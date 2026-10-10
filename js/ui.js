@@ -977,13 +977,22 @@ window.OP = window.OP || {};
   }
 
   function aplicarPasso(botao) {
-    const campo = document.getElementById(botao.dataset.alvo);
-    if (!campo || campo.disabled) return;
+    somarAoCampo(botao.dataset.alvo, Number(botao.dataset.passo));
+  }
+
+  /**
+   * Soma `delta` ao valor mostrado no campo (respeitando min/max dele) e grava.
+   * Devolve { anterior, novo } ou null se o campo não existe ou está desativado.
+   */
+  function somarAoCampo(idCampo, delta) {
+    const campo = document.getElementById(idCampo);
+    if (!campo || campo.disabled) return null;
     const caminho = campo.dataset.campo;
     const atual = OP.calc.numero(valorExibido(campo));
-    const soma = Math.round((atual + Number(botao.dataset.passo)) * 100) / 100; // passos como 1,5
+    const soma = Math.round((atual + Number(delta)) * 100) / 100; // passos como 1,5
     const novo = limitar(soma, campo.getAttribute('min'), campo.getAttribute('max'));
     if (novo !== atual) OP.state.atualizar(caminho, novo);
+    return { anterior: atual, novo: novo };
   }
 
   /** Liga/desliga o valor booleano indicado em data-alternar (ex.: modo livre). */
@@ -3005,6 +3014,7 @@ window.OP = window.OP || {};
     // Para as extensões da tela (js/ui-classe.js)
     registrarExtensao: registrarExtensao,
     coletarLigacoes: coletarLigacoes,
+    somarAoCampo: somarAoCampo,
     criarElemento: criarElemento,
     substituirFilhos: substituirFilhos,
     desenharListaTextos: desenharListaTextos

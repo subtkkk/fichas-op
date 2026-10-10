@@ -272,10 +272,10 @@
               <h2 class="hud__titulo" id="hud-titulo">Vitais</h2>
               <div class="hud__vitais">
                 <div class="vital vital--pv" data-vital="pv">
-                  <div class="vital__topo">
-                    <span class="vital__sigla" title="Pontos de Vida">PV</span>
-                    <span class="vital__valor"><output data-saida="recursos.pv.atual" aria-label="PV atuais">—</output><span class="vital__max">/<output data-saida="recursos.pv.max" aria-label="PV máximos">—</output></span></span>
-                  </div>
+                  <button type="button" class="vital__topo" data-abrir-vital="pv" aria-haspopup="dialog" aria-label="Ajustar PV">
+                    <span class="vital__sigla" aria-hidden="true">PV</span>
+                    <span class="vital__valor" aria-hidden="true"><output data-saida="recursos.pv.atual">—</output><span class="vital__max">/<output data-saida="recursos.pv.max">—</output></span></span>
+                  </button>
                   <div class="vital__barra" aria-hidden="true"><div class="barra__preenchimento" data-largura="recursos.pv.percentual"></div></div>
                   <div class="vital__botoes">
                     <button type="button" class="vital__botao" data-passo="-1" data-alvo="rec-pv-atual" aria-label="Diminuir 1 PV">−</button>
@@ -283,10 +283,10 @@
                   </div>
                 </div>
                 <div class="vital vital--pe" data-vital="pe">
-                  <div class="vital__topo">
-                    <span class="vital__sigla" title="Pontos de Esforço">PE</span>
-                    <span class="vital__valor"><output data-saida="recursos.pe.atual" aria-label="PE atuais">—</output><span class="vital__max">/<output data-saida="recursos.pe.max" aria-label="PE máximos">—</output></span></span>
-                  </div>
+                  <button type="button" class="vital__topo" data-abrir-vital="pe" aria-haspopup="dialog" aria-label="Ajustar PE">
+                    <span class="vital__sigla" aria-hidden="true">PE</span>
+                    <span class="vital__valor" aria-hidden="true"><output data-saida="recursos.pe.atual">—</output><span class="vital__max">/<output data-saida="recursos.pe.max">—</output></span></span>
+                  </button>
                   <div class="vital__barra" aria-hidden="true"><div class="barra__preenchimento" data-largura="recursos.pe.percentual"></div></div>
                   <div class="vital__botoes">
                     <button type="button" class="vital__botao" data-passo="-1" data-alvo="rec-pe-atual" aria-label="Diminuir 1 PE">−</button>
@@ -294,10 +294,10 @@
                   </div>
                 </div>
                 <div class="vital vital--san" data-vital="san">
-                  <div class="vital__topo">
-                    <span class="vital__sigla" title="Sanidade">SAN</span>
-                    <span class="vital__valor"><output data-saida="recursos.san.atual" aria-label="Sanidade atual">—</output><span class="vital__max">/<output data-saida="recursos.san.max" aria-label="Sanidade máxima">—</output></span></span>
-                  </div>
+                  <button type="button" class="vital__topo" data-abrir-vital="san" aria-haspopup="dialog" aria-label="Ajustar SAN">
+                    <span class="vital__sigla" aria-hidden="true">SAN</span>
+                    <span class="vital__valor" aria-hidden="true"><output data-saida="recursos.san.atual">—</output><span class="vital__max">/<output data-saida="recursos.san.max">—</output></span></span>
+                  </button>
                   <div class="vital__barra" aria-hidden="true"><div class="barra__preenchimento" data-largura="recursos.san.percentual"></div></div>
                   <div class="vital__botoes">
                     <button type="button" class="vital__botao" data-passo="-1" data-alvo="rec-san-atual" aria-label="Diminuir 1 de Sanidade">−</button>
@@ -336,6 +336,41 @@
             </nav>
           </div>
         </aside>
+
+        <!-- Ajuste de um vital (abre pelo topo de PV, PE ou SAN; no celular é uma gaveta) -->
+        <dialog class="dialogo dialogo--vital" id="dialogo-vital" aria-labelledby="vital-titulo">
+          <div class="dialogo__corpo vital-folha">
+            <div class="dialogo__topo">
+              <h2 class="dialogo__titulo vital-folha__titulo" id="vital-titulo"><span class="vital-folha__sigla" id="vital-sigla">PV</span><span class="vital-folha__nome" id="vital-nome">Pontos de Vida</span></h2>
+              <button type="button" class="botao-icone" data-fechar-vital aria-label="Fechar">
+                <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>
+              </button>
+            </div>
+            <p class="vital-folha__leitura"><output class="vital-folha__atual" id="vital-atual">—</output><span class="vital-folha__max">/ <output id="vital-max">—</output></span></p>
+            <div class="vital-folha__barra" aria-hidden="true"><div class="barra__preenchimento" id="vital-barra"></div></div>
+            <div class="vital-folha__passos" role="group" aria-label="Ajuste rápido">
+              <button type="button" class="vital-folha__passo" data-vital-delta="-5">−5</button>
+              <button type="button" class="vital-folha__passo" data-vital-delta="-1">−1</button>
+              <button type="button" class="vital-folha__passo" data-vital-delta="1">+1</button>
+              <button type="button" class="vital-folha__passo" data-vital-delta="5">+5</button>
+            </div>
+            <div class="vital-folha__quantia">
+              <label class="vital-folha__rotulo" for="vital-quantia">Quantia</label>
+              <input class="controle controle--numero vital-folha__campo" id="vital-quantia" type="number" min="1" step="1" inputmode="numeric" placeholder="0">
+              <button type="button" class="botao-barra vital-folha__aplicar" data-vital-aplicar="-1" id="vital-menos">Dano</button>
+              <button type="button" class="botao-barra vital-folha__aplicar" data-vital-aplicar="1" id="vital-mais">Cura</button>
+            </div>
+            <p class="vital-folha__ultimo" id="vital-ultimo-linha" hidden>
+              <span id="vital-ultimo" role="status"></span>
+              <button type="button" class="botao-texto vital-folha__desfazer" id="vital-desfazer">Desfazer</button>
+            </p>
+            <dl class="vital-folha__derivados">
+              <div><dt>Defesa</dt><dd><output data-saida="defesa.total">10</output></dd></div>
+              <div><dt>Deslocamento</dt><dd><output data-saida="deslocamento.metros" data-formato="metros">9 m</output></dd></div>
+              <div><dt>PE por turno</dt><dd><output data-saida="conjuracao.peGastoTurno">0</output> / <output data-saida="conjuracao.limitePE">1</output></dd></div>
+            </dl>
+          </div>
+        </dialog>
 
         <div class="pagina ficha__conteudo">
 

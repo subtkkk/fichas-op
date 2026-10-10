@@ -5,8 +5,9 @@
    Entra no ciclo de desenho do js/ui.js (OP.ui.registrarExtensao):
    - capa: monograma (iniciais do nome), código do registro (do id da ficha);
    - vitais (PV, PE, SAN): os números e as barras vêm de data-saida e
-     data-largura (ui.js); aqui só o estado visual (nível da barra) e os
-     botões −/+ desligados enquanto não há classe (o máximo é desconhecido);
+     data-largura (ui.js); aqui só o estado visual (nível da barra), os
+     botões −/+ desligados enquanto não há classe (o máximo é desconhecido)
+     e a janela de ajuste (−5…+5, dano/cura de N e desfazer o último);
    - índice: rola até a seção e marca a seção visível (aria-current);
    - tema: data-tema na ficha e no painel de rolagens. SÓ APARÊNCIA: não
      muda afinidade, regras nem nenhum valor da ficha. A escolha fica nas
@@ -156,6 +157,14 @@ window.OP = window.OP || {};
       elemento.querySelectorAll('[data-passo]').forEach(function (botao) {
         if (botao.disabled === definido) botao.disabled = !definido;
       });
+      const abrir = elemento.querySelector('[data-abrir-vital]');
+      if (abrir) {
+        if (abrir.disabled === definido) abrir.disabled = !definido;
+        const rotulo = definido
+          ? 'Ajustar ' + recurso.sigla + ': ' + textoNumero(estado.atual) + ' de ' + textoNumero(estado.max)
+          : recurso.sigla + ': escolha uma classe para calcular';
+        if (abrir.getAttribute('aria-label') !== rotulo) abrir.setAttribute('aria-label', rotulo);
+      }
     });
     refs.hudSemClasse.hidden = !semClasse;
     refs.hudTurno.classList.toggle('hud__derivado--alerta', Boolean(derivados.conjuracao && derivados.conjuracao.passouLimite));
@@ -169,11 +178,182 @@ window.OP = window.OP || {};
     refs.campoNome.classList.toggle('campo__destaque--vazio', !nome);
     desenharVitais(derivados);
 
+    refs.derivados = derivados;
+    desenharFolhaVital();
+
     // Outra ficha aberta: aplica o tema dela (sem animação)
     if (ficha.id !== idDesenhado) {
       idDesenhado = ficha.id;
+      folhaVital.ultimo = {};
+      if (refs.dialogoVital && refs.dialogoVital.open) refs.dialogoVital.close();
       aplicarTema(OP.prefs.tema(ficha.id), false);
     }
+  }
+
+  /* ------------------------------------------------------------------------
+     Ajuste de vitais: janela no desktop, gaveta no celular. Usa o mesmo
+     campo dos Recursos (rec-<id>-atual), então os limites (0 e o máximo)
+     e o salvamento são os de sempre; aqui só se soma e se guarda o último
+     ajuste para poder desfazer.
+     ------------------------------------------------------------------------ */
+
+  // Palavras de cada vital para tirar e somar (só o rótulo dos botões)
+  const ACOES_VITAL = {
+    pv: { menos: 'Dano', mais: 'Cura' },
+    pe: { menos: 'Gastar', mais: 'Recuperar' },
+    san: { menos: 'Perder', mais: 'Recuperar' }
+  };
+
+  const folhaVital = { id: null, ultimo: {} }; // ultimo[id] = { anterior, novo }
+
+  function textoNumero(valor) {
+    return valor === null || valor === undefined || valor === '' ? '—' : String(valor);
+  }
+
+  function dadosRecurso(id) {
+    return OP.data.recursos.find(function (recurso) { return recurso.id === id; });
+  }
+
+  function sinal(delta) {
+    return (delta < 0 ? '−' : '+') + Math.abs(delta);
+  }
+
+  function abrirFolhaVital(id) {
+    const recurso = dadosRecurso(id);
+    if (!recurso || !refs.dialogoVital) return;
+    folhaVital.id = id;
+    refs.dialogoVital.setAttribute('data-vital', id);
+    definirTexto(refs.vitalSigla, recurso.sigla);
+    definirTexto(refs.vitalNome, recurso.nome);
+    const acoes = ACOES_VITAL[id] || { menos: 'Tirar', mais: 'Somar' };
+    definirTexto(refs.vitalMenos, acoes.menos);
+    definirTexto(refs.vitalMais, acoes.mais);
+    refs.vitalMenos.setAttribute('aria-label', acoes.menos + ': tirar a quantia de ' + recurso.sigla);
+    refs.vitalMais.setAttribute('aria-label', acoes.mais + ': somar a quantia a ' + recurso.sigla);
+    refs.vitalPassos.forEach(function (botao) {
+      const delta = Number(botao.getAttribute('data-vital-delta'));
+      botao.setAttribute('aria-label', (delta < 0 ? 'Menos ' : 'Mais ') + Math.abs(delta) + ' ' + recurso.sigla);
+    });
+    refs.vitalQuantia.value = '';
+    definirTexto(refs.vitalMensagem, '');
+    desenharFolhaVital();
+    if (!refs.dialogoVital.open) refs.dialogoVital.showModal();
+    // Foco no −1 (não no campo: no celular, focar o campo abriria o teclado)
+    const menosUm = refs.dialogoVital.querySelector('[data-vital-delta="-1"]');
+    if (menosUm && !menosUm.disabled) menosUm.focus();
+  }
+
+  function desenharFolhaVital() {
+    const id = folhaVital.id;
+    if (!id || !refs.dialogoVital || !refs.dialogoVital.open || !refs.derivados) return;
+    const estado = refs.derivados.recursos && refs.derivados.recursos[id];
+    if (!estado) return;
+    const definido = Boolean(estado.classeDefinida);
+    definirTexto(refs.vitalAtual, textoNumero(estado.atual));
+    definirTexto(refs.vitalMax, textoNumero(estado.max));
+    const percentual = Math.max(0, Math.min(100, OP.calc.numero(estado.percentual)));
+    const largura = (definido ? percentual : 0) + '%';
+    if (refs.vitalBarra.style.width !== largura) refs.vitalBarra.style.width = largura;
+    const nivel = definido ? nivelBarra(percentual) : 'indefinido';
+    if (refs.dialogoVital.dataset.nivel !== nivel) refs.dialogoVital.dataset.nivel = nivel;
+    refs.dialogoVital.querySelectorAll('[data-vital-delta], [data-vital-aplicar]').forEach(function (botao) {
+      if (botao.disabled === definido) botao.disabled = !definido;
+    });
+    // O valor mudou por outro caminho (campo dos Recursos, outra aba): o desfazer perde o sentido
+    const ultimo = folhaVital.ultimo[id];
+    if (ultimo && OP.calc.numero(estado.atual) !== ultimo.novo) delete folhaVital.ultimo[id];
+    const temUltimo = Boolean(folhaVital.ultimo[id]);
+    refs.vitalDesfazer.hidden = !temUltimo;
+    refs.vitalUltimoLinha.hidden = !temUltimo && !refs.vitalMensagem.textContent;
+  }
+
+  function ajustarVital(delta) {
+    const id = folhaVital.id;
+    const recurso = dadosRecurso(id);
+    if (!recurso || !delta) return;
+    const resultado = OP.ui.somarAoCampo('rec-' + id + '-atual', delta);
+    if (!resultado) return;
+    if (resultado.novo === resultado.anterior) {
+      definirTexto(refs.vitalMensagem, recurso.sigla + (delta < 0 ? ' já está no mínimo.' : ' já está no máximo.'));
+      desenharFolhaVital();
+      return;
+    }
+    folhaVital.ultimo[id] = resultado;
+    definirTexto(refs.vitalMensagem, sinal(resultado.novo - resultado.anterior) + ' ' + recurso.sigla +
+      ' · ' + resultado.anterior + ' → ' + resultado.novo);
+    desenharFolhaVital();
+  }
+
+  function aplicarQuantia(direcao) {
+    const quantia = Math.floor(Number(refs.vitalQuantia.value));
+    if (!(quantia > 0)) {
+      definirTexto(refs.vitalMensagem, 'Digite a quantia (um número maior que zero).');
+      refs.vitalUltimoLinha.hidden = false;
+      refs.vitalQuantia.focus();
+      return;
+    }
+    refs.vitalQuantia.value = '';
+    ajustarVital(direcao * quantia);
+  }
+
+  function desfazerVital() {
+    const id = folhaVital.id;
+    const ultimo = folhaVital.ultimo[id];
+    const recurso = dadosRecurso(id);
+    if (!ultimo || !recurso) return;
+    delete folhaVital.ultimo[id];
+    definirTexto(refs.vitalMensagem, 'Desfeito: ' + recurso.sigla + ' volta a ' + ultimo.anterior + '.');
+    OP.state.atualizar('recursos.' + id + '.atual', ultimo.anterior);
+    desenharFolhaVital();
+  }
+
+  function montarFolhaVital() {
+    refs.dialogoVital = document.getElementById('dialogo-vital');
+    if (!refs.dialogoVital) return;
+    refs.vitalSigla = document.getElementById('vital-sigla');
+    refs.vitalNome = document.getElementById('vital-nome');
+    refs.vitalAtual = document.getElementById('vital-atual');
+    refs.vitalMax = document.getElementById('vital-max');
+    refs.vitalBarra = document.getElementById('vital-barra');
+    refs.vitalQuantia = document.getElementById('vital-quantia');
+    refs.vitalMenos = document.getElementById('vital-menos');
+    refs.vitalMais = document.getElementById('vital-mais');
+    refs.vitalMensagem = document.getElementById('vital-ultimo');
+    refs.vitalUltimoLinha = document.getElementById('vital-ultimo-linha');
+    refs.vitalDesfazer = document.getElementById('vital-desfazer');
+    refs.vitalPassos = Array.prototype.slice.call(refs.dialogoVital.querySelectorAll('[data-vital-delta]'));
+
+    document.querySelectorAll('[data-abrir-vital]').forEach(function (botao) {
+      botao.addEventListener('click', function () { abrirFolhaVital(botao.getAttribute('data-abrir-vital')); });
+    });
+
+    refs.dialogoVital.addEventListener('click', function (evento) {
+      // Toque fora da janela (no fundo escurecido) fecha
+      if (evento.target === refs.dialogoVital) {
+        refs.dialogoVital.close();
+        return;
+      }
+      const passo = evento.target.closest('[data-vital-delta]');
+      if (passo) {
+        ajustarVital(Number(passo.getAttribute('data-vital-delta')));
+        return;
+      }
+      const aplicar = evento.target.closest('[data-vital-aplicar]');
+      if (aplicar) {
+        aplicarQuantia(Number(aplicar.getAttribute('data-vital-aplicar')));
+        return;
+      }
+      if (evento.target.closest('#vital-desfazer')) {
+        desfazerVital();
+        return;
+      }
+      if (evento.target.closest('[data-fechar-vital]')) refs.dialogoVital.close();
+    });
+
+    refs.dialogoVital.addEventListener('close', function () {
+      folhaVital.id = null;
+      definirTexto(refs.vitalMensagem, '');
+    });
   }
 
   /* ------------------------------------------------------------------------
@@ -311,6 +491,7 @@ window.OP = window.OP || {};
     });
 
     montarSeletorTema();
+    montarFolhaVital();
 
     refs.indice.addEventListener('click', function (evento) {
       const link = evento.target.closest('[data-ir-secao]');

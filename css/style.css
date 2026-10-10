@@ -3093,10 +3093,10 @@ body.arrastando-arquivo::after {
 .vital {
   --cor-vital: var(--papel-2);
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas:
-    "sigla valor botoes"
-    "barra barra barra";
+    "topo  botoes"
+    "barra barra";
   align-items: center;
   gap: 7px 8px;
 }
@@ -3105,8 +3105,38 @@ body.arrastando-arquivo::after {
 .vital--pe { --cor-vital: var(--pe); }
 .vital--san { --cor-vital: var(--san); }
 
+/* Sigla e valor: um botão que abre o ajuste do vital (−5…+5, dano/cura) */
 .vital__topo {
-  display: contents;
+  grid-area: topo;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: -5px -7px;
+  padding: 5px 7px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--raio-2);
+  cursor: pointer;
+  transition: background-color var(--dur-1) var(--curva), border-color var(--dur-1) var(--curva);
+}
+
+.vital__topo > .vital__sigla,
+.vital__topo > .vital__valor {
+  grid-area: auto;
+}
+
+.vital__topo:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--cor-vital) 9%, transparent);
+  border-color: color-mix(in oklab, var(--cor-vital) 32%, transparent);
+}
+
+.vital__topo:disabled {
+  cursor: default;
 }
 
 .vital__sigla {
@@ -7336,6 +7366,11 @@ body[data-vista="ficha"] .rolagens {
   to { opacity: 1; }
 }
 
+@keyframes gaveta-subir {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+
 .dialogo--confirmar {
   width: min(500px, calc(100vw - 24px));
 }
@@ -7406,6 +7441,211 @@ body[data-vista="ficha"] .rolagens {
   margin-top: 6px;
   padding-top: 16px;
   border-top: 1px solid var(--linha-1);
+}
+
+/* ---- Ajuste de um vital (janela; no celular, gaveta de baixo) ---- */
+.dialogo--vital {
+  --cor-vital: var(--papel-2);
+  width: min(420px, calc(100vw - 24px));
+}
+
+.dialogo--vital[data-vital="pv"] { --cor-vital: var(--pv); }
+.dialogo--vital[data-vital="pe"] { --cor-vital: var(--pe); }
+.dialogo--vital[data-vital="san"] { --cor-vital: var(--san); }
+
+.vital-folha {
+  gap: 16px;
+}
+
+.vital-folha__titulo {
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.vital-folha__sigla {
+  font: 600 30px/1 var(--fonte-display);
+  letter-spacing: 0.06em;
+  color: var(--cor-vital);
+}
+
+.vital-folha__nome {
+  font: 500 var(--t-rotulo) / 1.2 var(--fonte-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--papel-2);
+}
+
+.vital-folha__leitura {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 2px 0 -4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.vital-folha__atual {
+  font: 600 56px/1 var(--fonte-mono);
+  letter-spacing: -0.02em;
+  color: var(--papel);
+}
+
+.vital-folha__max {
+  font: 500 20px/1 var(--fonte-mono);
+  color: var(--papel-2);
+}
+
+.dialogo--vital[data-nivel="critico"] .vital-folha__atual {
+  color: var(--aviso);
+}
+
+.dialogo--vital[data-nivel="zero"] .vital-folha__atual {
+  color: var(--erro);
+}
+
+.vital-folha__barra {
+  height: 6px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--raio-pilula);
+}
+
+.vital-folha__barra .barra__preenchimento {
+  height: 100%;
+  background: linear-gradient(90deg, color-mix(in oklab, var(--cor-vital) 55%, #000), var(--cor-vital));
+  border-radius: inherit;
+  transition: width var(--dur-3) var(--curva);
+}
+
+.vital-folha__passos {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.vital-folha__passo {
+  height: 48px;
+  font: 600 18px/1 var(--fonte-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--papel);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--linha-2);
+  border-radius: var(--raio-2);
+  cursor: pointer;
+  transition: background-color var(--dur-1) var(--curva), border-color var(--dur-1) var(--curva), color var(--dur-1) var(--curva);
+}
+
+.vital-folha__passo:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--cor-vital) 14%, transparent);
+  border-color: var(--cor-vital);
+}
+
+.vital-folha__passo:active:not(:disabled) {
+  background: color-mix(in oklab, var(--cor-vital) 24%, transparent);
+}
+
+.vital-folha__passo:disabled,
+.vital-folha__aplicar:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.vital-folha__quantia {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "rotulo rotulo rotulo"
+    "campo  menos  mais";
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.vital-folha__rotulo {
+  grid-area: rotulo;
+  font: 500 var(--t-rotulo) / 1.2 var(--fonte-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--papel-2);
+}
+
+.vital-folha__campo {
+  grid-area: campo;
+  width: 100%;
+  height: 44px;
+  font: 600 18px/1 var(--fonte-mono);
+  text-align: center;
+}
+
+.vital-folha__aplicar {
+  height: 44px;
+  padding: 0 16px;
+}
+
+.vital-folha__aplicar[data-vital-aplicar="-1"] {
+  grid-area: menos;
+}
+
+.vital-folha__aplicar[data-vital-aplicar="1"] {
+  grid-area: mais;
+}
+
+.vital-folha__ultimo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 12px;
+  min-height: 40px;
+  padding: 6px 6px 6px 14px;
+  font: 500 13px/1.4 var(--fonte-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--papel);
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--linha-1);
+  border-radius: var(--raio-2);
+}
+
+.vital-folha__desfazer {
+  min-height: 32px;
+  padding: 4px 10px;
+  font: 600 13px/1 var(--fonte-ui);
+  color: var(--acento);
+}
+
+.vital-folha__desfazer:hover {
+  color: var(--acento-claro);
+}
+
+.vital-folha__derivados {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--linha-1);
+}
+
+.vital-folha__derivados > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0 10px;
+}
+
+.vital-folha__derivados > div + div {
+  border-left: 1px solid var(--linha-1);
+}
+
+.vital-folha__derivados dt {
+  font: 500 var(--t-rotulo) / 1.2 var(--fonte-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--papel-2);
+}
+
+.vital-folha__derivados dd {
+  margin: 0;
+  font: 600 18px/1 var(--fonte-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--papel);
 }
 
 /* ==========================================================================
@@ -7778,11 +8018,32 @@ body[data-vista="ficha"] .rolagens {
   }
 
   .avisos-app {
-    top: 12px;
     right: 12px;
-    bottom: auto;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     left: 12px;
     width: auto;
+  }
+
+  body[data-vista="ficha"] .avisos-app {
+    bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Ajuste do vital: gaveta presa embaixo, ao alcance do polegar */
+  .dialogo--vital {
+    width: 100%;
+    max-width: 100%;
+    max-height: calc(100dvh - 40px);
+    margin: auto 0 0;
+    border-bottom: 0;
+    border-radius: var(--raio-4) var(--raio-4) 0 0;
+  }
+
+  .dialogo--vital[open] {
+    animation: gaveta-subir 300ms var(--curva-saida);
+  }
+
+  .dialogo--vital .vital-folha {
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
   }
 
   /* Ficha: faixa de vitais compacta */
@@ -7804,11 +8065,22 @@ body[data-vista="ficha"] .rolagens {
   }
 
   .vital {
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
-      "sigla valor"
-      "barra barra";
+      "topo"
+      "barra";
     gap: 5px 6px;
+  }
+
+  .vital__topo {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 6px;
+    min-height: 40px;
+    margin: -4px -6px -2px;
+    padding: 4px 6px 2px;
+    /* Sem os −/+ na faixa: o vital aparece como botão (toque abre o ajuste) */
+    background: rgba(255, 255, 255, 0.035);
+    border-color: var(--linha-1);
   }
 
   .vital__valor {
@@ -7985,5 +8257,13 @@ body[data-vista="ficha"] .rolagens {
 
   .indice__item {
     min-height: 34px;
+  }
+
+  .indice__item {
+    min-height: 40px;
+  }
+
+  .pericia__concedida .caixa {
+    min-height: 44px;
   }
 }

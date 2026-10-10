@@ -934,19 +934,18 @@ window.OP = window.OP || {};
       try {
         dados = JSON.parse(texto);
       } catch (erro) {
-        return falha('O arquivo não é um JSON válido.');
+        return falha('O arquivo está danificado ou não é um .json de ficha.');
       }
-      if (!ehObjetoSimples(dados)) return falha('Formato desconhecido: o arquivo não é uma ficha exportada por este site.');
+      if (!ehObjetoSimples(dados)) return falha('Este arquivo não é uma ficha do Dossiê. Use um .json baixado em Exportar ou Backup.');
       if (!temPropria(dados, 'formato')) {
-        return falha('O arquivo não tem o campo "formato": não parece ter sido exportado por este site.');
+        return falha('Este arquivo não é uma ficha do Dossiê. Use um .json baixado em Exportar ou Backup.');
       }
       if (dados.formato !== FORMATO_FICHA && dados.formato !== FORMATO_BACKUP) {
-        const nome = typeof dados.formato === 'string' ? ' ("' + dados.formato.slice(0, 40) + '")' : '';
-        return falha('Formato desconhecido' + nome + ': use um arquivo exportado por este site.');
+        return falha('Este arquivo é de outro programa ou site. Use um .json baixado em Exportar ou Backup do Dossiê.');
       }
 
       const versao = dados.versao;
-      if (typeof versao !== 'number' || !Number.isFinite(versao) || versao < 1) return falha('O arquivo não informa uma versão válida.');
+      if (typeof versao !== 'number' || !Number.isFinite(versao) || versao < 1) return falha('O arquivo está incompleto (falta a versão). Exporte a ficha de novo e tente outra vez.');
       if (versao > VERSAO_MODELO) {
         return falha('Este arquivo foi gerado por uma versão mais nova do site (versão ' + versao + '; esta é a ' +
           VERSAO_MODELO + '). Atualize a página antes de importar.');

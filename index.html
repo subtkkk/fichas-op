@@ -233,7 +233,7 @@
             </select>
           </label>
         </div>
-        <p class="arquivo__dica">Dica: arraste um arquivo <strong>.json</strong> para qualquer lugar da página para importar. Importar sempre cria fichas novas — nenhuma existente é alterada.</p>
+        <p class="arquivo__dica">Dica: arraste um arquivo <strong>.json</strong> para qualquer lugar da página para importar. Se a ficha já estiver aqui, você escolhe entre substituir e manter as duas.</p>
 
         <!-- Cartões gerados por js/ui-fichas.js (nomes só por textContent) -->
         <ul class="arquivo__grade" id="lista-fichas" aria-label="Fichas salvas neste navegador"></ul>
@@ -1077,6 +1077,7 @@
       <p class="dialogo__destaque" id="confirmar-destaque" role="alert" hidden></p>
       <div class="dialogo__botoes">
         <button type="submit" class="botao" value="cancelar">Cancelar</button>
+        <button type="submit" class="botao" id="confirmar-alternativa" value="alternativa" hidden>Alternativa</button>
         <button type="submit" class="botao botao--primario" id="confirmar-ok" value="confirmar">Confirmar</button>
       </div>
     </form>

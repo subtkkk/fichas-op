@@ -1044,9 +1044,49 @@ window.OP = window.OP || {};
   }
 
   function removerAtaque(idAtaque) {
-    const restantes = OP.state.obter('ataques').filter(function (ataque) { return ataque.id !== idAtaque; });
     delete refs.danoCritico[idAtaque];
-    OP.state.atualizar('ataques', restantes);
+    removerComDesfazer('ataques', idAtaque);
+  }
+
+  // Como cada lista se chama no aviso de remoção
+  const REMOCOES = {
+    'ataques': { removido: 'Ataque removido', semNome: 'ataque sem nome' },
+    'inventario.itens': { removido: 'Item removido', semNome: 'item sem nome' },
+    'habilidades': { removido: 'Habilidade removida', semNome: 'habilidade sem nome' },
+    'rituais': { removido: 'Ritual removido', semNome: 'ritual sem nome' }
+  };
+
+  /**
+   * Tira um elemento de uma lista da ficha e mostra um aviso com "Desfazer"
+   * (o texto digitado pelo jogador não se perde num toque errado). Desfazer
+   * devolve o elemento à mesma posição, se a mesma ficha ainda estiver aberta.
+   */
+  function removerComDesfazer(caminho, id) {
+    const lista = OP.state.obter(caminho);
+    if (!Array.isArray(lista)) return;
+    const posicao = lista.findIndex(function (elemento) { return elemento.id === id; });
+    if (posicao === -1) return;
+    const removido = lista[posicao];
+    const idFicha = OP.fichas.idAtual();
+    OP.state.atualizar(caminho, lista.filter(function (elemento) { return elemento.id !== id; }));
+
+    const textos = REMOCOES[caminho] || { removido: 'Removido', semNome: 'sem nome' };
+    const nome = String(removido.nome || '').trim() || textos.semNome;
+    if (!OP.uiApp || typeof OP.uiApp.aviso !== 'function') return;
+    OP.uiApp.aviso('ok', textos.removido + ': ' + nome + '.', {
+      duracao: 9000,
+      acao: {
+        rotulo: 'Desfazer',
+        fazer: function () {
+          if (OP.fichas.idAtual() !== idFicha) return;
+          const atual = OP.state.obter(caminho);
+          if (!Array.isArray(atual) || atual.some(function (elemento) { return elemento.id === id; })) return;
+          const nova = atual.slice();
+          nova.splice(Math.min(posicao, nova.length), 0, removido);
+          OP.state.atualizar(caminho, nova);
+        }
+      }
+    });
   }
 
   /** Acrescenta um item vazio ao inventário e põe o foco no nome dele. */
@@ -1059,9 +1099,8 @@ window.OP = window.OP || {};
 
   /** Remove um item pelo id (a lista inteira é regravada pelo estado). */
   function removerItem(idItem) {
-    const restantes = OP.state.obter('inventario.itens').filter(function (item) { return item.id !== idItem; });
     delete refs.descricoesAbertas[idItem];
-    OP.state.atualizar('inventario.itens', restantes);
+    removerComDesfazer('inventario.itens', idItem);
   }
 
   /** Abre/fecha a descrição de um item (estado só da tela, não vai para a ficha). */
@@ -2065,10 +2104,9 @@ window.OP = window.OP || {};
     return false;
   }
 
-  /** Remove um elemento de uma lista da ficha (habilidades ou rituais) pelo id. */
+  /** Remove um elemento de uma lista da ficha (habilidades ou rituais) pelo id, com desfazer. */
   function removerDaLista(caminho, id) {
-    const restantes = OP.state.obter(caminho).filter(function (elemento) { return elemento.id !== id; });
-    OP.state.atualizar(caminho, restantes);
+    removerComDesfazer(caminho, id);
   }
 
   /* ------------------------------------------------------------------------
@@ -2733,6 +2771,7 @@ window.OP = window.OP || {};
     refs.confirmarAvisos = document.getElementById('confirmar-avisos');
     refs.confirmarDestaque = document.getElementById('confirmar-destaque');
     refs.confirmarOk = document.getElementById('confirmar-ok');
+    refs.confirmarAlternativa = document.getElementById('confirmar-alternativa');
 
     refs.dialogoConfirmar.addEventListener('close', function () {
       const opcoes = confirmacaoPendente;
@@ -2740,6 +2779,8 @@ window.OP = window.OP || {};
       if (!opcoes) return;
       if (refs.dialogoConfirmar.returnValue === 'confirmar') {
         if (opcoes.aoConfirmar) opcoes.aoConfirmar();
+      } else if (refs.dialogoConfirmar.returnValue === 'alternativa' && opcoes.alternativa) {
+        if (opcoes.alternativa.aoEscolher) opcoes.alternativa.aoEscolher();
       } else if (opcoes.aoCancelar) {
         opcoes.aoCancelar();
       }
@@ -2772,6 +2813,10 @@ window.OP = window.OP || {};
     refs.confirmarDestaque.hidden = !o.destaque;
     definirTexto(refs.confirmarOk, o.textoConfirmar || 'Confirmar');
     refs.confirmarOk.classList.toggle('botao-barra--perigo', o.perigo === true);
+    // Terceira escolha opcional (ex.: "Importar como novas" ao lado de "Substituir")
+    const alternativa = o.alternativa && o.alternativa.texto ? o.alternativa : null;
+    refs.confirmarAlternativa.hidden = !alternativa;
+    definirTexto(refs.confirmarAlternativa, alternativa ? alternativa.texto : '');
     confirmacaoPendente = o;
     dialogo.returnValue = '';
     dialogo.showModal();

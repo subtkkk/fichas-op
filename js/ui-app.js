@@ -276,7 +276,8 @@ window.OP = window.OP || {};
     const itens = refs.avisos.querySelectorAll('.aviso-app:not([data-saindo="sim"])');
     if (itens.length > MAXIMO_AVISOS) fecharAviso(itens[0]);
 
-    item.dataset.temporizador = String(setTimeout(function () { fecharAviso(item); }, DURACAO_AVISO[t]));
+    const duracao = Number(o.duracao) > 0 ? Number(o.duracao) : DURACAO_AVISO[t];
+    item.dataset.temporizador = String(setTimeout(function () { fecharAviso(item); }, duracao));
     // Passar o mouse ou focar segura o aviso na tela
     item.addEventListener('mouseenter', function () { clearTimeout(Number(item.dataset.temporizador)); });
     item.addEventListener('focusin', function () { clearTimeout(Number(item.dataset.temporizador)); });

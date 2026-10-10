@@ -1,0 +1,5 @@
+# Estado de execução do servidor do Impeccable (porta, PID e token de sessão).
+live/server.json
+
+# Preferências pessoais do Impeccable nesta máquina.
+config.local.json

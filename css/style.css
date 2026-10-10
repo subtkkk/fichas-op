@@ -6615,6 +6615,297 @@ body.arrastando-arquivo::after {
   color: var(--papel-3);
 }
 
+/* ---- Visão de mesa: ataques, rituais e perícias em resumo ----
+   Na mesa, cada cartão mostra o que se usa no meio da cena (nome, uma linha
+   de resumo e os botões de rolar ou conjurar). "Editar" abre o formulário.
+   Só tela: a impressão (outro CSS) mostra todos os campos. */
+.cartao-resumo {
+  display: none;
+  margin: 0;
+  font: 500 12.5px/1.5 var(--fonte-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--papel-2);
+  overflow-wrap: anywhere;
+}
+
+.cartao-editar {
+  min-height: 34px;
+  padding: 6px 10px;
+  font: 600 13px/1 var(--fonte-ui);
+  text-decoration: none;
+  color: var(--papel-2);
+  border: 1px solid var(--linha-2);
+  border-radius: var(--raio-2);
+}
+
+.cartao-editar:hover {
+  color: var(--papel);
+  border-color: var(--linha-3);
+}
+
+.cartao-editar[aria-expanded="true"] {
+  color: var(--acento);
+  border-color: var(--acento-linha);
+}
+
+/* Ataque em resumo */
+.ataque[data-modo="resumo"] {
+  gap: 8px;
+}
+
+.ataque[data-modo="resumo"] .ataque__campo--pericia,
+.ataque[data-modo="resumo"] .ataque__campo--outros,
+.ataque[data-modo="resumo"] .ataque__linha--dano > .ataque__campo,
+.ataque[data-modo="resumo"] .ataque__linha--detalhes,
+.ataque[data-modo="resumo"] .ataque__linha--fim {
+  display: none;
+}
+
+.ataque[data-modo="resumo"] .ataque__linha--dano {
+  align-items: center;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.ataque[data-modo="resumo"] .cartao-resumo {
+  display: block;
+  flex: 1 1 260px;
+}
+
+.ataque[data-modo="resumo"] .ataque__linha--teste {
+  align-items: center;
+}
+
+.ataque[data-modo="resumo"] .ataque__campo--nome .ataque__rotulo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+/* O nome continua editável, mas lê como título do cartão */
+.ataque[data-modo="resumo"] .ataque__nome,
+.ritual[data-modo="resumo"] .ritual__nome {
+  height: 38px;
+  padding-left: 0;
+  font-size: 23px;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.ataque[data-modo="resumo"] .ataque__nome:hover,
+.ritual[data-modo="resumo"] .ritual__nome:hover {
+  border-color: transparent;
+}
+
+.ataque[data-modo="resumo"] .ataque__nome:focus,
+.ritual[data-modo="resumo"] .ritual__nome:focus {
+  padding-left: 10px;
+  background: var(--campo-fundo);
+  border-color: var(--acento);
+}
+
+.ataque[data-modo="resumo"] .ataque__campo--teste {
+  flex: 0 1 auto;
+}
+
+@container ficha (max-width: 600px) {
+  /* Teste na mesma linha do rótulo: o cartão fica baixo no celular */
+  .ataque[data-modo="resumo"] .ataque__campo--teste {
+    flex: 1 1 100%;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .ataque[data-modo="resumo"] .ataque__teste {
+    font-size: 19px;
+  }
+}
+
+/* Ritual em resumo */
+.ritual[data-modo="resumo"] {
+  gap: 10px;
+}
+
+.ritual[data-modo="resumo"] .ritual__cabecalho {
+  align-items: center;
+}
+
+.ritual[data-modo="resumo"] .ritual__cabecalho > .ataque__campo:not(.ataque__campo--nome),
+.ritual[data-modo="resumo"] .ritual__cabecalho [data-remover-ritual],
+.ritual[data-modo="resumo"] .ritual__detalhes,
+.ritual[data-modo="resumo"] .ritual__resistencia-campos,
+.ritual[data-modo="resumo"] > .ataque__campo--notas,
+.ritual[data-modo="resumo"] .forma[data-ativa="nao"],
+.ritual[data-modo="resumo"] .forma__cabecalho .caixa,
+.ritual[data-modo="resumo"] .forma__sempre,
+.ritual[data-modo="resumo"] .forma__corpo > :not(.forma__acoes):not(.mensagem-acao):not(.forma__avisos) {
+  display: none;
+}
+
+.ritual[data-modo="resumo"] .ritual__cabecalho .ataque__campo--nome .ataque__rotulo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.ritual[data-modo="resumo"] .cartao-resumo {
+  display: block;
+  margin-top: -4px;
+}
+
+.ritual[data-modo="resumo"] .ritual__formas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding-top: 10px;
+}
+
+.ritual[data-modo="resumo"] .forma {
+  flex: 0 1 auto;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.ritual[data-modo="resumo"] .forma__cabecalho {
+  min-height: 0;
+}
+
+.ritual[data-modo="resumo"] .forma__corpo {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Perícias na mesa: nome, dados, bônus e rolar (o resto fica em "Editar perícias") */
+.secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(3),
+.secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(5),
+.secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(6),
+.secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(9),
+.secao--pericias[data-modo="mesa"] .pericia > .pericia__atributo,
+.secao--pericias[data-modo="mesa"] .pericia > .pericia__grau,
+.secao--pericias[data-modo="mesa"] .pericia > .pericia__outros,
+.secao--pericias[data-modo="mesa"] .pericia > .pericia__concedida,
+.secao--pericias[data-modo="mesa"] .pericias__pontos,
+.secao--pericias[data-modo="mesa"] #contador-treinamento,
+.secao--pericias[data-modo="mesa"] #contador-graus,
+.secao--pericias[data-modo="mesa"] #botao-modo-livre-pericias,
+.secao--pericias[data-modo="mesa"] #avisos-pericias,
+.secao--pericias[data-modo="mesa"] #avisos-graus {
+  display: none !important;
+}
+
+.secao--pericias[data-modo="mesa"] .tabela-pericias td,
+.secao--pericias[data-modo="mesa"] .tabela-pericias tbody th {
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
+.secao--pericias[data-modo="mesa"] .pericia__nome-conteudo {
+  min-height: 38px;
+}
+
+/* Estreito, na mesa: cada perícia numa linha (nome, dados, bônus, rolar) */
+@container ficha (max-width: 759px) {
+  .secao--pericias[data-modo="mesa"] .tabela-pericias tbody {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .secao--pericias[data-modo="mesa"] .pericia {
+    grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+    grid-template-areas: "ind nome dados bonus rolar";
+    align-items: center;
+    gap: 4px 10px;
+    padding: 6px 8px 6px 12px;
+  }
+
+  .secao--pericias[data-modo="mesa"] .pericia [data-rotulo]::before {
+    display: none;
+  }
+
+  .secao--pericias[data-modo="mesa"] .pericia__dados output {
+    white-space: nowrap;
+  }
+
+  /* Selos ("Requer treinamento", carga) quebram dentro da coluna do nome */
+  .secao--pericias[data-modo="mesa"] .pericia__nome-conteudo .selo,
+  .secao--pericias[data-modo="mesa"] .pericia__requer,
+  .secao--pericias[data-modo="mesa"] .pericia__carga,
+  .secao--pericias[data-modo="mesa"] .pericia__fonte {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .secao--pericias[data-modo="mesa"] .pericia__bonus output {
+    font-size: 18px;
+  }
+
+  .secao--pericias[data-modo="mesa"] .pericia--treinada .pericia__bonus output {
+    font-size: 20px;
+  }
+}
+
+/* Recursos: bônus de máximo e a conta, recolhidos */
+.recurso__detalhes {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.recurso__detalhes-titulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  font: 500 var(--t-rotulo) / 1.2 var(--fonte-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--papel-2);
+  cursor: pointer;
+  list-style: none;
+}
+
+.recurso__detalhes-titulo::-webkit-details-marker {
+  display: none;
+}
+
+.recurso__detalhes-titulo::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform var(--dur-2) var(--curva);
+}
+
+.recurso__detalhes[open] > .recurso__detalhes-titulo::before {
+  transform: rotate(45deg);
+}
+
+.recurso__detalhes-titulo:hover {
+  color: var(--papel);
+}
+
+.recurso__detalhes-corpo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 16px;
+  padding-top: 10px;
+}
+
 /* ==========================================================================
    10b. ASSINATURAS DOS TEMAS — além das cores, cada tema muda a luz, os
         detalhes gráficos e o comportamento. Só aparência.

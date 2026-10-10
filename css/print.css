@@ -145,7 +145,8 @@ body::after,
 .cartao-editar,
 .pericias__modo,
 .recurso__detalhes-titulo,
-.dialogo--vital {
+.dialogo--vital,
+.glossario {
   display: none !important;
 }
 

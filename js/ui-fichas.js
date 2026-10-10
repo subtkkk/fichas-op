@@ -266,12 +266,14 @@ window.OP = window.OP || {};
     const lista = criar('dl', 'mini-vitais' + (classeExtra ? ' ' + classeExtra : ''));
     ['pv', 'pe', 'san'].forEach(function (id) {
       const vital = resumo.vitais[id];
-      const item = criar('div', 'mini-vital mini-vital--' + id);
-      item.title = vital.nome + ': ' + vital.atual + ' de ' + vital.max;
+      const zerado = vital.atual === 0 && vital.max > 0;
+      const item = criar('div', 'mini-vital mini-vital--' + id + (zerado ? ' mini-vital--zero' : ''));
+      item.title = vital.nome + ': ' + vital.atual + ' de ' + vital.max + (zerado ? ' (zerado)' : '');
       item.appendChild(criar('dt', 'mini-vital__sigla', vital.sigla));
       const valor = criar('dd', 'mini-vital__valor');
       valor.appendChild(criar('span', 'mini-vital__atual', vital.atual === null ? '—' : vital.atual));
       valor.appendChild(criar('span', 'mini-vital__max', '/' + (vital.max === null ? '—' : vital.max)));
+      if (zerado) valor.appendChild(criar('span', 'mini-vital__estado', 'zerado'));
       const barra = criar('span', 'mini-vital__barra');
       barra.setAttribute('aria-hidden', 'true');
       const preenchido = criar('span', 'mini-vital__preenchido');
@@ -421,6 +423,10 @@ window.OP = window.OP || {};
     if (!principal) principal = ordenadas[0] || null;
 
     refs.central.dataset.vazia = lista.length ? 'nao' : 'sim';
+    if (refs.tituloContinuar) {
+      const rotulo = lista.length ? 'Continuar de onde parou' : 'Comece por aqui';
+      if (refs.tituloContinuar.textContent !== rotulo) refs.tituloContinuar.textContent = rotulo;
+    }
     if (!principal) {
       substituirFilhos(refs.continuar, [criarEstadoVazio('Nenhum agente no arquivo ainda.',
         'Registre o primeiro agente para começar, ou importe um .json exportado de outro navegador.')]);
@@ -978,6 +984,7 @@ window.OP = window.OP || {};
 
     refs.central = document.getElementById('vista-central');
     refs.continuar = document.getElementById('central-continuar');
+    refs.tituloContinuar = document.getElementById('central-continuar-titulo');
     refs.recentes = document.getElementById('central-recentes');
     refs.blocoRecentes = refs.recentes.closest('.central__bloco');
     refs.statusArquivo = document.getElementById('central-status');

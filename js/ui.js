@@ -685,7 +685,7 @@ window.OP = window.OP || {};
     preencherSelect(
       document.getElementById('inv-credito'),
       OP.data.niveisCredito.map(function (n) { return { valor: n.id, texto: n.nome }; }),
-      'Padrão da patente'
+      'Padrão'
     );
     refs.opcaoCreditoPadrao = document.querySelector('#inv-credito option[value=""]');
 
@@ -1658,7 +1658,7 @@ window.OP = window.OP || {};
     definirTexto(refs.dicaPatente, 'Com ' + inv.pontosPrestigio + ' PP, a patente sugerida é ' + sugerida.nome +
       (sugerida.id === patente.id ? ' (a atual).' : '.'));
     refs.dicaPatente.classList.toggle('painel__info--destaque', sugerida.id !== patente.id);
-    definirTexto(refs.opcaoCreditoPadrao, 'Padrão da patente (' + nomeCredito(inv.creditoPatente) + ')');
+    definirTexto(refs.opcaoCreditoPadrao, 'Padrão: ' + nomeCredito(inv.creditoPatente));
 
     // Limites por categoria (aviso sem bloquear)
     const excedidos = [];
@@ -1953,6 +1953,7 @@ window.OP = window.OP || {};
     caixa.appendChild(criarTopoResultado(resultado.titulo, resultado.critico ? 'CRÍTICO' : ''));
     caixa.appendChild(criarDadosTeste(resultado));
     caixa.appendChild(criarElemento('p', 'resultado__regra', regra));
+    if (resultado.aviso) caixa.appendChild(criarElemento('p', 'resultado__aviso', resultado.aviso));
     caixa.appendChild(criarFimResultado(conta, resultado.total));
     if (alvo) caixa.appendChild(criarElemento('p', 'resultado__alvo resultado__alvo--' + (resultado.acertou ? 'sim' : 'nao'), alvo));
     const acoes = criarAcoesResultado(resultado);
@@ -2056,7 +2057,13 @@ window.OP = window.OP || {};
   }
 
   function rolarPericiaNaTela(idPericia) {
-    mostrarResultado(OP.rolagens.rolarPericia(OP.state.ficha, idPericia, opcoesRolagem()));
+    const resultado = OP.rolagens.rolarPericia(OP.state.ficha, idPericia, opcoesRolagem());
+    // Perícia "somente treinada" rolada sem treino: rola mesmo assim, mas avisa no resultado
+    const estado = refs.derivados && refs.derivados.pericias && refs.derivados.pericias[idPericia];
+    if (resultado && resultado.ok !== false && estado && estado.requerTreinamento) {
+      resultado.aviso = 'Perícia somente para treinados, e este agente não é treinado nela.';
+    }
+    mostrarResultado(resultado);
   }
 
   function acharAtaque(idAtaque) {

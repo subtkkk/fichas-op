@@ -349,6 +349,7 @@
             </div>
             <p class="vital-folha__leitura"><output class="vital-folha__atual" id="vital-atual">—</output><span class="vital-folha__max">/ <output id="vital-max">—</output></span></p>
             <div class="vital-folha__barra" aria-hidden="true"><div class="barra__preenchimento" id="vital-barra"></div></div>
+            <p class="vital-folha__estado" id="vital-estado" hidden></p>
             <div class="vital-folha__passos" role="group" aria-label="Ajuste rápido">
               <button type="button" class="vital-folha__passo" data-vital-delta="-5">−5</button>
               <button type="button" class="vital-folha__passo" data-vital-delta="-1">−1</button>
@@ -456,6 +457,23 @@
               </div>
             </div>
           </section>
+
+          <!-- Termos que aparecem na ficha (as dicas de passar o mouse não existem no toque) -->
+          <details class="glossario">
+            <summary class="glossario__titulo">Termos da ficha</summary>
+            <dl class="glossario__lista">
+              <div><dt>NEX</dt><dd>Nível de exposição paranormal do agente. Os avanços de NEX liberam habilidades, rituais e aumentos.</dd></div>
+              <div><dt>Passos de NEX</dt><dd>Avanços de 5% depois do NEX 5% (no Sobrevivente, estágios depois do 1º).</dd></div>
+              <div><dt>PE por turno</dt><dd>PE que podem ser gastos num mesmo turno (NEX ÷ 5).</dd></div>
+              <div><dt>DT</dt><dd>Dificuldade do teste. A DT de rituais é 10 + limite de PE por turno + o atributo escolhido.</dd></div>
+              <div><dt>Graus</dt><dd>No NEX 35% e no 70%, perícias treinadas sobem um grau: Treinado → Veterano → Expert.</dd></div>
+              <div><dt>Concedida</dt><dd>Perícia que veio da origem, da classe ou de um poder: não gasta pontos de treinamento.</dd></div>
+              <div><dt>Somente treinada</dt><dd>Perícia marcada com o capelo: feita para quem é treinado nela.</dd></div>
+              <div><dt>Discente e Verdadeira</dt><dd>Formas mais fortes de um ritual: custam PE a mais e podem exigir um círculo maior ou afinidade.</dd></div>
+              <div><dt>Perda permanente</dt><dd>Sanidade perdida para sempre (rituais de Medo). Reduz o máximo.</dd></div>
+              <div><dt>Modo livre</dt><dd>Desliga os avisos de pontos e graus, para personagens com aumentos ou regras especiais.</dd></div>
+            </dl>
+          </details>
 
           <!-- ============== ORIGEM, CLASSE E TRILHA ============== -->
           <!-- Conteúdo gerado por js/ui-classe.js a partir de data/origens.js, classes.js e trilhas.js.
@@ -765,7 +783,7 @@
                   <th scope="col">Outros</th>
                   <th scope="col">Bônus</th>
                   <th scope="col">Rolar</th>
-                  <th scope="col" title="Concedida: veio da origem, classe ou poder e não gasta pontos">Conc.</th>
+                  <th scope="col" title="Concedida: veio da origem, classe ou poder e não gasta pontos">Concedida</th>
                 </tr>
               </thead>
               <!-- Linhas geradas a partir de OP.data.pericias -->

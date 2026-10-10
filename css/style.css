@@ -250,9 +250,10 @@
 
 /* Sangue: carmesim, vermelho profundo, preto; luz avermelhada e orgânica */
 [data-tema="sangue"] {
-  --acento: #e64a3e;
-  --acento-claro: #ff7a6b;
-  --acento-2: #8f1c1c;
+  /* Carmesim puxado para o rosado: o vermelho-alaranjado é de PV (sinal fixo) */
+  --acento: #e5476f;
+  --acento-claro: #ff8aa3;
+  --acento-2: #8f1c2c;
   --acento-texto: #1a0605;
   --luz-a: rgba(190, 28, 28, 0.2);
   --luz-b: rgba(110, 8, 16, 0.18);
@@ -3179,6 +3180,27 @@ body.arrastando-arquivo::after {
 }
 
 /* Marcas de 10% (mostrador) */
+.vital[data-nivel="zero"] .vital__barra {
+  height: auto;
+  overflow: visible;
+  background: none;
+}
+
+.vital[data-nivel="zero"] .vital__barra .barra__preenchimento {
+  display: none;
+}
+
+.vital[data-nivel="zero"] .vital__barra::after {
+  content: "zerado";
+  position: static;
+  display: block;
+  font: 600 11px/1.2 var(--fonte-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--erro);
+  background: none;
+}
+
 .vital__barra::after {
   content: "";
   position: absolute;
@@ -6911,6 +6933,103 @@ body.arrastando-arquivo::after {
   padding-top: 10px;
 }
 
+/* ---- Termos da ficha (glossário recolhido depois da capa) ---- */
+.glossario {
+  margin-top: 14px;
+}
+
+.glossario + .secao {
+  margin-top: 22px;
+}
+
+.glossario__titulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  font: 500 var(--t-rotulo) / 1.2 var(--fonte-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--papel-2);
+  cursor: pointer;
+  list-style: none;
+}
+
+.glossario__titulo::-webkit-details-marker {
+  display: none;
+}
+
+.glossario__titulo::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform var(--dur-2) var(--curva);
+}
+
+.glossario[open] > .glossario__titulo::before {
+  transform: rotate(45deg);
+}
+
+.glossario__titulo:hover {
+  color: var(--papel);
+}
+
+.glossario__lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: 12px 28px;
+  margin: 8px 0 0;
+  padding: 16px 18px;
+  background: color-mix(in oklab, var(--tinta-superficie) 80%, transparent);
+  border: 1px solid var(--linha-1);
+  border-radius: var(--raio-3);
+}
+
+.glossario__lista dt {
+  font: 600 var(--t-rotulo) / 1.3 var(--fonte-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--acento);
+}
+
+.glossario__lista dd {
+  margin: 3px 0 0;
+  max-width: 60ch;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--papel-2);
+}
+
+.resultado__aviso {
+  margin: 0;
+  padding: 6px 10px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--aviso);
+  background: var(--aviso-fundo);
+  border: 1px solid var(--aviso-borda);
+  border-radius: var(--raio-1);
+}
+
+.vital-folha__estado {
+  margin: -6px 0 0;
+  font: 600 var(--t-rotulo) / 1.3 var(--fonte-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--erro);
+}
+
+.mini-vital__estado {
+  margin-left: 6px;
+  font: 600 11px/1 var(--fonte-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--erro);
+}
+
 /* ==========================================================================
    10b. ASSINATURAS DOS TEMAS — além das cores, cada tema muda a luz, os
         detalhes gráficos e o comportamento. Só aparência.
@@ -6949,8 +7068,8 @@ body.arrastando-arquivo::after {
 }
 
 [data-tema="sangue"] .atributos__anel {
-  border-color: rgba(230, 74, 62, 0.45);
-  box-shadow: 0 0 0 10px rgba(60, 0, 0, 0.18), 0 0 0 11px rgba(230, 74, 62, 0.12), 0 0 90px -10px rgba(190, 20, 20, 0.45);
+  border-color: rgba(229, 71, 111, 0.45);
+  box-shadow: 0 0 0 10px rgba(60, 0, 0, 0.18), 0 0 0 11px rgba(229, 71, 111, 0.12), 0 0 90px -10px rgba(190, 20, 20, 0.45);
 }
 
 [data-tema="sangue"] .botao-rolagem:hover,

@@ -19,7 +19,7 @@ window.OP.data = window.OP.data || {};
    * O primeiro é o padrão.
    */
   data.temas = [
-    { id: 'neutro',       nome: 'Arquivo',      cor: '#c9a45c', descricao: 'Grafite e latão. O padrão institucional.' },
+    { id: 'neutro',       nome: 'Neutro',       cor: '#c9a45c', descricao: 'Grafite e ouro de arquivo. Sem elemento: o padrão.' },
     { id: 'sangue',       nome: 'Sangue',       cor: '#e0473c', descricao: 'Carmesim, vermelho profundo e preto.' },
     { id: 'morte',        nome: 'Morte',        cor: '#a594c8', descricao: 'Violetas fechados, cinzas frios e névoa.' },
     { id: 'conhecimento', nome: 'Conhecimento', cor: '#d9b35a', descricao: 'Dourado envelhecido, grafite e diagramas.' },

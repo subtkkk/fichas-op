@@ -161,7 +161,8 @@ window.OP = window.OP || {};
       if (abrir) {
         if (abrir.disabled === definido) abrir.disabled = !definido;
         const rotulo = definido
-          ? 'Ajustar ' + recurso.sigla + ': ' + textoNumero(estado.atual) + ' de ' + textoNumero(estado.max)
+          ? 'Ajustar ' + recurso.sigla + ': ' + textoNumero(estado.atual) + ' de ' + textoNumero(estado.max) +
+            (nivel === 'zero' ? ' (zerado)' : '')
           : recurso.sigla + ': escolha uma classe para calcular';
         if (abrir.getAttribute('aria-label') !== rotulo) abrir.setAttribute('aria-label', rotulo);
       }
@@ -210,6 +211,11 @@ window.OP = window.OP || {};
     return valor === null || valor === undefined || valor === '' ? '—' : String(valor);
   }
 
+  /** "PV zerados", "PE zerados", "Sanidade zerada" (só o fato; a regra fica com a mesa). */
+  function textoZerado(recurso) {
+    return recurso.id === 'san' ? 'Sanidade zerada.' : recurso.sigla + ' zerados.';
+  }
+
   function dadosRecurso(id) {
     return OP.data.recursos.find(function (recurso) { return recurso.id === id; });
   }
@@ -256,6 +262,9 @@ window.OP = window.OP || {};
     if (refs.vitalBarra.style.width !== largura) refs.vitalBarra.style.width = largura;
     const nivel = definido ? nivelBarra(percentual) : 'indefinido';
     if (refs.dialogoVital.dataset.nivel !== nivel) refs.dialogoVital.dataset.nivel = nivel;
+    const recurso = dadosRecurso(id);
+    definirTexto(refs.vitalEstado, nivel === 'zero' && recurso ? textoZerado(recurso) : '');
+    refs.vitalEstado.hidden = nivel !== 'zero';
     refs.dialogoVital.querySelectorAll('[data-vital-delta], [data-vital-aplicar]').forEach(function (botao) {
       if (botao.disabled === definido) botao.disabled = !definido;
     });
@@ -322,6 +331,7 @@ window.OP = window.OP || {};
     refs.vitalUltimoLinha = document.getElementById('vital-ultimo-linha');
     refs.vitalDesfazer = document.getElementById('vital-desfazer');
     refs.vitalPassos = Array.prototype.slice.call(refs.dialogoVital.querySelectorAll('[data-vital-delta]'));
+    refs.vitalEstado = document.getElementById('vital-estado');
 
     document.querySelectorAll('[data-abrir-vital]').forEach(function (botao) {
       botao.addEventListener('click', function () { abrirFolhaVital(botao.getAttribute('data-abrir-vital')); });

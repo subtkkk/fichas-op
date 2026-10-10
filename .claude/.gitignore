@@ -1,0 +1,7 @@
+# Configurações pessoais do Claude Code (os hooks do Impeccable ficam aqui).
+settings.local.json
+
+# Motor do Impeccable (~20 MB por plataforma). O lançador
+# skills/impeccable/scripts/impeccable baixa a versão fixada em
+# scripts/VERSION no primeiro uso.
+skills/impeccable/scripts/bin/

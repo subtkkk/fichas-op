@@ -268,7 +268,14 @@ window.OP = window.OP || {};
     fechar.type = 'button';
     fechar.className = 'aviso-app__fechar';
     fechar.setAttribute('aria-label', 'Fechar aviso');
-    fechar.textContent = '×';
+    const iconeFechar = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    iconeFechar.setAttribute('class', 'icone-ui');
+    iconeFechar.setAttribute('aria-hidden', 'true');
+    iconeFechar.setAttribute('focusable', 'false');
+    const usoFechar = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+    usoFechar.setAttribute('href', '#ic-fechar');
+    iconeFechar.appendChild(usoFechar);
+    fechar.appendChild(iconeFechar);
     fechar.addEventListener('click', function () { fecharAviso(item); });
     item.appendChild(fechar);
 

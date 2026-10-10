@@ -16,7 +16,7 @@ colors:
   papel: "#ece6da"
   papel-2: "#bab3a6"
   papel-3: "#938d82"
-  papel-4: "#6f6a62"
+  papel-4: "#88827a"
   linha-1: "rgba(236, 230, 218, 0.07)"
   linha-2: "rgba(236, 230, 218, 0.12)"
   linha-3: "rgba(236, 230, 218, 0.22)"
@@ -32,7 +32,7 @@ colors:
   el-conhecimento: "#d9b35a"
   el-energia: "#b06bff"
   el-medo: "#e9e6df"
-  tema-sangue: "#e64a3e"
+  tema-sangue: "#e5476f"
   tema-morte: "#ab9bd3"
   tema-conhecimento: "#e3c04e"
   tema-energia: "#b571ff"
@@ -190,7 +190,7 @@ O site é o arquivo de papel da Ordem que ganhou tecnologia. A linguagem de docu
 
 O clima é sóbrio e preciso. A atmosfera existe, mas como pano de fundo: luz ambiente parada, grão quase invisível (4,5% de opacidade) e escuridão profunda servem à leitura, nunca disputam com ela. A densidade é a de um instrumento: muita informação por tela, organizada por hierarquia tipográfica e por superfícies em camadas, não por cor. A cor aparece onde há ação ou estado.
 
-A identidade tem dois registros. Fora da ficha (barra global, Central e Arquivo), vale a voz institucional: grafite e Ouro de Arquivo. Dentro da ficha, o jogador escolhe um dos cinco temas elementais (Sangue, Morte, Conhecimento, Energia, Medo) ou o neutro, e o tema troca só cor, luz e textura, mantendo a mesma estrutura.
+A identidade tem dois registros. Fora da ficha (barra global, Central e Arquivo), vale a voz institucional: grafite e Ouro de Arquivo. Dentro da ficha, o jogador escolhe um dos cinco temas elementais (Sangue, Morte, Conhecimento, Energia, Medo) ou o neutro, e o tema troca só cor, luz e textura, mantendo a mesma estrutura. O neutro se chama "Neutro" (não "Arquivo", que é a biblioteca).
 
 **Key Characteristics:**
 - Tinta escura em camadas (`tinta-0` a `tinta-5`) com texto em tom de papel, nunca branco puro.
@@ -212,7 +212,7 @@ Uma paleta de tinta e papel quase monocromática, com um acento metálico e core
 
 ### Tertiary
 Os acentos dos temas elementais, aplicados só dentro de `[data-tema]` (ficha, painel de rolagens e atmosfera):
-- **Carmesim** (`tema-sangue`): luz avermelhada e orgânica.
+- **Carmesim** (`tema-sangue`): luz avermelhada e orgânica. Puxado para o rosado de propósito, para não se confundir com o vermelho-alaranjado de PV.
 - **Violeta Fechado** (`tema-morte`): violetas e cinzas frios, névoa.
 - **Dourado Envelhecido** (`tema-conhecimento`): amarelo controlado sobre grafite, diagramas.
 - **Violeta Elétrico** (`tema-energia`), com **Ciano** (`tema-energia-ciano`) como segundo acento.
@@ -221,7 +221,7 @@ Os acentos dos temas elementais, aplicados só dentro de `[data-tema]` (ficha, p
 ### Neutral
 - **Tintas** (`tinta-0` a `tinta-5`): fundos e superfícies, do mais fundo ao mais alto. `tinta-1` é o fundo da página, `tinta-2` o dos cartões de agente, `tinta-3` o das superfícies da ficha.
 - **Fundo de Campo** (`fundo-de-campo`): o interior de campos e passos numéricos, um tom abaixo da superfície em volta.
-- **Papéis** (`papel` a `papel-4`): texto. `papel` para conteúdo e valores, `papel-2` para texto secundário, `papel-3` para rótulos e metadados, `papel-4` só para elementos não essenciais. Os placeholders usam `#8a857c`, para manter o contraste.
+- **Papéis** (`papel` a `papel-4`): texto. `papel` para conteúdo e valores, `papel-2` para texto secundário, `papel-3` para rótulos e metadados, `papel-4` para o que é mais apagado (separadores, códigos, a conta dos máximos). Até `papel-4` lê em 4,5:1 sobre as superfícies. Os placeholders usam `#8a857c`.
 - **Linhas** (`linha-1` a `linha-3`): bordas e divisórias translúcidas em tom de papel. `linha-1` separa, `linha-2` contorna controles, `linha-3` marca hover e caixas de seleção.
 - **Estados** (`ok`, `aviso`, `erro`): validação e avisos, sempre acompanhados de texto ou ícone, com fundos translúcidos de 8% a 10%.
 
@@ -250,28 +250,32 @@ Os acentos dos temas elementais, aplicados só dentro de `[data-tema]` (ficha, p
 - **Title** (600, 31px, 1.05): títulos de seção da ficha, sempre precedidos pela etiqueta numerada da seção. Siglas de atributo e de recurso usam a mesma família em 26 a 27px.
 - **Body** (400, 14.5px, 1.55): textos, descrições e campos (14px nos controles).
 - **Control** (600, 13.5px): rótulos de botões e da navegação.
-- **Label** (600, 11px, tracking 0.2em, caixa alta): rótulos de bloco, sobretítulos, códigos de registro, carimbos e selos (9.5px a 11px, tracking de 0.12em a 0.26em).
+- **Label** (600, 11px, tracking 0.2em, caixa alta): rótulos de bloco, sobretítulos, códigos de registro, carimbos e selos. 11px é o piso de todo texto funcional; o tracking vai de 0.06em a 0.26em conforme o espaço.
 - **Numeral** (mono 600, 14px): valores numéricos editáveis e leituras de instrumento.
 
 ### Named Rules
 **A Regra das Três Vozes.** Serifa para o que tem nome, sans para ler e agir, mono para rotular e contar. Não trocar de voz dentro de um mesmo papel.
 
-**A Regra do Rótulo de Arquivo.** Rótulo é sempre mono, caixa alta e espaçado, em `papel-3`. Se precisa de destaque, ganha cor de acento, não tamanho.
+**A Regra do Rótulo de Arquivo.** Rótulo é sempre mono, caixa alta e espaçado, em `papel-3`, e nunca menor que 11px. Se precisa de destaque, ganha cor de acento, não tamanho.
+
+**A Regra da Divisória.** Cada seção da ficha abre com a etiqueta de pasta numerada (o mesmo número do índice) e o título na voz da capa, de 30 a 42px conforme a largura da ficha. Há mais ar acima do título do que abaixo.
 
 ## Layout
 
 A casca do app tem largura máxima de 1440px, com margem lateral de 32px (24px abaixo de 1200px e 16px no celular). O espaçamento segue a base 4 (`e1` a `e16`).
 
-**Ficha no desktop:** grade de duas colunas, com um trilho lateral fixo de 232px (sinais vitais, derivados e índice das seções) e o conteúdo ao lado, separados por 44px. O trilho fica preso abaixo da barra global. Atributos e Recursos dividem uma linha. Os cinco atributos formam um pentagrama quando o palco tem 540px ou mais. Com 1480px ou mais, o painel de rolagens, quando aberto, vira uma coluna fixa de 380px à direita.
+**Ficha no desktop:** grade de duas colunas, com um trilho lateral fixo de 232px (sinais vitais, derivados e índice das seções) e o conteúdo ao lado, separados por 44px. O trilho fica preso abaixo da barra global. Atributos e Recursos dividem uma linha. Os cinco atributos formam um pentagrama quando o palco tem 540px ou mais. A partir de 1024px, o painel de rolagens aberto vira uma coluna fixa de 380px à direita e só a área da ficha se estreita (a barra global fica inteira); entre 1024 e 1199px a faixa de vitais se compacta. A ficha reserva 96px no fim (e `scroll-padding-bottom`) para a alça das rolagens não esconder controles.
 
 **Até 1199px:** a ficha vira uma coluna só, e o trilho vira uma faixa horizontal presa no topo; `--topo-fixo` soma a barra e a faixa, para as âncoras pararem no lugar certo.
 
-**Até 719px (celular):** a barra global tem 56px e, na ficha, rola junto com a página; quem fica preso é a faixa de vitais. As perícias viram cartões em grade de cinco colunas, com o botão de rolar sempre visível. Até 380px, os ícones da navegação somem e o título da Central cai para 44px.
+**Até 719px (celular):** a barra global tem 56px e, na ficha, rola junto com a página; quem fica preso é a faixa de vitais, e cada vital da faixa é um botão que abre a gaveta de ajuste. Na visão de mesa, cada perícia é uma linha (nome, dados, bônus, rolar); em edição, um cartão em grade de cinco colunas. Os avisos aparecem embaixo, acima da alça das rolagens. Até 380px, os ícones da navegação somem e o título da Central cai para 44px.
+
+**Mesa e edição:** perícias, ataques e rituais têm dois modos de tela. Na mesa, só o que se usa no meio da cena; "Editar" abre o formulário inteiro. É estado só da tela: a impressão mostra todos os campos.
 
 **Componentes:** a ficha e os atributos usam container queries (de 560 a 980px), então um componente responde à largura que tem, não à da janela.
 
 ### Named Rules
-**A Regra da Mão na Mesa.** No celular, PV, SAN, PE e o botão de rolar ficam sempre ao alcance, sem rolar até eles.
+**A Regra da Mão na Mesa.** No celular, PV, SAN e PE ficam sempre à vista e a um toque do ajuste (−5…+5, dano e cura de N, desfazer), e cada linha de perícia tem o seu botão de rolar.
 
 ## Elevation & Depth
 
@@ -285,7 +289,7 @@ A profundidade vem de camadas discretas. As superfícies sobem por tom de tinta 
 ### Named Rules
 **A Regra do Vidro Estrutural.** Desfoque só no que emoldura o conteúdo, nunca num cartão de conteúdo. Com transparência reduzida, ou sem suporte a `backdrop-filter`, o vidro vira tinta sólida.
 
-**A Regra do Brilho como Resposta.** Em repouso, nada brilha. O brilho do acento (`--brilho`) aparece só em hover, foco, seleção ou rolagem ativa.
+**A Regra do Brilho com Motivo.** Controles não brilham em repouso: o brilho do acento (`--brilho`) neles aparece só em hover, foco, seleção ou rolagem ativa. Em repouso, o brilho é reservado ao que é leitura de instrumento ou identidade: os totais dos atributos, as barras de PV, PE e SAN, o anel dos atributos e o monograma da capa.
 
 ## Shapes
 
@@ -328,7 +332,16 @@ Instrumentos de campo: robustos, fáceis de acertar no celular e lidos num relan
 - **Abas:** segmentos de 30px; a ativa ganha fundo de acento e texto em tinta.
 
 ### Trilho de vitais (signature)
-O painel de instrumentos da ficha: vidro fumê com um halo do acento no canto. Mostra PV, SAN e PE com barra de medida, valor e botões de ±1, os derivados e o índice. Cada vital indica o nível (ok, baixo, crítico, zero ou indefinido). No celular, vira a faixa presa no topo.
+O painel de instrumentos da ficha: vidro fumê com um halo do acento no canto. Mostra PV, SAN e PE com barra de medida, valor e botões de ±1, os derivados e o índice. Cada vital indica o nível (ok, baixo, crítico, zero ou indefinido); zerado, a palavra "zerado" substitui a barra. No celular, vira a faixa presa no topo.
+
+### Ajuste de vital (signature)
+Tocar na sigla e no valor de um vital abre o ajuste: no desktop, uma janela; no celular, uma gaveta presa embaixo. Valor em mono de 56px na cor do vital, botões −5, −1, +1 e +5 de 48px, "Quantia" com Dano e Cura (Gastar e Recuperar em PE; Perder e Recuperar em SAN), a linha do último ajuste com Desfazer e, no rodapé, Defesa, Deslocamento e PE por turno.
+
+### Cartões em resumo
+Ataques e rituais na mesa: o nome lê como título (o campo continua editável), uma linha de resumo em mono (dano, crítico, tipo, alcance, munição; ou elemento, execução, alcance) e os botões de rolar ou conjurar. O botão "Editar" (contorno de 1px, `raio-2`) vira "Recolher" com borda de acento. Remover só aparece na edição.
+
+### Termos da ficha
+Glossário recolhido logo depois da capa: o título em rótulo mono com uma seta desenhada em CSS, e a lista em duas colunas com o termo em acento e a explicação em `papel-2`.
 
 ### Capa do dossiê (signature)
 A identificação do agente: faixa com carimbo, código de registro, seletor de tema, exportar e imprimir. Depois, o monograma no selo e o nome em serifa grande. É a única tela onde o carimbo aparece.
@@ -349,4 +362,5 @@ A identificação do agente: faixa com carimbo, código de registro, seletor de 
 - **Don't** deixar o tema elemental alcançar a barra global, a Central ou o Arquivo.
 - **Don't** usar raio maior que 10px em cartões nem a pílula fora de medidores, contadores e interruptores.
 - **Don't** usar branco puro para texto; o tom mais claro é `papel`.
-- **Don't** fazer o brilho do acento aparecer em repouso.
+- **Don't** fazer um controle brilhar em repouso; o brilho parado é só de leitura de instrumento e identidade.
+- **Don't** usar um rótulo menor que 11px.

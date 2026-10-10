@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-10T10:01:30Z",
+  "generatedAt": "2026-10-10T10:58:54Z",
   "title": "Design System: Dossiê",
   "extensions": {
     "colorMeta": {
@@ -217,16 +217,16 @@
       "papel-4": {
         "role": "neutral",
         "displayName": "Papel 4",
-        "canonical": "#6f6a62",
+        "canonical": "#88827a",
         "tonalRamp": [
-          "oklch(15.0% 0.014 79.7)",
-          "oklch(26.4% 0.014 79.7)",
-          "oklch(37.9% 0.014 79.7)",
-          "oklch(49.3% 0.014 79.7)",
-          "oklch(60.7% 0.014 79.7)",
-          "oklch(72.1% 0.014 79.7)",
-          "oklch(83.6% 0.014 79.7)",
-          "oklch(95.0% 0.014 79.7)"
+          "oklch(15.0% 0.014 75.3)",
+          "oklch(26.4% 0.014 75.3)",
+          "oklch(37.9% 0.014 75.3)",
+          "oklch(49.3% 0.014 75.3)",
+          "oklch(60.7% 0.014 75.3)",
+          "oklch(72.1% 0.014 75.3)",
+          "oklch(83.6% 0.014 75.3)",
+          "oklch(95.0% 0.014 75.3)"
         ]
       },
       "linha-1": {
@@ -427,16 +427,16 @@
       "tema-sangue": {
         "role": "tertiary",
         "displayName": "Carmesim",
-        "canonical": "#e64a3e",
+        "canonical": "#e5476f",
         "tonalRamp": [
-          "oklch(15.0% 0.093 28.4)",
-          "oklch(26.4% 0.164 28.4)",
-          "oklch(37.9% 0.194 28.4)",
-          "oklch(49.3% 0.194 28.4)",
-          "oklch(60.7% 0.194 28.4)",
-          "oklch(72.1% 0.173 28.4)",
-          "oklch(83.6% 0.102 28.4)",
-          "oklch(95.0% 0.031 28.4)"
+          "oklch(15.0% 0.093 9.7)",
+          "oklch(26.4% 0.165 9.7)",
+          "oklch(37.9% 0.195 9.7)",
+          "oklch(49.3% 0.195 9.7)",
+          "oklch(60.7% 0.195 9.7)",
+          "oklch(72.1% 0.174 9.7)",
+          "oklch(83.6% 0.102 9.7)",
+          "oklch(95.0% 0.031 9.7)"
         ]
       },
       "tema-morte": {
@@ -674,7 +674,7 @@
       "refersTo": "nav-item-active",
       "description": "Central, Arquivo e Ficha na barra de vidro fumê.",
       "html": "<nav class=\"ds-nav\" aria-label=\"Navegação\"><a href=\"#\" aria-current=\"page\">Central</a><a href=\"#\">Arquivo <span>3</span></a><a href=\"#\">Ficha</a></nav>",
-      "css": ".ds-nav{display:flex;gap:4px;padding:8px;background:linear-gradient(180deg,rgba(10,11,13,.84),rgba(10,11,13,.68));backdrop-filter:blur(18px) saturate(150%);border-bottom:1px solid rgba(236,230,218,.1)}.ds-nav a{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 13px;font:600 13.5px/1 var(--fonte-ui, IBM Plex Sans, system-ui, sans-serif);color:var(--papel-3, #938d82);text-decoration:none;border:1px solid transparent;border-radius:6px;transition:color 120ms,background-color 120ms,border-color 120ms}.ds-nav a:hover{color:var(--papel, #ece6da)}.ds-nav a[aria-current=page]{color:var(--papel, #ece6da);background:rgba(255,255,255,.055);border-color:var(--linha-1, rgba(236,230,218,.07))}.ds-nav a:focus-visible{outline:2px solid #c9a45c;outline-offset:2px}.ds-nav span{padding:1px 7px;font:600 10.5px/1.5 var(--fonte-mono, IBM Plex Mono, monospace);color:var(--papel-2, #bab3a6);background:rgba(255,255,255,.06);border-radius:999px}"
+      "css": ".ds-nav{display:flex;gap:4px;padding:8px;background:linear-gradient(180deg,rgba(10,11,13,.84),rgba(10,11,13,.68));backdrop-filter:blur(18px) saturate(150%);border-bottom:1px solid rgba(236,230,218,.1)}.ds-nav a{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 13px;font:600 13.5px/1 var(--fonte-ui, IBM Plex Sans, system-ui, sans-serif);color:var(--papel-3, #938d82);text-decoration:none;border:1px solid transparent;border-radius:6px;transition:color 120ms,background-color 120ms,border-color 120ms}.ds-nav a:hover{color:var(--papel, #ece6da)}.ds-nav a[aria-current=page]{color:var(--papel, #ece6da);background:rgba(255,255,255,.055);border-color:var(--linha-1, rgba(236,230,218,.07))}.ds-nav a:focus-visible{outline:2px solid #c9a45c;outline-offset:2px}.ds-nav span{padding:1px 7px;font:600 11px/1.5 var(--fonte-mono, IBM Plex Mono, monospace);color:var(--papel-2, #bab3a6);background:rgba(255,255,255,.06);border-radius:999px}"
     },
     {
       "name": "Selos e carimbo",
@@ -682,7 +682,7 @@
       "refersTo": "stamp",
       "description": "Selos de fonte e requisito nas perícias; o carimbo só na capa do dossiê.",
       "html": "<div style=\"display:flex;gap:10px;align-items:center\"><span class=\"ds-selo ds-selo--fonte\">Livro</span><span class=\"ds-selo ds-selo--requer\">Treino</span><span class=\"ds-carimbo\">CONFIDENCIAL</span></div>",
-      "css": ".ds-selo{display:inline-flex;align-items:center;padding:2px 7px;font:600 9.5px/1.4 var(--fonte-mono, IBM Plex Mono, monospace);letter-spacing:.12em;text-transform:uppercase;border:1px solid currentColor;border-radius:3px}.ds-selo--fonte{color:var(--ok, #82b38c)}.ds-selo--requer{color:var(--aviso, #e2b354);border-color:rgba(226,179,84,.34)}.ds-carimbo{padding:5px 9px 4px;font:700 10.5px/1 var(--fonte-mono, IBM Plex Mono, monospace);letter-spacing:.26em;color:var(--carimbo, #c94a40);border:1.5px solid currentColor;border-radius:3px;transform:rotate(-3deg);opacity:.88}"
+      "css": ".ds-selo{display:inline-flex;align-items:center;padding:2px 7px;font:600 11px/1.4 var(--fonte-mono, IBM Plex Mono, monospace);letter-spacing:.12em;text-transform:uppercase;border:1px solid currentColor;border-radius:3px}.ds-selo--fonte{color:var(--ok, #82b38c)}.ds-selo--requer{color:var(--aviso, #e2b354);border-color:rgba(226,179,84,.34)}.ds-carimbo{padding:5px 9px 4px;font:700 11px/1 var(--fonte-mono, IBM Plex Mono, monospace);letter-spacing:.26em;color:var(--carimbo, #c94a40);border:1.5px solid currentColor;border-radius:3px;transform:rotate(-3deg);opacity:.88}"
     },
     {
       "name": "Cartão de agente",
@@ -690,7 +690,7 @@
       "refersTo": "card-agent",
       "description": "Uma ficha no Arquivo e na Central, com o traço do tema e a orelha dobrada.",
       "html": "<article class=\"ds-cartao\"><p class=\"ds-cartao__codigo\">MXQ4-7B2K</p><h3 class=\"ds-cartao__nome\">Nome do agente</h3><p class=\"ds-cartao__meta\">Classe · NEX</p></article>",
-      "css": ".ds-cartao{position:relative;display:grid;gap:6px;max-width:320px;padding:18px 18px 14px;background:radial-gradient(120% 70% at 100% 0%,rgba(201,164,92,.07),transparent 60%),linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.008) 40%),var(--tinta-2, #0f1114);border:1px solid var(--linha-1, rgba(236,230,218,.07));border-radius:10px;box-shadow:0 14px 34px -14px rgba(0,0,0,.75),0 1px 0 rgba(255,255,255,.04) inset;transition:transform 200ms cubic-bezier(.2,.7,.2,1),box-shadow 320ms cubic-bezier(.2,.7,.2,1),border-color 200ms}.ds-cartao::before{content:'';position:absolute;top:-1px;left:18px;width:54px;height:2px;border-radius:2px;background:#c9a45c;box-shadow:0 0 14px #c9a45c}.ds-cartao::after{content:'';position:absolute;top:-1px;right:-1px;width:20px;height:20px;border-top-right-radius:10px;border-bottom-left-radius:4px;background:linear-gradient(225deg,#0a0b0d 50%,rgba(255,255,255,.07) 50%)}.ds-cartao:hover{transform:translateY(-3px);border-color:var(--linha-2, rgba(236,230,218,.12));box-shadow:0 30px 70px -24px rgba(0,0,0,.85),0 0 0 1px rgba(201,164,92,.22)}.ds-cartao__codigo{margin:0;font:600 10.5px/1.2 var(--fonte-mono, IBM Plex Mono, monospace);letter-spacing:.2em;color:var(--papel-3, #938d82)}.ds-cartao__nome{margin:0;font:600 26px/1.05 var(--fonte-display, Cormorant Garamond, Georgia, serif);color:var(--papel, #ece6da)}.ds-cartao__meta{margin:0;font:400 13px/1.4 var(--fonte-ui, IBM Plex Sans, system-ui, sans-serif);color:var(--papel-2, #bab3a6)}"
+      "css": ".ds-cartao{position:relative;display:grid;gap:6px;max-width:320px;padding:18px 18px 14px;background:radial-gradient(120% 70% at 100% 0%,rgba(201,164,92,.07),transparent 60%),linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.008) 40%),var(--tinta-2, #0f1114);border:1px solid var(--linha-1, rgba(236,230,218,.07));border-radius:10px;box-shadow:0 14px 34px -14px rgba(0,0,0,.75),0 1px 0 rgba(255,255,255,.04) inset;transition:transform 200ms cubic-bezier(.2,.7,.2,1),box-shadow 320ms cubic-bezier(.2,.7,.2,1),border-color 200ms}.ds-cartao::before{content:'';position:absolute;top:-1px;left:18px;width:54px;height:2px;border-radius:2px;background:#c9a45c;box-shadow:0 0 14px #c9a45c}.ds-cartao::after{content:'';position:absolute;top:-1px;right:-1px;width:20px;height:20px;border-top-right-radius:10px;border-bottom-left-radius:4px;background:linear-gradient(225deg,#0a0b0d 50%,rgba(255,255,255,.07) 50%)}.ds-cartao:hover{transform:translateY(-3px);border-color:var(--linha-2, rgba(236,230,218,.12));box-shadow:0 30px 70px -24px rgba(0,0,0,.85),0 0 0 1px rgba(201,164,92,.22)}.ds-cartao__codigo{margin:0;font:600 11px/1.2 var(--fonte-mono, IBM Plex Mono, monospace);letter-spacing:.2em;color:var(--papel-3, #938d82)}.ds-cartao__nome{margin:0;font:600 26px/1.05 var(--fonte-display, Cormorant Garamond, Georgia, serif);color:var(--papel, #ece6da)}.ds-cartao__meta{margin:0;font:400 13px/1.4 var(--fonte-ui, IBM Plex Sans, system-ui, sans-serif);color:var(--papel-2, #bab3a6)}"
     },
     {
       "name": "Vital do trilho",
@@ -703,7 +703,7 @@
   ],
   "narrative": {
     "northStar": "O Dossiê Vivo",
-    "overview": "**Creative North Star: \"O Dossiê Vivo\"**\n\nO site é o arquivo de papel da Ordem que ganhou tecnologia. A linguagem de documento (rótulos datilografados em caixa alta, códigos de registro, carimbos, etiquetas de pasta numeradas, monogramas) fica sobre telas de tinta escura, com controles precisos e números fáceis de ler. O papel dá a identidade; a tecnologia dá a precisão. Nenhum dos dois grita.\n\nO clima é sóbrio e preciso. A atmosfera existe, mas como pano de fundo: luz ambiente parada, grão quase invisível (4,5% de opacidade) e escuridão profunda servem à leitura, nunca disputam com ela. A densidade é a de um instrumento: muita informação por tela, organizada por hierarquia tipográfica e por superfícies em camadas, não por cor. A cor aparece onde há ação ou estado.\n\nA identidade tem dois registros. Fora da ficha (barra global, Central e Arquivo), vale a voz institucional: grafite e Ouro de Arquivo. Dentro da ficha, o jogador escolhe um dos cinco temas elementais (Sangue, Morte, Conhecimento, Energia, Medo) ou o neutro, e o tema troca só cor, luz e textura, mantendo a mesma estrutura.",
+    "overview": "**Creative North Star: \"O Dossiê Vivo\"**\n\nO site é o arquivo de papel da Ordem que ganhou tecnologia. A linguagem de documento (rótulos datilografados em caixa alta, códigos de registro, carimbos, etiquetas de pasta numeradas, monogramas) fica sobre telas de tinta escura, com controles precisos e números fáceis de ler. O papel dá a identidade; a tecnologia dá a precisão. Nenhum dos dois grita.\n\nO clima é sóbrio e preciso. A atmosfera existe, mas como pano de fundo: luz ambiente parada, grão quase invisível (4,5% de opacidade) e escuridão profunda servem à leitura, nunca disputam com ela. A densidade é a de um instrumento: muita informação por tela, organizada por hierarquia tipográfica e por superfícies em camadas, não por cor. A cor aparece onde há ação ou estado.\n\nA identidade tem dois registros. Fora da ficha (barra global, Central e Arquivo), vale a voz institucional: grafite e Ouro de Arquivo. Dentro da ficha, o jogador escolhe um dos cinco temas elementais (Sangue, Morte, Conhecimento, Energia, Medo) ou o neutro, e o tema troca só cor, luz e textura, mantendo a mesma estrutura. O neutro se chama \"Neutro\" (não \"Arquivo\", que é a biblioteca).",
     "keyCharacteristics": [
       "Tinta escura em camadas (`tinta-0` a `tinta-5`) com texto em tom de papel, nunca branco puro.",
       "Três vozes tipográficas: serifa editorial para nomes e títulos, sans para leitura e controles, mono para rótulos, códigos e números.",
@@ -735,12 +735,17 @@
       },
       {
         "name": "A Regra do Rótulo de Arquivo",
-        "body": "Rótulo é sempre mono, caixa alta e espaçado, em `papel-3`. Se precisa de destaque, ganha cor de acento, não tamanho.",
+        "body": "Rótulo é sempre mono, caixa alta e espaçado, em `papel-3`, e nunca menor que 11px. Se precisa de destaque, ganha cor de acento, não tamanho.",
+        "section": "typography"
+      },
+      {
+        "name": "A Regra da Divisória",
+        "body": "Cada seção da ficha abre com a etiqueta de pasta numerada (o mesmo número do índice) e o título na voz da capa, de 30 a 42px conforme a largura da ficha. Há mais ar acima do título do que abaixo.",
         "section": "typography"
       },
       {
         "name": "A Regra da Mão na Mesa",
-        "body": "No celular, PV, SAN, PE e o botão de rolar ficam sempre ao alcance, sem rolar até eles.",
+        "body": "No celular, PV, SAN e PE ficam sempre à vista e a um toque do ajuste (−5…+5, dano e cura de N, desfazer), e cada linha de perícia tem o seu botão de rolar.",
         "section": "layout"
       },
       {
@@ -749,8 +754,8 @@
         "section": "elevation"
       },
       {
-        "name": "A Regra do Brilho como Resposta",
-        "body": "Em repouso, nada brilha. O brilho do acento (`--brilho`) aparece só em hover, foco, seleção ou rolagem ativa.",
+        "name": "A Regra do Brilho com Motivo",
+        "body": "Controles não brilham em repouso: o brilho do acento (`--brilho`) neles aparece só em hover, foco, seleção ou rolagem ativa. Em repouso, o brilho é reservado ao que é leitura de instrumento ou identidade: os totais dos atributos, as barras de PV, PE e SAN, o anel dos atributos e o monograma da capa.",
         "section": "elevation"
       }
     ],
@@ -768,7 +773,8 @@
       "**Don't** deixar o tema elemental alcançar a barra global, a Central ou o Arquivo.",
       "**Don't** usar raio maior que 10px em cartões nem a pílula fora de medidores, contadores e interruptores.",
       "**Don't** usar branco puro para texto; o tom mais claro é `papel`.",
-      "**Don't** fazer o brilho do acento aparecer em repouso."
+      "**Don't** fazer um controle brilhar em repouso; o brilho parado é só de leitura de instrumento e identidade.",
+      "**Don't** usar um rótulo menor que 11px."
     ]
   }
 }

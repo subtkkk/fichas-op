@@ -404,6 +404,16 @@ a {
   background: var(--acento);
 }
 
+/* Superfícies do navegador também seguem a paleta */
+html {
+  scrollbar-color: var(--linha-3) var(--tinta-1);
+}
+
+input,
+textarea {
+  caret-color: var(--acento);
+}
+
 :focus-visible {
   outline: 2px solid var(--acento);
   outline-offset: 2px;
@@ -2986,11 +2996,12 @@ body[data-vista="ficha"] .rodape {
 }
 
 .aviso-app__fechar {
+  display: grid;
   flex: none;
-  width: 30px;
-  height: 30px;
-  font-size: 19px;
-  line-height: 1;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
   color: var(--papel-3);
   background: transparent;
   border: 0;
@@ -4130,12 +4141,11 @@ body.arrastando-arquivo::after {
   padding: 9px 10px 9px 12px;
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid var(--linha-1);
-  border-left: 2px solid var(--linha-3);
   border-radius: 4px;
 }
 
 .trilha__habilidade--liberada {
-  border-left-color: var(--ok);
+  border-color: color-mix(in oklab, var(--ok) 42%, transparent);
 }
 
 .trilha__marco {
@@ -6100,14 +6110,26 @@ body.arrastando-arquivo::after {
 }
 
 .ritual__resistencia {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   align-self: flex-start;
   padding: 5px 10px;
   font: 600 12.5px/1.4 var(--fonte-mono);
   color: var(--papel);
   background: rgba(0, 0, 0, 0.28);
   border: 1px solid var(--linha-2);
-  border-left: 2px solid var(--cor-elemento);
   border-radius: 4px;
+}
+
+/* Marca do elemento do ritual (no lugar de uma faixa lateral) */
+.ritual__resistencia::before {
+  content: "";
+  flex: none;
+  width: 7px;
+  height: 7px;
+  background: var(--cor-elemento);
+  border-radius: 50%;
 }
 
 .ritual__medo {

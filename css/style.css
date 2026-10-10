@@ -2197,6 +2197,11 @@ body[data-vista="ficha"] .rodape {
   margin-top: 28px;
 }
 
+/* Arquivo vazio: as ações do topo repetiriam as do estado vazio logo abaixo */
+.vista--central[data-vazia="sim"] .central__acoes {
+  display: none;
+}
+
 /* Sem a lista de recentes (nenhuma ou só uma ficha): a situação sobe */
 .vista--central[data-vazia="sim"] .central__grade,
 .central__grade:has(.central__bloco--recentes[hidden]) {
@@ -7191,6 +7196,16 @@ body[data-vista="ficha"] .rolagens {
   display: flex;
 }
 
+/* A alça das rolagens flutua sobre o fim da página: espaço para rolar além
+   dela, e o foco do teclado nunca para escondido atrás dela */
+body[data-vista="ficha"] .ficha__conteudo {
+  padding-bottom: 96px;
+}
+
+html[data-vista="ficha"] {
+  scroll-padding-bottom: 96px;
+}
+
 .rolagens[data-aberto="false"] {
   width: auto;
   border-radius: var(--raio-pilula);
@@ -7597,9 +7612,11 @@ body[data-vista="ficha"] .rolagens {
   color: var(--papel-4);
 }
 
-/* Telas bem largas: o painel aberto vira uma coluna, sem cobrir a ficha */
-@media (min-width: 1480px) {
-  body.com-painel-rolagens[data-vista="ficha"] {
+/* A partir de 1024px: o painel aberto vira uma coluna à direita e a ficha
+   se estreita ao lado dele, em vez de ficar coberta */
+@media (min-width: 1024px) {
+  /* Só a área da ficha abre espaço; a barra global continua inteira */
+  body.com-painel-rolagens[data-vista="ficha"] .vista--ficha {
     padding-right: 412px;
   }
 
@@ -7613,6 +7630,19 @@ body[data-vista="ficha"] .rolagens {
 
   .rolagens[data-aberto="true"] .rolagens__corpo {
     flex: 1;
+  }
+}
+
+/* Faixa de vitais estreitada pelo painel: os vitais viram botões de ajuste */
+@media (min-width: 1024px) and (max-width: 1199px) {
+  body.com-painel-rolagens[data-vista="ficha"] .hud__derivados,
+  body.com-painel-rolagens[data-vista="ficha"] .vital__botoes {
+    display: none;
+  }
+
+  body.com-painel-rolagens[data-vista="ficha"] .vital__topo {
+    background: rgba(255, 255, 255, 0.035);
+    border-color: var(--linha-1);
   }
 }
 
@@ -8212,8 +8242,13 @@ body[data-vista="ficha"] .rolagens {
   .central__selo {
     order: -1;
     justify-self: start;
-    width: 190px;
-    margin: 0 0 -6px -10px;
+    width: 124px;
+    margin: 0 0 -4px -6px;
+  }
+
+  /* Arrastar arquivos não existe no celular */
+  .arquivo__dica {
+    display: none;
   }
 
   .central__titulo {
@@ -8410,7 +8445,7 @@ body[data-vista="ficha"] .rolagens {
     bottom: 0;
     left: 0;
     width: auto;
-    max-height: 82vh;
+    max-height: 70vh;
     border-width: 1px 0 0;
     border-radius: var(--raio-4) var(--raio-4) 0 0;
   }

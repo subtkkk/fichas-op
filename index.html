@@ -236,7 +236,8 @@
         <p class="arquivo__dica">Dica: arraste um arquivo <strong>.json</strong> para qualquer lugar da página para importar. Se a ficha já estiver aqui, você escolhe entre substituir e manter as duas.</p>
 
         <!-- Cartões gerados por js/ui-fichas.js (nomes só por textContent) -->
-        <ul class="arquivo__grade" id="lista-fichas" aria-label="Fichas salvas neste navegador"></ul>
+        <h2 class="visualmente-oculto" id="arquivo-lista-titulo">Fichas salvas neste navegador</h2>
+        <ul class="arquivo__grade" id="lista-fichas" aria-labelledby="arquivo-lista-titulo"></ul>
         <div class="estado-vazio" id="arquivo-vazio" hidden></div>
         <div class="estado-vazio estado-vazio--compacto" id="arquivo-sem-resultado" hidden>
           <p class="estado-vazio__titulo">Nenhum agente corresponde à busca.</p>

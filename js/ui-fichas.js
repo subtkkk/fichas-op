@@ -563,6 +563,7 @@ window.OP = window.OP || {};
 
     substituirFilhos(refs.lista, visiveis.map(criarCartao));
     refs.lista.hidden = visiveis.length === 0;
+    if (refs.tituloLista) refs.tituloLista.hidden = refs.lista.hidden;
     refs.ferramentas.hidden = lista.length === 0;
     refs.dica.hidden = lista.length === 0;
 
@@ -983,6 +984,7 @@ window.OP = window.OP || {};
 
     refs.vistaArquivo = document.getElementById('vista-arquivo');
     refs.lista = document.getElementById('lista-fichas');
+    refs.tituloLista = document.getElementById('arquivo-lista-titulo');
     refs.contagem = document.getElementById('arquivo-contagem');
     refs.busca = document.getElementById('arquivo-busca');
     refs.filtroClasse = document.getElementById('arquivo-filtro-classe');

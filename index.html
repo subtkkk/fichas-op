@@ -536,6 +536,12 @@
                 <h2 class="secao__titulo" id="titulo-atributos">Atributos</h2>
 
                 <div class="secao__controles">
+                  <button type="button" class="alternar atributos__modo" id="botao-modo-atributos" aria-pressed="false"
+                          title="Mostra base e bônus de cada atributo, os pontos de criação e o modo livre.">
+                    <span class="alternar__trilho" aria-hidden="true"></span>
+                    <span>Editar atributos</span>
+                  </button>
+
                   <div class="contador" id="contador-pontos" data-estado="pendente">
                     <output class="contador__valor" data-saida="distribuicao.restantes" aria-describedby="contador-rotulo">0</output>
                     <span class="contador__rotulo" id="contador-rotulo">pontos restantes</span>
@@ -557,13 +563,21 @@
                 <p class="avisos__dica">Regra especial ou poder que muda atributos? Ative o <strong>modo livre</strong> para esconder estes avisos.</p>
               </div>
 
-              <!-- Palco: o selo dos cinco atributos (decorativo) atrás dos cartões -->
+              <!-- Palco: na mesa, os cinco dados num mostrador (anel de marcas e o teste no centro) -->
               <div class="atributos__palco">
-                <svg class="atributos__linhas" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-                  <path d="M50 16.7 66.7 83.3 16.7 50 83.3 50 33.3 83.3Z"/>
-                  <path class="atributos__pentagono" d="M50 16.7 83.3 50 66.7 83.3 33.3 83.3 16.7 50Z"/>
+                <svg class="atributos__mostrador" viewBox="-100 -100 200 200" aria-hidden="true" focusable="false">
+                  <circle class="mostrador__anel" r="95"/>
+                  <circle class="mostrador__marcas" r="90" pathLength="120"/>
+                  <circle class="mostrador__marcas mostrador__marcas--maiores" r="89" pathLength="24"/>
+                  <path class="mostrador__cruz" d="M-84 0H-32M32 0H84M0-84V-32M0 32V84"/>
+                  <path class="mostrador__diagrama" d="M0-68 64.7-21 40 55-40 55-64.7-21Z"/>
+                  <circle class="mostrador__trilho" r="68"/>
+                  <circle class="mostrador__centro" r="27"/>
+                  <text class="mostrador__teste" y="-4">TESTE</text>
+                  <text class="mostrador__formula" y="11">ATR d20</text>
                 </svg>
-                <div class="atributos__anel" aria-hidden="true"></div>
+                <p class="visualmente-oculto">Num teste de atributo, role tantos d20 quanto o valor do atributo e fique com o maior
+                  (com 0, role 2d20 e fique com o menor).</p>
                 <!-- Cartões gerados a partir de OP.data.atributos -->
                 <div class="grade-atributos" id="grade-atributos"></div>
               </div>

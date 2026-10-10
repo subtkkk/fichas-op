@@ -4362,8 +4362,7 @@ body.arrastando-arquivo::after {
   margin: 4px auto 0;
 }
 
-.atributos__linhas,
-.atributos__anel {
+.atributos__mostrador {
   display: none;
 }
 
@@ -4375,6 +4374,45 @@ body.arrastando-arquivo::after {
   gap: 12px;
 }
 
+/* ---- O dado (d20 de frente): o total do atributo fica na face central ---- */
+.atributo__dado {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.dado__faceta {
+  stroke: color-mix(in oklab, var(--acento) 50%, transparent);
+  stroke-width: 1.3;
+  stroke-linejoin: round;
+}
+
+.dado__faceta--luz { fill: color-mix(in oklab, var(--acento) 46%, var(--tinta-5)); }
+.dado__faceta--meia { fill: color-mix(in oklab, var(--acento) 26%, var(--tinta-4)); }
+.dado__faceta--sombra { fill: color-mix(in oklab, var(--acento) 12%, var(--tinta-3)); }
+.dado__faceta--funda { fill: color-mix(in oklab, var(--acento) 5%, var(--tinta-2)); }
+
+.dado__faceta--face {
+  fill: color-mix(in oklab, var(--acento) 14%, var(--tinta-5));
+  stroke: var(--acento);
+  stroke-width: 1.6;
+}
+
+.dado__contorno {
+  fill: none;
+  stroke: var(--acento);
+  stroke-width: 2.6;
+  stroke-linejoin: round;
+}
+
+.atributo--alerta .dado__contorno,
+.atributo--alerta .dado__faceta--face {
+  stroke: var(--aviso);
+}
+
+/* ---- Edição: cartões com base e bônus ---- */
 .atributo {
   position: relative;
   display: grid;
@@ -4396,7 +4434,6 @@ body.arrastando-arquivo::after {
   transition: border-color var(--dur-2) var(--curva), box-shadow var(--dur-3) var(--curva);
 }
 
-.atributo:hover,
 .atributo:focus-within {
   border-color: var(--acento-linha);
   box-shadow: var(--sombra-2), 0 0 28px -14px var(--brilho);
@@ -4435,26 +4472,22 @@ body.arrastando-arquivo::after {
   color: var(--papel-3);
 }
 
-/* Total: um lacre redondo */
 .atributo__total {
   grid-area: total;
+  position: relative;
   display: grid;
   place-items: center;
-  width: 56px;
-  height: 56px;
-  background:
-    radial-gradient(circle at 50% 30%, var(--acento-suave), transparent 70%),
-    rgba(0, 0, 0, 0.35);
-  border: 1px solid var(--acento-linha);
-  border-radius: 50%;
-  box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.4), 0 0 20px -8px var(--brilho);
+  width: 60px;
+  aspect-ratio: 1;
 }
 
 .atributo__total output {
-  font: 600 27px/1 var(--fonte-mono);
+  position: relative;
+  top: 6%; /* centro da face triangular */
+  z-index: 1;
+  font: 700 21px/1 var(--fonte-mono);
   font-variant-numeric: tabular-nums;
   color: var(--papel);
-  text-shadow: 0 0 14px var(--brilho);
 }
 
 .atributo__total-rotulo {
@@ -4491,7 +4524,7 @@ body.arrastando-arquivo::after {
   width: 34px;
 }
 
-/* Com largura: os cartões formam um pentágono em volta do selo */
+/* Com largura: os cartões de edição formam um pentágono */
 @container atributos (min-width: 540px) {
   .grade-atributos {
     grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -4513,43 +4546,192 @@ body.arrastando-arquivo::after {
   .atributo[data-atributo="int"] { grid-area: int; }
   .atributo[data-atributo="pre"] { grid-area: pre; }
   .atributo[data-atributo="vig"] { grid-area: vig; }
+}
 
-  .atributos__linhas {
-    position: absolute;
-    inset: 0;
-    display: block;
-    width: 100%;
-    height: 100%;
-    overflow: visible;
-    fill: none;
-    stroke: var(--acento-linha);
-    stroke-width: 1;
-  }
+/* ---- Mesa: os cinco dados num mostrador, com o teste no centro ----
+   Base, bônus, pontos, modo livre, avisos e regras ficam em "Editar atributos". */
+.secao--atributos[data-modo="mesa"] {
+  --dado: clamp(68px, 17cqi, 112px);
+}
 
-  .atributos__linhas path {
-    vector-effect: non-scaling-stroke;
-  }
+.secao--atributos[data-modo="mesa"] #contador-pontos,
+.secao--atributos[data-modo="mesa"] #botao-modo-livre,
+.secao--atributos[data-modo="mesa"] #info-aumentos,
+.secao--atributos[data-modo="mesa"] #avisos-atributos,
+.secao--atributos[data-modo="mesa"] #nota-regras,
+.secao--atributos[data-modo="mesa"] .atributo__campo {
+  display: none !important;
+}
 
-  .atributos__pentagono {
-    stroke: var(--linha-2);
-    stroke-dasharray: 3 6;
-  }
+.secao--atributos[data-modo="mesa"] .atributos__palco {
+  width: min(100%, 600px);
+  aspect-ratio: 1;
+  margin: -6px auto 0;
+}
 
-  .atributos__anel {
-    position: absolute;
-    top: 56.7%;
-    left: 50%;
-    display: block;
-    width: 38%;
-    aspect-ratio: 1;
-    border: 1px solid var(--acento-linha);
-    border-radius: 50%;
-    background:
-      radial-gradient(circle, var(--acento-suave) 0%, transparent 62%),
-      repeating-radial-gradient(circle, transparent 0 18px, var(--linha-1) 18px 19px);
-    box-shadow: 0 0 0 10px rgba(0, 0, 0, 0.12), 0 0 0 11px var(--linha-1), 0 0 80px -20px var(--brilho);
-    transform: translate(-50%, -50%);
-  }
+.secao--atributos[data-modo="mesa"] .atributos__palco::before {
+  content: "";
+  position: absolute;
+  inset: 14%;
+  background: radial-gradient(circle, var(--acento-suave), transparent 68%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.secao--atributos[data-modo="mesa"] .atributos__mostrador {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.mostrador__anel {
+  fill: none;
+  stroke: var(--acento-linha);
+  stroke-width: 1;
+}
+
+.mostrador__marcas {
+  fill: none;
+  stroke: var(--linha-3);
+  stroke-width: 6;
+  stroke-dasharray: 0.12 0.88;
+}
+
+.mostrador__marcas--maiores {
+  stroke: var(--acento-linha);
+  stroke-width: 11;
+  stroke-dasharray: 0.06 0.94;
+}
+
+.mostrador__cruz {
+  fill: none;
+  stroke: var(--linha-1);
+  stroke-width: 1;
+}
+
+.mostrador__diagrama {
+  display: none;
+  fill: none;
+  stroke: var(--acento-linha);
+  stroke-width: 1;
+  stroke-dasharray: 2 5;
+}
+
+.mostrador__trilho {
+  fill: none;
+  stroke: var(--linha-2);
+  stroke-width: 1.2;
+  stroke-dasharray: 4 5;
+}
+
+.mostrador__centro {
+  fill: var(--tinta-1);
+  stroke: var(--acento-linha);
+  stroke-width: 1.2;
+}
+
+.mostrador__teste,
+.mostrador__formula {
+  font-family: var(--fonte-mono);
+  text-anchor: middle;
+}
+
+.mostrador__teste {
+  font-size: 6.5px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  fill: var(--papel-2);
+}
+
+.mostrador__formula {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  fill: var(--acento);
+}
+
+.secao--atributos[data-modo="mesa"] .grade-atributos {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.secao--atributos[data-modo="mesa"] .atributo {
+  position: absolute;
+  top: var(--y);
+  left: var(--x);
+  grid-template-columns: auto;
+  grid-template-areas:
+    "sigla"
+    "total"
+    "nome";
+  justify-items: center;
+  gap: 0;
+  width: auto;
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  transform: translate(-50%, -50%);
+}
+
+/* Um vértice do pentágono para cada atributo (raio de 34% em volta do centro) */
+.secao--atributos[data-modo="mesa"] .atributo[data-atributo="agi"] { --x: 50%;   --y: 16%; }
+.secao--atributos[data-modo="mesa"] .atributo[data-atributo="int"] { --x: 82.3%; --y: 39.5%; }
+.secao--atributos[data-modo="mesa"] .atributo[data-atributo="vig"] { --x: 70%;   --y: 77.5%; }
+.secao--atributos[data-modo="mesa"] .atributo[data-atributo="pre"] { --x: 30%;   --y: 77.5%; }
+.secao--atributos[data-modo="mesa"] .atributo[data-atributo="for"] { --x: 17.7%; --y: 39.5%; }
+
+.secao--atributos[data-modo="mesa"] .atributo__cabecalho {
+  display: contents;
+}
+
+/* Sigla numa placa sobre o dado */
+.secao--atributos[data-modo="mesa"] .atributo__sigla {
+  grid-area: sigla;
+  position: relative;
+  z-index: 2;
+  margin-bottom: -10px;
+  padding: 5px 9px 4px 11px;
+  font: 700 13px/1 var(--fonte-mono);
+  letter-spacing: 0.18em;
+  color: var(--acento-texto);
+  background: var(--acento);
+  border-radius: 3px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3) inset, 0 6px 14px -6px rgba(0, 0, 0, 0.8);
+}
+
+.secao--atributos[data-modo="mesa"] .atributo--alerta .atributo__sigla {
+  color: #1a1204;
+  background: var(--aviso);
+}
+
+.secao--atributos[data-modo="mesa"] .atributo__total {
+  width: var(--dado);
+}
+
+.secao--atributos[data-modo="mesa"] .atributo__dado {
+  filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 14px var(--brilho));
+}
+
+.secao--atributos[data-modo="mesa"] .atributo__total output {
+  font-size: calc(var(--dado) * 0.3);
+}
+
+.secao--atributos[data-modo="mesa"] .atributo__nome {
+  grid-area: nome;
+  margin-top: 5px;
+  padding: 3px 7px 2px 8px;
+  overflow: visible;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--papel-2);
+  /* lê limpo por cima das marcas e do trilho do mostrador */
+  background: color-mix(in oklab, var(--tinta-1) 88%, transparent);
+  border-radius: 3px;
 }
 
 /* ---- Recursos: PV, PE e SAN como medidores ---- */
@@ -7089,9 +7271,8 @@ body.arrastando-arquivo::after {
   background: linear-gradient(90deg, var(--acento) 0%, rgba(150, 20, 20, 0.5) 16%, var(--linha-1) 55%, transparent 100%);
 }
 
-[data-tema="sangue"] .atributos__anel {
-  border-color: rgba(229, 71, 111, 0.45);
-  box-shadow: 0 0 0 10px rgba(60, 0, 0, 0.18), 0 0 0 11px rgba(229, 71, 111, 0.12), 0 0 90px -10px rgba(190, 20, 20, 0.45);
+[data-tema="sangue"] .atributos__mostrador {
+  filter: drop-shadow(0 0 22px rgba(190, 20, 20, 0.3));
 }
 
 [data-tema="sangue"] .botao-rolagem:hover,
@@ -7136,10 +7317,8 @@ body.arrastando-arquivo::after {
   background: linear-gradient(90deg, rgba(171, 155, 211, 0.45), rgba(171, 155, 211, 0.08) 45%, transparent 85%);
 }
 
-[data-tema="morte"] .atributos__anel {
-  background:
-    radial-gradient(circle, rgba(171, 155, 211, 0.12) 0%, transparent 60%),
-    repeating-radial-gradient(circle, transparent 0 10px, rgba(171, 155, 211, 0.08) 10px 11px);
+/* Morte: o anel de marcas se desfaz em névoa */
+[data-tema="morte"] .mostrador__marcas {
   filter: blur(0.6px);
 }
 
@@ -7177,8 +7356,9 @@ body.arrastando-arquivo::after {
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' fill='none' stroke='%23e3c04e' stroke-opacity='0.22'%3E%3Ccircle cx='100' cy='100' r='92'/%3E%3Ccircle cx='100' cy='100' r='58'/%3E%3Cpath d='M100 8 180 146H20z'/%3E%3Cpath d='M100 8v184M8 100h184M35 35l130 130M165 35 35 165' stroke-dasharray='2 4'/%3E%3Ccircle cx='100' cy='100' r='3' fill='%23e3c04e' fill-opacity='0.3'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
-[data-tema="conhecimento"] .atributos__anel {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' fill='none' stroke='%23e3c04e' stroke-opacity='0.25'%3E%3Ccircle cx='100' cy='100' r='70'/%3E%3Cpath d='M100 30 160.6 135H39.4z'/%3E%3Cpath d='M100 30v140M30 100h140' stroke-dasharray='2 4'/%3E%3C/svg%3E") center / 92% no-repeat;
+/* Conhecimento: o mostrador ganha o diagrama que liga os cinco dados */
+[data-tema="conhecimento"] .mostrador__diagrama {
+  display: inline;
 }
 
 [data-tema="conhecimento"] .ficha__conteudo .secao::before {
@@ -7273,14 +7453,13 @@ body.arrastando-arquivo::after {
   box-shadow: none;
 }
 
-[data-tema="medo"] .atributos__anel {
-  background: none;
-  border-color: rgba(255, 255, 255, 0.12);
-  box-shadow: none;
+[data-tema="medo"] .mostrador__anel,
+[data-tema="medo"] .mostrador__trilho {
+  stroke: rgba(255, 255, 255, 0.12);
 }
 
-[data-tema="medo"] .atributos__linhas {
-  stroke: rgba(255, 255, 255, 0.1);
+[data-tema="medo"] .secao--atributos[data-modo="mesa"] .atributo__dado {
+  filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.55));
 }
 
 [data-tema="medo"] .dossie__monograma {

@@ -214,6 +214,22 @@ window.OP = window.OP || {};
       '</div>';
   }
 
+  // Um d20 de frente (hexágono, triângulo central e facetas): o total do atributo fica na face central
+  const DADO_D20 =
+    '<svg class="atributo__dado" viewBox="-50 -50 100 100" aria-hidden="true" focusable="false">' +
+    '<polygon class="dado__faceta dado__faceta--luz" points="-40.7,-23.5 0,-47 0,-25"/>' +
+    '<polygon class="dado__faceta dado__faceta--luz" points="0,-47 40.7,-23.5 0,-25"/>' +
+    '<polygon class="dado__faceta dado__faceta--meia" points="-40.7,-23.5 0,-25 -27,21"/>' +
+    '<polygon class="dado__faceta dado__faceta--meia" points="40.7,-23.5 0,-25 27,21"/>' +
+    '<polygon class="dado__faceta dado__faceta--sombra" points="-40.7,-23.5 -40.7,23.5 -27,21"/>' +
+    '<polygon class="dado__faceta dado__faceta--sombra" points="40.7,-23.5 40.7,23.5 27,21"/>' +
+    '<polygon class="dado__faceta dado__faceta--funda" points="-40.7,23.5 0,47 -27,21"/>' +
+    '<polygon class="dado__faceta dado__faceta--funda" points="40.7,23.5 0,47 27,21"/>' +
+    '<polygon class="dado__faceta dado__faceta--funda" points="0,47 -27,21 27,21"/>' +
+    '<polygon class="dado__faceta dado__faceta--face" points="0,-25 -27,21 27,21"/>' +
+    '<polygon class="dado__contorno" points="0,-47 40.7,-23.5 40.7,23.5 0,47 -40.7,23.5 -40.7,-23.5"/>' +
+    '</svg>';
+
   /** HTML do cartão de um atributo (base, bônus e total). */
   function htmlCartaoAtributo(atributo) {
     const id = atributo.id;
@@ -224,6 +240,7 @@ window.OP = window.OP || {};
           '<span class="atributo__nome">' + escaparHtml(atributo.nome) + '</span>' +
         '</div>' +
         '<div class="atributo__total" title="Total = base + bônus">' +
+          DADO_D20 +
           '<output data-saida="atributos.' + escaparHtml(id) + '" aria-label="Total de ' + escaparHtml(atributo.nome) + '">0</output>' +
           '<span class="atributo__total-rotulo" aria-hidden="true">total</span>' +
         '</div>' +
@@ -1206,6 +1223,12 @@ window.OP = window.OP || {};
       alternarEdicaoCartao(alternarEdicao.getAttribute('data-alternar-edicao'));
       return;
     }
+    const botaoModoAtributos = evento.target.closest('#botao-modo-atributos');
+    if (botaoModoAtributos) {
+      refs.modoAtributos = refs.modoAtributos === 'mesa' ? 'edicao' : 'mesa';
+      desenharModoAtributos(OP.state.ficha, refs.derivados && refs.derivados.distribuicao);
+      return;
+    }
     const botaoModoPericias = evento.target.closest('#botao-modo-pericias');
     if (botaoModoPericias) {
       refs.modoPericias = refs.modoPericias === 'mesa' ? 'edicao' : 'mesa';
@@ -1407,6 +1430,24 @@ window.OP = window.OP || {};
       if (visivel) visiveis++;
     });
     refs.periciasVazio.hidden = visiveis > 0;
+  }
+
+  /**
+   * Atributos na mesa (só os totais, no mostrador) ou em edição (base, bônus,
+   * pontos, modo livre e regras). Na primeira vez que a ficha aparece: com
+   * pontos a distribuir (ou fora da regra), abre em edição; senão, na mesa.
+   */
+  function desenharModoAtributos(ficha, distribuicao) {
+    if (!refs.secaoAtributos || !ficha) return;
+    if (refs.modoAtributosFicha !== ficha.id) {
+      refs.modoAtributosFicha = ficha.id;
+      const restantes = distribuicao ? OP.calc.numero(distribuicao.restantes) : 0;
+      const livre = Boolean(ficha.config && ficha.config.modoLivre);
+      refs.modoAtributos = !livre && restantes !== 0 ? 'edicao' : 'mesa';
+    }
+    if (refs.secaoAtributos.dataset.modo !== refs.modoAtributos) refs.secaoAtributos.dataset.modo = refs.modoAtributos;
+    const editando = String(refs.modoAtributos === 'edicao');
+    if (refs.botaoModoAtributos.getAttribute('aria-pressed') !== editando) refs.botaoModoAtributos.setAttribute('aria-pressed', editando);
   }
 
   /**
@@ -3071,6 +3112,8 @@ window.OP = window.OP || {};
   function montar() {
     refs.raiz = document.getElementById('ficha');
     refs.secaoPericias = document.getElementById('secao-pericias');
+    refs.secaoAtributos = document.getElementById('secao-atributos');
+    refs.botaoModoAtributos = document.getElementById('botao-modo-atributos');
     refs.botaoModoPericias = document.getElementById('botao-modo-pericias');
     refs.contador = document.getElementById('contador-pontos');
     refs.contadorRotulo = document.getElementById('contador-rotulo');
@@ -3159,6 +3202,7 @@ window.OP = window.OP || {};
 
     desenharAlternadores();
     desenharDistribuicao(ficha, derivados.distribuicao);
+    desenharModoAtributos(ficha, derivados.distribuicao);
     desenharBarras(derivados);
     desenharRecursos(derivados);
     desenharDefesa(derivados);

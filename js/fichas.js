@@ -24,6 +24,10 @@ window.OP = window.OP || {};
   // estado: 'salvo' | 'pendente' | 'falha'; quando: Date da última gravação;
   // falhou: a última tentativa de gravar falhou (o aviso fica até dar certo).
   let status = { estado: 'salvo', quando: null, falhou: false };
+  // criarSeVazio: sem nenhuma ficha salva, cria uma (comportamento antigo).
+  // Com a Central de operações (iniciar({ criarSeVazio: false })), fica um
+  // RASCUNHO em branco só na memória: não entra no índice até ser editado.
+  const config = { criarSeVazio: true };
   const ouvintesStatus = [];
   const ouvintesFora = [];
 
@@ -193,6 +197,17 @@ window.OP = window.OP || {};
     return Number.isFinite(data.getTime()) ? data : null;
   }
 
+  /** A ficha está no índice (foi salva neste navegador)? */
+  function existe(id) {
+    return OP.state.idValido(id) && posicaoNoIndice(indiceOuVazio(), id) !== -1;
+  }
+
+  /** A ficha aberta é um rascunho em branco que ainda não foi salvo? */
+  function ehRascunho() {
+    const id = idAtual();
+    return id === null || !existe(id);
+  }
+
   function marcarAtual(id) {
     const indice = indiceOuVazio();
     if (posicaoNoIndice(indice, id) === -1 || indice.atualId === id) return;
@@ -352,9 +367,20 @@ window.OP = window.OP || {};
     return null;
   }
 
+  /** Põe na tela um rascunho em branco (não salvo; entra no índice ao ser editado). */
+  function abrirRascunho() {
+    cancelarSalvamento();
+    const ficha = OP.state.completarPadroes(OP.state.modeloVazio());
+    ficha.id = novoId();
+    OP.state.substituir(ficha);
+    emitirStatus({ estado: status.falhou ? 'falha' : 'salvo', quando: null });
+    return ficha.id;
+  }
+
   /**
-   * Exclui uma ficha. Se era a aberta, abre a vizinha da lista ou cria uma
-   * nova se era a última. Devolve { ok, abriuId }.
+   * Exclui uma ficha. Se era a aberta, abre a vizinha da lista; se era a
+   * última, cria uma nova (ou deixa um rascunho, com criarSeVazio desligado).
+   * Devolve { ok, abriuId } (abriuId é null se ficou um rascunho).
    */
   function excluir(id) {
     if (!OP.state.idValido(id)) return { ok: false, abriuId: null };
@@ -372,6 +398,10 @@ window.OP = window.OP || {};
     let abriu = indice.fichas.length
       ? abrirAlguma(indice.fichas, Math.max(0, Math.min(posicao, indice.fichas.length - 1)))
       : null;
+    if (!abriu && !config.criarSeVazio) {
+      abrirRascunho();
+      return { ok: true, abriuId: null };
+    }
     if (!abriu) {
       abriu = criar();
       abrir(abriu, { semSalvar: true, forcar: true });
@@ -491,8 +521,12 @@ window.OP = window.OP || {};
   /**
    * Prepara o índice (ou migra a ficha da Etapa 1) e abre na tela a ficha
    * atual — ou a primeira que der para ler, ou uma nova. Devolve a ficha.
+   * opcoes.criarSeVazio = false: sem fichas salvas, abre um rascunho em
+   * branco que só é salvo se for editado (a Central mostra o estado vazio).
    */
-  function iniciar() {
+  function iniciar(opcoes) {
+    const o = opcoes || {};
+    if (o.criarSeVazio === false) config.criarSeVazio = false;
     const indice = prepararIndice();
     const ordem = [indice.atualId].concat(indice.fichas.map(function (linha) { return linha.id; }));
     let id = null;
@@ -502,12 +536,16 @@ window.OP = window.OP || {};
       ficha = ler(ordem[i]);
       if (ficha) id = ordem[i];
     }
-    if (!ficha) {
+    if (!ficha && !config.criarSeVazio) {
+      ficha = OP.state.completarPadroes(OP.state.modeloVazio());
+      ficha.id = novoId();
+      id = ficha.id;
+    } else if (!ficha) {
       id = criar();
       ficha = ler(id) || Object.assign(OP.state.modeloVazio(), { id: id });
     }
     OP.state.substituir(ficha);
-    marcarAtual(id);
+    marcarAtual(id); // não faz nada com o rascunho (ele não está no índice)
 
     status = OP.storage.modo() === 'memoria'
       ? { estado: 'falha', quando: null, falhou: true }
@@ -538,6 +576,9 @@ window.OP = window.OP || {};
     excluir: excluir,
     importar: importar,
     abrir: abrir,
+    abrirRascunho: abrirRascunho,
+    existe: existe,
+    ehRascunho: ehRascunho,
     idAtual: idAtual,
     salvarAtual: salvarAtual,
     agendarSalvamento: agendarSalvamento,

@@ -1569,6 +1569,8 @@ window.OP = window.OP || {};
   }
 
   function desenharTitulo(ficha) {
+    // Na Central e no Arquivo o título é da tela (js/ui-app.js)
+    if (document.body.dataset.vista && document.body.dataset.vista !== 'ficha') return;
     const nome = ficha.identificacao.nome.trim();
     document.title = nome ? nome + ' · Ficha de Agente' : 'Ficha de Agente · Ordem Paranormal';
   }

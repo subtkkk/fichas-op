@@ -1,11 +1,19 @@
 /* ==========================================================================
-   js/ui-fichas.js — barra superior, janela "Fichas", importar/exportar,
-   impressão e avisos de salvamento
+   js/ui-fichas.js — Central de operações, Arquivo de agentes e operações
+   com fichas (OP.uiFichas)
    --------------------------------------------------------------------------
-   Dados das fichas (nomes etc.) só entram na página por textContent,
-   .value ou setAttribute — nunca por innerHTML: arquivos importados não
-   são confiáveis. Confirmações usam <dialog> (OP.ui.confirmar), nunca
-   window.confirm.
+   - Barra global: nome da ficha aberta e indicador de salvamento; faixas de
+     falha ao salvar e de mudança em outra aba.
+   - Central: "continuar de onde parou" (a ficha aberta por último), as
+     atualizadas recentemente e a situação do arquivo neste navegador.
+   - Arquivo: busca, filtro por classe, ordenação e cartões com Abrir,
+     Duplicar, Exportar e Excluir (com confirmação).
+   - Importar (botão ou arrastar e soltar), exportar, backup e impressão.
+   Tudo o que aparece vem das fichas salvas (OP.fichas) e dos cálculos
+   (OP.calc): nada é inventado. Dados das fichas só entram na página por
+   textContent, .value ou setAttribute — nunca por innerHTML: arquivos
+   importados não são confiáveis. Confirmações usam <dialog>
+   (OP.ui.confirmar), nunca window.confirm.
    ========================================================================== */
 window.OP = window.OP || {};
 
@@ -13,7 +21,10 @@ window.OP = window.OP || {};
   'use strict';
 
   const LIMITE_ARQUIVO = 2 * 1024 * 1024; // 2 MB
+  const MAXIMO_RECENTES = 5;
   const refs = {};
+  // Filtros do Arquivo: só da tela (não são salvos).
+  const filtros = { busca: '', classe: 'todas', ordem: 'recentes' };
 
   /* ------------------------------------------------------------------------
      Utilitários
@@ -25,6 +36,25 @@ window.OP = window.OP || {};
     if (classe) elemento.className = classe;
     if (texto !== undefined && texto !== null && texto !== '') elemento.textContent = String(texto);
     return elemento;
+  }
+
+  /** Ícone do sprite do index.html (<symbol id="ic-...">). */
+  function icone(nome, classe) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', classe || 'icone-ui');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    const uso = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+    uso.setAttribute('href', '#ic-' + nome);
+    svg.appendChild(uso);
+    return svg;
+  }
+
+  function substituirFilhos(pai, filhos) {
+    const fragmento = document.createDocumentFragment();
+    filhos.forEach(function (filho) { if (filho) fragmento.appendChild(filho); });
+    pai.textContent = '';
+    pai.appendChild(fragmento);
   }
 
   function doisDigitos(n) {
@@ -43,9 +73,24 @@ window.OP = window.OP || {};
     return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
   }
 
-  function nomeClasse(id) {
-    const classe = OP.calc.classeDados(id);
-    return classe ? classe.nome : 'Sem classe';
+  /** "agora há pouco", "há 12 min", "há 3 h", "ontem às 21:10", "há 4 dias", "02/03/2026". */
+  function tempoRelativo(data) {
+    if (!data) return '';
+    const agora = new Date();
+    const minutos = Math.round((agora.getTime() - data.getTime()) / 60000);
+    if (minutos < 1) return 'agora há pouco';
+    if (minutos < 60) return 'há ' + minutos + ' min';
+    if (mesmoDia(data, agora)) return 'hoje às ' + hora(data);
+    const ontem = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate() - 1);
+    if (mesmoDia(data, ontem)) return 'ontem às ' + hora(data);
+    const dias = Math.floor(minutos / 1440);
+    if (dias < 7) return 'há ' + Math.max(2, dias) + ' dias';
+    return 'em ' + dataCurta(data);
+  }
+
+  function dataValida(texto) {
+    const data = new Date(texto);
+    return Number.isFinite(data.getTime()) ? data : null;
   }
 
   function nomeExibido(nome) {
@@ -53,11 +98,39 @@ window.OP = window.OP || {};
     return texto || 'Sem nome';
   }
 
+  /** "Liz Webber" → "LW"; "Dante" → "DA"; vazio → "?". */
+  function monograma(nome) {
+    const palavras = String(nome || '').trim().split(/\s+/).filter(Boolean);
+    if (!palavras.length) return '?';
+    if (palavras.length === 1) return palavras[0].slice(0, 2).toUpperCase();
+    return (palavras[0][0] + palavras[palavras.length - 1][0]).toUpperCase();
+  }
+
+  /** Código curto do registro, derivado do id da ficha: "3F9A-2C1E". */
+  function codigoRegistro(id) {
+    const limpo = String(id || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    if (!limpo) return '—';
+    return limpo.slice(0, 4) + (limpo.length > 4 ? '-' + limpo.slice(4, 8) : '');
+  }
+
+  function semAcento(texto) {
+    return String(texto || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  }
+
+  function nomeClasse(id) {
+    const classe = OP.calc.classeDados(id);
+    return classe ? classe.nome : 'Sem classe';
+  }
+
   /** "Ocultista · NEX 5%" (Sobrevivente: "Sobrevivente · Estágio 2"). */
   function resumoClasseNex(classe, nex, estagio) {
     const dados = OP.calc.classeDados(classe);
     if (dados && dados.unidadeProgressao === 'estagio') return dados.nome + ' · Estágio ' + (Number(estagio) || 1);
     return nomeClasse(classe) + ' · NEX ' + (Number(nex) || 0) + '%';
+  }
+
+  function dadosTema(id) {
+    return (OP.data.temas || []).find(function (tema) { return tema.id === id; }) || OP.data.temas[0];
   }
 
   /** Baixa um texto como arquivo (Blob + <a download>; funciona em file://). */
@@ -79,148 +152,488 @@ window.OP = window.OP || {};
     }
   }
 
-  /** Mensagem dentro da janela "Fichas": tipo "ok", "aviso" ou "erro". */
-  function mostrarMensagem(tipo, texto) {
-    refs.mensagem.hidden = !texto;
-    refs.mensagem.dataset.tipo = tipo;
-    refs.mensagem.textContent = texto || '';
+  function aviso(tipo, texto, opcoes) {
+    if (OP.uiApp) OP.uiApp.aviso(tipo, texto, opcoes);
+  }
+
+  function irPara(vista, id, opcoes) {
+    if (OP.uiApp) OP.uiApp.irPara(vista, id, opcoes);
+  }
+
+  function vistaAtual() {
+    return OP.uiApp ? OP.uiApp.vistaAtual() : document.body.dataset.vista;
   }
 
   /* ------------------------------------------------------------------------
-     Barra superior: nome da ficha e indicador de salvamento
+     Resumo de cada ficha (lido do armazenamento e calculado; nada inventado)
      ------------------------------------------------------------------------ */
 
-  function desenharNomeAtual(ficha) {
-    const nome = nomeExibido(ficha && ficha.identificacao && ficha.identificacao.nome);
-    if (refs.nome.textContent !== nome) refs.nome.textContent = nome;
-  }
-
-  /** "Salvo às HH:MM" / "Salvando…" / "Não salvo" e o aviso vermelho de falha. */
-  function mostrarStatus(status) {
-    let texto;
-    let estado;
-    if (status.estado === 'pendente') {
-      texto = 'Salvando…';
-      estado = 'pendente';
-    } else if (status.estado === 'falha') {
-      texto = 'Não salvo';
-      estado = 'falha';
-    } else if (status.quando) {
-      texto = mesmoDia(status.quando, new Date())
-        ? 'Salvo às ' + hora(status.quando)
-        : 'Salvo em ' + dataCurta(status.quando);
-      estado = 'ok';
-    } else {
-      texto = 'Salvo neste navegador';
-      estado = 'ok';
-    }
-    if (refs.status.textContent !== texto) refs.status.textContent = texto;
-    refs.status.dataset.estado = estado;
-    // O aviso fica até uma gravação dar certo (mesmo enquanto digita).
-    refs.faixaFalha.hidden = !status.falhou;
-  }
-
-  /* ------------------------------------------------------------------------
-     Janela "Fichas"
-     ------------------------------------------------------------------------ */
-
-  const ACOES_LINHA = [
-    { id: 'abrir', rotulo: 'Abrir' },
-    { id: 'duplicar', rotulo: 'Duplicar' },
-    { id: 'exportar', rotulo: 'Exportar' },
-    { id: 'excluir', rotulo: 'Excluir' }
-  ];
-
-  function criarLinha(linha, aberta) {
-    const nome = nomeExibido(linha.nome);
-    const item = criar('li', 'ficha-linha' + (aberta ? ' ficha-linha--atual' : ''));
-
-    const info = criar('div', 'ficha-linha__info');
-    const titulo = criar('p', 'ficha-linha__titulo');
-    titulo.appendChild(criar('span', 'ficha-linha__nome', nome));
-    if (aberta) titulo.appendChild(criar('span', 'ficha-linha__selo', 'aberta'));
-    info.appendChild(titulo);
-    const data = new Date(linha.atualizadoEm);
-    const quando = Number.isFinite(data.getTime()) ? ' · ' + dataCurta(data) + ' ' + hora(data) : '';
-    info.appendChild(criar('p', 'ficha-linha__meta', resumoClasseNex(linha.classe, linha.nex, linha.estagio) + quando));
-    item.appendChild(info);
-
-    const acoes = criar('div', 'ficha-linha__acoes');
-    ACOES_LINHA.forEach(function (acao) {
-      const botao = criar('button', 'botao-barra botao-barra--pequeno' + (acao.id === 'excluir' ? ' botao-barra--perigo' : ''), acao.rotulo);
-      botao.type = 'button';
-      botao.setAttribute('data-ficha-acao', acao.id);
-      botao.setAttribute('data-ficha-id', linha.id);
-      botao.setAttribute('aria-label', acao.rotulo + ' a ficha ' + nome);
-      if (acao.id === 'abrir' && aberta) botao.disabled = true;
-      acoes.appendChild(botao);
+  /** Vitais calculados { pv, pe, san } com atual, máximo e % (ou null sem classe). */
+  function vitais(derivados) {
+    const resultado = {};
+    let definido = false;
+    OP.data.recursos.forEach(function (recurso) {
+      const estado = derivados.recursos[recurso.id];
+      if (estado && estado.classeDefinida) definido = true;
+      resultado[recurso.id] = {
+        sigla: recurso.sigla,
+        nome: recurso.nome,
+        atual: estado ? estado.atual : null,
+        max: estado ? estado.max : null,
+        percentual: estado ? OP.calc.numero(estado.percentual) : 0
+      };
     });
-    item.appendChild(acoes);
+    return definido ? resultado : null;
+  }
+
+  /**
+   * Resumo de uma linha do índice. A ficha aberta vem da memória (mais
+   * recente); as outras, do armazenamento. corrompida: não deu para ler.
+   */
+  function resumir(linha, posicao) {
+    const aberta = linha.id === OP.fichas.idAtual();
+    const ficha = aberta ? OP.state.ficha : OP.fichas.ler(linha.id);
+    const base = {
+      id: linha.id,
+      posicao: posicao,
+      aberta: aberta,
+      nome: nomeExibido(linha.nome),
+      nomeVazio: String(linha.nome || '').trim() === '',
+      monograma: monograma(linha.nome),
+      codigo: codigoRegistro(linha.id),
+      classeId: linha.classe,
+      classeTexto: resumoClasseNex(linha.classe, linha.nex, linha.estagio),
+      nivel: Number(linha.nex) || 0,
+      atualizadoEm: dataValida(linha.atualizadoEm),
+      tema: dadosTema(OP.prefs.tema(linha.id)),
+      jogador: '',
+      origem: '',
+      trilha: '',
+      vitais: null,
+      defesa: null,
+      corrompida: !ficha
+    };
+    if (!ficha) return base;
+
+    const derivados = OP.calc.calcularTudo(ficha);
+    const ident = ficha.identificacao;
+    const identidade = derivados.identidade;
+    base.nome = nomeExibido(ident.nome);
+    base.nomeVazio = String(ident.nome || '').trim() === '';
+    base.monograma = monograma(ident.nome);
+    base.classeId = ident.classe;
+    base.classeTexto = resumoClasseNex(ident.classe, ident.nex, ident.estagio);
+    base.nivel = derivados.nex.unidade === 'estagio' ? OP.calc.numero(ident.estagio) : OP.calc.numero(ident.nex);
+    base.jogador = String(ident.jogador || '').trim();
+    base.origem = identidade.origem ? identidade.origem.nome : (ident.origem === 'outra' ? String(ident.origemTexto || '').trim() : '');
+    base.trilha = identidade.trilha ? identidade.trilha.nome : (ident.trilha === 'outra' ? String(ident.trilhaTexto || '').trim() : '');
+    base.vitais = vitais(derivados);
+    base.defesa = derivados.defesa ? derivados.defesa.total : null;
+    return base;
+  }
+
+  /** Resumos de todas as fichas do índice, na ordem do arquivo. */
+  function resumos() {
+    return OP.fichas.listar().map(resumir);
+  }
+
+  /** Mais recente primeiro (sem data vai para o fim). */
+  function porData(a, b) {
+    const ta = a.atualizadoEm ? a.atualizadoEm.getTime() : 0;
+    const tb = b.atualizadoEm ? b.atualizadoEm.getTime() : 0;
+    return tb - ta || a.posicao - b.posicao;
+  }
+
+  /* ------------------------------------------------------------------------
+     Peças visuais reutilizadas (Central e Arquivo)
+     ------------------------------------------------------------------------ */
+
+  function criarMonograma(resumo, classeExtra) {
+    const selo = criar('span', 'monograma' + (classeExtra ? ' ' + classeExtra : ''));
+    selo.setAttribute('aria-hidden', 'true');
+    selo.appendChild(criar('span', 'monograma__letras', resumo.monograma));
+    selo.appendChild(icone(resumo.tema.id, 'monograma__elemento'));
+    return selo;
+  }
+
+  /** Barras de PV, PE e SAN (somente leitura). */
+  function criarVitais(resumo, classeExtra) {
+    if (!resumo.vitais) {
+      return criar('p', 'mini-vitais mini-vitais--vazio' + (classeExtra ? ' ' + classeExtra : ''), 'Vitais calculados após escolher a classe.');
+    }
+    const lista = criar('dl', 'mini-vitais' + (classeExtra ? ' ' + classeExtra : ''));
+    ['pv', 'pe', 'san'].forEach(function (id) {
+      const vital = resumo.vitais[id];
+      const item = criar('div', 'mini-vital mini-vital--' + id);
+      item.title = vital.nome + ': ' + vital.atual + ' de ' + vital.max;
+      item.appendChild(criar('dt', 'mini-vital__sigla', vital.sigla));
+      const valor = criar('dd', 'mini-vital__valor');
+      valor.appendChild(criar('span', 'mini-vital__atual', vital.atual === null ? '—' : vital.atual));
+      valor.appendChild(criar('span', 'mini-vital__max', '/' + (vital.max === null ? '—' : vital.max)));
+      const barra = criar('span', 'mini-vital__barra');
+      barra.setAttribute('aria-hidden', 'true');
+      const preenchido = criar('span', 'mini-vital__preenchido');
+      preenchido.style.setProperty('--preenchimento', Math.max(0, Math.min(100, vital.percentual)) + '%');
+      barra.appendChild(preenchido);
+      valor.appendChild(barra);
+      item.appendChild(valor);
+      lista.appendChild(item);
+    });
+    return lista;
+  }
+
+  function criarTempo(resumo, prefixo) {
+    const tempo = criar('time', 'carimbo-tempo');
+    if (resumo.atualizadoEm) {
+      tempo.setAttribute('datetime', resumo.atualizadoEm.toISOString());
+      tempo.title = dataCurta(resumo.atualizadoEm) + ' ' + hora(resumo.atualizadoEm);
+      tempo.textContent = (prefixo || 'Atualizada ') + tempoRelativo(resumo.atualizadoEm);
+    } else {
+      tempo.textContent = 'Sem data de atualização';
+    }
+    return tempo;
+  }
+
+  /** "Acadêmico · Graduado" (o que houver). */
+  function textoOrigemTrilha(resumo) {
+    return [resumo.origem, resumo.trilha].filter(Boolean).join(' · ');
+  }
+
+  function aplicarCorTema(elemento, resumo) {
+    elemento.setAttribute('data-tema-cartao', resumo.tema.id);
+    elemento.style.setProperty('--cor-tema', resumo.tema.cor);
+  }
+
+  /** Estado vazio com o selo (Central e Arquivo). */
+  function criarEstadoVazio(titulo, texto) {
+    const caixa = criar('div', 'estado-vazio__conteudo');
+    const desenho = criar('div', 'estado-vazio__selo');
+    desenho.setAttribute('aria-hidden', 'true');
+    desenho.appendChild(icone('central', 'estado-vazio__icone'));
+    caixa.appendChild(desenho);
+    caixa.appendChild(criar('p', 'estado-vazio__titulo', titulo));
+    caixa.appendChild(criar('p', 'estado-vazio__texto', texto));
+    const acoes = criar('div', 'estado-vazio__acoes');
+    const nova = criar('button', 'botao botao--primario');
+    nova.type = 'button';
+    nova.setAttribute('data-acao-app', 'nova-ficha');
+    nova.appendChild(icone('mais'));
+    nova.appendChild(document.createTextNode('Criar a primeira ficha'));
+    acoes.appendChild(nova);
+    const importar = criar('button', 'botao');
+    importar.type = 'button';
+    importar.setAttribute('data-acao-app', 'importar');
+    importar.appendChild(icone('importar'));
+    importar.appendChild(document.createTextNode('Importar .json'));
+    acoes.appendChild(importar);
+    caixa.appendChild(acoes);
+    return caixa;
+  }
+
+  /* ------------------------------------------------------------------------
+     Central de operações
+     ------------------------------------------------------------------------ */
+
+  /** Cartão grande "continuar": a ficha aberta por último. */
+  function criarDestaque(resumo) {
+    const cartao = criar('article', 'destaque');
+    aplicarCorTema(cartao, resumo);
+    cartao.setAttribute('aria-labelledby', 'destaque-nome');
+
+    const topo = criar('div', 'destaque__topo');
+    topo.appendChild(criar('span', 'destaque__codigo', 'Registro ' + resumo.codigo));
+    const tema = criar('span', 'destaque__tema');
+    tema.appendChild(icone(resumo.tema.id));
+    tema.appendChild(document.createTextNode(resumo.tema.nome));
+    topo.appendChild(tema);
+    cartao.appendChild(topo);
+
+    const identidade = criar('div', 'destaque__identidade');
+    identidade.appendChild(criarMonograma(resumo, 'monograma--grande'));
+    const textos = criar('div', 'destaque__textos');
+    const nome = criar('h3', 'destaque__nome' + (resumo.nomeVazio ? ' destaque__nome--vazio' : ''), resumo.nome);
+    nome.id = 'destaque-nome';
+    textos.appendChild(nome);
+    textos.appendChild(criar('p', 'destaque__classe', resumo.classeTexto));
+    const origem = textoOrigemTrilha(resumo);
+    if (origem) textos.appendChild(criar('p', 'destaque__origem', origem));
+    if (resumo.jogador) textos.appendChild(criar('p', 'destaque__jogador', 'Jogador: ' + resumo.jogador));
+    identidade.appendChild(textos);
+    cartao.appendChild(identidade);
+
+    const painel = criar('div', 'destaque__painel');
+    painel.appendChild(criarVitais(resumo, 'mini-vitais--grande'));
+    if (resumo.vitais && resumo.defesa !== null) {
+      const defesa = criar('p', 'destaque__defesa');
+      defesa.appendChild(criar('span', 'destaque__defesa-rotulo', 'Defesa'));
+      defesa.appendChild(criar('span', 'destaque__defesa-valor', resumo.defesa));
+      painel.appendChild(defesa);
+    }
+    cartao.appendChild(painel);
+
+    const rodape = criar('div', 'destaque__rodape');
+    rodape.appendChild(criarTempo(resumo));
+    const abrir = criar('a', 'botao botao--primario');
+    abrir.href = '#/ficha/' + encodeURIComponent(resumo.id);
+    abrir.appendChild(document.createTextNode(resumo.aberta ? 'Continuar na ficha' : 'Abrir ficha'));
+    abrir.appendChild(icone('seta'));
+    abrir.setAttribute('aria-label', (resumo.aberta ? 'Continuar na ficha de ' : 'Abrir a ficha de ') + resumo.nome);
+    rodape.appendChild(abrir);
+    cartao.appendChild(rodape);
+    return cartao;
+  }
+
+  function criarLinhaRecente(resumo) {
+    const item = criar('li', 'recente');
+    aplicarCorTema(item, resumo);
+    const link = criar('a', 'recente__link');
+    link.href = '#/ficha/' + encodeURIComponent(resumo.id);
+    link.appendChild(criarMonograma(resumo, 'monograma--pequeno'));
+    const textos = criar('span', 'recente__textos');
+    textos.appendChild(criar('span', 'recente__nome' + (resumo.nomeVazio ? ' recente__nome--vazio' : ''), resumo.nome));
+    textos.appendChild(criar('span', 'recente__classe', resumo.classeTexto));
+    link.appendChild(textos);
+    const tempo = criarTempo(resumo, ' ');
+    tempo.classList.add('recente__tempo');
+    tempo.textContent = resumo.atualizadoEm ? tempoRelativo(resumo.atualizadoEm) : '—';
+    link.appendChild(tempo);
+    link.appendChild(icone('seta', 'icone-ui recente__seta'));
+    item.appendChild(link);
     return item;
   }
 
-  function desenharLista() {
-    const aberta = OP.fichas.idAtual();
-    const linhas = OP.fichas.listar();
-    const itens = linhas.map(function (linha) { return criarLinha(linha, linha.id === aberta); });
-    if (!itens.length) itens.push(criar('li', 'fichas__vazio', 'Nenhuma ficha salva neste navegador.'));
-    refs.lista.textContent = '';
-    itens.forEach(function (item) { refs.lista.appendChild(item); });
-    refs.contagem.textContent = linhas.length === 1 ? '1 ficha' : linhas.length + ' fichas';
+  function linhaStatus(rotulo, valor, tipo) {
+    const linha = criar('div', 'status-arquivo__linha' + (tipo ? ' status-arquivo__linha--' + tipo : ''));
+    linha.appendChild(criar('dt', '', rotulo));
+    linha.appendChild(criar('dd', '', valor));
+    return linha;
   }
 
-  function abrirDialogo() {
-    OP.fichas.salvarPendente(); // a lista mostra a data e o nome mais recentes
-    mostrarMensagem('ok', '');
-    desenharLista();
-    if (!refs.dialogo.open) refs.dialogo.showModal();
+  function desenharCentral() {
+    const lista = resumos();
+    const atualId = (OP.fichas.lerIndice() || {}).atualId;
+    const ordenadas = lista.slice().sort(porData);
+    let principal = null;
+    if (!OP.fichas.ehRascunho()) principal = lista.find(function (r) { return r.id === OP.fichas.idAtual(); }) || null;
+    if (!principal && atualId) principal = lista.find(function (r) { return r.id === atualId; }) || null;
+    if (!principal) principal = ordenadas[0] || null;
+
+    refs.central.dataset.vazia = lista.length ? 'nao' : 'sim';
+    if (!principal) {
+      substituirFilhos(refs.continuar, [criarEstadoVazio('Nenhum agente no arquivo ainda.',
+        'Registre o primeiro agente para começar, ou importe um .json exportado de outro navegador.')]);
+    } else {
+      substituirFilhos(refs.continuar, [criarDestaque(principal)]);
+    }
+
+    const outras = ordenadas.filter(function (r) { return !principal || r.id !== principal.id; }).slice(0, MAXIMO_RECENTES);
+    refs.blocoRecentes.hidden = outras.length === 0;
+    substituirFilhos(refs.recentes, outras.map(criarLinhaRecente));
+
+    // Situação do arquivo neste navegador (dados reais)
+    const memoria = OP.storage.modo() === 'memoria';
+    const ultima = ordenadas.length && ordenadas[0].atualizadoEm ? tempoRelativo(ordenadas[0].atualizadoEm) : '—';
+    const fontes = OP.prefs.fontesAtivas();
+    const totalFontes = Object.keys(fontes).length;
+    const ativas = Object.keys(fontes).filter(function (id) { return fontes[id]; }).length;
+    substituirFilhos(refs.statusArquivo, [
+      linhaStatus('Agentes registrados', String(lista.length)),
+      linhaStatus('Armazenamento', memoria ? 'Temporário — some ao fechar' : 'Neste navegador', memoria ? 'alerta' : 'ok'),
+      linhaStatus('Última atualização', ultima),
+      linhaStatus('Fontes ativas', ativas + ' de ' + totalFontes)
+    ]);
   }
 
-  function fecharDialogo() {
-    if (refs.dialogo.open) refs.dialogo.close();
+  /* ------------------------------------------------------------------------
+     Arquivo de agentes
+     ------------------------------------------------------------------------ */
+
+  const ACOES_CARTAO = [
+    { id: 'duplicar', rotulo: 'Duplicar', icone: 'duplicar' },
+    { id: 'exportar', rotulo: 'Exportar', icone: 'exportar' },
+    { id: 'excluir', rotulo: 'Excluir', icone: 'lixeira' }
+  ];
+
+  function criarCartao(resumo) {
+    const item = criar('li', 'cartao-agente' + (resumo.aberta ? ' cartao-agente--aberta' : '') +
+      (resumo.corrompida ? ' cartao-agente--corrompida' : ''));
+    aplicarCorTema(item, resumo);
+    item.setAttribute('data-ficha', resumo.id);
+
+    const topo = criar('div', 'cartao-agente__topo');
+    topo.appendChild(criar('span', 'cartao-agente__codigo', 'Reg. ' + resumo.codigo));
+    if (resumo.aberta) topo.appendChild(criar('span', 'cartao-agente__selo', 'Em uso'));
+    if (resumo.corrompida) topo.appendChild(criar('span', 'cartao-agente__selo cartao-agente__selo--erro', 'Ilegível'));
+    item.appendChild(topo);
+
+    const identidade = criar('div', 'cartao-agente__identidade');
+    identidade.appendChild(criarMonograma(resumo));
+    const textos = criar('div', 'cartao-agente__textos');
+    const titulo = criar('h3', 'cartao-agente__nome');
+    const link = criar('a', 'cartao-agente__link' + (resumo.nomeVazio ? ' cartao-agente__link--vazio' : ''), resumo.nome);
+    link.href = '#/ficha/' + encodeURIComponent(resumo.id);
+    link.setAttribute('data-abrir-ficha', resumo.id);
+    titulo.appendChild(link);
+    textos.appendChild(titulo);
+    textos.appendChild(criar('p', 'cartao-agente__classe', resumo.classeTexto));
+    identidade.appendChild(textos);
+    item.appendChild(identidade);
+
+    const detalhes = criar('dl', 'cartao-agente__detalhes');
+    [['Origem · trilha', textoOrigemTrilha(resumo) || '—'], ['Jogador', resumo.jogador || '—']].forEach(function (par) {
+      const linha = criar('div', 'cartao-agente__detalhe');
+      linha.appendChild(criar('dt', '', par[0]));
+      linha.appendChild(criar('dd', '', par[1]));
+      detalhes.appendChild(linha);
+    });
+    item.appendChild(detalhes);
+
+    item.appendChild(criarVitais(resumo));
+
+    const rodape = criar('div', 'cartao-agente__rodape');
+    rodape.appendChild(criarTempo(resumo));
+    const acoes = criar('div', 'cartao-agente__acoes');
+    ACOES_CARTAO.forEach(function (acao) {
+      const botao = criar('button', 'botao-icone' + (acao.id === 'excluir' ? ' botao-icone--perigo' : ''));
+      botao.type = 'button';
+      botao.setAttribute('data-ficha-acao', acao.id);
+      botao.setAttribute('data-ficha-id', resumo.id);
+      botao.setAttribute('aria-label', acao.rotulo + ' a ficha ' + resumo.nome);
+      botao.title = acao.rotulo;
+      if (acao.id !== 'excluir' && resumo.corrompida) botao.disabled = true;
+      botao.appendChild(icone(acao.icone));
+      acoes.appendChild(botao);
+    });
+    rodape.appendChild(acoes);
+    item.appendChild(rodape);
+    return item;
   }
+
+  function casaFiltros(resumo, termo) {
+    if (filtros.classe !== 'todas') {
+      const classe = resumo.classeId || 'sem-classe';
+      if (classe !== filtros.classe) return false;
+    }
+    if (!termo) return true;
+    const alvo = semAcento([resumo.nome, resumo.jogador, resumo.origem, resumo.trilha, resumo.classeTexto, resumo.codigo].join(' '));
+    return alvo.indexOf(termo) !== -1;
+  }
+
+  function ordenar(lista) {
+    const copia = lista.slice();
+    if (filtros.ordem === 'nome') {
+      copia.sort(function (a, b) { return a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }) || a.posicao - b.posicao; });
+    } else if (filtros.ordem === 'nivel') {
+      copia.sort(function (a, b) { return b.nivel - a.nivel || a.posicao - b.posicao; });
+    } else if (filtros.ordem === 'ordem') {
+      copia.sort(function (a, b) { return a.posicao - b.posicao; });
+    } else {
+      copia.sort(porData);
+    }
+    return copia;
+  }
+
+  /** Botões de filtro por classe (as classes que existem nos dados, mais "Sem classe"). */
+  function montarFiltroClasse() {
+    const opcoes = [{ id: 'todas', nome: 'Todas' }]
+      .concat(OP.calc.classesLista().map(function (c) { return { id: c.id, nome: c.nome }; }))
+      .concat([{ id: 'sem-classe', nome: 'Sem classe' }]);
+    substituirFilhos(refs.filtroClasse, opcoes.map(function (opcao) {
+      const botao = criar('button', 'segmentado__opcao', opcao.nome);
+      botao.type = 'button';
+      botao.setAttribute('data-filtro-classe', opcao.id);
+      botao.setAttribute('aria-pressed', String(opcao.id === filtros.classe));
+      return botao;
+    }));
+  }
+
+  function desenharArquivo() {
+    const lista = resumos();
+    const termo = semAcento(filtros.busca);
+    const visiveis = ordenar(lista.filter(function (r) { return casaFiltros(r, termo); }));
+
+    refs.contagem.textContent = lista.length === 1 ? '1 agente registrado' : lista.length + ' agentes registrados';
+    if (lista.length && visiveis.length !== lista.length) refs.contagem.textContent += ' · ' + visiveis.length + ' na busca';
+
+    refs.filtroClasse.querySelectorAll('[data-filtro-classe]').forEach(function (botao) {
+      botao.setAttribute('aria-pressed', String(botao.getAttribute('data-filtro-classe') === filtros.classe));
+    });
+
+    substituirFilhos(refs.lista, visiveis.map(criarCartao));
+    refs.lista.hidden = visiveis.length === 0;
+    refs.ferramentas.hidden = lista.length === 0;
+    refs.dica.hidden = lista.length === 0;
+
+    refs.vazio.hidden = lista.length > 0;
+    if (!lista.length && !refs.vazio.firstChild) {
+      refs.vazio.appendChild(criarEstadoVazio('O arquivo está vazio.',
+        'Nenhuma ficha salva neste navegador. Crie uma nova ou importe um arquivo .json (de uma ficha ou de um backup).'));
+    }
+    refs.semResultado.hidden = !(lista.length > 0 && visiveis.length === 0);
+  }
+
+  /** Atualiza a contagem da navegação e a tela que estiver visível. */
+  function atualizarListas() {
+    const total = OP.fichas.listar().length;
+    refs.navContagem.textContent = total ? String(total) : '';
+    const vista = vistaAtual();
+    if (vista === 'central') desenharCentral();
+    if (vista === 'arquivo') desenharArquivo();
+  }
+
+  /** Destaca um cartão por um instante (ex.: a cópia recém-criada). */
+  function destacarCartao(id) {
+    const cartao = refs.lista.querySelector('[data-ficha="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]');
+    if (!cartao) return;
+    cartao.classList.add('cartao-agente--novo');
+    setTimeout(function () { cartao.classList.remove('cartao-agente--novo'); }, 1600);
+  }
+
+  /* ------------------------------------------------------------------------
+     Ações com fichas
+     ------------------------------------------------------------------------ */
 
   function novaFicha() {
     const id = OP.fichas.criar();
     const resultado = OP.fichas.abrir(id);
     if (!resultado.ok) {
-      desenharLista();
-      mostrarMensagem('erro', resultado.erro);
+      aviso('erro', resultado.erro);
+      atualizarListas();
       return;
     }
-    fecharDialogo();
-    const campoNome = document.getElementById('campo-nome');
-    if (campoNome) campoNome.focus();
-  }
-
-  function abrirFicha(id) {
-    const resultado = OP.fichas.abrir(id);
-    if (!resultado.ok) {
-      mostrarMensagem('erro', resultado.erro);
-      return;
-    }
-    fecharDialogo();
+    atualizarListas();
+    // Depois da troca de tela, o foco vai para o nome: é só começar a digitar
+    irPara('ficha', id, { focar: 'campo-nome' });
+    aviso('ok', 'Novo agente registrado. Comece pelo nome.');
   }
 
   function duplicarFicha(id) {
     const novo = OP.fichas.duplicar(id);
-    desenharLista();
     if (!novo) {
-      mostrarMensagem('erro', 'Não foi possível duplicar esta ficha.');
+      aviso('erro', 'Não foi possível duplicar esta ficha.');
       return;
     }
+    // A cópia herda a aparência da original
+    const tema = OP.prefs.tema(id);
+    if (tema !== OP.prefs.temaPadrao()) OP.prefs.definirTema(novo, tema);
+    atualizarListas();
+    destacarCartao(novo);
     const copia = OP.fichas.listar().find(function (linha) { return linha.id === novo; });
-    mostrarMensagem('ok', 'Cópia criada: ' + nomeExibido(copia && copia.nome) + '.');
+    aviso('ok', 'Cópia criada: ' + nomeExibido(copia && copia.nome) + '.', {
+      acao: { rotulo: 'Abrir', fazer: function () { irPara('ficha', novo); } }
+    });
   }
 
   function exportarFicha(id) {
     const texto = OP.fichas.exportarTexto(id);
     if (texto === null) {
-      mostrarMensagem('erro', 'Não foi possível ler esta ficha para exportar.');
+      aviso('erro', 'Não foi possível ler esta ficha para exportar.');
       return;
     }
     const ficha = id === OP.fichas.idAtual() ? OP.state.ficha : OP.fichas.ler(id);
-    if (!baixar(OP.fichas.nomeArquivoFicha(ficha), texto)) mostrarMensagem('erro', 'O navegador não deixou baixar o arquivo.');
+    const nomeArquivo = OP.fichas.nomeArquivoFicha(ficha);
+    if (baixar(nomeArquivo, texto)) aviso('ok', 'Ficha exportada: ' + nomeArquivo + '.');
+    else aviso('erro', 'O navegador não deixou baixar o arquivo.');
   }
 
   function excluirFicha(id) {
@@ -233,54 +646,31 @@ window.OP = window.OP || {};
       perigo: true,
       aoConfirmar: function () {
         const eraAberta = id === OP.fichas.idAtual();
-        OP.fichas.excluir(id);
-        desenharLista();
-        mostrarMensagem('ok', 'Ficha "' + nome + '" excluída.' + (eraAberta ? ' Outra ficha foi aberta.' : ''));
+        const resultado = OP.fichas.excluir(id);
+        OP.prefs.esquecerTema(id);
+        atualizarListas();
+        OP.uiApp.atualizarNav();
+        aviso('ok', 'Ficha "' + nome + '" excluída.' + (eraAberta && resultado.abriuId ? ' Outra ficha ficou aberta.' : ''));
       }
     });
   }
 
   function baixarBackup() {
+    if (!OP.fichas.listar().length) {
+      aviso('aviso', 'Não há fichas salvas para incluir no backup.');
+      return;
+    }
     const texto = OP.fichas.backupTexto();
-    if (!baixar(OP.fichas.nomeArquivoBackup(new Date()), texto)) {
-      if (refs.dialogo.open) mostrarMensagem('erro', 'O navegador não deixou baixar o arquivo.');
-    }
-  }
-
-  /** Cliques dentro da janela (delegados). */
-  function aoClicarDialogo(evento) {
-    // Clique no fundo escurecido (fora do conteúdo) fecha a janela.
-    if (evento.target === refs.dialogo) {
-      fecharDialogo();
-      return;
-    }
-    if (evento.target.closest('[data-fechar-fichas]')) {
-      fecharDialogo();
-      return;
-    }
-    const acaoTopo = evento.target.closest('[data-acao-fichas]');
-    if (acaoTopo) {
-      const acao = acaoTopo.getAttribute('data-acao-fichas');
-      if (acao === 'nova') novaFicha();
-      if (acao === 'importar') refs.arquivo.click();
-      if (acao === 'backup') baixarBackup();
-      return;
-    }
-    const botao = evento.target.closest('[data-ficha-acao]');
-    if (!botao) return;
-    const id = botao.getAttribute('data-ficha-id');
-    const acao = botao.getAttribute('data-ficha-acao');
-    if (acao === 'abrir') abrirFicha(id);
-    if (acao === 'duplicar') duplicarFicha(id);
-    if (acao === 'exportar') exportarFicha(id);
-    if (acao === 'excluir') excluirFicha(id);
+    const nomeArquivo = OP.fichas.nomeArquivoBackup(new Date());
+    if (baixar(nomeArquivo, texto)) aviso('ok', 'Backup baixado: ' + nomeArquivo + '.');
+    else aviso('erro', 'O navegador não deixou baixar o arquivo.');
   }
 
   /* ------------------------------------------------------------------------
      Importar (botão ou arrastar e soltar)
      ------------------------------------------------------------------------ */
 
-  function resumoFicha(ficha) {
+  function resumoImportacao(ficha) {
     return nomeExibido(ficha.identificacao.nome) + ' — ' +
       resumoClasseNex(ficha.identificacao.classe, ficha.identificacao.nex, ficha.identificacao.estagio);
   }
@@ -292,42 +682,49 @@ window.OP = window.OP || {};
       titulo: total === 1 ? 'Importar ficha' : 'Importar ' + total + ' fichas',
       texto: (total === 1 ? 'A ficha abaixo entra como nova' : 'As fichas abaixo entram como novas') +
         '; nenhuma ficha existente é alterada.',
-      itens: resultado.fichas.map(resumoFicha),
+      itens: resultado.fichas.map(resumoImportacao),
       avisos: resultado.avisos,
       textoConfirmar: 'Importar',
       aoConfirmar: function () {
         const gravacao = OP.fichas.importar(resultado.fichas);
-        desenharLista();
         const quantas = gravacao.ids.length === 1 ? '1 ficha importada' : gravacao.ids.length + ' fichas importadas';
-        mostrarMensagem(gravacao.ok ? 'ok' : 'aviso', gravacao.ok
-          ? quantas + '. Use "Abrir" para ver.'
-          : quantas + ', mas o navegador não conseguiu salvar: exporte um backup antes de fechar a página.');
+        if (vistaAtual() !== 'arquivo') irPara('arquivo');
+        atualizarListas();
+        gravacao.ids.forEach(destacarCartao);
+        if (gravacao.ok) {
+          aviso('ok', quantas + '.', gravacao.ids.length === 1
+            ? { acao: { rotulo: 'Abrir', fazer: function () { irPara('ficha', gravacao.ids[0]); } } }
+            : undefined);
+        } else {
+          aviso('aviso', quantas + ', mas o navegador não conseguiu salvar: exporte um backup antes de fechar a página.');
+        }
       }
     });
   }
 
   function importarArquivo(arquivo) {
     if (!arquivo) return;
-    if (!refs.dialogo.open) abrirDialogo();
     if (arquivo.size > LIMITE_ARQUIVO) {
-      mostrarMensagem('erro', 'O arquivo passa de 2 MB e não foi importado.');
+      aviso('erro', 'O arquivo passa de 2 MB e não foi importado.');
       return;
     }
-    mostrarMensagem('ok', 'Lendo o arquivo…');
     const leitor = new FileReader();
     leitor.onload = function () {
       const resultado = OP.state.lerImportacao(typeof leitor.result === 'string' ? leitor.result : '');
       if (!resultado.ok) {
-        mostrarMensagem('erro', 'Não foi possível importar: ' + resultado.erro);
+        aviso('erro', 'Não foi possível importar: ' + resultado.erro);
         return;
       }
-      mostrarMensagem('ok', '');
       confirmarImportacao(resultado);
     };
     leitor.onerror = function () {
-      mostrarMensagem('erro', 'Não foi possível ler o arquivo.');
+      aviso('erro', 'Não foi possível ler o arquivo.');
     };
     leitor.readAsText(arquivo);
+  }
+
+  function escolherArquivo() {
+    refs.arquivo.click();
   }
 
   function temArquivos(evento) {
@@ -335,7 +732,7 @@ window.OP = window.OP || {};
     return Boolean(tipos) && Array.prototype.indexOf.call(tipos, 'Files') !== -1;
   }
 
-  /** Arrastar um .json para a página (ou para a janela) importa. */
+  /** Arrastar um .json para a página importa (em qualquer tela). */
   function ligarArrastar() {
     document.addEventListener('dragover', function (evento) {
       if (!temArquivos(evento)) return;
@@ -355,13 +752,55 @@ window.OP = window.OP || {};
   }
 
   /* ------------------------------------------------------------------------
+     Barra global: nome da ficha aberta e indicador de salvamento
+     ------------------------------------------------------------------------ */
+
+  function desenharNomeAtual(ficha) {
+    const nome = nomeExibido(ficha && ficha.identificacao && ficha.identificacao.nome);
+    if (refs.nome.textContent !== nome) refs.nome.textContent = nome;
+  }
+
+  /** "Salvo às HH:MM" / "Salvando…" / "Não salvo" e a faixa vermelha de falha. */
+  function mostrarStatus(status) {
+    let texto;
+    let estado;
+    if (status.estado === 'pendente') {
+      texto = 'Salvando…';
+      estado = 'pendente';
+    } else if (status.estado === 'falha') {
+      texto = 'Não salvo';
+      estado = 'falha';
+    } else if (status.quando) {
+      texto = mesmoDia(status.quando, new Date())
+        ? 'Salvo às ' + hora(status.quando)
+        : 'Salvo em ' + dataCurta(status.quando);
+      estado = 'ok';
+    } else {
+      texto = 'Salvo neste navegador';
+      estado = 'ok';
+    }
+    if (refs.status.textContent !== texto) refs.status.textContent = texto;
+    const anterior = refs.status.dataset.estado;
+    refs.status.dataset.estado = estado;
+    // Um brilho curto quando uma gravação termina (feedback de "salvou")
+    if (anterior === 'pendente' && estado === 'ok') {
+      refs.status.classList.remove('status-salvamento--pulso');
+      void refs.status.offsetWidth;
+      refs.status.classList.add('status-salvamento--pulso');
+    }
+    // A faixa fica até uma gravação dar certo (mesmo enquanto digita).
+    refs.faixaFalha.hidden = !status.falhou;
+  }
+
+  /* ------------------------------------------------------------------------
      Outra aba e impressão
      ------------------------------------------------------------------------ */
 
   /** Avisa (nunca recarrega sozinho) quando a ficha aberta muda em outra aba. */
   function aoAlterarFora(tipo) {
     if (tipo === 'ficha') refs.faixaOutraAba.hidden = false;
-    if (refs.dialogo.open) desenharLista();
+    atualizarListas();
+    OP.uiApp.atualizarNav();
   }
 
   function recarregar() {
@@ -370,8 +809,55 @@ window.OP = window.OP || {};
   }
 
   function imprimir() {
-    fecharDialogo();
     window.print();
+  }
+
+  /* ------------------------------------------------------------------------
+     Eventos
+     ------------------------------------------------------------------------ */
+
+  /** Botões com data-acao-app (Central, Arquivo, estados vazios). */
+  function aoClicarDocumento(evento) {
+    const acaoApp = evento.target.closest('[data-acao-app]');
+    if (acaoApp) {
+      const acao = acaoApp.getAttribute('data-acao-app');
+      if (acao === 'nova-ficha') novaFicha();
+      if (acao === 'importar') escolherArquivo();
+      if (acao === 'backup') baixarBackup();
+      if (acao === 'fontes' && OP.uiClasse) OP.uiClasse.abrirFontes();
+    }
+  }
+
+  function aoClicarArquivo(evento) {
+    const filtro = evento.target.closest('[data-filtro-classe]');
+    if (filtro) {
+      filtros.classe = filtro.getAttribute('data-filtro-classe');
+      desenharArquivo();
+      return;
+    }
+    const botao = evento.target.closest('[data-ficha-acao]');
+    if (botao) {
+      const id = botao.getAttribute('data-ficha-id');
+      const acao = botao.getAttribute('data-ficha-acao');
+      if (acao === 'duplicar') duplicarFicha(id);
+      if (acao === 'exportar') exportarFicha(id);
+      if (acao === 'excluir') excluirFicha(id);
+      return;
+    }
+    // Abrindo: estado "abrindo…" no cartão até a troca de tela
+    const abrir = evento.target.closest('[data-abrir-ficha]');
+    if (abrir) {
+      const cartao = abrir.closest('.cartao-agente');
+      if (cartao) cartao.setAttribute('aria-busy', 'true');
+    }
+  }
+
+  function limparFiltros() {
+    filtros.busca = '';
+    filtros.classe = 'todas';
+    refs.busca.value = '';
+    desenharArquivo();
+    refs.busca.focus();
   }
 
   /* ------------------------------------------------------------------------
@@ -383,33 +869,84 @@ window.OP = window.OP || {};
     refs.status = document.getElementById('status-salvamento');
     refs.faixaFalha = document.getElementById('faixa-falha-salvamento');
     refs.faixaOutraAba = document.getElementById('faixa-outra-aba');
-    refs.dialogo = document.getElementById('dialogo-fichas');
+    refs.navContagem = document.getElementById('nav-contagem');
+
+    refs.central = document.getElementById('vista-central');
+    refs.continuar = document.getElementById('central-continuar');
+    refs.recentes = document.getElementById('central-recentes');
+    refs.blocoRecentes = refs.recentes.closest('.central__bloco');
+    refs.statusArquivo = document.getElementById('central-status');
+
+    refs.vistaArquivo = document.getElementById('vista-arquivo');
     refs.lista = document.getElementById('lista-fichas');
-    refs.contagem = document.getElementById('fichas-contagem');
-    refs.mensagem = document.getElementById('fichas-mensagem');
+    refs.contagem = document.getElementById('arquivo-contagem');
+    refs.busca = document.getElementById('arquivo-busca');
+    refs.filtroClasse = document.getElementById('arquivo-filtro-classe');
+    refs.ordem = document.getElementById('arquivo-ordem');
+    refs.ferramentas = refs.vistaArquivo.querySelector('.arquivo__ferramentas');
+    refs.dica = refs.vistaArquivo.querySelector('.arquivo__dica');
+    refs.vazio = document.getElementById('arquivo-vazio');
+    refs.semResultado = document.getElementById('arquivo-sem-resultado');
     refs.arquivo = document.getElementById('importar-arquivo');
 
-    document.getElementById('botao-fichas').addEventListener('click', abrirDialogo);
     document.getElementById('botao-imprimir').addEventListener('click', imprimir);
+    document.getElementById('botao-exportar-ficha').addEventListener('click', function () {
+      const id = OP.fichas.idAtual();
+      if (id) exportarFicha(id);
+    });
     document.getElementById('botao-backup-agora').addEventListener('click', baixarBackup);
     document.getElementById('botao-recarregar-ficha').addEventListener('click', recarregar);
-    refs.dialogo.addEventListener('click', aoClicarDialogo);
+    document.getElementById('arquivo-limpar-filtros').addEventListener('click', limparFiltros);
+    document.addEventListener('click', aoClicarDocumento);
+    refs.vistaArquivo.addEventListener('click', aoClicarArquivo);
+    refs.busca.addEventListener('input', function () {
+      filtros.busca = refs.busca.value;
+      desenharArquivo();
+    });
+    refs.ordem.addEventListener('change', function () {
+      filtros.ordem = refs.ordem.value;
+      desenharArquivo();
+    });
     refs.arquivo.addEventListener('change', function () {
       const arquivo = refs.arquivo.files && refs.arquivo.files[0];
       refs.arquivo.value = ''; // permite escolher o mesmo arquivo de novo
       importarArquivo(arquivo);
     });
     ligarArrastar();
+    montarFiltroClasse();
 
     OP.fichas.aoMudarStatus(mostrarStatus);
     OP.fichas.aoAlterarFora(aoAlterarFora);
     OP.state.aoMudar(desenharNomeAtual);
+    // A Central e o Arquivo são redesenhados ao aparecer e quando o índice muda
+    OP.uiApp.aoTrocarVista(function (vista) {
+      if (vista === 'central') desenharCentral();
+      if (vista === 'arquivo') desenharArquivo();
+    });
+    OP.fichas.aoMudarStatus(function (status) {
+      // Gravou: nome/classe/NEX/data no índice mudaram; atualiza a contagem
+      if (status.estado !== 'pendente') {
+        const total = OP.fichas.listar().length;
+        refs.navContagem.textContent = total ? String(total) : '';
+      }
+    });
+    OP.prefs.aoMudar(function (prefs, tipo) {
+      if (tipo === 'fontes' && vistaAtual() === 'central') desenharCentral();
+    });
     desenharNomeAtual(OP.state.ficha);
     mostrarStatus(OP.fichas.status());
+    atualizarListas();
   }
 
   OP.uiFichas = {
     montar: montar,
-    abrirDialogo: abrirDialogo
+    novaFicha: novaFicha,
+    exportarFicha: exportarFicha,
+    escolherArquivo: escolherArquivo,
+    baixarBackup: baixarBackup,
+    atualizarListas: atualizarListas,
+    // Usados pelo dossiê da ficha (js/ui-dossie.js)
+    monograma: monograma,
+    codigoRegistro: codigoRegistro
   };
 })(window.OP);

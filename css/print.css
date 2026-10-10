@@ -123,6 +123,43 @@ body::after,
   display: none !important;
 }
 
+/* Redesign: tudo o que é só da tela (Central, Arquivo, atmosfera, trilho de
+   vitais e índice, capa do dossiê com tema e selo, ícones, avisos). O papel
+   continua sendo só a ficha, no mesmo layout de antes. Ctrl+P em qualquer
+   tela imprime a ficha aberta. */
+.pular,
+.atmosfera,
+.simbolos,
+.app-barra,
+.vista--central,
+.vista--arquivo,
+.trilho,
+.avisos-app,
+.dossie__faixa,
+.dossie__selo,
+.atributos__linhas,
+.atributos__anel,
+.icone-ui,
+.sem-js {
+  display: none !important;
+}
+
+.vista--ficha,
+.ficha-layout,
+.ficha__conteudo,
+.ficha__par,
+.atributos__palco {
+  display: block !important;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* O cabeçalho só do papel (na tela, a capa do dossiê faz esse papel) */
+.so-impressao {
+  display: block !important;
+}
+
 /* Etapa 9: painéis de origem/classe/trilha e progressão são de consulta
    (a origem, a classe e a trilha escolhidas aparecem na Identificação);
    nas formas dos rituais fica só "Requer círculo" e o total. */

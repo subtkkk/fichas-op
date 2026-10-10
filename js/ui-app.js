@@ -154,8 +154,11 @@ window.OP = window.OP || {};
     }
   }
 
-  function trocarVista(vista, anterior) {
+  /** Troca de fato (sem animação). Sempre aplica a tela pedida por último. */
+  function trocarVista(vista) {
+    const anterior = document.body.dataset.vista;
     document.body.dataset.vista = vista;
+    document.documentElement.dataset.vista = vista; // o CSS do <html> (âncoras) depende da tela
     atualizarNav();
     atualizarTitulo(vista);
     if (anterior !== vista || refs.focoPendente) {
@@ -165,20 +168,44 @@ window.OP = window.OP || {};
     ouvintes.forEach(function (funcao) { funcao(vista, anterior); });
   }
 
-  /** Mostra uma tela (com transição curta quando o navegador permite). */
+  /**
+   * Mostra uma tela, com uma passagem curta quando o navegador permite
+   * (View Transitions). Nunca duas passagens ao mesmo tempo: durante uma,
+   * a troca seguinte é direta. A troca acontece mesmo se o navegador
+   * atrasar a passagem (reserva de 300 ms).
+   */
   function mostrarVista(vista) {
     const anterior = document.body.dataset.vista;
-    if (anterior === vista || reduzMovimento() || typeof document.startViewTransition !== 'function' || !refs.prontos) {
-      trocarVista(vista, anterior);
+    refs.vistaPedida = vista;
+    const raiz = document.documentElement;
+    const animar = anterior !== vista && refs.prontos && !refs.emTransicao && !raiz.dataset.transicao &&
+      !reduzMovimento() && typeof document.startViewTransition === 'function' && document.visibilityState === 'visible';
+    if (!animar) {
+      trocarVista(vista);
       return;
     }
-    document.documentElement.dataset.transicao = anterior + '-' + vista;
-    const transicao = document.startViewTransition(function () { trocarVista(vista, anterior); });
-    transicao.finished.then(limparTransicao, limparTransicao);
-  }
 
-  function limparTransicao() {
-    delete document.documentElement.dataset.transicao;
+    const marca = anterior + '-' + vista;
+    let feita = false;
+    const aplicar = function () {
+      if (feita) return;
+      feita = true;
+      trocarVista(refs.vistaPedida);
+    };
+    refs.emTransicao = true;
+    raiz.dataset.transicao = marca;
+    const reserva = setTimeout(aplicar, 300);
+    const terminar = function () {
+      clearTimeout(reserva);
+      aplicar();
+      refs.emTransicao = false;
+      if (raiz.dataset.transicao === marca) delete raiz.dataset.transicao;
+    };
+    try {
+      document.startViewTransition(aplicar).finished.then(terminar, terminar);
+    } catch (erro) {
+      terminar();
+    }
   }
 
   function vistaAtual() {

@@ -272,12 +272,15 @@
   --tinta-superficie: #141419;
   --linha-1: rgba(222, 220, 240, 0.07);
   --linha-2: rgba(222, 220, 240, 0.12);
+  --papel: #e8e5f0;
+  --papel-2: #b9b5c7;
+  --papel-3: #9591a6;
 }
 
 /* Conhecimento: dourado envelhecido, amarelo controlado e grafite; diagramas */
 [data-tema="conhecimento"] {
-  --acento: #dcb45a;
-  --acento-claro: #f2d488;
+  --acento: #e3c04e;
+  --acento-claro: #f7df8f;
   --acento-2: #8a6a2a;
   --acento-texto: #191304;
   --luz-a: rgba(214, 170, 70, 0.13);
@@ -310,6 +313,9 @@
   --linha-1: rgba(255, 255, 255, 0.06);
   --linha-2: rgba(255, 255, 255, 0.11);
   --linha-3: rgba(255, 255, 255, 0.2);
+  --papel: #f1efea;
+  --papel-2: #bdbbb6;
+  --papel-3: #95938f;
 }
 
 /* Troca de tema: as cores registradas deslizam (só enquanto troca) */
@@ -985,11 +991,20 @@ body[data-vista="ficha"] .atmosfera[data-tema="medo"] .atmosfera__base {
   box-shadow: 0 0 0 3px var(--acento-suave);
 }
 
+/* Foco pelo teclado: anel duplo bem visível */
+.controle:focus-visible,
+.campo input:focus-visible,
+.campo select:focus-visible,
+.busca input:focus-visible,
+.campo-busca input:focus-visible {
+  box-shadow: 0 0 0 1px var(--acento), 0 0 0 4px color-mix(in oklab, var(--acento) 30%, transparent);
+}
+
 .controle::placeholder,
 .campo input::placeholder,
 .busca input::placeholder,
 textarea::placeholder {
-  color: #7d786f;
+  color: #8a857c;
   opacity: 1;
 }
 
@@ -1072,7 +1087,7 @@ textarea.controle {
 
 .passo:focus-within {
   border-color: var(--acento);
-  box-shadow: 0 0 0 3px var(--acento-suave);
+  box-shadow: 0 0 0 1px var(--acento), 0 0 0 4px color-mix(in oklab, var(--acento) 26%, transparent);
 }
 
 .passo__botao {
@@ -1775,8 +1790,8 @@ body[data-vista="ficha"] .vista--ficha {
   display: block;
 }
 
-/* Entrada da tela (sem View Transitions; com elas, o navegador faz a passagem) */
-html:not([data-transicao]).app-pronto body[data-vista] .vista {
+/* Entrada da tela: só toca quando a tela aparece (sai de display: none) */
+.app-pronto .vista {
   animation: vista-entrada 420ms var(--curva-saida);
 }
 
@@ -1790,7 +1805,7 @@ html:not([data-transicao]).app-pronto body[data-vista] .vista {
 }
 
 ::view-transition-new(root) {
-  animation: 340ms var(--curva-saida) both vt-entrar;
+  animation: 280ms var(--curva-saida) both vt-entrar;
 }
 
 @keyframes vt-sair {
@@ -1798,7 +1813,7 @@ html:not([data-transicao]).app-pronto body[data-vista] .vista {
 }
 
 @keyframes vt-entrar {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; }
 }
 
 .rodape {
@@ -1809,7 +1824,7 @@ html:not([data-transicao]).app-pronto body[data-vista] .vista {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   text-align: center;
-  color: var(--papel-4);
+  color: var(--papel-3);
 }
 
 body[data-vista="ficha"] .rodape {
@@ -2581,7 +2596,7 @@ body[data-vista="ficha"] .rodape {
 }
 
 .campo-busca input::placeholder {
-  color: #7d786f;
+  color: #8a857c;
 }
 
 /* Botões segmentados (filtro por classe) */
@@ -3319,8 +3334,7 @@ body.arrastando-arquivo::after {
   position: relative;
   min-width: 0;
   padding: 34px 0 8px;
-  counter-increment: secao;
-  scroll-margin-top: calc(var(--topo-fixo) + 12px);
+  counter-increment: secao; /* o deslocamento das âncoras vem do scroll-padding-top do <html> */
 }
 
 .ficha__conteudo .secao + .secao,
@@ -4301,9 +4315,7 @@ body.arrastando-arquivo::after {
   padding: 12px 12px 12px 14px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0) 50%),
-    color-mix(in oklab, var(--tinta-superficie) 88%, transparent);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
+    color-mix(in oklab, var(--tinta-superficie) 94%, transparent);
   border: 1px solid var(--linha-2);
   border-radius: var(--raio-3);
   box-shadow: var(--sombra-2);
@@ -4873,9 +4885,14 @@ body.arrastando-arquivo::after {
   box-shadow: 0 0 8px var(--ok);
 }
 
+/* Indisponível: apagado pela cor (legível), não por transparência */
 .reacao--indisponivel .reacao__nome,
 .reacao--indisponivel .reacao__valor {
-  opacity: 0.45;
+  color: var(--papel-3);
+}
+
+.reacao--indisponivel .reacao__valor {
+  font-weight: 500;
 }
 
 /* Testes rápidos (Iniciativa, Fortitude, Reflexos, Vontade) */
@@ -5153,9 +5170,7 @@ body.arrastando-arquivo::after {
   text-transform: uppercase;
   white-space: nowrap;
   color: var(--papel-3);
-  background: color-mix(in oklab, var(--tinta-1) 90%, transparent);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  background: color-mix(in oklab, var(--tinta-1) 97%, transparent);
   border-bottom: 1px solid var(--linha-2);
 }
 
@@ -5231,7 +5246,7 @@ body.arrastando-arquivo::after {
 .pericia--requer-treino .controle,
 .pericia--requer-treino output,
 .pericia--requer-treino .caixa {
-  opacity: 0.5;
+  opacity: 0.62; /* esmaecida, mas ainda legível (contraste ≥ 4,5:1) */
 }
 
 .pericia--requer-treino .controle:focus {
@@ -5880,7 +5895,7 @@ body.arrastando-arquivo::after {
 .grupo-ritual__vazio {
   padding: 0 16px 14px 36px;
   font-size: 13px;
-  color: var(--papel-4);
+  color: var(--papel-3);
 }
 
 /* Cartão de ritual: cor e símbolo do elemento */
@@ -6523,6 +6538,263 @@ body.arrastando-arquivo::after {
 .fontes__contagem {
   font: 500 11px var(--fonte-mono);
   color: var(--papel-3);
+}
+
+/* ==========================================================================
+   10b. ASSINATURAS DOS TEMAS — além das cores, cada tema muda a luz, os
+        detalhes gráficos e o comportamento. Só aparência.
+   ========================================================================== */
+
+/* ---- Sangue: orgânico, quente; um batimento ao interagir ---- */
+[data-tema="sangue"] {
+  --raio-2: 8px;
+  --raio-3: 14px;
+}
+
+[data-tema="sangue"] .painel,
+[data-tema="sangue"] .ataque,
+[data-tema="sangue"] .ritual,
+[data-tema="sangue"] .recurso,
+[data-tema="sangue"] .atributo {
+  box-shadow: var(--sombra-1), inset 0 -34px 46px -34px rgba(170, 18, 18, 0.42);
+}
+
+[data-tema="sangue"] .ficha__conteudo .secao--dossie::after {
+  top: -120px;
+  right: -60px;
+  width: 460px;
+  height: 380px;
+  border-radius: 46% 54% 60% 40% / 52% 40% 60% 48%;
+  background:
+    radial-gradient(circle at 58% 42%, rgba(170, 20, 20, 0.34), transparent 58%),
+    radial-gradient(circle at 26% 74%, rgba(120, 8, 10, 0.26), transparent 46%);
+  filter: blur(10px);
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+[data-tema="sangue"] .ficha__conteudo .secao::before {
+  background: linear-gradient(90deg, var(--acento) 0%, rgba(150, 20, 20, 0.5) 16%, var(--linha-1) 55%, transparent 100%);
+}
+
+[data-tema="sangue"] .atributos__anel {
+  border-color: rgba(230, 74, 62, 0.45);
+  box-shadow: 0 0 0 10px rgba(60, 0, 0, 0.18), 0 0 0 11px rgba(230, 74, 62, 0.12), 0 0 90px -10px rgba(190, 20, 20, 0.45);
+}
+
+[data-tema="sangue"] .botao-rolagem:hover,
+[data-tema="sangue"] .botao-icone--rolar:hover {
+  animation: batimento 1.1s var(--curva) 1;
+}
+
+@keyframes batimento {
+  0%, 100% { transform: scale(1); }
+  14% { transform: scale(1.045); }
+  28% { transform: scale(1); }
+  42% { transform: scale(1.03); }
+  60% { transform: scale(1); }
+}
+
+/* ---- Morte: névoa, cinzas frios; tudo um pouco mais lento ---- */
+[data-tema="morte"] {
+  --dur-2: 320ms;
+  --dur-3: 520ms;
+}
+
+[data-tema="morte"] .painel,
+[data-tema="morte"] .atributo,
+[data-tema="morte"] .recurso,
+[data-tema="morte"] .ataque,
+[data-tema="morte"] .ritual,
+[data-tema="morte"] .habilidade,
+[data-tema="morte"] .reacao,
+[data-tema="morte"] .teste {
+  background:
+    radial-gradient(120% 60% at 50% 0%, rgba(205, 198, 232, 0.08), transparent 70%),
+    color-mix(in oklab, var(--tinta-superficie) 84%, transparent);
+}
+
+[data-tema="morte"] .ficha__conteudo .secao--dossie::after {
+  background: repeating-radial-gradient(circle, transparent 0 13px, rgba(171, 155, 211, 0.12) 13px 14px);
+  filter: blur(1.4px);
+}
+
+[data-tema="morte"] .ficha__conteudo .secao::before {
+  height: 1px;
+  background: linear-gradient(90deg, rgba(171, 155, 211, 0.45), rgba(171, 155, 211, 0.08) 45%, transparent 85%);
+}
+
+[data-tema="morte"] .atributos__anel {
+  background:
+    radial-gradient(circle, rgba(171, 155, 211, 0.12) 0%, transparent 60%),
+    repeating-radial-gradient(circle, transparent 0 10px, rgba(171, 155, 211, 0.08) 10px 11px);
+  filter: blur(0.6px);
+}
+
+/* ---- Conhecimento: papel quadriculado, diagramas e numeração editorial ---- */
+[data-tema="conhecimento"] .ficha__conteudo {
+  background-image:
+    linear-gradient(rgba(227, 192, 78, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(227, 192, 78, 0.035) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: -1px -1px;
+}
+
+[data-tema="conhecimento"] .ficha__conteudo .secao__titulo::before {
+  content: "§ " counter(secao, upper-roman);
+  font-family: var(--fonte-display);
+  font-size: 15px;
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  transform: translateY(-4px);
+}
+
+[data-tema="conhecimento"] .secao__titulo,
+[data-tema="conhecimento"] .grupo-ritual__titulo {
+  font-style: italic;
+  font-weight: 500;
+}
+
+[data-tema="conhecimento"] .ficha__conteudo .secao--dossie::after {
+  top: -70px;
+  right: -40px;
+  width: 340px;
+  height: 340px;
+  border-radius: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' fill='none' stroke='%23e3c04e' stroke-opacity='0.22'%3E%3Ccircle cx='100' cy='100' r='92'/%3E%3Ccircle cx='100' cy='100' r='58'/%3E%3Cpath d='M100 8 180 146H20z'/%3E%3Cpath d='M100 8v184M8 100h184M35 35l130 130M165 35 35 165' stroke-dasharray='2 4'/%3E%3Ccircle cx='100' cy='100' r='3' fill='%23e3c04e' fill-opacity='0.3'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+[data-tema="conhecimento"] .atributos__anel {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' fill='none' stroke='%23e3c04e' stroke-opacity='0.25'%3E%3Ccircle cx='100' cy='100' r='70'/%3E%3Cpath d='M100 30 160.6 135H39.4z'/%3E%3Cpath d='M100 30v140M30 100h140' stroke-dasharray='2 4'/%3E%3C/svg%3E") center / 92% no-repeat;
+}
+
+[data-tema="conhecimento"] .ficha__conteudo .secao::before {
+  background: repeating-linear-gradient(90deg, var(--acento-linha) 0 6px, transparent 6px 10px);
+  -webkit-mask-image: linear-gradient(90deg, #000 30%, transparent);
+  mask-image: linear-gradient(90deg, #000 30%, transparent);
+}
+
+/* ---- Energia: gradientes direcionados e brilhos pontuais nos ativos ---- */
+[data-tema="energia"] .botao-rolagem:not(.botao-rolagem--dano):not(.botao-rolagem--usar):not(.botao-rolagem--conjurar):not(.botao-rolagem--secundario):not(.botao-rolagem--bloqueado),
+[data-tema="energia"] .aba[aria-pressed="true"],
+[data-tema="energia"] .botao-icone--rolar:hover:not(:disabled) {
+  color: #fff;
+  background: linear-gradient(115deg, #8b4dff 0%, #e04ad6 50%, #2fd7ff 100%);
+  background-size: 220% 100%;
+  background-position: 0% 50%;
+  border-color: rgba(214, 160, 255, 0.6);
+  transition: background-position var(--dur-4) var(--curva-saida), box-shadow var(--dur-2) var(--curva);
+}
+
+[data-tema="energia"] .botao-rolagem:not(.botao-rolagem--dano):not(.botao-rolagem--usar):not(.botao-rolagem--conjurar):not(.botao-rolagem--secundario):not(.botao-rolagem--bloqueado):hover {
+  background-position: 100% 50%;
+  box-shadow: 0 0 0 3px rgba(181, 113, 255, 0.18), 0 10px 30px -8px rgba(224, 74, 214, 0.6), 0 0 22px -6px rgba(47, 224, 255, 0.7);
+}
+
+[data-tema="energia"] .ficha__conteudo .secao::before {
+  background: linear-gradient(90deg, #b571ff 0%, #ff4fd8 22%, #2fe0ff 42%, transparent 78%);
+  box-shadow: 0 0 10px rgba(181, 113, 255, 0.55);
+}
+
+[data-tema="energia"] .ficha__conteudo .secao--dossie::after {
+  background:
+    radial-gradient(circle at 70% 30%, rgba(47, 224, 255, 0.16), transparent 40%),
+    repeating-linear-gradient(115deg, transparent 0 20px, rgba(181, 113, 255, 0.12) 20px 21px);
+}
+
+[data-tema="energia"] .atributo__total output,
+[data-tema="energia"] .painel__valor,
+[data-tema="energia"] .resultado__total {
+  text-shadow: 0 0 18px rgba(47, 224, 255, 0.55), 0 0 2px rgba(181, 113, 255, 0.8);
+}
+
+[data-tema="energia"] .indice__item[aria-current="location"]::before,
+[data-tema="energia"] .painel::before,
+[data-tema="energia"] .ataque::before {
+  background: linear-gradient(180deg, #2fe0ff, #b571ff 50%, #ff4fd8);
+}
+
+[data-tema="energia"] .painel::before {
+  background: linear-gradient(90deg, #2fe0ff, #b571ff 50%, #ff4fd8);
+}
+
+[data-tema="energia"] :focus-visible {
+  outline-color: var(--acento-2);
+}
+
+/* ---- Medo: silêncio visual; quase nada brilha ---- */
+[data-tema="medo"] {
+  --brilho: transparent;
+  --sombra-2: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+  --sombra-3: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+}
+
+[data-tema="medo"] .ficha__conteudo .secao--dossie::after {
+  top: -300px;
+  right: -300px;
+  width: 600px;
+  height: 600px;
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+[data-tema="medo"] .ficha__conteudo .secao::before {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.2), transparent 38%);
+}
+
+[data-tema="medo"] .secao__titulo {
+  font-weight: 500;
+  letter-spacing: 0.035em;
+}
+
+[data-tema="medo"] .painel::before,
+[data-tema="medo"] .ataque::before,
+[data-tema="medo"] .ritual::before,
+[data-tema="medo"] .recurso::before,
+[data-tema="medo"] .indice__item[aria-current="location"]::before,
+[data-tema="medo"] .mini-vital__preenchido,
+[data-tema="medo"] .vital__barra .barra__preenchimento,
+[data-tema="medo"] .recurso .barra__preenchimento {
+  box-shadow: none;
+}
+
+[data-tema="medo"] .atributos__anel {
+  background: none;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+}
+
+[data-tema="medo"] .atributos__linhas {
+  stroke: rgba(255, 255, 255, 0.1);
+}
+
+[data-tema="medo"] .dossie__monograma {
+  font-weight: 500;
+  letter-spacing: 0.14em;
+}
+
+[data-tema="medo"] .dossie__selo-anel {
+  filter: none;
+}
+
+.atmosfera[data-tema="medo"] .atmosfera__grao {
+  opacity: 0.07;
+}
+
+/* ---- Troca de tema: a página inteira se dissolve no novo (View Transitions) ---- */
+html[data-transicao="tema"]::view-transition-old(root) {
+  animation: 520ms var(--curva) both vt-sair;
+}
+
+html[data-transicao="tema"]::view-transition-new(root) {
+  animation: 520ms var(--curva) both vt-tema-entrar;
+}
+
+@keyframes vt-tema-entrar {
+  from { opacity: 0; }
 }
 
 /* ==========================================================================
@@ -7294,7 +7566,7 @@ body[data-vista="ficha"] .rolagens {
   }
 
   /* Na ficha, a barra global rola junto: quem fica preso é a faixa de vitais */
-  body[data-vista="ficha"] {
+  html[data-vista="ficha"] {
     --topo-fixo: var(--altura-trilho, 96px);
   }
 
@@ -7549,6 +7821,23 @@ body[data-vista="ficha"] .rolagens {
   }
 }
 
+/* Celular: o vidro desfoca menos (mais leve em aparelhos modestos) */
+@media (max-width: 719px) {
+  :root {
+    --vidro-desfoque: blur(10px) saturate(130%);
+  }
+
+  .app-barra,
+  .rolagens,
+  .dialogo,
+  .aviso-app,
+  .destaque,
+  .ficha__conteudo .secao--dossie {
+    -webkit-backdrop-filter: var(--vidro-desfoque);
+    backdrop-filter: var(--vidro-desfoque);
+  }
+}
+
 @media (max-width: 380px) {
   .nav-global__item .icone-ui {
     display: none;
@@ -7590,9 +7879,7 @@ body[data-vista="ficha"] .rolagens {
   .rolagens,
   .dialogo,
   .aviso-app,
-  .atributo,
-  .ficha__conteudo .secao--dossie,
-  .tabela-pericias thead th {
+  .ficha__conteudo .secao--dossie {
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
   }
@@ -7604,9 +7891,7 @@ body[data-vista="ficha"] .rolagens {
   .aviso-app { background: var(--tinta-3); }
   .rolagens,
   .dialogo { background: #111317; }
-  .atributo,
   .ficha__conteudo .secao--dossie { background: var(--tinta-superficie); }
-  .tabela-pericias thead th { background: var(--tinta-1); }
 }
 
 /* Sem desfoque (navegadores antigos ou economia de energia): vidro mais opaco */

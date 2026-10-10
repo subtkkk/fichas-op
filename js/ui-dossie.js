@@ -79,16 +79,46 @@ window.OP = window.OP || {};
     });
   }
 
-  /** Aplica um tema na ficha e no painel de rolagens (e no fundo, enquanto a ficha está na tela). */
+  /**
+   * Aplica um tema na ficha e no painel de rolagens (e no fundo, enquanto a
+   * ficha está na tela). Com transição: a página se dissolve no tema novo
+   * (View Transitions) ou, sem esse recurso, as cores deslizam (@property).
+   */
   function aplicarTema(idTema, comTransicao) {
     const tema = dadosTema(idTema);
     if (temaAplicado === tema.id) return;
     const raiz = document.documentElement;
-    if (comTransicao && !reduzMovimento()) {
+    const animar = comTransicao && !reduzMovimento() && document.body.dataset.vista === 'ficha';
+    if (animar && typeof document.startViewTransition === 'function' && !raiz.dataset.transicao) {
+      raiz.dataset.transicao = 'tema';
+      let feita = false;
+      const aplicar = function () {
+        if (feita) return;
+        feita = true;
+        trocarTema(tema);
+      };
+      const reserva = setTimeout(aplicar, 300); // se o navegador atrasar a passagem, troca mesmo assim
+      const terminar = function () {
+        clearTimeout(reserva);
+        aplicar();
+        if (raiz.dataset.transicao === 'tema') delete raiz.dataset.transicao;
+      };
+      try {
+        document.startViewTransition(aplicar).finished.then(terminar, terminar);
+      } catch (erro) {
+        terminar();
+      }
+      return;
+    }
+    if (animar) {
       raiz.classList.add('trocando-tema');
       clearTimeout(refs.timerTema);
       refs.timerTema = setTimeout(function () { raiz.classList.remove('trocando-tema'); }, 700);
     }
+    trocarTema(tema);
+  }
+
+  function trocarTema(tema) {
     temaAplicado = tema.id;
     refs.vista.setAttribute('data-tema', tema.id);
     refs.rolagens.setAttribute('data-tema', tema.id);
@@ -164,6 +194,7 @@ window.OP = window.OP || {};
         titulo.focus();
       }
     }
+    refs.secaoAtiva = id;
     marcarSecao(id);
   }
 
@@ -187,11 +218,25 @@ window.OP = window.OP || {};
    * Lido no máximo uma vez por quadro (requestAnimationFrame).
    */
   function secaoNaLeitura() {
-    const topoFixo = parseFloat(getComputedStyle(document.body).getPropertyValue('--topo-fixo')) || 0;
+    const topoFixo = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--topo-fixo')) || 0;
     const linha = topoFixo + (window.innerHeight - topoFixo) * 0.33;
-    let ativa = refs.secoes[0] || null;
+    // Seções lado a lado (atributos e recursos) têm o mesmo topo: formam um
+    // grupo; vale a já marcada (ex.: a que foi clicada no índice) ou a 1ª.
+    let grupo = refs.secoes.length ? [refs.secoes[0]] : [];
+    let topoGrupo = -Infinity;
     for (let i = 0; i < refs.secoes.length; i++) {
-      if (refs.secoes[i].getBoundingClientRect().top <= linha) ativa = refs.secoes[i];
+      const topo = refs.secoes[i].getBoundingClientRect().top;
+      if (topo > linha) continue;
+      if (topo > topoGrupo + 2) {
+        grupo = [refs.secoes[i]];
+        topoGrupo = topo;
+      } else if (Math.abs(topo - topoGrupo) <= 2) {
+        grupo.push(refs.secoes[i]);
+      }
+    }
+    let ativa = grupo[0] || null;
+    for (let i = 0; i < grupo.length; i++) {
+      if (grupo[i].id === refs.secaoAtiva) ativa = grupo[i];
     }
     // No fim da página, a última seção (mesmo curta) é a ativa
     if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {

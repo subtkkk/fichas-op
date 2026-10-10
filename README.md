@@ -32,7 +32,7 @@ Precisa de um navegador atual (Chrome, Edge, Safari ou Firefox recentes).
 
 **A ficha**
 - Identificação, origem, classe e trilha com progressão por NEX (ou estágio, no Sobrevivente). As fontes de origens e trilhas podem ser escolhidas por livro.
-- Atributos dispostos em pentagrama, com distribuição de pontos e "modo livre".
+- Atributos num mostrador com um d20 para cada um. Base, bônus e a distribuição de pontos (com "modo livre") ficam atrás de "Editar atributos".
 - Recursos (PV, PE, SAN) com o cálculo do máximo à vista e perda permanente de Sanidade.
 - Defesa, reações, deslocamento e resistências a dano.
 - Perícias com graus de treinamento, pontos, perícias concedidas e penalidade de carga.
@@ -41,6 +41,7 @@ Precisa de um navegador atual (Chrome, Edge, Safari ou Firefox recentes).
 - **Ajuste de vitais:** tocar em PV, PE ou SAN abre −5/−1/+1/+5, dano ou cura de uma quantia, e Desfazer. No celular, é uma gaveta.
 - Remover qualquer item da ficha mostra Desfazer por alguns segundos.
 - "Termos da ficha" é um glossário recolhido com NEX, DT, graus e outros termos.
+- As listas de escolha abrem um painel próprio, com as opções agrupadas por livro, busca nas listas longas e, no celular, uma gaveta.
 
 **Rolagens**
 - Painel com o resultado de cada teste (todos os d20 e qual valeu), dano, crítico, modificador de dados, bônus extra, DT do alvo, fórmula livre (ex.: `2d6+3`) e histórico.
@@ -98,6 +99,7 @@ js/
   ui-dossie.js      Capa do dossiê, vitais, ajuste de vital, índice e tema
   ui-fichas.js      Central, Arquivo e operações com fichas
   ui-app.js         Navegação entre telas e avisos
+  ui-seletor.js     Painel próprio das listas de escolha (no lugar do menu nativo)
   tests.js          Verificações das fórmulas
 data/               Dados de jogo (classes, origens, trilhas, perícias, rituais, temas…)
 fonts/              Fontes locais (Cormorant Garamond e IBM Plex, licença OFL)

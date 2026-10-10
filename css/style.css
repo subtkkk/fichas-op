@@ -973,6 +973,7 @@ body[data-vista="ficha"] .atmosfera[data-tema="medo"] .atmosfera__base {
 .controle,
 .campo input,
 .campo select,
+.campo .seletor,
 .busca input {
   height: 34px;
   min-width: 0;
@@ -989,6 +990,7 @@ body[data-vista="ficha"] .atmosfera[data-tema="medo"] .atmosfera__base {
 .controle:hover:not(:disabled),
 .campo input:hover,
 .campo select:hover:not(:disabled),
+.campo .seletor:hover:not(:disabled),
 .busca input:hover {
   border-color: var(--linha-3);
 }
@@ -996,6 +998,7 @@ body[data-vista="ficha"] .atmosfera[data-tema="medo"] .atmosfera__base {
 .controle:focus,
 .campo input:focus,
 .campo select:focus,
+.campo .seletor:focus,
 .busca input:focus {
   border-color: var(--acento);
   outline: none;
@@ -1006,6 +1009,7 @@ body[data-vista="ficha"] .atmosfera[data-tema="medo"] .atmosfera__base {
 .controle:focus-visible,
 .campo input:focus-visible,
 .campo select:focus-visible,
+.campo .seletor:focus-visible,
 .busca input:focus-visible,
 .campo-busca input:focus-visible {
   box-shadow: 0 0 0 1px var(--acento), 0 0 0 4px color-mix(in oklab, var(--acento) 30%, transparent);
@@ -1047,9 +1051,87 @@ textarea.controle {
 }
 
 .controle:disabled,
-.campo select:disabled {
+.campo select:disabled,
+.campo .seletor:disabled {
   cursor: not-allowed;
   opacity: 0.45;
+}
+
+/* ---- Seletor: botão no lugar do <select> (js/ui-seletor.js) ----
+   O <select> fica no lugar, invisível e com 1px, para os rótulos, os dados e
+   a impressão. O botão herda as classes dele (.controle e companhia). */
+.seletor-nativo {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  min-width: 0 !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  white-space: nowrap;
+  border: 0 !important;
+  opacity: 0;
+  clip-path: inset(50%);
+  pointer-events: none;
+}
+
+.seletor {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.seletor__caixa {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.seletor__valor,
+.seletor__medida > span {
+  grid-area: 1 / 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seletor__medida {
+  display: contents;
+}
+
+.seletor__medida > span {
+  height: 0;
+  visibility: hidden;
+}
+
+.seletor__seta {
+  flex: none;
+  width: 12px;
+  height: 8px;
+  fill: none;
+  stroke: var(--papel-3);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform var(--dur-2) var(--curva), stroke var(--dur-1) var(--curva);
+}
+
+.seletor:hover:not(:disabled) .seletor__seta {
+  stroke: var(--papel-2);
+}
+
+.seletor.seletor--aberto {
+  border-color: var(--acento);
+  box-shadow: 0 0 0 3px var(--acento-suave);
+}
+
+.seletor--aberto .seletor__seta {
+  stroke: var(--acento-claro);
+  transform: rotate(180deg);
 }
 
 .controle--numero {
@@ -2662,6 +2744,7 @@ body[data-vista="ficha"] .rodape {
 
 .arquivo__ordem .controle {
   height: 38px;
+  font-family: var(--fonte-ui);
   font-size: 13.5px;
   letter-spacing: normal;
   text-transform: none;
@@ -3893,12 +3976,17 @@ body.arrastando-arquivo::after {
 }
 
 .secao--dossie .campo input,
-.secao--dossie .campo select {
+.secao--dossie .campo select,
+.secao--dossie .campo .seletor {
   display: block;
   width: 100%;
   height: 40px;
   font-size: 14.5px;
   background-color: rgba(0, 0, 0, 0.3);
+}
+
+.secao--dossie .campo .seletor {
+  display: flex;
 }
 
 .campo .campo__texto-livre {
@@ -4362,8 +4450,7 @@ body.arrastando-arquivo::after {
   margin: 4px auto 0;
 }
 
-.atributos__linhas,
-.atributos__anel {
+.atributos__mostrador {
   display: none;
 }
 
@@ -4375,6 +4462,45 @@ body.arrastando-arquivo::after {
   gap: 12px;
 }
 
+/* ---- O dado (d20 de frente): o total do atributo fica na face central ---- */
+.atributo__dado {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.dado__faceta {
+  stroke: color-mix(in oklab, var(--acento) 50%, transparent);
+  stroke-width: 1.3;
+  stroke-linejoin: round;
+}
+
+.dado__faceta--luz { fill: color-mix(in oklab, var(--acento) 46%, var(--tinta-5)); }
+.dado__faceta--meia { fill: color-mix(in oklab, var(--acento) 26%, var(--tinta-4)); }
+.dado__faceta--sombra { fill: color-mix(in oklab, var(--acento) 12%, var(--tinta-3)); }
+.dado__faceta--funda { fill: color-mix(in oklab, var(--acento) 5%, var(--tinta-2)); }
+
+.dado__faceta--face {
+  fill: color-mix(in oklab, var(--acento) 14%, var(--tinta-5));
+  stroke: var(--acento);
+  stroke-width: 1.6;
+}
+
+.dado__contorno {
+  fill: none;
+  stroke: var(--acento);
+  stroke-width: 2.6;
+  stroke-linejoin: round;
+}
+
+.atributo--alerta .dado__contorno,
+.atributo--alerta .dado__faceta--face {
+  stroke: var(--aviso);
+}
+
+/* ---- Edição: cartões com base e bônus ---- */
 .atributo {
   position: relative;
   display: grid;
@@ -4396,7 +4522,6 @@ body.arrastando-arquivo::after {
   transition: border-color var(--dur-2) var(--curva), box-shadow var(--dur-3) var(--curva);
 }
 
-.atributo:hover,
 .atributo:focus-within {
   border-color: var(--acento-linha);
   box-shadow: var(--sombra-2), 0 0 28px -14px var(--brilho);
@@ -4435,26 +4560,22 @@ body.arrastando-arquivo::after {
   color: var(--papel-3);
 }
 
-/* Total: um lacre redondo */
 .atributo__total {
   grid-area: total;
+  position: relative;
   display: grid;
   place-items: center;
-  width: 56px;
-  height: 56px;
-  background:
-    radial-gradient(circle at 50% 30%, var(--acento-suave), transparent 70%),
-    rgba(0, 0, 0, 0.35);
-  border: 1px solid var(--acento-linha);
-  border-radius: 50%;
-  box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.4), 0 0 20px -8px var(--brilho);
+  width: 60px;
+  aspect-ratio: 1;
 }
 
 .atributo__total output {
-  font: 600 27px/1 var(--fonte-mono);
+  position: relative;
+  top: 6%; /* centro da face triangular */
+  z-index: 1;
+  font: 700 21px/1 var(--fonte-mono);
   font-variant-numeric: tabular-nums;
   color: var(--papel);
-  text-shadow: 0 0 14px var(--brilho);
 }
 
 .atributo__total-rotulo {
@@ -4491,7 +4612,7 @@ body.arrastando-arquivo::after {
   width: 34px;
 }
 
-/* Com largura: os cartões formam um pentágono em volta do selo */
+/* Com largura: os cartões de edição formam um pentágono */
 @container atributos (min-width: 540px) {
   .grade-atributos {
     grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -4513,43 +4634,192 @@ body.arrastando-arquivo::after {
   .atributo[data-atributo="int"] { grid-area: int; }
   .atributo[data-atributo="pre"] { grid-area: pre; }
   .atributo[data-atributo="vig"] { grid-area: vig; }
+}
 
-  .atributos__linhas {
-    position: absolute;
-    inset: 0;
-    display: block;
-    width: 100%;
-    height: 100%;
-    overflow: visible;
-    fill: none;
-    stroke: var(--acento-linha);
-    stroke-width: 1;
-  }
+/* ---- Mesa: os cinco dados num mostrador, com o teste no centro ----
+   Base, bônus, pontos, modo livre, avisos e regras ficam em "Editar atributos". */
+.secao--atributos[data-modo="mesa"] {
+  --dado: clamp(68px, 17cqi, 112px);
+}
 
-  .atributos__linhas path {
-    vector-effect: non-scaling-stroke;
-  }
+.secao--atributos[data-modo="mesa"] #contador-pontos,
+.secao--atributos[data-modo="mesa"] #botao-modo-livre,
+.secao--atributos[data-modo="mesa"] #info-aumentos,
+.secao--atributos[data-modo="mesa"] #avisos-atributos,
+.secao--atributos[data-modo="mesa"] #nota-regras,
+.secao--atributos[data-modo="mesa"] .atributo__campo {
+  display: none !important;
+}
 
-  .atributos__pentagono {
-    stroke: var(--linha-2);
-    stroke-dasharray: 3 6;
-  }
+.secao--atributos[data-modo="mesa"] .atributos__palco {
+  width: min(100%, 600px);
+  aspect-ratio: 1;
+  margin: -6px auto 0;
+}
 
-  .atributos__anel {
-    position: absolute;
-    top: 56.7%;
-    left: 50%;
-    display: block;
-    width: 38%;
-    aspect-ratio: 1;
-    border: 1px solid var(--acento-linha);
-    border-radius: 50%;
-    background:
-      radial-gradient(circle, var(--acento-suave) 0%, transparent 62%),
-      repeating-radial-gradient(circle, transparent 0 18px, var(--linha-1) 18px 19px);
-    box-shadow: 0 0 0 10px rgba(0, 0, 0, 0.12), 0 0 0 11px var(--linha-1), 0 0 80px -20px var(--brilho);
-    transform: translate(-50%, -50%);
-  }
+.secao--atributos[data-modo="mesa"] .atributos__palco::before {
+  content: "";
+  position: absolute;
+  inset: 14%;
+  background: radial-gradient(circle, var(--acento-suave), transparent 68%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.secao--atributos[data-modo="mesa"] .atributos__mostrador {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.mostrador__anel {
+  fill: none;
+  stroke: var(--acento-linha);
+  stroke-width: 1;
+}
+
+.mostrador__marcas {
+  fill: none;
+  stroke: var(--linha-3);
+  stroke-width: 6;
+  stroke-dasharray: 0.12 0.88;
+}
+
+.mostrador__marcas--maiores {
+  stroke: var(--acento-linha);
+  stroke-width: 11;
+  stroke-dasharray: 0.06 0.94;
+}
+
+.mostrador__cruz {
+  fill: none;
+  stroke: var(--linha-1);
+  stroke-width: 1;
+}
+
+.mostrador__diagrama {
+  display: none;
+  fill: none;
+  stroke: var(--acento-linha);
+  stroke-width: 1;
+  stroke-dasharray: 2 5;
+}
+
+.mostrador__trilho {
+  fill: none;
+  stroke: var(--linha-2);
+  stroke-width: 1.2;
+  stroke-dasharray: 4 5;
+}
+
+.mostrador__centro {
+  fill: var(--tinta-1);
+  stroke: var(--acento-linha);
+  stroke-width: 1.2;
+}
+
+.mostrador__teste,
+.mostrador__formula {
+  font-family: var(--fonte-mono);
+  text-anchor: middle;
+}
+
+.mostrador__teste {
+  font-size: 6.5px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  fill: var(--papel-2);
+}
+
+.mostrador__formula {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  fill: var(--acento);
+}
+
+.secao--atributos[data-modo="mesa"] .grade-atributos {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.secao--atributos[data-modo="mesa"] .atributo {
+  position: absolute;
+  top: var(--y);
+  left: var(--x);
+  grid-template-columns: auto;
+  grid-template-areas:
+    "sigla"
+    "total"
+    "nome";
+  justify-items: center;
+  gap: 0;
+  width: auto;
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  transform: translate(-50%, -50%);
+}
+
+/* Um vértice do pentágono para cada atributo (raio de 34% em volta do centro) */
+.secao--atributos[data-modo="mesa"] .atributo[data-atributo="agi"] { --x: 50%;   --y: 16%; }
+.secao--atributos[data-modo="mesa"] .atributo[data-atributo="int"] { --x: 82.3%; --y: 39.5%; }
+.secao--atributos[data-modo="mesa"] .atributo[data-atributo="vig"] { --x: 70%;   --y: 77.5%; }
+.secao--atributos[data-modo="mesa"] .atributo[data-atributo="pre"] { --x: 30%;   --y: 77.5%; }
+.secao--atributos[data-modo="mesa"] .atributo[data-atributo="for"] { --x: 17.7%; --y: 39.5%; }
+
+.secao--atributos[data-modo="mesa"] .atributo__cabecalho {
+  display: contents;
+}
+
+/* Sigla numa placa sobre o dado */
+.secao--atributos[data-modo="mesa"] .atributo__sigla {
+  grid-area: sigla;
+  position: relative;
+  z-index: 2;
+  margin-bottom: -10px;
+  padding: 5px 9px 4px 11px;
+  font: 700 13px/1 var(--fonte-mono);
+  letter-spacing: 0.18em;
+  color: var(--acento-texto);
+  background: var(--acento);
+  border-radius: 3px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3) inset, 0 6px 14px -6px rgba(0, 0, 0, 0.8);
+}
+
+.secao--atributos[data-modo="mesa"] .atributo--alerta .atributo__sigla {
+  color: #1a1204;
+  background: var(--aviso);
+}
+
+.secao--atributos[data-modo="mesa"] .atributo__total {
+  width: var(--dado);
+}
+
+.secao--atributos[data-modo="mesa"] .atributo__dado {
+  filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 14px var(--brilho));
+}
+
+.secao--atributos[data-modo="mesa"] .atributo__total output {
+  font-size: calc(var(--dado) * 0.3);
+}
+
+.secao--atributos[data-modo="mesa"] .atributo__nome {
+  grid-area: nome;
+  margin-top: 5px;
+  padding: 3px 7px 2px 8px;
+  overflow: visible;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--papel-2);
+  /* lê limpo por cima das marcas e do trilho do mostrador */
+  background: color-mix(in oklab, var(--tinta-1) 88%, transparent);
+  border-radius: 3px;
 }
 
 /* ---- Recursos: PV, PE e SAN como medidores ---- */
@@ -7089,9 +7359,8 @@ body.arrastando-arquivo::after {
   background: linear-gradient(90deg, var(--acento) 0%, rgba(150, 20, 20, 0.5) 16%, var(--linha-1) 55%, transparent 100%);
 }
 
-[data-tema="sangue"] .atributos__anel {
-  border-color: rgba(229, 71, 111, 0.45);
-  box-shadow: 0 0 0 10px rgba(60, 0, 0, 0.18), 0 0 0 11px rgba(229, 71, 111, 0.12), 0 0 90px -10px rgba(190, 20, 20, 0.45);
+[data-tema="sangue"] .atributos__mostrador {
+  filter: drop-shadow(0 0 22px rgba(190, 20, 20, 0.3));
 }
 
 [data-tema="sangue"] .botao-rolagem:hover,
@@ -7136,10 +7405,8 @@ body.arrastando-arquivo::after {
   background: linear-gradient(90deg, rgba(171, 155, 211, 0.45), rgba(171, 155, 211, 0.08) 45%, transparent 85%);
 }
 
-[data-tema="morte"] .atributos__anel {
-  background:
-    radial-gradient(circle, rgba(171, 155, 211, 0.12) 0%, transparent 60%),
-    repeating-radial-gradient(circle, transparent 0 10px, rgba(171, 155, 211, 0.08) 10px 11px);
+/* Morte: o anel de marcas se desfaz em névoa */
+[data-tema="morte"] .mostrador__marcas {
   filter: blur(0.6px);
 }
 
@@ -7177,8 +7444,9 @@ body.arrastando-arquivo::after {
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' fill='none' stroke='%23e3c04e' stroke-opacity='0.22'%3E%3Ccircle cx='100' cy='100' r='92'/%3E%3Ccircle cx='100' cy='100' r='58'/%3E%3Cpath d='M100 8 180 146H20z'/%3E%3Cpath d='M100 8v184M8 100h184M35 35l130 130M165 35 35 165' stroke-dasharray='2 4'/%3E%3Ccircle cx='100' cy='100' r='3' fill='%23e3c04e' fill-opacity='0.3'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
-[data-tema="conhecimento"] .atributos__anel {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' fill='none' stroke='%23e3c04e' stroke-opacity='0.25'%3E%3Ccircle cx='100' cy='100' r='70'/%3E%3Cpath d='M100 30 160.6 135H39.4z'/%3E%3Cpath d='M100 30v140M30 100h140' stroke-dasharray='2 4'/%3E%3C/svg%3E") center / 92% no-repeat;
+/* Conhecimento: o mostrador ganha o diagrama que liga os cinco dados */
+[data-tema="conhecimento"] .mostrador__diagrama {
+  display: inline;
 }
 
 [data-tema="conhecimento"] .ficha__conteudo .secao::before {
@@ -7273,14 +7541,13 @@ body.arrastando-arquivo::after {
   box-shadow: none;
 }
 
-[data-tema="medo"] .atributos__anel {
-  background: none;
-  border-color: rgba(255, 255, 255, 0.12);
-  box-shadow: none;
+[data-tema="medo"] .mostrador__anel,
+[data-tema="medo"] .mostrador__trilho {
+  stroke: rgba(255, 255, 255, 0.12);
 }
 
-[data-tema="medo"] .atributos__linhas {
-  stroke: rgba(255, 255, 255, 0.1);
+[data-tema="medo"] .secao--atributos[data-modo="mesa"] .atributo__dado {
+  filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.55));
 }
 
 [data-tema="medo"] .dossie__monograma {
@@ -8110,6 +8377,269 @@ html[data-vista="ficha"] {
   color: var(--papel);
 }
 
+/* ---- Painel do seletor (lista própria; js/ui-seletor.js) ----
+   Desktop: ficha de índice presa ao botão. Celular: gaveta embaixo. */
+.seletor-fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 390;
+  background: rgba(4, 5, 6, 0.64);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  animation: fundo-abrir 220ms var(--curva);
+}
+
+.seletor-painel {
+  position: fixed;
+  z-index: 400;
+  display: flex;
+  flex-direction: column;
+  max-height: 360px;
+  overflow: hidden;
+  color: var(--papel);
+  background: var(--vidro-reflexo), rgba(14, 16, 19, 0.95);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  backdrop-filter: blur(24px) saturate(140%);
+  border: 1px solid var(--vidro-borda);
+  border-radius: var(--raio-3);
+  box-shadow: var(--sombra-3), 0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+
+.seletor-painel--animar {
+  animation: seletor-abrir 170ms var(--curva-saida);
+}
+
+.seletor-painel--animar[data-lado="cima"] {
+  animation-name: seletor-abrir-cima;
+}
+
+@keyframes seletor-abrir {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes seletor-abrir-cima {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* O nome do campo só aparece na gaveta; no desktop o botão está logo ali */
+.seletor-painel__topo {
+  display: none;
+}
+
+.seletor-painel__busca {
+  flex: none;
+  width: auto;
+  margin: 8px 8px 0;
+}
+
+.seletor-painel__busca::-webkit-search-cancel-button {
+  cursor: pointer;
+}
+
+.seletor-painel__lista {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  outline: none;
+  scroll-padding: 36px 0 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--linha-3) transparent;
+}
+
+.seletor-painel__vazio {
+  margin: 0;
+  padding: 4px 18px 16px;
+  font-size: 13.5px;
+  color: var(--papel-3);
+}
+
+/* Grupos (livros): título em voz de etiqueta, preso no alto ao rolar */
+.seletor-grupo + .seletor-grupo,
+.seletor-opcao + .seletor-grupo {
+  margin-top: 6px;
+}
+
+.seletor-grupo__titulo {
+  position: sticky;
+  top: -6px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px 7px 12px;
+  font: 500 var(--t-micro) / 1.2 var(--fonte-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--acento-claro);
+  background: color-mix(in oklab, var(--acento) 6%, rgb(14, 16, 19));
+}
+
+.seletor-grupo__titulo::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--acento-linha);
+}
+
+.seletor-opcao {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 16px;
+  align-items: center;
+  column-gap: 12px;
+  min-height: 36px;
+  padding: 7px 10px 7px 14px;
+  font-size: 14px;
+  line-height: 1.3;
+  color: var(--papel-2);
+  border-radius: var(--raio-2);
+  cursor: pointer;
+  transition: background-color var(--dur-1) var(--curva), color var(--dur-1) var(--curva);
+}
+
+.seletor-opcao__texto,
+.seletor-opcao__descricao {
+  grid-column: 1;
+  overflow-wrap: anywhere;
+}
+
+.seletor-opcao__descricao {
+  margin-top: 2px;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--papel-3);
+}
+
+.seletor-opcao__marca {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--acento-claro);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+}
+
+.seletor-opcao--vazia .seletor-opcao__texto {
+  color: var(--papel-3);
+}
+
+/* Ativa (teclado ou ponteiro) */
+.seletor-opcao--ativa {
+  color: var(--papel);
+  background: rgba(236, 230, 218, 0.07);
+}
+
+/* Escolhida: filete do tema à esquerda e a marca à direita */
+.seletor-opcao[aria-selected="true"] {
+  color: var(--papel);
+  background: var(--acento-suave);
+}
+
+.seletor-opcao[aria-selected="true"]::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 4px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--acento);
+}
+
+.seletor-opcao[aria-selected="true"] .seletor-opcao__marca {
+  opacity: 1;
+}
+
+.seletor-opcao[aria-selected="true"].seletor-opcao--ativa {
+  background: color-mix(in oklab, var(--acento) 22%, transparent);
+}
+
+.seletor-opcao[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.seletor-opcao[aria-disabled="true"].seletor-opcao--ativa {
+  background: none;
+}
+
+/* Gaveta (celular): presa embaixo, linhas do tamanho do polegar */
+.seletor-painel--gaveta {
+  top: auto;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  max-height: min(78dvh, 640px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  border-bottom: 0;
+  border-radius: var(--raio-4) var(--raio-4) 0 0;
+}
+
+.seletor-painel--gaveta.seletor-painel--animar {
+  animation: gaveta-subir 280ms var(--curva-saida);
+}
+
+.seletor-painel--gaveta::before {
+  content: "";
+  flex: none;
+  align-self: center;
+  width: 38px;
+  height: 4px;
+  margin-top: 8px;
+  border-radius: 2px;
+  background: var(--linha-3);
+}
+
+.seletor-painel--gaveta .seletor-painel__topo {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 10px 6px 20px;
+}
+
+.seletor-painel__titulo {
+  margin: 0;
+  font: 600 23px/1.15 var(--fonte-display);
+  overflow-wrap: anywhere;
+}
+
+.seletor-painel--gaveta .seletor-painel__busca {
+  height: 44px;
+  margin: 2px 16px 4px;
+  font-size: 16px; /* 16px: o iOS não amplia a tela ao focar */
+}
+
+.seletor-painel--gaveta .seletor-painel__lista {
+  padding: 4px 10px 14px;
+  scroll-padding: 40px 0 14px;
+}
+
+.seletor-painel--gaveta .seletor-grupo__titulo {
+  top: -4px;
+  padding-top: 12px;
+}
+
+.seletor-painel--gaveta .seletor-opcao {
+  min-height: 48px;
+  padding: 10px 14px 10px 18px;
+  font-size: 15px;
+}
+
+.seletor-painel--gaveta .seletor-opcao__descricao {
+  font-size: 13px;
+}
+
 /* ==========================================================================
    13. RESPONSIVO
    ========================================================================== */
@@ -8614,6 +9144,7 @@ html[data-vista="ficha"] {
   .app-barra,
   .rolagens,
   .dialogo,
+  .seletor-painel,
   .aviso-app,
   .destaque,
   .ficha__conteudo .secao--dossie {
@@ -8662,6 +9193,8 @@ html[data-vista="ficha"] {
   .destaque,
   .rolagens,
   .dialogo,
+  .seletor-painel,
+  .seletor-fundo,
   .aviso-app,
   .ficha__conteudo .secao--dossie {
     -webkit-backdrop-filter: none !important;
@@ -8674,7 +9207,8 @@ html[data-vista="ficha"] {
   .destaque,
   .aviso-app { background: var(--tinta-3); }
   .rolagens,
-  .dialogo { background: #111317; }
+  .dialogo,
+  .seletor-painel { background: #111317; }
   .ficha__conteudo .secao--dossie { background: var(--tinta-superficie); }
 }
 
@@ -8686,7 +9220,8 @@ html[data-vista="ficha"] {
   .destaque,
   .aviso-app { background: rgba(18, 20, 24, 0.97); }
   .rolagens,
-  .dialogo { background: rgba(14, 16, 19, 0.98); }
+  .dialogo,
+  .seletor-painel { background: rgba(14, 16, 19, 0.98); }
 }
 
 /* Contraste maior pedido pelo sistema */

@@ -264,7 +264,7 @@ Os acentos dos temas elementais, aplicados só dentro de `[data-tema]` (ficha, p
 
 A casca do app tem largura máxima de 1440px, com margem lateral de 32px (24px abaixo de 1200px e 16px no celular). O espaçamento segue a base 4 (`e1` a `e16`).
 
-**Ficha no desktop:** grade de duas colunas, com um trilho lateral fixo de 232px (sinais vitais, derivados e índice das seções) e o conteúdo ao lado, separados por 44px. O trilho fica preso abaixo da barra global. Atributos e Recursos dividem uma linha. Os cinco atributos formam um pentagrama quando o palco tem 540px ou mais. A partir de 1024px, o painel de rolagens aberto vira uma coluna fixa de 380px à direita e só a área da ficha se estreita (a barra global fica inteira); entre 1024 e 1199px a faixa de vitais se compacta. A ficha reserva 96px no fim (e `scroll-padding-bottom`) para a alça das rolagens não esconder controles.
+**Ficha no desktop:** grade de duas colunas, com um trilho lateral fixo de 232px (sinais vitais, derivados e índice das seções) e o conteúdo ao lado, separados por 44px. O trilho fica preso abaixo da barra global. Atributos e Recursos dividem uma linha. Na mesa, os cinco atributos ficam num mostrador quadrado (até 600px) com um d20 em cada ponta do pentagrama; na edição, voltam para a grade de cartões. A partir de 1024px, o painel de rolagens aberto vira uma coluna fixa de 380px à direita e só a área da ficha se estreita (a barra global fica inteira); entre 1024 e 1199px a faixa de vitais se compacta. A ficha reserva 96px no fim (e `scroll-padding-bottom`) para a alça das rolagens não esconder controles.
 
 **Até 1199px:** a ficha vira uma coluna só, e o trilho vira uma faixa horizontal presa no topo; `--topo-fixo` soma a barra e a faixa, para as âncoras pararem no lugar certo.
 
@@ -325,6 +325,7 @@ Instrumentos de campo: robustos, fáceis de acertar no celular e lidos num relan
 - **Focus:** a borda assume o acento, com halo de 3px a 14%; pelo teclado, anel duplo (1px sólido e 4px a 30%).
 - **Passos numéricos:** botões − e + embutidos no mesmo campo, com valor em Numeral.
 - **Error / Disabled:** no erro, a borda e o halo passam para a cor de erro; desabilitado fica a 45% de opacidade, com cursor bloqueado.
+- **Listas de escolha (seletor):** nenhuma lista usa o menu nativo. O botão tem o mesmo corpo do campo, a largura da opção mais longa e uma seta que gira e acende no acento quando aberto. O painel é de vidro fumê, cantos `raio-3`, 260px no mínimo e 360px de altura no máximo, preso abaixo (ou acima) do botão. Os livros viram títulos em rótulo mono no acento com um fio até a borda, presos no alto ao rolar. A opção escolhida ganha fundo `acento-suave`, filete de 2px no acento e a marca à direita; a descrição da opção (o `title`) aparece em `papel-3` abaixo do nome. Listas com mais de 10 opções ganham busca. No celular, é uma gaveta presa embaixo, com alça, o nome do campo em serifa de 23px, linhas de 48px e busca em 16px. O `<select>` continua na página, invisível, como fonte de verdade (dados, rótulos e impressão).
 
 ### Navigation
 - **Barra global:** vidro fumê preso no topo (60px; 56px no celular), com o selo e o nome "Dossiê". Itens em sans 600 de 13.5px, `papel-3` em repouso. O item ativo ganha `papel`, fundo branco de 5,5% e borda `linha-1`. O contador do Arquivo é uma pílula.
@@ -333,6 +334,9 @@ Instrumentos de campo: robustos, fáceis de acertar no celular e lidos num relan
 
 ### Trilho de vitais (signature)
 O painel de instrumentos da ficha: vidro fumê com um halo do acento no canto. Mostra PV, SAN e PE com barra de medida, valor e botões de ±1, os derivados e o índice. Cada vital indica o nível (ok, baixo, crítico, zero ou indefinido); zerado, a palavra "zerado" substitui a barra. No celular, vira a faixa presa no topo.
+
+### Mostrador de atributos (signature)
+Na mesa, os atributos são só números: um d20 facetado (SVG, facetas em cinco tons do acento) com o valor em Numeral e, embaixo, a sigla numa plaqueta de acento e o nome num rótulo escuro. Ficam nas pontas de um pentagrama sobre um mostrador de instrumento (anel, marcas de grau, trilho e o centro com "TESTE · ATR d20"). Base, bônus, pontos e avisos ficam atrás de "Editar atributos"; uma ficha nova, com pontos a distribuir, já abre na edição.
 
 ### Ajuste de vital (signature)
 Tocar na sigla e no valor de um vital abre o ajuste: no desktop, uma janela; no celular, uma gaveta presa embaixo. Valor em mono de 56px na cor do vital, botões −5, −1, +1 e +5 de 48px, "Quantia" com Dano e Cura (Gastar e Recuperar em PE; Perder e Recuperar em SAN), a linha do último ajuste com Desfazer e, no rodapé, Defesa, Deslocamento e PE por turno.

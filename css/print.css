@@ -137,8 +137,9 @@ body::after,
 .avisos-app,
 .dossie__faixa,
 .dossie__selo,
-.atributos__linhas,
-.atributos__anel,
+.atributos__mostrador,
+.atributo__dado,
+.atributos__modo,
 .icone-ui,
 .sem-js,
 .cartao-resumo,
@@ -146,7 +147,10 @@ body::after,
 .pericias__modo,
 .recurso__detalhes-titulo,
 .dialogo--vital,
-.glossario {
+.glossario,
+.seletor,
+.seletor-painel,
+.seletor-fundo {
   display: none !important;
 }
 

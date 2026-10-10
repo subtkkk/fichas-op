@@ -147,7 +147,10 @@ body::after,
 .pericias__modo,
 .recurso__detalhes-titulo,
 .dialogo--vital,
-.glossario {
+.glossario,
+.seletor,
+.seletor-painel,
+.seletor-fundo {
   display: none !important;
 }
 

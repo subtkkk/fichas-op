@@ -973,6 +973,7 @@ body[data-vista="ficha"] .atmosfera[data-tema="medo"] .atmosfera__base {
 .controle,
 .campo input,
 .campo select,
+.campo .seletor,
 .busca input {
   height: 34px;
   min-width: 0;
@@ -989,6 +990,7 @@ body[data-vista="ficha"] .atmosfera[data-tema="medo"] .atmosfera__base {
 .controle:hover:not(:disabled),
 .campo input:hover,
 .campo select:hover:not(:disabled),
+.campo .seletor:hover:not(:disabled),
 .busca input:hover {
   border-color: var(--linha-3);
 }
@@ -996,6 +998,7 @@ body[data-vista="ficha"] .atmosfera[data-tema="medo"] .atmosfera__base {
 .controle:focus,
 .campo input:focus,
 .campo select:focus,
+.campo .seletor:focus,
 .busca input:focus {
   border-color: var(--acento);
   outline: none;
@@ -1006,6 +1009,7 @@ body[data-vista="ficha"] .atmosfera[data-tema="medo"] .atmosfera__base {
 .controle:focus-visible,
 .campo input:focus-visible,
 .campo select:focus-visible,
+.campo .seletor:focus-visible,
 .busca input:focus-visible,
 .campo-busca input:focus-visible {
   box-shadow: 0 0 0 1px var(--acento), 0 0 0 4px color-mix(in oklab, var(--acento) 30%, transparent);
@@ -1047,9 +1051,87 @@ textarea.controle {
 }
 
 .controle:disabled,
-.campo select:disabled {
+.campo select:disabled,
+.campo .seletor:disabled {
   cursor: not-allowed;
   opacity: 0.45;
+}
+
+/* ---- Seletor: botão no lugar do <select> (js/ui-seletor.js) ----
+   O <select> fica no lugar, invisível e com 1px, para os rótulos, os dados e
+   a impressão. O botão herda as classes dele (.controle e companhia). */
+.seletor-nativo {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  min-width: 0 !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  white-space: nowrap;
+  border: 0 !important;
+  opacity: 0;
+  clip-path: inset(50%);
+  pointer-events: none;
+}
+
+.seletor {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.seletor__caixa {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.seletor__valor,
+.seletor__medida > span {
+  grid-area: 1 / 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seletor__medida {
+  display: contents;
+}
+
+.seletor__medida > span {
+  height: 0;
+  visibility: hidden;
+}
+
+.seletor__seta {
+  flex: none;
+  width: 12px;
+  height: 8px;
+  fill: none;
+  stroke: var(--papel-3);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform var(--dur-2) var(--curva), stroke var(--dur-1) var(--curva);
+}
+
+.seletor:hover:not(:disabled) .seletor__seta {
+  stroke: var(--papel-2);
+}
+
+.seletor.seletor--aberto {
+  border-color: var(--acento);
+  box-shadow: 0 0 0 3px var(--acento-suave);
+}
+
+.seletor--aberto .seletor__seta {
+  stroke: var(--acento-claro);
+  transform: rotate(180deg);
 }
 
 .controle--numero {
@@ -2662,6 +2744,7 @@ body[data-vista="ficha"] .rodape {
 
 .arquivo__ordem .controle {
   height: 38px;
+  font-family: var(--fonte-ui);
   font-size: 13.5px;
   letter-spacing: normal;
   text-transform: none;
@@ -3893,12 +3976,17 @@ body.arrastando-arquivo::after {
 }
 
 .secao--dossie .campo input,
-.secao--dossie .campo select {
+.secao--dossie .campo select,
+.secao--dossie .campo .seletor {
   display: block;
   width: 100%;
   height: 40px;
   font-size: 14.5px;
   background-color: rgba(0, 0, 0, 0.3);
+}
+
+.secao--dossie .campo .seletor {
+  display: flex;
 }
 
 .campo .campo__texto-livre {
@@ -8289,6 +8377,269 @@ html[data-vista="ficha"] {
   color: var(--papel);
 }
 
+/* ---- Painel do seletor (lista própria; js/ui-seletor.js) ----
+   Desktop: ficha de índice presa ao botão. Celular: gaveta embaixo. */
+.seletor-fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 390;
+  background: rgba(4, 5, 6, 0.64);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  animation: fundo-abrir 220ms var(--curva);
+}
+
+.seletor-painel {
+  position: fixed;
+  z-index: 400;
+  display: flex;
+  flex-direction: column;
+  max-height: 360px;
+  overflow: hidden;
+  color: var(--papel);
+  background: var(--vidro-reflexo), rgba(14, 16, 19, 0.95);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  backdrop-filter: blur(24px) saturate(140%);
+  border: 1px solid var(--vidro-borda);
+  border-radius: var(--raio-3);
+  box-shadow: var(--sombra-3), 0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+
+.seletor-painel--animar {
+  animation: seletor-abrir 170ms var(--curva-saida);
+}
+
+.seletor-painel--animar[data-lado="cima"] {
+  animation-name: seletor-abrir-cima;
+}
+
+@keyframes seletor-abrir {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes seletor-abrir-cima {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* O nome do campo só aparece na gaveta; no desktop o botão está logo ali */
+.seletor-painel__topo {
+  display: none;
+}
+
+.seletor-painel__busca {
+  flex: none;
+  width: auto;
+  margin: 8px 8px 0;
+}
+
+.seletor-painel__busca::-webkit-search-cancel-button {
+  cursor: pointer;
+}
+
+.seletor-painel__lista {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  outline: none;
+  scroll-padding: 36px 0 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--linha-3) transparent;
+}
+
+.seletor-painel__vazio {
+  margin: 0;
+  padding: 4px 18px 16px;
+  font-size: 13.5px;
+  color: var(--papel-3);
+}
+
+/* Grupos (livros): título em voz de etiqueta, preso no alto ao rolar */
+.seletor-grupo + .seletor-grupo,
+.seletor-opcao + .seletor-grupo {
+  margin-top: 6px;
+}
+
+.seletor-grupo__titulo {
+  position: sticky;
+  top: -6px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px 7px 12px;
+  font: 500 var(--t-micro) / 1.2 var(--fonte-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--acento-claro);
+  background: color-mix(in oklab, var(--acento) 6%, rgb(14, 16, 19));
+}
+
+.seletor-grupo__titulo::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--acento-linha);
+}
+
+.seletor-opcao {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 16px;
+  align-items: center;
+  column-gap: 12px;
+  min-height: 36px;
+  padding: 7px 10px 7px 14px;
+  font-size: 14px;
+  line-height: 1.3;
+  color: var(--papel-2);
+  border-radius: var(--raio-2);
+  cursor: pointer;
+  transition: background-color var(--dur-1) var(--curva), color var(--dur-1) var(--curva);
+}
+
+.seletor-opcao__texto,
+.seletor-opcao__descricao {
+  grid-column: 1;
+  overflow-wrap: anywhere;
+}
+
+.seletor-opcao__descricao {
+  margin-top: 2px;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--papel-3);
+}
+
+.seletor-opcao__marca {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--acento-claro);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+}
+
+.seletor-opcao--vazia .seletor-opcao__texto {
+  color: var(--papel-3);
+}
+
+/* Ativa (teclado ou ponteiro) */
+.seletor-opcao--ativa {
+  color: var(--papel);
+  background: rgba(236, 230, 218, 0.07);
+}
+
+/* Escolhida: filete do tema à esquerda e a marca à direita */
+.seletor-opcao[aria-selected="true"] {
+  color: var(--papel);
+  background: var(--acento-suave);
+}
+
+.seletor-opcao[aria-selected="true"]::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 4px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--acento);
+}
+
+.seletor-opcao[aria-selected="true"] .seletor-opcao__marca {
+  opacity: 1;
+}
+
+.seletor-opcao[aria-selected="true"].seletor-opcao--ativa {
+  background: color-mix(in oklab, var(--acento) 22%, transparent);
+}
+
+.seletor-opcao[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.seletor-opcao[aria-disabled="true"].seletor-opcao--ativa {
+  background: none;
+}
+
+/* Gaveta (celular): presa embaixo, linhas do tamanho do polegar */
+.seletor-painel--gaveta {
+  top: auto;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  max-height: min(78dvh, 640px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  border-bottom: 0;
+  border-radius: var(--raio-4) var(--raio-4) 0 0;
+}
+
+.seletor-painel--gaveta.seletor-painel--animar {
+  animation: gaveta-subir 280ms var(--curva-saida);
+}
+
+.seletor-painel--gaveta::before {
+  content: "";
+  flex: none;
+  align-self: center;
+  width: 38px;
+  height: 4px;
+  margin-top: 8px;
+  border-radius: 2px;
+  background: var(--linha-3);
+}
+
+.seletor-painel--gaveta .seletor-painel__topo {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 10px 6px 20px;
+}
+
+.seletor-painel__titulo {
+  margin: 0;
+  font: 600 23px/1.15 var(--fonte-display);
+  overflow-wrap: anywhere;
+}
+
+.seletor-painel--gaveta .seletor-painel__busca {
+  height: 44px;
+  margin: 2px 16px 4px;
+  font-size: 16px; /* 16px: o iOS não amplia a tela ao focar */
+}
+
+.seletor-painel--gaveta .seletor-painel__lista {
+  padding: 4px 10px 14px;
+  scroll-padding: 40px 0 14px;
+}
+
+.seletor-painel--gaveta .seletor-grupo__titulo {
+  top: -4px;
+  padding-top: 12px;
+}
+
+.seletor-painel--gaveta .seletor-opcao {
+  min-height: 48px;
+  padding: 10px 14px 10px 18px;
+  font-size: 15px;
+}
+
+.seletor-painel--gaveta .seletor-opcao__descricao {
+  font-size: 13px;
+}
+
 /* ==========================================================================
    13. RESPONSIVO
    ========================================================================== */
@@ -8793,6 +9144,7 @@ html[data-vista="ficha"] {
   .app-barra,
   .rolagens,
   .dialogo,
+  .seletor-painel,
   .aviso-app,
   .destaque,
   .ficha__conteudo .secao--dossie {
@@ -8841,6 +9193,8 @@ html[data-vista="ficha"] {
   .destaque,
   .rolagens,
   .dialogo,
+  .seletor-painel,
+  .seletor-fundo,
   .aviso-app,
   .ficha__conteudo .secao--dossie {
     -webkit-backdrop-filter: none !important;
@@ -8853,7 +9207,8 @@ html[data-vista="ficha"] {
   .destaque,
   .aviso-app { background: var(--tinta-3); }
   .rolagens,
-  .dialogo { background: #111317; }
+  .dialogo,
+  .seletor-painel { background: #111317; }
   .ficha__conteudo .secao--dossie { background: var(--tinta-superficie); }
 }
 
@@ -8865,7 +9220,8 @@ html[data-vista="ficha"] {
   .destaque,
   .aviso-app { background: rgba(18, 20, 24, 0.97); }
   .rolagens,
-  .dialogo { background: rgba(14, 16, 19, 0.98); }
+  .dialogo,
+  .seletor-painel { background: rgba(14, 16, 19, 0.98); }
 }
 
 /* Contraste maior pedido pelo sistema */

@@ -3,6 +3,7 @@
    --------------------------------------------------------------------------
    Ciclo: OP.state.atualizar() → corrige limites → recalcula (calc)
           → redesenha (ui) → agenda o salvamento (fichas, 400 ms).
+   Telas: Central de operações, Arquivo e Ficha (js/ui-app.js, pelo #hash).
    ========================================================================== */
 window.OP = window.OP || {};
 
@@ -32,22 +33,28 @@ window.OP = window.OP || {};
   /**
    * Chamado pelo estado a cada mudança na ficha.
    * Trocar a ficha inteira (caminho "*": abrir, recarregar) não é edição:
-   * só salva se precisou corrigir algo.
+   * só salva se precisou corrigir algo — e nunca o rascunho em branco
+   * (sem fichas salvas), que só entra no arquivo quando for editado.
    */
   function aoMudarFicha(ficha, caminho) {
     const corrigiu = redesenhar(ficha);
+    if (caminho === '*' && OP.fichas.ehRascunho()) return;
     if (caminho !== '*' || corrigiu) OP.fichas.agendarSalvamento();
   }
 
   function iniciar() {
-    OP.fichas.iniciar();   // abre a ficha atual (ou migra a da Etapa 1, ou cria uma)
+    // Abre a ficha atual (ou migra a da Etapa 1). Sem nenhuma ficha salva,
+    // fica um rascunho em branco e a Central mostra o estado vazio.
+    OP.fichas.iniciar({ criarSeVazio: false });
     OP.ui.montar();
     OP.uiFichas.montar();
     OP.uiClasse.montar();  // origem, classe, trilha e progressão (entra no ciclo de desenho do ui.js)
+    OP.uiDossie.montar();  // capa, vitais, índice e tema (também no ciclo de desenho)
     OP.state.aoMudar(aoMudarFicha);
     const corrigiu = redesenhar(OP.state.ficha);
     // Se a ficha salva tinha valores fora dos limites, já grava a versão corrigida.
-    if (corrigiu) OP.fichas.salvarAtual();
+    if (corrigiu && !OP.fichas.ehRascunho()) OP.fichas.salvarAtual();
+    OP.uiApp.montar();     // lê o #hash e mostra a tela certa
   }
 
   OP.app = {

@@ -187,11 +187,13 @@ window.OP = window.OP || {};
     const descricao = escaparHtml(opcoes.descricao);
     const minimo = opcoes.minimo !== undefined ? ' min="' + opcoes.minimo + '"' : '';
     const teclado = opcoes.teclado ? ' inputmode="' + opcoes.teclado + '"' : '';
+    // Nome acessível do campo (alguns, como a munição, não têm <label for>)
+    const nome = escaparHtml(opcoes.descricao.charAt(0).toUpperCase() + opcoes.descricao.slice(1));
 
     return '' +
       '<div class="passo">' +
         '<button type="button" class="passo__botao" tabindex="-1" data-passo="-1" data-alvo="' + id + '" aria-label="Diminuir ' + descricao + '">−</button>' +
-        '<input id="' + id + '" class="passo__valor" type="number" step="1"' + minimo + teclado +
+        '<input id="' + id + '" class="passo__valor" type="number" step="1" aria-label="' + nome + '"' + minimo + teclado +
           ' data-campo="' + escaparHtml(opcoes.caminho) + '" data-tipo="inteiro">' +
         '<button type="button" class="passo__botao" tabindex="-1" data-passo="1" data-alvo="' + id + '" aria-label="Aumentar ' + descricao + '">+</button>' +
       '</div>';
@@ -1569,6 +1571,8 @@ window.OP = window.OP || {};
   }
 
   function desenharTitulo(ficha) {
+    // Na Central e no Arquivo o título é da tela (js/ui-app.js)
+    if (document.body.dataset.vista && document.body.dataset.vista !== 'ficha') return;
     const nome = ficha.identificacao.nome.trim();
     document.title = nome ? nome + ' · Ficha de Agente' : 'Ficha de Agente · Ordem Paranormal';
   }

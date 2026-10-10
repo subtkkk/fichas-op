@@ -544,8 +544,10 @@ window.OP = window.OP || {};
       const caixa = evento.target.closest('[data-fonte]');
       if (caixa) OP.prefs.definirFonte(caixa.getAttribute('data-fonte'), caixa.checked);
     });
-    // Fontes mudaram: refaz as listas (a preferência fica fora da ficha)
-    OP.prefs.aoMudar(function () {
+    // Fontes mudaram: refaz as listas (a preferência fica fora da ficha).
+    // Mudança de tema (só aparência) não precisa redesenhar a ficha.
+    OP.prefs.aoMudar(function (prefs, tipo) {
+      if (tipo !== 'fontes') return;
       if (OP.state.ficha) OP.app.redesenhar(OP.state.ficha);
     });
 
@@ -554,6 +556,7 @@ window.OP = window.OP || {};
   }
 
   OP.uiClasse = {
-    montar: montar
+    montar: montar,
+    abrirFontes: abrirFontes
   };
 })(window.OP);

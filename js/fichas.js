@@ -301,6 +301,45 @@ window.OP = window.OP || {};
     return { ok: ok, ids: ids };
   }
 
+  /**
+   * Grava uma ficha importada por cima da que já existe com o mesmo id (a
+   * escolha "Substituir" ao reimportar). Se for a ficha aberta, a tela passa
+   * a mostrar a versão do arquivo. Devolve o id ou null.
+   */
+  function substituirExistente(dados) {
+    const ficha = OP.state.completarPadroes(dados);
+    if (!OP.state.idValido(ficha.id) || !existe(ficha.id)) return null;
+    const id = ficha.id;
+    if (id === idAtual()) {
+      cancelarSalvamento();
+      OP.state.substituir(ficha);
+    }
+    return gravar(id, ficha) ? id : null;
+  }
+
+  /**
+   * Devolve uma ficha excluída (mesmo id) ao lugar em que estava no índice.
+   * É o "Desfazer" depois de excluir. Não abre a ficha. Devolve true/false.
+   */
+  function restaurar(ficha, posicao) {
+    if (!ehObjeto(ficha) || !OP.state.idValido(ficha.id) || existe(ficha.id)) return false;
+    const id = ficha.id;
+    if (!gravar(id, OP.state.completarPadroes(ficha))) return false;
+    const indice = indiceOuVazio();
+    const atual = posicaoNoIndice(indice, id);
+    if (atual !== -1 && typeof posicao === 'number' && posicao !== atual) {
+      const linha = indice.fichas.splice(atual, 1)[0];
+      indice.fichas.splice(Math.max(0, Math.min(posicao, indice.fichas.length)), 0, linha);
+      gravarIndice(indice);
+    }
+    return true;
+  }
+
+  /** Posição da ficha no índice (ordem do Arquivo) ou -1. */
+  function posicao(id) {
+    return posicaoNoIndice(indiceOuVazio(), id);
+  }
+
   /* ------------------------------------------------------------------------
      Ficha aberta: salvar (com debounce), abrir, excluir, recarregar
      ------------------------------------------------------------------------ */
@@ -575,6 +614,9 @@ window.OP = window.OP || {};
     duplicar: duplicar,
     excluir: excluir,
     importar: importar,
+    substituirExistente: substituirExistente,
+    restaurar: restaurar,
+    posicao: posicao,
     abrir: abrir,
     abrirRascunho: abrirRascunho,
     existe: existe,

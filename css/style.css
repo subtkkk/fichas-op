@@ -118,7 +118,7 @@
   --papel: #ece6da;
   --papel-2: #bab3a6;
   --papel-3: #938d82;
-  --papel-4: #6f6a62;
+  --papel-4: #88827a; /* o tom mais apagado que ainda lê em 4,5:1 sobre as superfícies */
 
   /* ---- Institucional ---- */
   --latao: #c9a45c;
@@ -170,7 +170,7 @@
   --fonte-display: "Cormorant Garamond", "Cormorant", Georgia, "Times New Roman", serif;
   --fonte-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --fonte-mono: "IBM Plex Mono", ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
-  --t-micro: 10.5px;
+  --t-micro: 11px;
   --t-rotulo: 11px;
   --t-pequeno: 12.5px;
   --t-corpo: 14.5px;
@@ -250,9 +250,10 @@
 
 /* Sangue: carmesim, vermelho profundo, preto; luz avermelhada e orgânica */
 [data-tema="sangue"] {
-  --acento: #e64a3e;
-  --acento-claro: #ff7a6b;
-  --acento-2: #8f1c1c;
+  /* Carmesim puxado para o rosado: o vermelho-alaranjado é de PV (sinal fixo) */
+  --acento: #e5476f;
+  --acento-claro: #ff8aa3;
+  --acento-2: #8f1c2c;
   --acento-texto: #1a0605;
   --luz-a: rgba(190, 28, 28, 0.2);
   --luz-b: rgba(110, 8, 16, 0.18);
@@ -401,6 +402,16 @@ a {
 ::selection {
   color: var(--acento-texto);
   background: var(--acento);
+}
+
+/* Superfícies do navegador também seguem a paleta */
+html {
+  scrollbar-color: var(--linha-3) var(--tinta-1);
+}
+
+input,
+textarea {
+  caret-color: var(--acento);
 }
 
 :focus-visible {
@@ -1358,8 +1369,8 @@ textarea.controle {
   display: inline-flex;
   align-items: center;
   padding: 2px 7px;
-  font: 600 9.5px/1.4 var(--fonte-mono);
-  letter-spacing: 0.12em;
+  font: 600 11px/1.4 var(--fonte-mono);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
   border: 1px solid currentColor;
@@ -1565,8 +1576,8 @@ textarea.controle {
 
 .marca__sub {
   margin-top: 2px;
-  font: 500 8.5px/1 var(--fonte-mono);
-  letter-spacing: 0.3em;
+  font: 500 11px/1 var(--fonte-mono);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--papel-3);
 }
@@ -1634,7 +1645,7 @@ textarea.controle {
 .nav-global__contagem {
   min-width: 20px;
   padding: 3px 6px;
-  font: 600 10.5px/1 var(--fonte-mono);
+  font: 600 11px/1 var(--fonte-mono);
   text-align: center;
   color: var(--papel-2);
   background: rgba(255, 255, 255, 0.07);
@@ -1659,10 +1670,10 @@ textarea.controle {
 
 .barra-topo__rotulo {
   flex: none;
-  font: 600 9.5px/1 var(--fonte-mono);
-  letter-spacing: 0.22em;
+  font: 600 11px/1 var(--fonte-mono);
+  letter-spacing: 0.11em;
   text-transform: uppercase;
-  color: var(--carimbo);
+  color: color-mix(in oklab, var(--carimbo) 72%, var(--papel));
 }
 
 .barra-topo__nome {
@@ -1820,9 +1831,8 @@ body[data-vista="ficha"] .vista--ficha {
   max-width: var(--largura-app);
   margin: 0 auto;
   padding: 28px var(--margem-pagina) 40px;
-  font: 500 10.5px/1.6 var(--fonte-mono);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font: 500 11.5px/1.6 var(--fonte-mono);
+  letter-spacing: 0.03em;
   text-align: center;
   color: var(--papel-3);
 }
@@ -1901,8 +1911,8 @@ body[data-vista="ficha"] .rodape {
 .mini-vital--san { --cor-vital: var(--san); }
 
 .mini-vital__sigla {
-  font: 600 10px/1 var(--fonte-mono);
-  letter-spacing: 0.2em;
+  font: 600 11px/1 var(--fonte-mono);
+  letter-spacing: 0.13em;
   color: var(--cor-vital);
 }
 
@@ -2123,8 +2133,8 @@ body[data-vista="ficha"] .rodape {
 }
 
 .selo-elementos__texto {
-  font: 500 10.5px var(--fonte-mono);
-  letter-spacing: 0.32em;
+  font: 500 11px var(--fonte-mono);
+  letter-spacing: 0.28em;
   fill: var(--papel-3);
   stroke: none;
 }
@@ -2198,6 +2208,11 @@ body[data-vista="ficha"] .rodape {
   margin-top: 28px;
 }
 
+/* Arquivo vazio: as ações do topo repetiriam as do estado vazio logo abaixo */
+.vista--central[data-vazia="sim"] .central__acoes {
+  display: none;
+}
+
 /* Sem a lista de recentes (nenhuma ou só uma ficha): a situação sobe */
 .vista--central[data-vazia="sim"] .central__grade,
 .central__grade:has(.central__bloco--recentes[hidden]) {
@@ -2254,8 +2269,8 @@ body[data-vista="ficha"] .rodape {
   align-items: center;
   justify-content: space-between;
   gap: 8px 16px;
-  font: 500 10.5px/1.2 var(--fonte-mono);
-  letter-spacing: 0.2em;
+  font: 500 11px/1.2 var(--fonte-mono);
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--papel-3);
 }
@@ -2330,8 +2345,8 @@ body[data-vista="ficha"] .rodape {
 }
 
 .destaque__defesa-rotulo {
-  font: 600 10px/1 var(--fonte-mono);
-  letter-spacing: 0.2em;
+  font: 600 11px/1 var(--fonte-mono);
+  letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--papel-3);
 }
@@ -2413,8 +2428,8 @@ body[data-vista="ficha"] .rodape {
 .recente__classe {
   display: block;
   margin-top: 3px;
-  font: 500 10px/1.3 var(--fonte-mono);
-  letter-spacing: 0.14em;
+  font: 500 11px/1.3 var(--fonte-mono);
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--papel-3);
 }
@@ -2450,8 +2465,8 @@ body[data-vista="ficha"] .rodape {
 }
 
 .status-arquivo__linha dt {
-  font: 500 10px/1.2 var(--fonte-mono);
-  letter-spacing: 0.16em;
+  font: 500 11px/1.2 var(--fonte-mono);
+  letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--papel-3);
 }
@@ -2768,8 +2783,8 @@ body[data-vista="ficha"] .rodape {
   justify-content: space-between;
   gap: 8px;
   padding-right: 14px;
-  font: 500 10px/1.2 var(--fonte-mono);
-  letter-spacing: 0.18em;
+  font: 500 11px/1.2 var(--fonte-mono);
+  letter-spacing: 0.11em;
   text-transform: uppercase;
   color: var(--papel-4);
 }
@@ -2830,8 +2845,8 @@ body[data-vista="ficha"] .rodape {
 
 .cartao-agente__classe {
   margin-top: 6px;
-  font: 500 10.5px/1.3 var(--fonte-mono);
-  letter-spacing: 0.13em;
+  font: 500 11px/1.3 var(--fonte-mono);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--papel-2);
 }
@@ -2851,8 +2866,8 @@ body[data-vista="ficha"] .rodape {
 }
 
 .cartao-agente__detalhe dt {
-  font: 500 9.5px/1.3 var(--fonte-mono);
-  letter-spacing: 0.15em;
+  font: 500 11px/1.3 var(--fonte-mono);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--papel-3);
 }
@@ -2981,11 +2996,12 @@ body[data-vista="ficha"] .rodape {
 }
 
 .aviso-app__fechar {
+  display: grid;
   flex: none;
-  width: 30px;
-  height: 30px;
-  font-size: 19px;
-  line-height: 1;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
   color: var(--papel-3);
   background: transparent;
   border: 0;
@@ -3071,7 +3087,7 @@ body.arrastando-arquivo::after {
   font: 600 var(--t-micro) / 1 var(--fonte-mono);
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--papel-3);
+  color: var(--papel-2);
 }
 
 .hud__titulo::before {
@@ -3094,10 +3110,10 @@ body.arrastando-arquivo::after {
 .vital {
   --cor-vital: var(--papel-2);
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas:
-    "sigla valor botoes"
-    "barra barra barra";
+    "topo  botoes"
+    "barra barra";
   align-items: center;
   gap: 7px 8px;
 }
@@ -3106,8 +3122,38 @@ body.arrastando-arquivo::after {
 .vital--pe { --cor-vital: var(--pe); }
 .vital--san { --cor-vital: var(--san); }
 
+/* Sigla e valor: um botão que abre o ajuste do vital (−5…+5, dano/cura) */
 .vital__topo {
-  display: contents;
+  grid-area: topo;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: -5px -7px;
+  padding: 5px 7px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--raio-2);
+  cursor: pointer;
+  transition: background-color var(--dur-1) var(--curva), border-color var(--dur-1) var(--curva);
+}
+
+.vital__topo > .vital__sigla,
+.vital__topo > .vital__valor {
+  grid-area: auto;
+}
+
+.vital__topo:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--cor-vital) 9%, transparent);
+  border-color: color-mix(in oklab, var(--cor-vital) 32%, transparent);
+}
+
+.vital__topo:disabled {
+  cursor: default;
 }
 
 .vital__sigla {
@@ -3131,7 +3177,7 @@ body.arrastando-arquivo::after {
 .vital__max {
   font-size: 13px;
   font-weight: 500;
-  color: var(--papel-3);
+  color: var(--papel-2);
 }
 
 .vital__barra {
@@ -3145,6 +3191,27 @@ body.arrastando-arquivo::after {
 }
 
 /* Marcas de 10% (mostrador) */
+.vital[data-nivel="zero"] .vital__barra {
+  height: auto;
+  overflow: visible;
+  background: none;
+}
+
+.vital[data-nivel="zero"] .vital__barra .barra__preenchimento {
+  display: none;
+}
+
+.vital[data-nivel="zero"] .vital__barra::after {
+  content: "zerado";
+  position: static;
+  display: block;
+  font: 600 11px/1.2 var(--fonte-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--erro);
+  background: none;
+}
+
 .vital__barra::after {
   content: "";
   position: absolute;
@@ -3234,8 +3301,8 @@ body.arrastando-arquivo::after {
 }
 
 .hud__derivado dt {
-  font: 500 8.5px/1.2 var(--fonte-mono);
-  letter-spacing: 0.14em;
+  font: 500 11px/1.2 var(--fonte-mono);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--papel-3);
 }
@@ -3291,7 +3358,7 @@ body.arrastando-arquivo::after {
 .indice__num {
   flex: none;
   width: 18px;
-  font: 500 10px/1 var(--fonte-mono);
+  font: 500 11px/1 var(--fonte-mono);
   letter-spacing: 0.06em;
   color: var(--papel-4);
 }
@@ -3333,7 +3400,7 @@ body.arrastando-arquivo::after {
 .ficha__conteudo .secao {
   position: relative;
   min-width: 0;
-  padding: 34px 0 8px;
+  padding: 46px 0 8px;
   counter-increment: secao; /* o deslocamento das âncoras vem do scroll-padding-top do <html> */
 }
 
@@ -3366,27 +3433,36 @@ body.arrastando-arquivo::after {
 .secao__titulo {
   display: flex;
   align-items: baseline;
-  gap: 14px;
+  gap: 16px;
   font: 600 31px/1.05 var(--fonte-display);
   letter-spacing: 0.005em;
   color: var(--papel);
+}
+
+/* Na ficha, cada seção abre como uma divisória do dossiê: a mesma voz da capa */
+.ficha__conteudo .secao__titulo {
+  font-size: clamp(30px, 2.4cqi + 14px, 42px);
+  line-height: 1;
+  letter-spacing: -0.004em;
+  text-wrap: balance;
 }
 
 .secao > .secao__titulo {
   margin-bottom: 20px;
 }
 
-/* Número da seção no estilo de etiqueta de pasta */
+/* Número da seção no estilo de etiqueta de pasta (é o mesmo número do índice) */
 .ficha__conteudo .secao__titulo::before {
   content: counter(secao, decimal-leading-zero);
   flex: none;
-  padding: 4px 6px 3px;
-  font: 500 11px/1 var(--fonte-mono);
+  padding: 5px 7px 4px;
+  font: 600 12px/1 var(--fonte-mono);
   letter-spacing: 0.14em;
   color: var(--acento);
+  background: var(--acento-suave);
   border: 1px solid var(--acento-linha);
   border-radius: 2px;
-  transform: translateY(-6px);
+  transform: translateY(-9px);
 }
 
 .secao__controles {
@@ -3653,13 +3729,12 @@ body.arrastando-arquivo::after {
 
 .dossie__carimbo {
   padding: 5px 9px 4px;
-  font: 700 10.5px/1 var(--fonte-mono);
-  letter-spacing: 0.26em;
+  font: 700 11px/1 var(--fonte-mono);
+  letter-spacing: 0.22em;
   color: var(--carimbo);
   border: 1.5px solid currentColor;
   border-radius: 3px;
   transform: rotate(-3deg);
-  opacity: 0.88;
   box-shadow: inset 0 0 0 1px rgba(201, 74, 64, 0.15);
 }
 
@@ -4066,12 +4141,11 @@ body.arrastando-arquivo::after {
   padding: 9px 10px 9px 12px;
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid var(--linha-1);
-  border-left: 2px solid var(--linha-3);
   border-radius: 4px;
 }
 
 .trilha__habilidade--liberada {
-  border-left-color: var(--ok);
+  border-color: color-mix(in oklab, var(--ok) 42%, transparent);
 }
 
 .trilha__marco {
@@ -4089,8 +4163,8 @@ body.arrastando-arquivo::after {
 
 .trilha__situacao {
   grid-area: situacao;
-  font: 600 9.5px/1.2 var(--fonte-mono);
-  letter-spacing: 0.12em;
+  font: 600 11px/1.2 var(--fonte-mono);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ok);
 }
@@ -4268,8 +4342,8 @@ body.arrastando-arquivo::after {
 .progressao__atual {
   margin-left: 8px;
   padding: 1px 6px;
-  font: 600 9.5px/1.5 var(--fonte-mono);
-  letter-spacing: 0.12em;
+  font: 600 11px/1.5 var(--fonte-mono);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--acento);
   border: 1px solid currentColor;
@@ -4353,8 +4427,8 @@ body.arrastando-arquivo::after {
 .atributo__nome {
   margin-top: 5px;
   overflow: hidden;
-  font: 500 9.5px/1.2 var(--fonte-mono);
-  letter-spacing: 0.16em;
+  font: 500 11px/1.2 var(--fonte-mono);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -4553,8 +4627,8 @@ body.arrastando-arquivo::after {
 
 .recurso__nome {
   overflow: hidden;
-  font: 500 9.5px/1.2 var(--fonte-mono);
-  letter-spacing: 0.14em;
+  font: 500 11px/1.2 var(--fonte-mono);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -4564,7 +4638,7 @@ body.arrastando-arquivo::after {
 .recurso__info {
   flex: none;
   padding: 3px 9px;
-  font: 500 10.5px/1.4 var(--fonte-mono);
+  font: 500 11px/1.4 var(--fonte-mono);
   white-space: nowrap;
   color: var(--papel-3);
   border: 1px solid var(--linha-2);
@@ -4737,7 +4811,7 @@ body.arrastando-arquivo::after {
 }
 
 .recurso__detalhe {
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--papel-4);
 }
 
@@ -4841,8 +4915,8 @@ body.arrastando-arquivo::after {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font: 600 10.5px/1.2 var(--fonte-mono);
-  letter-spacing: 0.18em;
+  font: 600 11px/1.2 var(--fonte-mono);
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--papel-3);
 }
@@ -5240,12 +5314,16 @@ body.arrastando-arquivo::after {
   border-color: var(--erro-borda);
 }
 
-/* Somente treinada sem treinamento: esmaecida (o aviso continua legível) */
-.pericia--requer-treino .pericia__indicadores,
+/* Somente treinada sem treinamento: recua pela cor, nunca por transparência
+   (todo texto da linha continua acima de 4,5:1) */
 .pericia--requer-treino .controle,
 .pericia--requer-treino output,
 .pericia--requer-treino .caixa {
-  opacity: 0.62; /* esmaecida, mas ainda legível (contraste ≥ 4,5:1) */
+  color: var(--papel-3);
+}
+
+.pericia--requer-treino .controle {
+  border-color: var(--linha-1);
 }
 
 /* O nome é apagado pela cor, não por transparência (legível em qualquer fundo) */
@@ -5254,7 +5332,8 @@ body.arrastando-arquivo::after {
 }
 
 .pericia--requer-treino .controle:focus {
-  opacity: 1;
+  color: var(--papel);
+  border-color: var(--acento);
 }
 
 .pericia .controle {
@@ -5280,7 +5359,36 @@ body.arrastando-arquivo::after {
 }
 
 .pericia--treinada .pericia__bonus output {
+  font-size: 19px;
   color: var(--papel);
+}
+
+/* O dado da linha: cheio na perícia treinada, só traço nas demais */
+.tabela-pericias .botao-icone--rolar {
+  color: var(--papel-3);
+  background: transparent;
+  border-color: var(--linha-2);
+}
+
+.tabela-pericias .botao-icone--rolar:hover:not(:disabled) {
+  color: var(--acento);
+  background: var(--acento-suave);
+  border-color: var(--acento-linha);
+  box-shadow: none;
+}
+
+.tabela-pericias .pericia--treinada .botao-icone--rolar {
+  color: var(--acento-texto);
+  background: linear-gradient(180deg, var(--acento-claro) -70%, var(--acento) 70%);
+  border-color: color-mix(in oklab, var(--acento-claro) 60%, transparent);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3) inset;
+}
+
+.tabela-pericias .pericia--treinada .botao-icone--rolar:hover:not(:disabled) {
+  color: var(--acento-texto);
+  background: linear-gradient(180deg, var(--acento-claro) -40%, var(--acento) 80%);
+  border-color: var(--acento-claro);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.35) inset, 0 0 0 3px var(--acento-suave);
 }
 
 .pericia__rolar {
@@ -5877,8 +5985,8 @@ body.arrastando-arquivo::after {
 .grupo-ritual__bloqueado {
   margin-left: auto;
   padding: 3px 8px;
-  font: 600 9.5px/1.4 var(--fonte-mono);
-  letter-spacing: 0.12em;
+  font: 600 11px/1.4 var(--fonte-mono);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--aviso);
   background: var(--aviso-fundo);
@@ -6002,14 +6110,26 @@ body.arrastando-arquivo::after {
 }
 
 .ritual__resistencia {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   align-self: flex-start;
   padding: 5px 10px;
   font: 600 12.5px/1.4 var(--fonte-mono);
   color: var(--papel);
   background: rgba(0, 0, 0, 0.28);
   border: 1px solid var(--linha-2);
-  border-left: 2px solid var(--cor-elemento);
   border-radius: 4px;
+}
+
+/* Marca do elemento do ritual (no lugar de uma faixa lateral) */
+.ritual__resistencia::before {
+  content: "";
+  flex: none;
+  width: 7px;
+  height: 7px;
+  background: var(--cor-elemento);
+  border-radius: 50%;
 }
 
 .ritual__medo {
@@ -6197,8 +6317,8 @@ body.arrastando-arquivo::after {
 }
 
 .limite__rotulo {
-  font: 500 10px/1 var(--fonte-mono);
-  letter-spacing: 0.12em;
+  font: 500 11px/1 var(--fonte-mono);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--papel-3);
 }
@@ -6544,6 +6664,394 @@ body.arrastando-arquivo::after {
   color: var(--papel-3);
 }
 
+/* ---- Visão de mesa: ataques, rituais e perícias em resumo ----
+   Na mesa, cada cartão mostra o que se usa no meio da cena (nome, uma linha
+   de resumo e os botões de rolar ou conjurar). "Editar" abre o formulário.
+   Só tela: a impressão (outro CSS) mostra todos os campos. */
+.cartao-resumo {
+  display: none;
+  margin: 0;
+  font: 500 12.5px/1.5 var(--fonte-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--papel-2);
+  overflow-wrap: anywhere;
+}
+
+.cartao-editar {
+  min-height: 34px;
+  padding: 6px 10px;
+  font: 600 13px/1 var(--fonte-ui);
+  text-decoration: none;
+  color: var(--papel-2);
+  border: 1px solid var(--linha-2);
+  border-radius: var(--raio-2);
+}
+
+.cartao-editar:hover {
+  color: var(--papel);
+  border-color: var(--linha-3);
+}
+
+.cartao-editar[aria-expanded="true"] {
+  color: var(--acento);
+  border-color: var(--acento-linha);
+}
+
+/* Ataque em resumo */
+.ataque[data-modo="resumo"] {
+  gap: 8px;
+}
+
+.ataque[data-modo="resumo"] .ataque__campo--pericia,
+.ataque[data-modo="resumo"] .ataque__campo--outros,
+.ataque[data-modo="resumo"] .ataque__linha--dano > .ataque__campo,
+.ataque[data-modo="resumo"] .ataque__linha--detalhes,
+.ataque[data-modo="resumo"] .ataque__linha--fim {
+  display: none;
+}
+
+.ataque[data-modo="resumo"] .ataque__linha--dano {
+  align-items: center;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.ataque[data-modo="resumo"] .cartao-resumo {
+  display: block;
+  flex: 1 1 260px;
+}
+
+.ataque[data-modo="resumo"] .ataque__linha--teste {
+  align-items: center;
+}
+
+.ataque[data-modo="resumo"] .ataque__campo--nome .ataque__rotulo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+/* O nome continua editável, mas lê como título do cartão */
+.ataque[data-modo="resumo"] .ataque__nome,
+.ritual[data-modo="resumo"] .ritual__nome {
+  height: 38px;
+  padding-left: 0;
+  font-size: 23px;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.ataque[data-modo="resumo"] .ataque__nome:hover,
+.ritual[data-modo="resumo"] .ritual__nome:hover {
+  border-color: transparent;
+}
+
+.ataque[data-modo="resumo"] .ataque__nome:focus,
+.ritual[data-modo="resumo"] .ritual__nome:focus {
+  padding-left: 10px;
+  background: var(--campo-fundo);
+  border-color: var(--acento);
+}
+
+.ataque[data-modo="resumo"] .ataque__campo--teste {
+  flex: 0 1 auto;
+}
+
+@container ficha (max-width: 600px) {
+  /* Teste na mesma linha do rótulo: o cartão fica baixo no celular */
+  .ataque[data-modo="resumo"] .ataque__campo--teste {
+    flex: 1 1 100%;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .ataque[data-modo="resumo"] .ataque__teste {
+    font-size: 19px;
+  }
+}
+
+/* Ritual em resumo */
+.ritual[data-modo="resumo"] {
+  gap: 10px;
+}
+
+.ritual[data-modo="resumo"] .ritual__cabecalho {
+  align-items: center;
+}
+
+.ritual[data-modo="resumo"] .ritual__cabecalho > .ataque__campo:not(.ataque__campo--nome),
+.ritual[data-modo="resumo"] .ritual__cabecalho [data-remover-ritual],
+.ritual[data-modo="resumo"] .ritual__detalhes,
+.ritual[data-modo="resumo"] .ritual__resistencia-campos,
+.ritual[data-modo="resumo"] > .ataque__campo--notas,
+.ritual[data-modo="resumo"] .forma[data-ativa="nao"],
+.ritual[data-modo="resumo"] .forma__cabecalho .caixa,
+.ritual[data-modo="resumo"] .forma__sempre,
+.ritual[data-modo="resumo"] .forma__corpo > :not(.forma__acoes):not(.mensagem-acao):not(.forma__avisos) {
+  display: none;
+}
+
+.ritual[data-modo="resumo"] .ritual__cabecalho .ataque__campo--nome .ataque__rotulo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.ritual[data-modo="resumo"] .cartao-resumo {
+  display: block;
+  margin-top: -4px;
+}
+
+.ritual[data-modo="resumo"] .ritual__formas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding-top: 10px;
+}
+
+.ritual[data-modo="resumo"] .forma {
+  flex: 0 1 auto;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.ritual[data-modo="resumo"] .forma__cabecalho {
+  min-height: 0;
+}
+
+.ritual[data-modo="resumo"] .forma__corpo {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Perícias na mesa: nome, dados, bônus e rolar (o resto fica em "Editar perícias") */
+.secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(3),
+.secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(5),
+.secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(6),
+.secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(9),
+.secao--pericias[data-modo="mesa"] .pericia > .pericia__atributo,
+.secao--pericias[data-modo="mesa"] .pericia > .pericia__grau,
+.secao--pericias[data-modo="mesa"] .pericia > .pericia__outros,
+.secao--pericias[data-modo="mesa"] .pericia > .pericia__concedida,
+.secao--pericias[data-modo="mesa"] .pericias__pontos,
+.secao--pericias[data-modo="mesa"] #contador-treinamento,
+.secao--pericias[data-modo="mesa"] #contador-graus,
+.secao--pericias[data-modo="mesa"] #botao-modo-livre-pericias,
+.secao--pericias[data-modo="mesa"] #avisos-pericias,
+.secao--pericias[data-modo="mesa"] #avisos-graus {
+  display: none !important;
+}
+
+.secao--pericias[data-modo="mesa"] .tabela-pericias td,
+.secao--pericias[data-modo="mesa"] .tabela-pericias tbody th {
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
+.secao--pericias[data-modo="mesa"] .pericia__nome-conteudo {
+  min-height: 38px;
+}
+
+/* Estreito, na mesa: cada perícia numa linha (nome, dados, bônus, rolar) */
+@container ficha (max-width: 759px) {
+  .secao--pericias[data-modo="mesa"] .tabela-pericias tbody {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .secao--pericias[data-modo="mesa"] .pericia {
+    grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+    grid-template-areas: "ind nome dados bonus rolar";
+    align-items: center;
+    gap: 4px 10px;
+    padding: 6px 8px 6px 12px;
+  }
+
+  .secao--pericias[data-modo="mesa"] .pericia [data-rotulo]::before {
+    display: none;
+  }
+
+  .secao--pericias[data-modo="mesa"] .pericia__dados output {
+    white-space: nowrap;
+  }
+
+  /* Selos ("Requer treinamento", carga) quebram dentro da coluna do nome */
+  .secao--pericias[data-modo="mesa"] .pericia__nome-conteudo .selo,
+  .secao--pericias[data-modo="mesa"] .pericia__requer,
+  .secao--pericias[data-modo="mesa"] .pericia__carga,
+  .secao--pericias[data-modo="mesa"] .pericia__fonte {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .secao--pericias[data-modo="mesa"] .pericia__bonus output {
+    font-size: 18px;
+  }
+
+  .secao--pericias[data-modo="mesa"] .pericia--treinada .pericia__bonus output {
+    font-size: 20px;
+  }
+}
+
+/* Recursos: bônus de máximo e a conta, recolhidos */
+.recurso__detalhes {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.recurso__detalhes-titulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  font: 500 var(--t-rotulo) / 1.2 var(--fonte-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--papel-2);
+  cursor: pointer;
+  list-style: none;
+}
+
+.recurso__detalhes-titulo::-webkit-details-marker {
+  display: none;
+}
+
+.recurso__detalhes-titulo::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform var(--dur-2) var(--curva);
+}
+
+.recurso__detalhes[open] > .recurso__detalhes-titulo::before {
+  transform: rotate(45deg);
+}
+
+.recurso__detalhes-titulo:hover {
+  color: var(--papel);
+}
+
+.recurso__detalhes-corpo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 16px;
+  padding-top: 10px;
+}
+
+/* ---- Termos da ficha (glossário recolhido depois da capa) ---- */
+.glossario {
+  margin-top: 14px;
+}
+
+.glossario + .secao {
+  margin-top: 22px;
+}
+
+.glossario__titulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  font: 500 var(--t-rotulo) / 1.2 var(--fonte-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--papel-2);
+  cursor: pointer;
+  list-style: none;
+}
+
+.glossario__titulo::-webkit-details-marker {
+  display: none;
+}
+
+.glossario__titulo::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform var(--dur-2) var(--curva);
+}
+
+.glossario[open] > .glossario__titulo::before {
+  transform: rotate(45deg);
+}
+
+.glossario__titulo:hover {
+  color: var(--papel);
+}
+
+.glossario__lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: 12px 28px;
+  margin: 8px 0 0;
+  padding: 16px 18px;
+  background: color-mix(in oklab, var(--tinta-superficie) 80%, transparent);
+  border: 1px solid var(--linha-1);
+  border-radius: var(--raio-3);
+}
+
+.glossario__lista dt {
+  font: 600 var(--t-rotulo) / 1.3 var(--fonte-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--acento);
+}
+
+.glossario__lista dd {
+  margin: 3px 0 0;
+  max-width: 60ch;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--papel-2);
+}
+
+.resultado__aviso {
+  margin: 0;
+  padding: 6px 10px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--aviso);
+  background: var(--aviso-fundo);
+  border: 1px solid var(--aviso-borda);
+  border-radius: var(--raio-1);
+}
+
+.vital-folha__estado {
+  margin: -6px 0 0;
+  font: 600 var(--t-rotulo) / 1.3 var(--fonte-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--erro);
+}
+
+.mini-vital__estado {
+  margin-left: 6px;
+  font: 600 11px/1 var(--fonte-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--erro);
+}
+
 /* ==========================================================================
    10b. ASSINATURAS DOS TEMAS — além das cores, cada tema muda a luz, os
         detalhes gráficos e o comportamento. Só aparência.
@@ -6582,8 +7090,8 @@ body.arrastando-arquivo::after {
 }
 
 [data-tema="sangue"] .atributos__anel {
-  border-color: rgba(230, 74, 62, 0.45);
-  box-shadow: 0 0 0 10px rgba(60, 0, 0, 0.18), 0 0 0 11px rgba(230, 74, 62, 0.12), 0 0 90px -10px rgba(190, 20, 20, 0.45);
+  border-color: rgba(229, 71, 111, 0.45);
+  box-shadow: 0 0 0 10px rgba(60, 0, 0, 0.18), 0 0 0 11px rgba(229, 71, 111, 0.12), 0 0 90px -10px rgba(190, 20, 20, 0.45);
 }
 
 [data-tema="sangue"] .botao-rolagem:hover,
@@ -6827,6 +7335,16 @@ html[data-transicao="tema"]::view-transition-new(root) {
 
 body[data-vista="ficha"] .rolagens {
   display: flex;
+}
+
+/* A alça das rolagens flutua sobre o fim da página: espaço para rolar além
+   dela, e o foco do teclado nunca para escondido atrás dela */
+body[data-vista="ficha"] .ficha__conteudo {
+  padding-bottom: 96px;
+}
+
+html[data-vista="ficha"] {
+  scroll-padding-bottom: 96px;
 }
 
 .rolagens[data-aberto="false"] {
@@ -7167,8 +7685,8 @@ body[data-vista="ficha"] .rolagens {
 }
 
 .rolagens__subtitulo {
-  font: 600 10.5px/1.2 var(--fonte-mono);
-  letter-spacing: 0.2em;
+  font: 600 11px/1.2 var(--fonte-mono);
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--papel-3);
 }
@@ -7235,9 +7753,11 @@ body[data-vista="ficha"] .rolagens {
   color: var(--papel-4);
 }
 
-/* Telas bem largas: o painel aberto vira uma coluna, sem cobrir a ficha */
-@media (min-width: 1480px) {
-  body.com-painel-rolagens[data-vista="ficha"] {
+/* A partir de 1024px: o painel aberto vira uma coluna à direita e a ficha
+   se estreita ao lado dele, em vez de ficar coberta */
+@media (min-width: 1024px) {
+  /* Só a área da ficha abre espaço; a barra global continua inteira */
+  body.com-painel-rolagens[data-vista="ficha"] .vista--ficha {
     padding-right: 412px;
   }
 
@@ -7251,6 +7771,19 @@ body[data-vista="ficha"] .rolagens {
 
   .rolagens[data-aberto="true"] .rolagens__corpo {
     flex: 1;
+  }
+}
+
+/* Faixa de vitais estreitada pelo painel: os vitais viram botões de ajuste */
+@media (min-width: 1024px) and (max-width: 1199px) {
+  body.com-painel-rolagens[data-vista="ficha"] .hud__derivados,
+  body.com-painel-rolagens[data-vista="ficha"] .vital__botoes {
+    display: none;
+  }
+
+  body.com-painel-rolagens[data-vista="ficha"] .vital__topo {
+    background: rgba(255, 255, 255, 0.035);
+    border-color: var(--linha-1);
   }
 }
 
@@ -7293,6 +7826,11 @@ body[data-vista="ficha"] .rolagens {
 @keyframes fundo-abrir {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+@keyframes gaveta-subir {
+  from { transform: translateY(100%); }
+  to { transform: none; }
 }
 
 .dialogo--confirmar {
@@ -7365,6 +7903,211 @@ body[data-vista="ficha"] .rolagens {
   margin-top: 6px;
   padding-top: 16px;
   border-top: 1px solid var(--linha-1);
+}
+
+/* ---- Ajuste de um vital (janela; no celular, gaveta de baixo) ---- */
+.dialogo--vital {
+  --cor-vital: var(--papel-2);
+  width: min(420px, calc(100vw - 24px));
+}
+
+.dialogo--vital[data-vital="pv"] { --cor-vital: var(--pv); }
+.dialogo--vital[data-vital="pe"] { --cor-vital: var(--pe); }
+.dialogo--vital[data-vital="san"] { --cor-vital: var(--san); }
+
+.vital-folha {
+  gap: 16px;
+}
+
+.vital-folha__titulo {
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.vital-folha__sigla {
+  font: 600 30px/1 var(--fonte-display);
+  letter-spacing: 0.06em;
+  color: var(--cor-vital);
+}
+
+.vital-folha__nome {
+  font: 500 var(--t-rotulo) / 1.2 var(--fonte-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--papel-2);
+}
+
+.vital-folha__leitura {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 2px 0 -4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.vital-folha__atual {
+  font: 600 56px/1 var(--fonte-mono);
+  letter-spacing: -0.02em;
+  color: var(--papel);
+}
+
+.vital-folha__max {
+  font: 500 20px/1 var(--fonte-mono);
+  color: var(--papel-2);
+}
+
+.dialogo--vital[data-nivel="critico"] .vital-folha__atual {
+  color: var(--aviso);
+}
+
+.dialogo--vital[data-nivel="zero"] .vital-folha__atual {
+  color: var(--erro);
+}
+
+.vital-folha__barra {
+  height: 6px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--raio-pilula);
+}
+
+.vital-folha__barra .barra__preenchimento {
+  height: 100%;
+  background: linear-gradient(90deg, color-mix(in oklab, var(--cor-vital) 55%, #000), var(--cor-vital));
+  border-radius: inherit;
+  transition: width var(--dur-3) var(--curva);
+}
+
+.vital-folha__passos {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.vital-folha__passo {
+  height: 48px;
+  font: 600 18px/1 var(--fonte-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--papel);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--linha-2);
+  border-radius: var(--raio-2);
+  cursor: pointer;
+  transition: background-color var(--dur-1) var(--curva), border-color var(--dur-1) var(--curva), color var(--dur-1) var(--curva);
+}
+
+.vital-folha__passo:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--cor-vital) 14%, transparent);
+  border-color: var(--cor-vital);
+}
+
+.vital-folha__passo:active:not(:disabled) {
+  background: color-mix(in oklab, var(--cor-vital) 24%, transparent);
+}
+
+.vital-folha__passo:disabled,
+.vital-folha__aplicar:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.vital-folha__quantia {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "rotulo rotulo rotulo"
+    "campo  menos  mais";
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.vital-folha__rotulo {
+  grid-area: rotulo;
+  font: 500 var(--t-rotulo) / 1.2 var(--fonte-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--papel-2);
+}
+
+.vital-folha__campo {
+  grid-area: campo;
+  width: 100%;
+  height: 44px;
+  font: 600 18px/1 var(--fonte-mono);
+  text-align: center;
+}
+
+.vital-folha__aplicar {
+  height: 44px;
+  padding: 0 16px;
+}
+
+.vital-folha__aplicar[data-vital-aplicar="-1"] {
+  grid-area: menos;
+}
+
+.vital-folha__aplicar[data-vital-aplicar="1"] {
+  grid-area: mais;
+}
+
+.vital-folha__ultimo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 12px;
+  min-height: 40px;
+  padding: 6px 6px 6px 14px;
+  font: 500 13px/1.4 var(--fonte-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--papel);
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--linha-1);
+  border-radius: var(--raio-2);
+}
+
+.vital-folha__desfazer {
+  min-height: 32px;
+  padding: 4px 10px;
+  font: 600 13px/1 var(--fonte-ui);
+  color: var(--acento);
+}
+
+.vital-folha__desfazer:hover {
+  color: var(--acento-claro);
+}
+
+.vital-folha__derivados {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--linha-1);
+}
+
+.vital-folha__derivados > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0 10px;
+}
+
+.vital-folha__derivados > div + div {
+  border-left: 1px solid var(--linha-1);
+}
+
+.vital-folha__derivados dt {
+  font: 500 var(--t-rotulo) / 1.2 var(--fonte-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--papel-2);
+}
+
+.vital-folha__derivados dd {
+  margin: 0;
+  font: 600 18px/1 var(--fonte-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--papel);
 }
 
 /* ==========================================================================
@@ -7535,7 +8278,7 @@ body[data-vista="ficha"] .rolagens {
   }
 
   .ficha__conteudo .secao__titulo::before {
-    transform: translateY(-4px);
+    transform: translateY(-6px);
   }
 }
 
@@ -7640,8 +8383,13 @@ body[data-vista="ficha"] .rolagens {
   .central__selo {
     order: -1;
     justify-self: start;
-    width: 190px;
-    margin: 0 0 -6px -10px;
+    width: 124px;
+    margin: 0 0 -4px -6px;
+  }
+
+  /* Arrastar arquivos não existe no celular */
+  .arquivo__dica {
+    display: none;
   }
 
   .central__titulo {
@@ -7737,11 +8485,32 @@ body[data-vista="ficha"] .rolagens {
   }
 
   .avisos-app {
-    top: 12px;
     right: 12px;
-    bottom: auto;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     left: 12px;
     width: auto;
+  }
+
+  body[data-vista="ficha"] .avisos-app {
+    bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Ajuste do vital: gaveta presa embaixo, ao alcance do polegar */
+  .dialogo--vital {
+    width: 100%;
+    max-width: 100%;
+    max-height: calc(100dvh - 40px);
+    margin: auto 0 0;
+    border-bottom: 0;
+    border-radius: var(--raio-4) var(--raio-4) 0 0;
+  }
+
+  .dialogo--vital[open] {
+    animation: gaveta-subir 300ms var(--curva-saida);
+  }
+
+  .dialogo--vital .vital-folha {
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
   }
 
   /* Ficha: faixa de vitais compacta */
@@ -7763,11 +8532,22 @@ body[data-vista="ficha"] .rolagens {
   }
 
   .vital {
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
-      "sigla valor"
-      "barra barra";
+      "topo"
+      "barra";
     gap: 5px 6px;
+  }
+
+  .vital__topo {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 6px;
+    min-height: 40px;
+    margin: -4px -6px -2px;
+    padding: 4px 6px 2px;
+    /* Sem os −/+ na faixa: o vital aparece como botão (toque abre o ajuste) */
+    background: rgba(255, 255, 255, 0.035);
+    border-color: var(--linha-1);
   }
 
   .vital__valor {
@@ -7792,7 +8572,7 @@ body[data-vista="ficha"] .rolagens {
   }
 
   .ficha__conteudo .secao {
-    padding-top: 28px;
+    padding-top: 34px;
   }
 
   .botao--grande {
@@ -7806,7 +8586,7 @@ body[data-vista="ficha"] .rolagens {
     bottom: 0;
     left: 0;
     width: auto;
-    max-height: 82vh;
+    max-height: 70vh;
     border-width: 1px 0 0;
     border-radius: var(--raio-4) var(--raio-4) 0 0;
   }
@@ -7944,5 +8724,13 @@ body[data-vista="ficha"] .rolagens {
 
   .indice__item {
     min-height: 34px;
+  }
+
+  .indice__item {
+    min-height: 40px;
+  }
+
+  .pericia__concedida .caixa {
+    min-height: 44px;
   }
 }

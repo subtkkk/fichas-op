@@ -1,0 +1,780 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-10T10:58:54Z",
+  "title": "Design System: Dossiê",
+  "extensions": {
+    "colorMeta": {
+      "ouro-de-arquivo": {
+        "role": "primary",
+        "displayName": "Ouro de Arquivo",
+        "canonical": "#c9a45c",
+        "tonalRamp": [
+          "oklch(15.0% 0.048 82.7)",
+          "oklch(26.4% 0.085 82.7)",
+          "oklch(37.9% 0.101 82.7)",
+          "oklch(49.3% 0.101 82.7)",
+          "oklch(60.7% 0.101 82.7)",
+          "oklch(72.1% 0.090 82.7)",
+          "oklch(83.6% 0.053 82.7)",
+          "oklch(95.0% 0.016 82.7)"
+        ]
+      },
+      "ouro-de-arquivo-claro": {
+        "role": "primary",
+        "displayName": "Ouro de Arquivo Claro",
+        "canonical": "#e3c58a",
+        "tonalRamp": [
+          "oklch(15.0% 0.040 83.8)",
+          "oklch(26.4% 0.070 83.8)",
+          "oklch(37.9% 0.083 83.8)",
+          "oklch(49.3% 0.083 83.8)",
+          "oklch(60.7% 0.083 83.8)",
+          "oklch(72.1% 0.074 83.8)",
+          "oklch(83.6% 0.044 83.8)",
+          "oklch(95.0% 0.013 83.8)"
+        ]
+      },
+      "tinta-sobre-ouro": {
+        "role": "primary",
+        "displayName": "Tinta sobre Ouro",
+        "canonical": "#17120a",
+        "tonalRamp": [
+          "oklch(15.0% 0.017 79.1)",
+          "oklch(26.4% 0.017 79.1)",
+          "oklch(37.9% 0.017 79.1)",
+          "oklch(49.3% 0.017 79.1)",
+          "oklch(60.7% 0.017 79.1)",
+          "oklch(72.1% 0.017 79.1)",
+          "oklch(83.6% 0.017 79.1)",
+          "oklch(95.0% 0.017 79.1)"
+        ]
+      },
+      "vermelho-de-carimbo": {
+        "role": "secondary",
+        "displayName": "Vermelho de Carimbo",
+        "canonical": "#c94a40",
+        "tonalRamp": [
+          "oklch(15.0% 0.079 27.8)",
+          "oklch(26.4% 0.138 27.8)",
+          "oklch(37.9% 0.164 27.8)",
+          "oklch(49.3% 0.164 27.8)",
+          "oklch(60.7% 0.164 27.8)",
+          "oklch(72.1% 0.146 27.8)",
+          "oklch(83.6% 0.086 27.8)",
+          "oklch(95.0% 0.026 27.8)"
+        ]
+      },
+      "tinta-0": {
+        "role": "neutral",
+        "displayName": "Tinta 0",
+        "canonical": "#050607",
+        "tonalRamp": [
+          "oklch(15.0% 0.004 245.5)",
+          "oklch(26.4% 0.004 245.5)",
+          "oklch(37.9% 0.004 245.5)",
+          "oklch(49.3% 0.004 245.5)",
+          "oklch(60.7% 0.004 245.5)",
+          "oklch(72.1% 0.004 245.5)",
+          "oklch(83.6% 0.004 245.5)",
+          "oklch(95.0% 0.004 245.5)"
+        ]
+      },
+      "tinta-1": {
+        "role": "neutral",
+        "displayName": "Tinta 1",
+        "canonical": "#0a0b0d",
+        "tonalRamp": [
+          "oklch(15.0% 0.005 264.5)",
+          "oklch(26.4% 0.005 264.5)",
+          "oklch(37.9% 0.005 264.5)",
+          "oklch(49.3% 0.005 264.5)",
+          "oklch(60.7% 0.005 264.5)",
+          "oklch(72.1% 0.005 264.5)",
+          "oklch(83.6% 0.005 264.5)",
+          "oklch(95.0% 0.005 264.5)"
+        ]
+      },
+      "tinta-2": {
+        "role": "neutral",
+        "displayName": "Tinta 2",
+        "canonical": "#0f1114",
+        "tonalRamp": [
+          "oklch(15.0% 0.007 258.4)",
+          "oklch(26.4% 0.007 258.4)",
+          "oklch(37.9% 0.007 258.4)",
+          "oklch(49.3% 0.007 258.4)",
+          "oklch(60.7% 0.007 258.4)",
+          "oklch(72.1% 0.007 258.4)",
+          "oklch(83.6% 0.007 258.4)",
+          "oklch(95.0% 0.007 258.4)"
+        ]
+      },
+      "tinta-3": {
+        "role": "neutral",
+        "displayName": "Tinta 3",
+        "canonical": "#14171b",
+        "tonalRamp": [
+          "oklch(15.0% 0.009 255.6)",
+          "oklch(26.4% 0.009 255.6)",
+          "oklch(37.9% 0.009 255.6)",
+          "oklch(49.3% 0.009 255.6)",
+          "oklch(60.7% 0.009 255.6)",
+          "oklch(72.1% 0.009 255.6)",
+          "oklch(83.6% 0.009 255.6)",
+          "oklch(95.0% 0.009 255.6)"
+        ]
+      },
+      "tinta-4": {
+        "role": "neutral",
+        "displayName": "Tinta 4",
+        "canonical": "#1b1e23",
+        "tonalRamp": [
+          "oklch(15.0% 0.011 260.7)",
+          "oklch(26.4% 0.011 260.7)",
+          "oklch(37.9% 0.011 260.7)",
+          "oklch(49.3% 0.011 260.7)",
+          "oklch(60.7% 0.011 260.7)",
+          "oklch(72.1% 0.011 260.7)",
+          "oklch(83.6% 0.011 260.7)",
+          "oklch(95.0% 0.011 260.7)"
+        ]
+      },
+      "tinta-5": {
+        "role": "neutral",
+        "displayName": "Tinta 5",
+        "canonical": "#23272d",
+        "tonalRamp": [
+          "oklch(15.0% 0.013 258.4)",
+          "oklch(26.4% 0.013 258.4)",
+          "oklch(37.9% 0.013 258.4)",
+          "oklch(49.3% 0.013 258.4)",
+          "oklch(60.7% 0.013 258.4)",
+          "oklch(72.1% 0.013 258.4)",
+          "oklch(83.6% 0.013 258.4)",
+          "oklch(95.0% 0.013 258.4)"
+        ]
+      },
+      "fundo-de-campo": {
+        "role": "neutral",
+        "displayName": "Fundo de Campo",
+        "canonical": "#0b0d10",
+        "tonalRamp": [
+          "oklch(15.0% 0.007 258.4)",
+          "oklch(26.4% 0.007 258.4)",
+          "oklch(37.9% 0.007 258.4)",
+          "oklch(49.3% 0.007 258.4)",
+          "oklch(60.7% 0.007 258.4)",
+          "oklch(72.1% 0.007 258.4)",
+          "oklch(83.6% 0.007 258.4)",
+          "oklch(95.0% 0.007 258.4)"
+        ]
+      },
+      "papel": {
+        "role": "neutral",
+        "displayName": "Papel",
+        "canonical": "#ece6da",
+        "tonalRamp": [
+          "oklch(15.0% 0.017 84.6)",
+          "oklch(26.4% 0.017 84.6)",
+          "oklch(37.9% 0.017 84.6)",
+          "oklch(49.3% 0.017 84.6)",
+          "oklch(60.7% 0.017 84.6)",
+          "oklch(72.1% 0.017 84.6)",
+          "oklch(83.6% 0.017 84.6)",
+          "oklch(95.0% 0.017 84.6)"
+        ]
+      },
+      "papel-2": {
+        "role": "neutral",
+        "displayName": "Papel 2",
+        "canonical": "#bab3a6",
+        "tonalRamp": [
+          "oklch(15.0% 0.020 83.1)",
+          "oklch(26.4% 0.020 83.1)",
+          "oklch(37.9% 0.020 83.1)",
+          "oklch(49.3% 0.020 83.1)",
+          "oklch(60.7% 0.020 83.1)",
+          "oklch(72.1% 0.020 83.1)",
+          "oklch(83.6% 0.020 83.1)",
+          "oklch(95.0% 0.020 83.1)"
+        ]
+      },
+      "papel-3": {
+        "role": "neutral",
+        "displayName": "Papel 3",
+        "canonical": "#938d82",
+        "tonalRamp": [
+          "oklch(15.0% 0.018 82.8)",
+          "oklch(26.4% 0.018 82.8)",
+          "oklch(37.9% 0.018 82.8)",
+          "oklch(49.3% 0.018 82.8)",
+          "oklch(60.7% 0.018 82.8)",
+          "oklch(72.1% 0.018 82.8)",
+          "oklch(83.6% 0.018 82.8)",
+          "oklch(95.0% 0.018 82.8)"
+        ]
+      },
+      "papel-4": {
+        "role": "neutral",
+        "displayName": "Papel 4",
+        "canonical": "#88827a",
+        "tonalRamp": [
+          "oklch(15.0% 0.014 75.3)",
+          "oklch(26.4% 0.014 75.3)",
+          "oklch(37.9% 0.014 75.3)",
+          "oklch(49.3% 0.014 75.3)",
+          "oklch(60.7% 0.014 75.3)",
+          "oklch(72.1% 0.014 75.3)",
+          "oklch(83.6% 0.014 75.3)",
+          "oklch(95.0% 0.014 75.3)"
+        ]
+      },
+      "linha-1": {
+        "role": "neutral",
+        "displayName": "Linha 1",
+        "canonical": "rgba(236, 230, 218, 0.07)"
+      },
+      "linha-2": {
+        "role": "neutral",
+        "displayName": "Linha 2",
+        "canonical": "rgba(236, 230, 218, 0.12)"
+      },
+      "linha-3": {
+        "role": "neutral",
+        "displayName": "Linha 3",
+        "canonical": "rgba(236, 230, 218, 0.22)"
+      },
+      "ok": {
+        "role": "semantic",
+        "displayName": "OK",
+        "canonical": "#82b38c",
+        "tonalRamp": [
+          "oklch(15.0% 0.037 150.4)",
+          "oklch(26.4% 0.065 150.4)",
+          "oklch(37.9% 0.077 150.4)",
+          "oklch(49.3% 0.077 150.4)",
+          "oklch(60.7% 0.077 150.4)",
+          "oklch(72.1% 0.068 150.4)",
+          "oklch(83.6% 0.040 150.4)",
+          "oklch(95.0% 0.012 150.4)"
+        ]
+      },
+      "aviso": {
+        "role": "semantic",
+        "displayName": "Aviso",
+        "canonical": "#e2b354",
+        "tonalRamp": [
+          "oklch(15.0% 0.060 82.7)",
+          "oklch(26.4% 0.106 82.7)",
+          "oklch(37.9% 0.125 82.7)",
+          "oklch(49.3% 0.125 82.7)",
+          "oklch(60.7% 0.125 82.7)",
+          "oklch(72.1% 0.111 82.7)",
+          "oklch(83.6% 0.066 82.7)",
+          "oklch(95.0% 0.020 82.7)"
+        ]
+      },
+      "erro": {
+        "role": "semantic",
+        "displayName": "Erro",
+        "canonical": "#e86a5e",
+        "tonalRamp": [
+          "oklch(15.0% 0.076 27.6)",
+          "oklch(26.4% 0.134 27.6)",
+          "oklch(37.9% 0.159 27.6)",
+          "oklch(49.3% 0.159 27.6)",
+          "oklch(60.7% 0.159 27.6)",
+          "oklch(72.1% 0.142 27.6)",
+          "oklch(83.6% 0.084 27.6)",
+          "oklch(95.0% 0.025 27.6)"
+        ]
+      },
+      "perigo-fundo": {
+        "role": "semantic",
+        "displayName": "Perigo",
+        "canonical": "#b8362d",
+        "tonalRamp": [
+          "oklch(15.0% 0.081 28.2)",
+          "oklch(26.4% 0.142 28.2)",
+          "oklch(37.9% 0.168 28.2)",
+          "oklch(49.3% 0.168 28.2)",
+          "oklch(60.7% 0.168 28.2)",
+          "oklch(72.1% 0.150 28.2)",
+          "oklch(83.6% 0.088 28.2)",
+          "oklch(95.0% 0.027 28.2)"
+        ]
+      },
+      "pv": {
+        "role": "functional",
+        "displayName": "PV",
+        "canonical": "#e65a50",
+        "tonalRamp": [
+          "oklch(15.0% 0.085 27.1)",
+          "oklch(26.4% 0.149 27.1)",
+          "oklch(37.9% 0.176 27.1)",
+          "oklch(49.3% 0.176 27.1)",
+          "oklch(60.7% 0.176 27.1)",
+          "oklch(72.1% 0.157 27.1)",
+          "oklch(83.6% 0.093 27.1)",
+          "oklch(95.0% 0.028 27.1)"
+        ]
+      },
+      "pe": {
+        "role": "functional",
+        "displayName": "PE",
+        "canonical": "#eb9b48",
+        "tonalRamp": [
+          "oklch(15.0% 0.066 63.9)",
+          "oklch(26.4% 0.115 63.9)",
+          "oklch(37.9% 0.136 63.9)",
+          "oklch(49.3% 0.136 63.9)",
+          "oklch(60.7% 0.136 63.9)",
+          "oklch(72.1% 0.122 63.9)",
+          "oklch(83.6% 0.072 63.9)",
+          "oklch(95.0% 0.022 63.9)"
+        ]
+      },
+      "san": {
+        "role": "functional",
+        "displayName": "SAN",
+        "canonical": "#8d9ef2",
+        "tonalRamp": [
+          "oklch(15.0% 0.059 274.2)",
+          "oklch(26.4% 0.105 274.2)",
+          "oklch(37.9% 0.124 274.2)",
+          "oklch(49.3% 0.124 274.2)",
+          "oklch(60.7% 0.124 274.2)",
+          "oklch(72.1% 0.110 274.2)",
+          "oklch(83.6% 0.065 274.2)",
+          "oklch(95.0% 0.020 274.2)"
+        ]
+      },
+      "el-sangue": {
+        "role": "functional",
+        "displayName": "Elemento Sangue",
+        "canonical": "#e0473c",
+        "tonalRamp": [
+          "oklch(15.0% 0.092 28.2)",
+          "oklch(26.4% 0.162 28.2)",
+          "oklch(37.9% 0.191 28.2)",
+          "oklch(49.3% 0.191 28.2)",
+          "oklch(60.7% 0.191 28.2)",
+          "oklch(72.1% 0.171 28.2)",
+          "oklch(83.6% 0.101 28.2)",
+          "oklch(95.0% 0.031 28.2)"
+        ]
+      },
+      "el-morte": {
+        "role": "functional",
+        "displayName": "Elemento Morte",
+        "canonical": "#a594c8",
+        "tonalRamp": [
+          "oklch(15.0% 0.037 299.4)",
+          "oklch(26.4% 0.065 299.4)",
+          "oklch(37.9% 0.077 299.4)",
+          "oklch(49.3% 0.077 299.4)",
+          "oklch(60.7% 0.077 299.4)",
+          "oklch(72.1% 0.069 299.4)",
+          "oklch(83.6% 0.041 299.4)",
+          "oklch(95.0% 0.012 299.4)"
+        ]
+      },
+      "el-conhecimento": {
+        "role": "functional",
+        "displayName": "Elemento Conhecimento",
+        "canonical": "#d9b35a",
+        "tonalRamp": [
+          "oklch(15.0% 0.056 86.4)",
+          "oklch(26.4% 0.098 86.4)",
+          "oklch(37.9% 0.116 86.4)",
+          "oklch(49.3% 0.116 86.4)",
+          "oklch(60.7% 0.116 86.4)",
+          "oklch(72.1% 0.104 86.4)",
+          "oklch(83.6% 0.061 86.4)",
+          "oklch(95.0% 0.019 86.4)"
+        ]
+      },
+      "el-energia": {
+        "role": "functional",
+        "displayName": "Elemento Energia",
+        "canonical": "#b06bff",
+        "tonalRamp": [
+          "oklch(15.0% 0.103 302.5)",
+          "oklch(26.4% 0.181 302.5)",
+          "oklch(37.9% 0.214 302.5)",
+          "oklch(49.3% 0.214 302.5)",
+          "oklch(60.7% 0.214 302.5)",
+          "oklch(72.1% 0.190 302.5)",
+          "oklch(83.6% 0.112 302.5)",
+          "oklch(95.0% 0.034 302.5)"
+        ]
+      },
+      "el-medo": {
+        "role": "functional",
+        "displayName": "Elemento Medo",
+        "canonical": "#e9e6df",
+        "tonalRamp": [
+          "oklch(15.0% 0.010 87.5)",
+          "oklch(26.4% 0.010 87.5)",
+          "oklch(37.9% 0.010 87.5)",
+          "oklch(49.3% 0.010 87.5)",
+          "oklch(60.7% 0.010 87.5)",
+          "oklch(72.1% 0.010 87.5)",
+          "oklch(83.6% 0.010 87.5)",
+          "oklch(95.0% 0.010 87.5)"
+        ]
+      },
+      "tema-sangue": {
+        "role": "tertiary",
+        "displayName": "Carmesim",
+        "canonical": "#e5476f",
+        "tonalRamp": [
+          "oklch(15.0% 0.093 9.7)",
+          "oklch(26.4% 0.165 9.7)",
+          "oklch(37.9% 0.195 9.7)",
+          "oklch(49.3% 0.195 9.7)",
+          "oklch(60.7% 0.195 9.7)",
+          "oklch(72.1% 0.174 9.7)",
+          "oklch(83.6% 0.102 9.7)",
+          "oklch(95.0% 0.031 9.7)"
+        ]
+      },
+      "tema-morte": {
+        "role": "tertiary",
+        "displayName": "Violeta Fechado",
+        "canonical": "#ab9bd3",
+        "tonalRamp": [
+          "oklch(15.0% 0.039 297.4)",
+          "oklch(26.4% 0.069 297.4)",
+          "oklch(37.9% 0.082 297.4)",
+          "oklch(49.3% 0.082 297.4)",
+          "oklch(60.7% 0.082 297.4)",
+          "oklch(72.1% 0.073 297.4)",
+          "oklch(83.6% 0.043 297.4)",
+          "oklch(95.0% 0.013 297.4)"
+        ]
+      },
+      "tema-conhecimento": {
+        "role": "tertiary",
+        "displayName": "Dourado Envelhecido",
+        "canonical": "#e3c04e",
+        "tonalRamp": [
+          "oklch(15.0% 0.065 91.9)",
+          "oklch(26.4% 0.115 91.9)",
+          "oklch(37.9% 0.136 91.9)",
+          "oklch(49.3% 0.136 91.9)",
+          "oklch(60.7% 0.136 91.9)",
+          "oklch(72.1% 0.122 91.9)",
+          "oklch(83.6% 0.072 91.9)",
+          "oklch(95.0% 0.022 91.9)"
+        ]
+      },
+      "tema-energia": {
+        "role": "tertiary",
+        "displayName": "Violeta Elétrico",
+        "canonical": "#b571ff",
+        "tonalRamp": [
+          "oklch(15.0% 0.099 303.5)",
+          "oklch(26.4% 0.174 303.5)",
+          "oklch(37.9% 0.206 303.5)",
+          "oklch(49.3% 0.206 303.5)",
+          "oklch(60.7% 0.206 303.5)",
+          "oklch(72.1% 0.184 303.5)",
+          "oklch(83.6% 0.108 303.5)",
+          "oklch(95.0% 0.033 303.5)"
+        ]
+      },
+      "tema-energia-ciano": {
+        "role": "tertiary",
+        "displayName": "Ciano",
+        "canonical": "#2fe0ff",
+        "tonalRamp": [
+          "oklch(15.0% 0.067 213.2)",
+          "oklch(26.4% 0.117 213.2)",
+          "oklch(37.9% 0.139 213.2)",
+          "oklch(49.3% 0.139 213.2)",
+          "oklch(60.7% 0.139 213.2)",
+          "oklch(72.1% 0.124 213.2)",
+          "oklch(83.6% 0.073 213.2)",
+          "oklch(95.0% 0.022 213.2)"
+        ]
+      },
+      "tema-medo": {
+        "role": "tertiary",
+        "displayName": "Branco Pálido",
+        "canonical": "#ebe8e1",
+        "tonalRamp": [
+          "oklch(15.0% 0.010 87.5)",
+          "oklch(26.4% 0.010 87.5)",
+          "oklch(37.9% 0.010 87.5)",
+          "oklch(49.3% 0.010 87.5)",
+          "oklch(60.7% 0.010 87.5)",
+          "oklch(72.1% 0.010 87.5)",
+          "oklch(83.6% 0.010 87.5)",
+          "oklch(95.0% 0.010 87.5)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Título da Central; uma ocorrência por tela."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Título do Arquivo e nome do agente na capa do dossiê (600)."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Títulos de seção da ficha, depois da etiqueta numerada."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Textos, descrições e campos."
+      },
+      "control": {
+        "displayName": "Control",
+        "purpose": "Rótulos de botões e da navegação."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Rótulos de bloco, códigos de registro, carimbos e selos; mono em caixa alta."
+      },
+      "numeral": {
+        "displayName": "Numeral",
+        "purpose": "Valores numéricos editáveis e leituras de instrumento."
+      }
+    },
+    "shadows": [
+      {
+        "name": "assentada",
+        "value": "0 1px 0 rgba(255, 255, 255, 0.035) inset, 0 1px 2px rgba(0, 0, 0, 0.45)",
+        "purpose": "Painéis e recursos dentro da ficha."
+      },
+      {
+        "name": "destacada",
+        "value": "0 14px 34px -14px rgba(0, 0, 0, 0.75), 0 1px 0 rgba(255, 255, 255, 0.04) inset",
+        "purpose": "Cartões de agente e atributos."
+      },
+      {
+        "name": "flutuante",
+        "value": "0 30px 70px -24px rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 255, 255, 0.05) inset",
+        "purpose": "Janelas, avisos e o cartão de agente sob o cursor."
+      },
+      {
+        "name": "vidro",
+        "value": "blur(18px) saturate(140%)",
+        "purpose": "backdrop-filter das superfícies estruturais (barra, trilho, painel de rolagens, janelas, avisos)."
+      }
+    ],
+    "motion": [
+      {
+        "name": "dur-1",
+        "value": "120ms",
+        "purpose": "Cor, borda e fundo de controles no hover."
+      },
+      {
+        "name": "dur-2",
+        "value": "200ms",
+        "purpose": "Halos de foco, elevação de cartões, entrada de elementos pequenos."
+      },
+      {
+        "name": "dur-3",
+        "value": "320ms",
+        "purpose": "Sombras e barras de medida."
+      },
+      {
+        "name": "dur-4",
+        "value": "600ms",
+        "purpose": "Troca de tema e da luz da atmosfera."
+      },
+      {
+        "name": "curva",
+        "value": "cubic-bezier(0.2, 0.7, 0.2, 1)",
+        "purpose": "Curva padrão de todas as transições de estado."
+      },
+      {
+        "name": "curva-saida",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Entradas (avisos, cartão recém-criado, troca de vista)."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "amplo",
+        "value": "1480px",
+        "purpose": "min-width: painel de rolagens vira coluna fixa à direita."
+      },
+      {
+        "name": "faixa",
+        "value": "1199px",
+        "purpose": "max-width: a ficha vira uma coluna e o trilho vira faixa no topo."
+      },
+      {
+        "name": "tablet",
+        "value": "1023px",
+        "purpose": "max-width: a grade da Central empilha."
+      },
+      {
+        "name": "celular",
+        "value": "719px",
+        "purpose": "max-width: barra de 56px, perícias em cartões, só a faixa de vitais presa."
+      },
+      {
+        "name": "estreito",
+        "value": "380px",
+        "purpose": "max-width: navegação sem ícones, título da Central em 44px."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botão principal",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "A ação principal da tela (nova ficha, confirmar).",
+      "html": "<button class=\"ds-btn-principal\" type=\"button\">Nova ficha</button>",
+      "css": ".ds-btn-principal{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;font:600 13.5px/1 var(--fonte-ui, IBM Plex Sans, system-ui, sans-serif);letter-spacing:.01em;color:var(--acento-texto, #17120a);background:linear-gradient(180deg,var(--acento-claro, #e3c58a) -60%,var(--acento, #c9a45c) 70%);border:1px solid color-mix(in oklab,var(--acento-claro, #e3c58a) 60%,transparent);border-radius:6px;box-shadow:0 1px 0 rgba(255,255,255,.3) inset,0 6px 18px -10px rgba(201,164,92,.5);cursor:pointer;transition:filter 120ms cubic-bezier(.2,.7,.2,1),box-shadow 200ms cubic-bezier(.2,.7,.2,1)}.ds-btn-principal:hover{filter:brightness(1.06);box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 10px 26px -8px rgba(201,164,92,.45),0 0 0 3px rgba(201,164,92,.14)}.ds-btn-principal:focus-visible{outline:2px solid var(--acento, #c9a45c);outline-offset:2px}.ds-btn-principal:active{transform:translateY(1px)}"
+    },
+    {
+      "name": "Botão secundário",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Ações de apoio na barra e nos cabeçalhos.",
+      "html": "<button class=\"ds-btn-secundario\" type=\"button\">Importar</button>",
+      "css": ".ds-btn-secundario{display:inline-flex;align-items:center;height:36px;padding:0 14px;font:600 13.5px/1 var(--fonte-ui, IBM Plex Sans, system-ui, sans-serif);color:var(--papel, #ece6da);background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid var(--linha-2, rgba(236,230,218,.12));border-radius:6px;box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 1px 2px rgba(0,0,0,.35);cursor:pointer;transition:border-color 120ms,background-color 120ms}.ds-btn-secundario:hover{border-color:var(--linha-3, rgba(236,230,218,.22));background:rgba(255,255,255,.07)}.ds-btn-secundario:focus-visible{outline:2px solid var(--acento, #c9a45c);outline-offset:2px}"
+    },
+    {
+      "name": "Botão de rolagem",
+      "kind": "button",
+      "refersTo": "button-roll-damage",
+      "description": "Rolar perícia, ataque ou dano; segue o acento do tema, e o dano usa o vermelho de PV.",
+      "html": "<div style=\"display:flex;gap:8px\"><button class=\"ds-rolar\" type=\"button\">Rolar</button><button class=\"ds-rolar ds-rolar--dano\" type=\"button\">Dano</button></div>",
+      "css": ".ds-rolar{height:36px;padding:0 14px;font:600 13px/1 var(--fonte-ui, IBM Plex Sans, system-ui, sans-serif);color:var(--acento-texto, #17120a);background:linear-gradient(180deg,var(--acento-claro, #e3c58a) -70%,var(--acento, #c9a45c) 70%);border:1px solid color-mix(in oklab,var(--acento-claro, #e3c58a) 60%,transparent);border-radius:6px;box-shadow:0 1px 0 rgba(255,255,255,.3) inset;cursor:pointer;transition:box-shadow 200ms cubic-bezier(.2,.7,.2,1)}.ds-rolar:hover{box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 10px 26px -8px rgba(201,164,92,.45),0 0 0 3px rgba(201,164,92,.14)}.ds-rolar:focus-visible{outline:2px solid var(--acento, #c9a45c);outline-offset:2px}.ds-rolar--dano{color:#fff4f2;background:linear-gradient(180deg,#f07a70 -70%,#c23b31 75%);border-color:rgba(240,122,112,.6)}"
+    },
+    {
+      "name": "Campo de texto",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Campos da ficha e busca do Arquivo.",
+      "html": "<label class=\"ds-campo\"><span>Agente</span><input type=\"text\" placeholder=\"Nome do agente\"></label>",
+      "css": ".ds-campo{display:grid;gap:6px;font:600 11px/1.2 var(--fonte-mono, IBM Plex Mono, ui-monospace, monospace);letter-spacing:.2em;text-transform:uppercase;color:var(--papel-3, #938d82)}.ds-campo input{height:34px;padding:0 10px;font:400 14px/1 var(--fonte-ui, IBM Plex Sans, system-ui, sans-serif);letter-spacing:0;text-transform:none;color:var(--papel, #ece6da);background:var(--campo-fundo, #0b0d10);border:1px solid var(--linha-2, rgba(236,230,218,.12));border-radius:3px;box-shadow:0 1px 0 rgba(255,255,255,.03);transition:border-color 120ms,box-shadow 200ms}.ds-campo input::placeholder{color:#8a857c}.ds-campo input:hover{border-color:var(--linha-3, rgba(236,230,218,.22))}.ds-campo input:focus{outline:none;border-color:var(--acento, #c9a45c);box-shadow:0 0 0 3px rgba(201,164,92,.14)}.ds-campo input:focus-visible{box-shadow:0 0 0 1px var(--acento, #c9a45c),0 0 0 4px rgba(201,164,92,.3)}"
+    },
+    {
+      "name": "Passo numérico",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Valor numérico com − e + embutidos (PV, SAN, PE, munição).",
+      "html": "<div class=\"ds-passo\"><button type=\"button\" aria-label=\"Diminuir\">−</button><input type=\"text\" inputmode=\"numeric\" value=\"12\" aria-label=\"PV atual\"><button type=\"button\" aria-label=\"Aumentar\">+</button></div>",
+      "css": ".ds-passo{display:inline-grid;grid-template-columns:30px 44px 30px;height:34px;background:var(--campo-fundo, #0b0d10);border:1px solid var(--linha-2, rgba(236,230,218,.12));border-radius:3px;overflow:hidden}.ds-passo:focus-within{border-color:var(--acento, #c9a45c);box-shadow:0 0 0 1px var(--acento, #c9a45c),0 0 0 4px rgba(201,164,92,.26)}.ds-passo button{font:500 16px/1 var(--fonte-mono, IBM Plex Mono, monospace);color:var(--papel-3, #938d82);background:transparent;border:0;cursor:pointer}.ds-passo button:hover{color:var(--papel, #ece6da);background:rgba(255,255,255,.06)}.ds-passo button:active{color:var(--acento, #c9a45c);background:rgba(201,164,92,.14)}.ds-passo input{width:100%;padding:0;font:600 14px/1 var(--fonte-mono, IBM Plex Mono, monospace);text-align:center;color:var(--papel, #ece6da);background:transparent;border:0;outline:none}"
+    },
+    {
+      "name": "Navegação global",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "Central, Arquivo e Ficha na barra de vidro fumê.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Navegação\"><a href=\"#\" aria-current=\"page\">Central</a><a href=\"#\">Arquivo <span>3</span></a><a href=\"#\">Ficha</a></nav>",
+      "css": ".ds-nav{display:flex;gap:4px;padding:8px;background:linear-gradient(180deg,rgba(10,11,13,.84),rgba(10,11,13,.68));backdrop-filter:blur(18px) saturate(150%);border-bottom:1px solid rgba(236,230,218,.1)}.ds-nav a{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 13px;font:600 13.5px/1 var(--fonte-ui, IBM Plex Sans, system-ui, sans-serif);color:var(--papel-3, #938d82);text-decoration:none;border:1px solid transparent;border-radius:6px;transition:color 120ms,background-color 120ms,border-color 120ms}.ds-nav a:hover{color:var(--papel, #ece6da)}.ds-nav a[aria-current=page]{color:var(--papel, #ece6da);background:rgba(255,255,255,.055);border-color:var(--linha-1, rgba(236,230,218,.07))}.ds-nav a:focus-visible{outline:2px solid #c9a45c;outline-offset:2px}.ds-nav span{padding:1px 7px;font:600 11px/1.5 var(--fonte-mono, IBM Plex Mono, monospace);color:var(--papel-2, #bab3a6);background:rgba(255,255,255,.06);border-radius:999px}"
+    },
+    {
+      "name": "Selos e carimbo",
+      "kind": "chip",
+      "refersTo": "stamp",
+      "description": "Selos de fonte e requisito nas perícias; o carimbo só na capa do dossiê.",
+      "html": "<div style=\"display:flex;gap:10px;align-items:center\"><span class=\"ds-selo ds-selo--fonte\">Livro</span><span class=\"ds-selo ds-selo--requer\">Treino</span><span class=\"ds-carimbo\">CONFIDENCIAL</span></div>",
+      "css": ".ds-selo{display:inline-flex;align-items:center;padding:2px 7px;font:600 11px/1.4 var(--fonte-mono, IBM Plex Mono, monospace);letter-spacing:.12em;text-transform:uppercase;border:1px solid currentColor;border-radius:3px}.ds-selo--fonte{color:var(--ok, #82b38c)}.ds-selo--requer{color:var(--aviso, #e2b354);border-color:rgba(226,179,84,.34)}.ds-carimbo{padding:5px 9px 4px;font:700 11px/1 var(--fonte-mono, IBM Plex Mono, monospace);letter-spacing:.26em;color:var(--carimbo, #c94a40);border:1.5px solid currentColor;border-radius:3px;transform:rotate(-3deg);opacity:.88}"
+    },
+    {
+      "name": "Cartão de agente",
+      "kind": "card",
+      "refersTo": "card-agent",
+      "description": "Uma ficha no Arquivo e na Central, com o traço do tema e a orelha dobrada.",
+      "html": "<article class=\"ds-cartao\"><p class=\"ds-cartao__codigo\">MXQ4-7B2K</p><h3 class=\"ds-cartao__nome\">Nome do agente</h3><p class=\"ds-cartao__meta\">Classe · NEX</p></article>",
+      "css": ".ds-cartao{position:relative;display:grid;gap:6px;max-width:320px;padding:18px 18px 14px;background:radial-gradient(120% 70% at 100% 0%,rgba(201,164,92,.07),transparent 60%),linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.008) 40%),var(--tinta-2, #0f1114);border:1px solid var(--linha-1, rgba(236,230,218,.07));border-radius:10px;box-shadow:0 14px 34px -14px rgba(0,0,0,.75),0 1px 0 rgba(255,255,255,.04) inset;transition:transform 200ms cubic-bezier(.2,.7,.2,1),box-shadow 320ms cubic-bezier(.2,.7,.2,1),border-color 200ms}.ds-cartao::before{content:'';position:absolute;top:-1px;left:18px;width:54px;height:2px;border-radius:2px;background:#c9a45c;box-shadow:0 0 14px #c9a45c}.ds-cartao::after{content:'';position:absolute;top:-1px;right:-1px;width:20px;height:20px;border-top-right-radius:10px;border-bottom-left-radius:4px;background:linear-gradient(225deg,#0a0b0d 50%,rgba(255,255,255,.07) 50%)}.ds-cartao:hover{transform:translateY(-3px);border-color:var(--linha-2, rgba(236,230,218,.12));box-shadow:0 30px 70px -24px rgba(0,0,0,.85),0 0 0 1px rgba(201,164,92,.22)}.ds-cartao__codigo{margin:0;font:600 11px/1.2 var(--fonte-mono, IBM Plex Mono, monospace);letter-spacing:.2em;color:var(--papel-3, #938d82)}.ds-cartao__nome{margin:0;font:600 26px/1.05 var(--fonte-display, Cormorant Garamond, Georgia, serif);color:var(--papel, #ece6da)}.ds-cartao__meta{margin:0;font:400 13px/1.4 var(--fonte-ui, IBM Plex Sans, system-ui, sans-serif);color:var(--papel-2, #bab3a6)}"
+    },
+    {
+      "name": "Vital do trilho",
+      "kind": "custom",
+      "refersTo": "panel",
+      "description": "Recurso do agente com barra, valor e ±1; a cor de PV/PE/SAN é fixa.",
+      "html": "<div class=\"ds-vital\"><div class=\"ds-vital__topo\"><span class=\"ds-vital__sigla\">PV</span><span class=\"ds-vital__valor\">18<small>/24</small></span></div><div class=\"ds-vital__barra\"><i style=\"width:75%\"></i></div></div>",
+      "css": ".ds-vital{--cor:var(--pv, #e65a50);position:relative;display:grid;gap:10px;width:220px;padding:14px 16px 14px 18px;background:radial-gradient(90% 80% at 100% 0%,color-mix(in oklab,var(--cor) 11%,transparent),transparent 60%),var(--tinta-3, #14171b);border:1px solid var(--linha-1, rgba(236,230,218,.07));border-radius:10px}.ds-vital::before{content:'';position:absolute;top:14px;bottom:14px;left:0;width:2px;border-radius:2px;background:var(--cor);box-shadow:0 0 12px var(--cor)}.ds-vital__topo{display:flex;justify-content:space-between;align-items:baseline}.ds-vital__sigla{font:600 27px/1 var(--fonte-display, Cormorant Garamond, Georgia, serif);letter-spacing:.06em;color:var(--cor)}.ds-vital__valor{font:600 18px/1 var(--fonte-mono, IBM Plex Mono, monospace);color:var(--papel, #ece6da)}.ds-vital__valor small{font-size:12px;color:var(--papel-3, #938d82)}.ds-vital__barra{height:6px;background:rgba(255,255,255,.06);border-radius:999px;overflow:hidden}.ds-vital__barra i{display:block;height:100%;background:var(--cor);border-radius:999px;transition:width 320ms cubic-bezier(.2,.7,.2,1)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "O Dossiê Vivo",
+    "overview": "**Creative North Star: \"O Dossiê Vivo\"**\n\nO site é o arquivo de papel da Ordem que ganhou tecnologia. A linguagem de documento (rótulos datilografados em caixa alta, códigos de registro, carimbos, etiquetas de pasta numeradas, monogramas) fica sobre telas de tinta escura, com controles precisos e números fáceis de ler. O papel dá a identidade; a tecnologia dá a precisão. Nenhum dos dois grita.\n\nO clima é sóbrio e preciso. A atmosfera existe, mas como pano de fundo: luz ambiente parada, grão quase invisível (4,5% de opacidade) e escuridão profunda servem à leitura, nunca disputam com ela. A densidade é a de um instrumento: muita informação por tela, organizada por hierarquia tipográfica e por superfícies em camadas, não por cor. A cor aparece onde há ação ou estado.\n\nA identidade tem dois registros. Fora da ficha (barra global, Central e Arquivo), vale a voz institucional: grafite e Ouro de Arquivo. Dentro da ficha, o jogador escolhe um dos cinco temas elementais (Sangue, Morte, Conhecimento, Energia, Medo) ou o neutro, e o tema troca só cor, luz e textura, mantendo a mesma estrutura. O neutro se chama \"Neutro\" (não \"Arquivo\", que é a biblioteca).",
+    "keyCharacteristics": [
+      "Tinta escura em camadas (`tinta-0` a `tinta-5`) com texto em tom de papel, nunca branco puro.",
+      "Três vozes tipográficas: serifa editorial para nomes e títulos, sans para leitura e controles, mono para rótulos, códigos e números.",
+      "Um único acento por contexto: Ouro de Arquivo na casca do app, a cor do tema dentro da ficha.",
+      "Vidro fumê só nas superfícies estruturais; o conteúdo fica sobre tinta sólida.",
+      "Cantos pequenos, de papel e metal.",
+      "Controles de instrumento de campo: 36px no mouse, 44px no toque."
+    ],
+    "rules": [
+      {
+        "name": "A Regra do Acento Único",
+        "body": "Cada contexto tem um acento só: Ouro de Arquivo na casca do app, a cor do tema dentro da ficha. Um segundo acento (`--acento-2`) aparece apenas em detalhes de textura e luz.",
+        "section": "colors"
+      },
+      {
+        "name": "A Regra dos Sinais Fixos",
+        "body": "PV, PE, SAN e as cores dos elementos são regra do jogo e não mudam com o tema. O jogador reconhece o recurso pela cor em qualquer tema.",
+        "section": "colors"
+      },
+      {
+        "name": "A Regra do Tema Só Visual",
+        "body": "Um tema troca tokens de cor, luz e textura dentro de `[data-tema]` e nada mais. Barra global, Central e Arquivo nunca mudam com ele.",
+        "section": "colors"
+      },
+      {
+        "name": "A Regra das Três Vozes",
+        "body": "Serifa para o que tem nome, sans para ler e agir, mono para rotular e contar. Não trocar de voz dentro de um mesmo papel.",
+        "section": "typography"
+      },
+      {
+        "name": "A Regra do Rótulo de Arquivo",
+        "body": "Rótulo é sempre mono, caixa alta e espaçado, em `papel-3`, e nunca menor que 11px. Se precisa de destaque, ganha cor de acento, não tamanho.",
+        "section": "typography"
+      },
+      {
+        "name": "A Regra da Divisória",
+        "body": "Cada seção da ficha abre com a etiqueta de pasta numerada (o mesmo número do índice) e o título na voz da capa, de 30 a 42px conforme a largura da ficha. Há mais ar acima do título do que abaixo.",
+        "section": "typography"
+      },
+      {
+        "name": "A Regra da Mão na Mesa",
+        "body": "No celular, PV, SAN e PE ficam sempre à vista e a um toque do ajuste (−5…+5, dano e cura de N, desfazer), e cada linha de perícia tem o seu botão de rolar.",
+        "section": "layout"
+      },
+      {
+        "name": "A Regra do Vidro Estrutural",
+        "body": "Desfoque só no que emoldura o conteúdo, nunca num cartão de conteúdo. Com transparência reduzida, ou sem suporte a `backdrop-filter`, o vidro vira tinta sólida.",
+        "section": "elevation"
+      },
+      {
+        "name": "A Regra do Brilho com Motivo",
+        "body": "Controles não brilham em repouso: o brilho do acento (`--brilho`) neles aparece só em hover, foco, seleção ou rolagem ativa. Em repouso, o brilho é reservado ao que é leitura de instrumento ou identidade: os totais dos atributos, as barras de PV, PE e SAN, o anel dos atributos e o monograma da capa.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** usar `--acento` dentro da ficha e Ouro de Arquivo fora dela, nunca os dois disputando a mesma tela.",
+      "**Do** manter PV, PE, SAN e as cores dos elementos idênticas em todos os temas.",
+      "**Do** escrever rótulos em mono, caixa alta e espaçados, em `papel-3`.",
+      "**Do** dar 44px aos controles quando o ponteiro é de toque (`pointer: coarse`).",
+      "**Do** esmaecer pela cor (`papel-3`, `papel-4`), não por opacidade, todo texto que ainda precisa ser lido, para manter o contraste AA. Opacidade (45%) fica só para controles desabilitados.",
+      "**Do** oferecer saída para cada preferência do sistema: movimento reduzido sem animações, transparência reduzida sem vidro e mais contraste com papéis e linhas mais fortes."
+    ],
+    "donts": [
+      "**Don't** pôr `backdrop-filter` em cartões de conteúdo; vidro é só estrutura.",
+      "**Don't** animar a atmosfera continuamente; luz e grão são estáticos.",
+      "**Don't** deixar o tema elemental alcançar a barra global, a Central ou o Arquivo.",
+      "**Don't** usar raio maior que 10px em cartões nem a pílula fora de medidores, contadores e interruptores.",
+      "**Don't** usar branco puro para texto; o tom mais claro é `papel`.",
+      "**Don't** fazer um controle brilhar em repouso; o brilho parado é só de leitura de instrumento e identidade.",
+      "**Don't** usar um rótulo menor que 11px."
+    ]
+  }
+}

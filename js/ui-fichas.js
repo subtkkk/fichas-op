@@ -100,7 +100,9 @@ window.OP = window.OP || {};
 
   /** "Liz Webber" → "LW"; "Dante" → "DA"; vazio → "?". */
   function monograma(nome) {
-    const palavras = String(nome || '').trim().split(/\s+/).filter(Boolean);
+    const palavras = String(nome || '').trim().split(/\s+/).filter(function (palavra) {
+      return /^[\p{L}\p{N}]/u.test(palavra);
+    });
     if (!palavras.length) return '?';
     if (palavras.length === 1) return palavras[0].slice(0, 2).toUpperCase();
     return (palavras[0][0] + palavras[palavras.length - 1][0]).toUpperCase();
@@ -264,12 +266,14 @@ window.OP = window.OP || {};
     const lista = criar('dl', 'mini-vitais' + (classeExtra ? ' ' + classeExtra : ''));
     ['pv', 'pe', 'san'].forEach(function (id) {
       const vital = resumo.vitais[id];
-      const item = criar('div', 'mini-vital mini-vital--' + id);
-      item.title = vital.nome + ': ' + vital.atual + ' de ' + vital.max;
+      const zerado = vital.atual === 0 && vital.max > 0;
+      const item = criar('div', 'mini-vital mini-vital--' + id + (zerado ? ' mini-vital--zero' : ''));
+      item.title = vital.nome + ': ' + vital.atual + ' de ' + vital.max + (zerado ? ' (zerado)' : '');
       item.appendChild(criar('dt', 'mini-vital__sigla', vital.sigla));
       const valor = criar('dd', 'mini-vital__valor');
       valor.appendChild(criar('span', 'mini-vital__atual', vital.atual === null ? '—' : vital.atual));
       valor.appendChild(criar('span', 'mini-vital__max', '/' + (vital.max === null ? '—' : vital.max)));
+      if (zerado) valor.appendChild(criar('span', 'mini-vital__estado', 'zerado'));
       const barra = criar('span', 'mini-vital__barra');
       barra.setAttribute('aria-hidden', 'true');
       const preenchido = criar('span', 'mini-vital__preenchido');
@@ -419,6 +423,10 @@ window.OP = window.OP || {};
     if (!principal) principal = ordenadas[0] || null;
 
     refs.central.dataset.vazia = lista.length ? 'nao' : 'sim';
+    if (refs.tituloContinuar) {
+      const rotulo = lista.length ? 'Continuar de onde parou' : 'Comece por aqui';
+      if (refs.tituloContinuar.textContent !== rotulo) refs.tituloContinuar.textContent = rotulo;
+    }
     if (!principal) {
       substituirFilhos(refs.continuar, [criarEstadoVazio('Nenhum agente no arquivo ainda.',
         'Registre o primeiro agente para começar, ou importe um .json exportado de outro navegador.')]);
@@ -561,6 +569,7 @@ window.OP = window.OP || {};
 
     substituirFilhos(refs.lista, visiveis.map(criarCartao));
     refs.lista.hidden = visiveis.length === 0;
+    if (refs.tituloLista) refs.tituloLista.hidden = refs.lista.hidden;
     refs.ferramentas.hidden = lista.length === 0;
     refs.dica.hidden = lista.length === 0;
 
@@ -641,18 +650,44 @@ window.OP = window.OP || {};
     const nome = nomeExibido(linha && linha.nome);
     OP.ui.confirmar({
       titulo: 'Excluir ficha',
-      texto: 'Excluir "' + nome + '"? Não dá para desfazer. Para guardar uma cópia, use Exportar antes.',
+      texto: 'Excluir "' + nome + '"? Logo depois, o aviso oferece Desfazer por alguns segundos. ' +
+        'Para guardar uma cópia fora deste navegador, use Exportar.',
       textoConfirmar: 'Excluir',
       perigo: true,
       aoConfirmar: function () {
         const eraAberta = id === OP.fichas.idAtual();
+        if (eraAberta) OP.fichas.salvarPendente();
+        // Guarda o que é preciso para desfazer: a ficha, o lugar no Arquivo e o tema
+        const copia = eraAberta ? OP.state.ficha : OP.fichas.ler(id);
+        const guardada = copia ? JSON.parse(JSON.stringify(copia)) : null;
+        const posicao = OP.fichas.posicao(id);
+        const tema = OP.prefs.tema(id);
+
         const resultado = OP.fichas.excluir(id);
         OP.prefs.esquecerTema(id);
         atualizarListas();
         OP.uiApp.atualizarNav();
-        aviso('ok', 'Ficha "' + nome + '" excluída.' + (eraAberta && resultado.abriuId ? ' Outra ficha ficou aberta.' : ''));
+        const texto = 'Ficha "' + nome + '" excluída.' + (eraAberta && resultado.abriuId ? ' Outra ficha ficou aberta.' : '');
+        aviso('ok', texto, guardada ? {
+          duracao: 10000,
+          acao: { rotulo: 'Desfazer', fazer: function () { restaurarFicha(guardada, posicao, tema, eraAberta); } }
+        } : undefined);
       }
     });
+  }
+
+  /** "Desfazer" da exclusão: a ficha volta com o mesmo id, no mesmo lugar e com o mesmo tema. */
+  function restaurarFicha(ficha, posicao, tema, abrir) {
+    if (!OP.fichas.restaurar(ficha, posicao)) {
+      aviso('erro', 'Não foi possível restaurar a ficha: o navegador não deixou salvar.');
+      return;
+    }
+    if (tema) OP.prefs.definirTema(ficha.id, tema);
+    atualizarListas();
+    OP.uiApp.atualizarNav();
+    destacarCartao(ficha.id);
+    if (abrir) irPara('ficha', ficha.id);
+    aviso('ok', 'Ficha "' + nomeExibido(ficha.identificacao && ficha.identificacao.nome) + '" restaurada.');
   }
 
   function baixarBackup() {
@@ -675,31 +710,107 @@ window.OP = window.OP || {};
       resumoClasseNex(ficha.identificacao.classe, ficha.identificacao.nex, ficha.identificacao.estagio);
   }
 
-  /** Mostra o resumo e só grava depois da confirmação. Importar SEMPRE cria fichas novas. */
+  /**
+   * Mostra o resumo e só grava depois da confirmação. Uma ficha que já existe
+   * neste navegador (mesmo registro, ex.: levada do celular para o notebook e
+   * de volta) pode substituir a daqui ou entrar como nova; o resto entra como nova.
+   */
   function confirmarImportacao(resultado) {
     const total = resultado.fichas.length;
+    const repetidas = resultado.fichas.filter(function (ficha) { return OP.fichas.existe(ficha.id); });
+    const titulo = total === 1 ? 'Importar ficha' : 'Importar ' + total + ' fichas';
+    const itens = resultado.fichas.map(resumoImportacao);
+    if (!repetidas.length) {
+      OP.ui.confirmar({
+        titulo: titulo,
+        texto: (total === 1 ? 'A ficha abaixo entra como nova' : 'As fichas abaixo entram como novas') +
+          '; nenhuma ficha existente é alterada.',
+        itens: itens,
+        avisos: resultado.avisos,
+        textoConfirmar: 'Importar',
+        aoConfirmar: function () { gravarImportacao(resultado.fichas, false); }
+      });
+      return;
+    }
+    const nomes = repetidas.map(function (ficha) { return '"' + nomeExibido(ficha.identificacao.nome) + '"'; }).join(', ');
+    const uma = repetidas.length === 1;
     OP.ui.confirmar({
-      titulo: total === 1 ? 'Importar ficha' : 'Importar ' + total + ' fichas',
-      texto: (total === 1 ? 'A ficha abaixo entra como nova' : 'As fichas abaixo entram como novas') +
-        '; nenhuma ficha existente é alterada.',
-      itens: resultado.fichas.map(resumoImportacao),
+      titulo: titulo,
+      texto: (uma ? 'A ficha ' + nomes + ' já está neste navegador.' : 'As fichas ' + nomes + ' já estão neste navegador.') +
+        ' Substituir troca a versão daqui pela do arquivo (dá para desfazer logo depois). ' +
+        'Importar como ' + (uma ? 'nova' : 'novas') + ' mantém as duas versões.',
+      itens: itens,
       avisos: resultado.avisos,
-      textoConfirmar: 'Importar',
-      aoConfirmar: function () {
-        const gravacao = OP.fichas.importar(resultado.fichas);
-        const quantas = gravacao.ids.length === 1 ? '1 ficha importada' : gravacao.ids.length + ' fichas importadas';
-        if (vistaAtual() !== 'arquivo') irPara('arquivo');
-        atualizarListas();
-        gravacao.ids.forEach(destacarCartao);
-        if (gravacao.ok) {
-          aviso('ok', quantas + '.', gravacao.ids.length === 1
-            ? { acao: { rotulo: 'Abrir', fazer: function () { irPara('ficha', gravacao.ids[0]); } } }
-            : undefined);
-        } else {
-          aviso('aviso', quantas + ', mas o navegador não conseguiu salvar: exporte um backup antes de fechar a página.');
-        }
-      }
+      textoConfirmar: 'Substituir',
+      alternativa: {
+        texto: uma ? 'Importar como nova' : 'Importar como novas',
+        aoEscolher: function () { gravarImportacao(resultado.fichas, false); }
+      },
+      aoConfirmar: function () { gravarImportacao(resultado.fichas, true); }
     });
+  }
+
+  /** Grava a importação. substituir: as fichas que já existem trocam a versão daqui pela do arquivo. */
+  function gravarImportacao(fichas, substituir) {
+    const ids = [];
+    const anteriores = []; // versões substituídas, para o Desfazer
+    const novas = [];
+    let ok = true;
+    let substituidas = 0;
+    fichas.forEach(function (ficha) {
+      if (!substituir || !OP.fichas.existe(ficha.id)) {
+        novas.push(ficha);
+        return;
+      }
+      if (ficha.id === OP.fichas.idAtual()) OP.fichas.salvarPendente();
+      const antes = ficha.id === OP.fichas.idAtual() ? OP.state.ficha : OP.fichas.ler(ficha.id);
+      const id = OP.fichas.substituirExistente(ficha);
+      if (!id) {
+        ok = false;
+        return;
+      }
+      if (antes) anteriores.push(JSON.parse(JSON.stringify(antes)));
+      ids.push(id);
+      substituidas++;
+    });
+    if (novas.length) {
+      const gravacao = OP.fichas.importar(novas);
+      gravacao.ids.forEach(function (id) { ids.push(id); });
+      if (!gravacao.ok) ok = false;
+    }
+
+    if (vistaAtual() !== 'arquivo') irPara('arquivo');
+    atualizarListas();
+    OP.uiApp.atualizarNav();
+    ids.forEach(destacarCartao);
+
+    const importadas = ids.length - substituidas;
+    const partes = [];
+    if (substituidas) partes.push(substituidas === 1 ? '1 ficha substituída' : substituidas + ' fichas substituídas');
+    if (importadas) partes.push(importadas === 1 ? '1 ficha importada' : importadas + ' fichas importadas');
+    const resumo = partes.join(' e ') || 'Nada foi importado';
+    if (!ok) {
+      aviso('aviso', resumo + ', mas o navegador não conseguiu salvar tudo: exporte um backup antes de fechar a página.');
+      return;
+    }
+    if (anteriores.length) {
+      aviso('ok', resumo + '.', {
+        duracao: 10000,
+        acao: {
+          rotulo: 'Desfazer',
+          fazer: function () {
+            anteriores.forEach(function (anterior) { OP.fichas.substituirExistente(anterior); });
+            atualizarListas();
+            OP.uiApp.atualizarNav();
+            aviso('ok', anteriores.length === 1 ? 'A versão anterior da ficha voltou.' : 'As versões anteriores das fichas voltaram.');
+          }
+        }
+      });
+      return;
+    }
+    aviso('ok', resumo + '.', ids.length === 1
+      ? { acao: { rotulo: 'Abrir', fazer: function () { irPara('ficha', ids[0]); } } }
+      : undefined);
   }
 
   function importarArquivo(arquivo) {
@@ -873,12 +984,14 @@ window.OP = window.OP || {};
 
     refs.central = document.getElementById('vista-central');
     refs.continuar = document.getElementById('central-continuar');
+    refs.tituloContinuar = document.getElementById('central-continuar-titulo');
     refs.recentes = document.getElementById('central-recentes');
     refs.blocoRecentes = refs.recentes.closest('.central__bloco');
     refs.statusArquivo = document.getElementById('central-status');
 
     refs.vistaArquivo = document.getElementById('vista-arquivo');
     refs.lista = document.getElementById('lista-fichas');
+    refs.tituloLista = document.getElementById('arquivo-lista-titulo');
     refs.contagem = document.getElementById('arquivo-contagem');
     refs.busca = document.getElementById('arquivo-busca');
     refs.filtroClasse = document.getElementById('arquivo-filtro-classe');

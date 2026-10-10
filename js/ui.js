@@ -319,15 +319,21 @@ window.OP = window.OP || {};
         '</fieldset>' +
 
         '<div class="recurso__rodape">' +
-          '<div class="recurso__bonus">' +
-            '<label for="' + idBonus + '">Bônus de máximo</label>' +
-            htmlPasso({ id: idBonus, caminho: 'recursos.' + recurso.id + '.bonusMax', descricao: 'bônus de máximo de ' + recurso.nome }) +
-          '</div>' +
           (recurso.id === 'san' ? htmlPerdaPermanente(recurso) : '') +
-          '<p class="recurso__composicao">' +
-            '<span class="recurso__resumo" data-composicao-resumo></span>' +
-            '<span class="recurso__detalhe" data-composicao-detalhe></span>' +
-          '</p>' +
+          // Ajuste fino do máximo e de onde vem o número: fora do caminho dos botões de sessão
+          '<details class="recurso__detalhes">' +
+            '<summary class="recurso__detalhes-titulo">Bônus e cálculo</summary>' +
+            '<div class="recurso__detalhes-corpo">' +
+              '<div class="recurso__bonus">' +
+                '<label for="' + idBonus + '">Bônus de máximo</label>' +
+                htmlPasso({ id: idBonus, caminho: 'recursos.' + recurso.id + '.bonusMax', descricao: 'bônus de máximo de ' + recurso.nome }) +
+              '</div>' +
+              '<p class="recurso__composicao">' +
+                '<span class="recurso__resumo" data-composicao-resumo></span>' +
+                '<span class="recurso__detalhe" data-composicao-detalhe></span>' +
+              '</p>' +
+            '</div>' +
+          '</details>' +
         '</div>' +
       '</article>';
   }
@@ -679,7 +685,7 @@ window.OP = window.OP || {};
     preencherSelect(
       document.getElementById('inv-credito'),
       OP.data.niveisCredito.map(function (n) { return { valor: n.id, texto: n.nome }; }),
-      'Padrão da patente'
+      'Padrão'
     );
     refs.opcaoCreditoPadrao = document.querySelector('#inv-credito option[value=""]');
 
@@ -726,7 +732,7 @@ window.OP = window.OP || {};
   }
 
   // Atributos que recebem o id do ataque (por setAttribute, em criarComIds).
-  const IDS_ATAQUE = ['data-ataque', 'data-rolar-ataque', 'data-dano-critico', 'data-rolar-dano', 'data-remover-ataque'];
+  const IDS_ATAQUE = ['data-ataque', 'data-rolar-ataque', 'data-dano-critico', 'data-rolar-dano', 'data-remover-ataque', 'data-alternar-edicao'];
 
   /** HTML FIXO de um ataque (cartão com 4 linhas: teste, dano, detalhes, notas). */
   function htmlAtaque(indice) {
@@ -734,7 +740,7 @@ window.OP = window.OP || {};
     return '' +
       '<div class="ataque" role="listitem" data-ataque>' +
         // Linha 1: identificação e teste
-        '<div class="ataque__linha">' +
+        '<div class="ataque__linha ataque__linha--teste">' +
           htmlCampoAtaque('nome', 'Nome',
             '<input type="text" class="controle ataque__nome" placeholder="Ex.: Faca" autocomplete="off" data-campo="' + c + '.nome" data-tipo="texto">') +
           htmlCampoAtaque('pericia', 'Perícia',
@@ -745,11 +751,13 @@ window.OP = window.OP || {};
             '<input type="number" step="1" class="controle controle--numero" data-campo="' + c + '.testeBonus" data-tipo="inteiro">') +
           '<div class="ataque__acoes">' +
             '<button type="button" class="botao-rolagem" data-rolar-ataque>' + ICONE_DADO + '<span>Rolar ataque</span></button>' +
+            htmlBotaoEdicao('ataque') +
           '</div>' +
         '</div>' +
 
-        // Linha 2: dano e crítico
-        '<div class="ataque__linha">' +
+        // Linha 2: dano e crítico (no resumo: só a linha de resumo e os botões)
+        '<div class="ataque__linha ataque__linha--dano">' +
+          '<p class="cartao-resumo" data-resumo-mesa></p>' +
           htmlCampoAtaque('dano', 'Dano',
             '<input type="text" class="controle ataque__formula" spellcheck="false" autocomplete="off" placeholder="1d6"' +
               ' data-campo="' + c + '.dano" data-tipo="texto">' +
@@ -776,7 +784,7 @@ window.OP = window.OP || {};
         '</div>' +
 
         // Linha 3: alcance, propriedades, munição e arma do inventário
-        '<div class="ataque__linha">' +
+        '<div class="ataque__linha ataque__linha--detalhes">' +
           htmlCampoAtaque('alcance', 'Alcance',
             '<input type="text" class="controle" placeholder="Ex.: curto" autocomplete="off" data-campo="' + c + '.alcance" data-tipo="texto">') +
           htmlCampoAtaque('propriedades', 'Propriedades',
@@ -804,6 +812,40 @@ window.OP = window.OP || {};
       '</div>';
   }
 
+  /**
+   * Ataques e rituais têm dois modos de tela: "resumo" (o que se usa na mesa:
+   * nome, uma linha de resumo e os botões de rolar/conjurar) e "edicao" (o
+   * formulário inteiro). É estado só da tela; a impressão mostra tudo.
+   */
+  function htmlBotaoEdicao(tipo) {
+    return '<button type="button" class="botao-texto cartao-editar" data-alternar-edicao aria-expanded="false"' +
+      ' data-tipo-cartao="' + tipo + '">Editar</button>';
+  }
+
+  /** Modo do cartão. Na primeira vez: sem nome abre editando (cartão novo); com nome, resumo. */
+  function modoCartao(id, nome) {
+    if (refs.cartoesAbertos[id] === undefined) refs.cartoesAbertos[id] = !String(nome || '').trim();
+    return refs.cartoesAbertos[id] ? 'edicao' : 'resumo';
+  }
+
+  function desenharModoCartao(cartao, botao, modo, nome, tipo) {
+    if (cartao.dataset.modo !== modo) cartao.dataset.modo = modo;
+    const editando = modo === 'edicao';
+    const texto = editando ? 'Recolher' : 'Editar';
+    if (botao.textContent !== texto) botao.textContent = texto;
+    if (botao.getAttribute('aria-expanded') !== String(editando)) botao.setAttribute('aria-expanded', String(editando));
+    const rotulo = (editando ? 'Recolher ' : 'Editar ') + tipo + (String(nome || '').trim() ? ' ' + String(nome).trim() : '');
+    if (botao.getAttribute('aria-label') !== rotulo) botao.setAttribute('aria-label', rotulo);
+  }
+
+  function alternarEdicaoCartao(id) {
+    refs.cartoesAbertos[id] = !refs.cartoesAbertos[id];
+    if (refs.derivados) {
+      desenharAtaques(OP.state.ficha, refs.derivados);
+      desenharRituais(OP.state.ficha, refs.derivados);
+    }
+  }
+
   function montarAtaques() {
     refs.listaAtaques = document.getElementById('lista-ataques');
     refs.ataquesVazio = document.getElementById('ataques-vazio');
@@ -811,6 +853,7 @@ window.OP = window.OP || {};
     refs.elementosAtaques = Object.create(null);  // id → elementos do cartão
     refs.armasRenderizadas = null;                // opções do select "Arma do inventário"
     refs.danoCritico = Object.create(null);       // id → o próximo dano é crítico (estado só da tela)
+    refs.cartoesAbertos = Object.create(null);    // id de ataque/ritual → true se está em edição (só da tela)
   }
 
   /** Resumo da regra de criação, montado a partir dos números de OP.data. */
@@ -977,13 +1020,22 @@ window.OP = window.OP || {};
   }
 
   function aplicarPasso(botao) {
-    const campo = document.getElementById(botao.dataset.alvo);
-    if (!campo || campo.disabled) return;
+    somarAoCampo(botao.dataset.alvo, Number(botao.dataset.passo));
+  }
+
+  /**
+   * Soma `delta` ao valor mostrado no campo (respeitando min/max dele) e grava.
+   * Devolve { anterior, novo } ou null se o campo não existe ou está desativado.
+   */
+  function somarAoCampo(idCampo, delta) {
+    const campo = document.getElementById(idCampo);
+    if (!campo || campo.disabled) return null;
     const caminho = campo.dataset.campo;
     const atual = OP.calc.numero(valorExibido(campo));
-    const soma = Math.round((atual + Number(botao.dataset.passo)) * 100) / 100; // passos como 1,5
+    const soma = Math.round((atual + Number(delta)) * 100) / 100; // passos como 1,5
     const novo = limitar(soma, campo.getAttribute('min'), campo.getAttribute('max'));
     if (novo !== atual) OP.state.atualizar(caminho, novo);
+    return { anterior: atual, novo: novo };
   }
 
   /** Liga/desliga o valor booleano indicado em data-alternar (ex.: modo livre). */
@@ -1035,9 +1087,49 @@ window.OP = window.OP || {};
   }
 
   function removerAtaque(idAtaque) {
-    const restantes = OP.state.obter('ataques').filter(function (ataque) { return ataque.id !== idAtaque; });
     delete refs.danoCritico[idAtaque];
-    OP.state.atualizar('ataques', restantes);
+    removerComDesfazer('ataques', idAtaque);
+  }
+
+  // Como cada lista se chama no aviso de remoção
+  const REMOCOES = {
+    'ataques': { removido: 'Ataque removido', semNome: 'ataque sem nome' },
+    'inventario.itens': { removido: 'Item removido', semNome: 'item sem nome' },
+    'habilidades': { removido: 'Habilidade removida', semNome: 'habilidade sem nome' },
+    'rituais': { removido: 'Ritual removido', semNome: 'ritual sem nome' }
+  };
+
+  /**
+   * Tira um elemento de uma lista da ficha e mostra um aviso com "Desfazer"
+   * (o texto digitado pelo jogador não se perde num toque errado). Desfazer
+   * devolve o elemento à mesma posição, se a mesma ficha ainda estiver aberta.
+   */
+  function removerComDesfazer(caminho, id) {
+    const lista = OP.state.obter(caminho);
+    if (!Array.isArray(lista)) return;
+    const posicao = lista.findIndex(function (elemento) { return elemento.id === id; });
+    if (posicao === -1) return;
+    const removido = lista[posicao];
+    const idFicha = OP.fichas.idAtual();
+    OP.state.atualizar(caminho, lista.filter(function (elemento) { return elemento.id !== id; }));
+
+    const textos = REMOCOES[caminho] || { removido: 'Removido', semNome: 'sem nome' };
+    const nome = String(removido.nome || '').trim() || textos.semNome;
+    if (!OP.uiApp || typeof OP.uiApp.aviso !== 'function') return;
+    OP.uiApp.aviso('ok', textos.removido + ': ' + nome + '.', {
+      duracao: 9000,
+      acao: {
+        rotulo: 'Desfazer',
+        fazer: function () {
+          if (OP.fichas.idAtual() !== idFicha) return;
+          const atual = OP.state.obter(caminho);
+          if (!Array.isArray(atual) || atual.some(function (elemento) { return elemento.id === id; })) return;
+          const nova = atual.slice();
+          nova.splice(Math.min(posicao, nova.length), 0, removido);
+          OP.state.atualizar(caminho, nova);
+        }
+      }
+    });
   }
 
   /** Acrescenta um item vazio ao inventário e põe o foco no nome dele. */
@@ -1050,9 +1142,8 @@ window.OP = window.OP || {};
 
   /** Remove um item pelo id (a lista inteira é regravada pelo estado). */
   function removerItem(idItem) {
-    const restantes = OP.state.obter('inventario.itens').filter(function (item) { return item.id !== idItem; });
     delete refs.descricoesAbertas[idItem];
-    OP.state.atualizar('inventario.itens', restantes);
+    removerComDesfazer('inventario.itens', idItem);
   }
 
   /** Abre/fecha a descrição de um item (estado só da tela, não vai para a ficha). */
@@ -1108,6 +1199,17 @@ window.OP = window.OP || {};
     const rolarDano = evento.target.closest('[data-rolar-dano]');
     if (rolarDano) {
       rolarDanoNaTela(rolarDano.dataset.rolarDano);
+      return;
+    }
+    const alternarEdicao = evento.target.closest('[data-alternar-edicao]');
+    if (alternarEdicao) {
+      alternarEdicaoCartao(alternarEdicao.getAttribute('data-alternar-edicao'));
+      return;
+    }
+    const botaoModoPericias = evento.target.closest('#botao-modo-pericias');
+    if (botaoModoPericias) {
+      refs.modoPericias = refs.modoPericias === 'mesa' ? 'edicao' : 'mesa';
+      desenharModoPericias(OP.state.ficha);
       return;
     }
     const removerAtq = evento.target.closest('[data-remover-ataque]');
@@ -1307,7 +1409,28 @@ window.OP = window.OP || {};
     refs.periciasVazio.hidden = visiveis > 0;
   }
 
+  /**
+   * Perícias na mesa (nome, dados, bônus e rolar) ou em edição (atributo,
+   * grau, outros, pontos). Na primeira vez que a ficha aparece: personagem
+   * com alguma perícia treinada abre na mesa; personagem novo, em edição.
+   */
+  function desenharModoPericias(ficha) {
+    if (!refs.secaoPericias || !ficha) return;
+    if (refs.modoPericiasFicha !== ficha.id) {
+      refs.modoPericiasFicha = ficha.id;
+      const treinada = OP.data.pericias.some(function (definicao) {
+        const pericia = ficha.pericias && ficha.pericias[definicao.id];
+        return pericia && OP.calc.numero(pericia.grau) > 0;
+      });
+      refs.modoPericias = treinada ? 'mesa' : 'edicao';
+    }
+    if (refs.secaoPericias.dataset.modo !== refs.modoPericias) refs.secaoPericias.dataset.modo = refs.modoPericias;
+    const editando = String(refs.modoPericias === 'edicao');
+    if (refs.botaoModoPericias.getAttribute('aria-pressed') !== editando) refs.botaoModoPericias.setAttribute('aria-pressed', editando);
+  }
+
   function desenharPericias(derivados) {
+    desenharModoPericias(OP.state.ficha);
     const identidade = derivados.identidade;
     OP.data.pericias.forEach(function (definicao) {
       const estado = derivados.pericias[definicao.id];
@@ -1535,7 +1658,7 @@ window.OP = window.OP || {};
     definirTexto(refs.dicaPatente, 'Com ' + inv.pontosPrestigio + ' PP, a patente sugerida é ' + sugerida.nome +
       (sugerida.id === patente.id ? ' (a atual).' : '.'));
     refs.dicaPatente.classList.toggle('painel__info--destaque', sugerida.id !== patente.id);
-    definirTexto(refs.opcaoCreditoPadrao, 'Padrão da patente (' + nomeCredito(inv.creditoPatente) + ')');
+    definirTexto(refs.opcaoCreditoPadrao, 'Padrão: ' + nomeCredito(inv.creditoPatente));
 
     // Limites por categoria (aviso sem bloquear)
     const excedidos = [];
@@ -1598,7 +1721,9 @@ window.OP = window.OP || {};
         formula: cartao.querySelector('.ataque__formula'),
         erroDano: cartao.querySelector('[data-erro-dano]'),
         marcaCritico: cartao.querySelector('[data-dano-critico]'),
-        botaoAtaque: cartao.querySelector('[data-rolar-ataque]')
+        botaoAtaque: cartao.querySelector('[data-rolar-ataque]'),
+        resumo: cartao.querySelector('[data-resumo-mesa]'),
+        editar: cartao.querySelector('[data-alternar-edicao]')
       };
     });
     refs.armasRenderizadas = null; // selects novos: recriar as opções de arma
@@ -1627,6 +1752,21 @@ window.OP = window.OP || {};
     });
   }
 
+  /** "Dano 2d6+2 · crítico 19/x3 · Balístico · curto · munição 6" (o que a mesa precisa ver). */
+  function resumoAtaque(ataque, estado) {
+    const partes = [];
+    const dano = String(ataque.dano || '').trim();
+    const bonus = OP.calc.numero(ataque.danoBonus);
+    if (dano) partes.push('Dano ' + dano + (bonus ? formatarComSinal(bonus) : ''));
+    if (estado && estado.critico) partes.push('crítico ' + formatarSaida(estado.critico, 'critico'));
+    const tipo = nomeNaLista(OP.data.tiposDano, ataque.tipoDano);
+    if (tipo) partes.push(tipo);
+    const alcance = String(ataque.alcance || '').trim();
+    if (alcance) partes.push(alcance);
+    if (ataque.usaMunicao === true) partes.push('munição ' + OP.calc.numero(ataque.municao));
+    return partes.join(' · ') || 'Sem dano cadastrado';
+  }
+
   function desenharAtaques(ficha, derivados) {
     sincronizarOpcoesArma(ficha);
     ficha.ataques.forEach(function (ataque, indice) {
@@ -1649,6 +1789,9 @@ window.OP = window.OP || {};
 
       const critico = refs.danoCritico[ataque.id] === true;
       if (elementos.marcaCritico.checked !== critico) elementos.marcaCritico.checked = critico;
+
+      desenharModoCartao(elementos.cartao, elementos.editar, modoCartao(ataque.id, ataque.nome), ataque.nome, 'ataque');
+      definirTexto(elementos.resumo, resumoAtaque(ataque, estado));
     });
     refs.ataquesVazio.hidden = ficha.ataques.length > 0;
   }
@@ -1810,6 +1953,7 @@ window.OP = window.OP || {};
     caixa.appendChild(criarTopoResultado(resultado.titulo, resultado.critico ? 'CRÍTICO' : ''));
     caixa.appendChild(criarDadosTeste(resultado));
     caixa.appendChild(criarElemento('p', 'resultado__regra', regra));
+    if (resultado.aviso) caixa.appendChild(criarElemento('p', 'resultado__aviso', resultado.aviso));
     caixa.appendChild(criarFimResultado(conta, resultado.total));
     if (alvo) caixa.appendChild(criarElemento('p', 'resultado__alvo resultado__alvo--' + (resultado.acertou ? 'sim' : 'nao'), alvo));
     const acoes = criarAcoesResultado(resultado);
@@ -1913,7 +2057,13 @@ window.OP = window.OP || {};
   }
 
   function rolarPericiaNaTela(idPericia) {
-    mostrarResultado(OP.rolagens.rolarPericia(OP.state.ficha, idPericia, opcoesRolagem()));
+    const resultado = OP.rolagens.rolarPericia(OP.state.ficha, idPericia, opcoesRolagem());
+    // Perícia "somente treinada" rolada sem treino: rola mesmo assim, mas avisa no resultado
+    const estado = refs.derivados && refs.derivados.pericias && refs.derivados.pericias[idPericia];
+    if (resultado && resultado.ok !== false && estado && estado.requerTreinamento) {
+      resultado.aviso = 'Perícia somente para treinados, e este agente não é treinado nela.';
+    }
+    mostrarResultado(resultado);
   }
 
   function acharAtaque(idAtaque) {
@@ -2056,10 +2206,9 @@ window.OP = window.OP || {};
     return false;
   }
 
-  /** Remove um elemento de uma lista da ficha (habilidades ou rituais) pelo id. */
+  /** Remove um elemento de uma lista da ficha (habilidades ou rituais) pelo id, com desfazer. */
   function removerDaLista(caminho, id) {
-    const restantes = OP.state.obter(caminho).filter(function (elemento) { return elemento.id !== id; });
-    OP.state.atualizar(caminho, restantes);
+    removerComDesfazer(caminho, id);
   }
 
   /* ------------------------------------------------------------------------
@@ -2265,7 +2414,7 @@ window.OP = window.OP || {};
     ['duracao', 'Duração', 'duracao'], ['pagina', 'Página']
   ];
   // Atributos que recebem o id do ritual (por setAttribute, em criarComIds).
-  const IDS_RITUAL = ['data-ritual', 'data-conjurar', 'data-rolar-dano-ritual', 'data-remover-ritual'];
+  const IDS_RITUAL = ['data-ritual', 'data-conjurar', 'data-rolar-dano-ritual', 'data-remover-ritual', 'data-alternar-edicao'];
 
   function ordinal(numero) {
     return numero + 'º';
@@ -2361,10 +2510,12 @@ window.OP = window.OP || {};
           '<div class="ataque__acoes">' +
             '<button type="button" class="botao-rolagem botao-rolagem--secundario" data-rolar-pericia="ocultismo" title="Rola Ocultismo no painel de rolagens">' +
               ICONE_DADO + '<span>Ocultismo</span></button>' +
+            htmlBotaoEdicao('ritual') +
             '<button type="button" class="botao-icone botao-icone--perigo" data-remover-ritual title="Remover ritual">' +
               ICONES_ITEM.remover + '<span class="visualmente-oculto">Remover ritual</span></button>' +
           '</div>' +
         '</div>' +
+        '<p class="cartao-resumo" data-resumo-mesa></p>' +
         // "Resistência: Vontade (Parcial), DT 14" (preenchido ao desenhar)
         '<p class="ritual__resistencia" data-resumo-resistencia hidden></p>' +
         '<p class="ritual__aviso" data-aviso-circulo hidden></p>' +
@@ -2499,6 +2650,8 @@ window.OP = window.OP || {};
         avisoMedo: cartao.querySelector('[data-aviso-medo]'),
         resumoResistencia: cartao.querySelector('[data-resumo-resistencia]'),
         efeito: cartao.querySelector('[data-efeito-resistencia]'),
+        resumo: cartao.querySelector('[data-resumo-mesa]'),
+        editar: cartao.querySelector('[data-alternar-edicao]'),
         formas: formas
       };
     });
@@ -2534,6 +2687,21 @@ window.OP = window.OP || {};
     if (refs.avisoLimitePE.hidden === conj.passouLimite) refs.avisoLimitePE.hidden = !conj.passouLimite;
   }
 
+  /** "Sangue · Execução padrão · Alcance curto · Alvo 1 ser · Duração cena" (só o que foi preenchido). */
+  function resumoRitual(ritual) {
+    const partes = [];
+    const elemento = nomeNaLista(OP.data.elementos, ritual.elemento);
+    if (elemento) partes.push(elemento);
+    CAMPOS_RITUAL.forEach(function (campo) {
+      if (campo[0] === 'pagina') return;
+      const valor = String(ritual[campo[0]] || '').trim();
+      if (valor) partes.push(campo[1] + ' ' + valor.toLowerCase());
+    });
+    const pagina = String(ritual.pagina || '').trim();
+    if (pagina) partes.push('p. ' + pagina);
+    return partes.join(' · ') || 'Toque em Editar para preencher execução, alcance e efeitos.';
+  }
+
   function desenharRituais(ficha, derivados) {
     const conj = derivados.conjuracao;
     desenharTopoRituais(conj);
@@ -2549,6 +2717,8 @@ window.OP = window.OP || {};
 
       const elemento = ritual.elemento || 'nenhum';
       if (el.cartao.dataset.elemento !== elemento) el.cartao.dataset.elemento = elemento;
+      desenharModoCartao(el.cartao, el.editar, modoCartao(ritual.id, ritual.nome), ritual.nome, 'ritual');
+      definirTexto(el.resumo, resumoRitual(ritual));
 
       // Aviso (não bloqueia) quando o círculo passa do que o NEX libera
       el.cartao.classList.toggle('ritual--alem', estado.alemDoCirculo);
@@ -2724,6 +2894,7 @@ window.OP = window.OP || {};
     refs.confirmarAvisos = document.getElementById('confirmar-avisos');
     refs.confirmarDestaque = document.getElementById('confirmar-destaque');
     refs.confirmarOk = document.getElementById('confirmar-ok');
+    refs.confirmarAlternativa = document.getElementById('confirmar-alternativa');
 
     refs.dialogoConfirmar.addEventListener('close', function () {
       const opcoes = confirmacaoPendente;
@@ -2731,6 +2902,8 @@ window.OP = window.OP || {};
       if (!opcoes) return;
       if (refs.dialogoConfirmar.returnValue === 'confirmar') {
         if (opcoes.aoConfirmar) opcoes.aoConfirmar();
+      } else if (refs.dialogoConfirmar.returnValue === 'alternativa' && opcoes.alternativa) {
+        if (opcoes.alternativa.aoEscolher) opcoes.alternativa.aoEscolher();
       } else if (opcoes.aoCancelar) {
         opcoes.aoCancelar();
       }
@@ -2763,6 +2936,10 @@ window.OP = window.OP || {};
     refs.confirmarDestaque.hidden = !o.destaque;
     definirTexto(refs.confirmarOk, o.textoConfirmar || 'Confirmar');
     refs.confirmarOk.classList.toggle('botao-barra--perigo', o.perigo === true);
+    // Terceira escolha opcional (ex.: "Importar como novas" ao lado de "Substituir")
+    const alternativa = o.alternativa && o.alternativa.texto ? o.alternativa : null;
+    refs.confirmarAlternativa.hidden = !alternativa;
+    definirTexto(refs.confirmarAlternativa, alternativa ? alternativa.texto : '');
     confirmacaoPendente = o;
     dialogo.returnValue = '';
     dialogo.showModal();
@@ -2893,6 +3070,8 @@ window.OP = window.OP || {};
 
   function montar() {
     refs.raiz = document.getElementById('ficha');
+    refs.secaoPericias = document.getElementById('secao-pericias');
+    refs.botaoModoPericias = document.getElementById('botao-modo-pericias');
     refs.contador = document.getElementById('contador-pontos');
     refs.contadorRotulo = document.getElementById('contador-rotulo');
     refs.avisos = document.getElementById('avisos-atributos');
@@ -3005,6 +3184,7 @@ window.OP = window.OP || {};
     // Para as extensões da tela (js/ui-classe.js)
     registrarExtensao: registrarExtensao,
     coletarLigacoes: coletarLigacoes,
+    somarAoCampo: somarAoCampo,
     criarElemento: criarElemento,
     substituirFilhos: substituirFilhos,
     desenharListaTextos: desenharListaTextos

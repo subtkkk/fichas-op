@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Ficha de Agente · Ordem Paranormal</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/print.css" media="print">
+</head>
+<body>
+  <!-- ================= BARRA SUPERIOR (fixa no topo) ================= -->
+  <!-- Fica fora de #ficha. Some na impressão. -->
+  <div class="barra-topo" id="barra-topo">
+    <div class="barra-topo__conteudo">
+      <p class="barra-topo__ficha">
+        <span class="barra-topo__rotulo">Ficha</span>
+        <span class="barra-topo__nome" id="nome-ficha-atual">Sem nome</span>
+      </p>
+      <p class="status-salvamento" id="status-salvamento"></p>
+      <div class="barra-topo__acoes">
+        <button type="button" class="botao-barra" id="botao-fichas" aria-haspopup="dialog">Fichas</button>
+        <button type="button" class="botao-barra" id="botao-imprimir">Imprimir / PDF</button>
+      </div>
+    </div>
+
+    <!-- Avisos fixos (não somem sozinhos) -->
+    <div class="faixa faixa--erro" id="faixa-falha-salvamento" role="alert" hidden>
+      <p class="faixa__texto"><strong>Não foi possível salvar neste navegador.</strong>
+        A ficha continua funcionando, mas as mudanças se perdem ao fechar a página.</p>
+      <button type="button" class="botao-barra" id="botao-backup-agora">Exportar backup agora</button>
+    </div>
+    <div class="faixa faixa--aviso" id="faixa-outra-aba" role="status" hidden>
+      <p class="faixa__texto">Esta ficha foi alterada em outra aba.</p>
+      <button type="button" class="botao-barra" id="botao-recarregar-ficha">Recarregar</button>
+    </div>
+  </div>
+
+  <header class="topo">
+    <div class="topo__conteudo">
+      <div class="topo__marca">
+        <span class="topo__selo">Dossiê</span>
+        <h1 class="topo__titulo">Ficha de Agente</h1>
+        <p class="topo__subtitulo">Ordem Paranormal RPG · 1ª edição</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="pagina" id="ficha">
+
+    <!-- ===================== IDENTIFICAÇÃO ===================== -->
+    <section class="secao" aria-labelledby="titulo-identificacao">
+      <h2 class="secao__titulo" id="titulo-identificacao">Identificação</h2>
+
+      <div class="grade-campos">
+        <div class="campo campo--largo">
+          <label for="campo-nome">Personagem</label>
+          <input id="campo-nome" class="campo__destaque" type="text" autocomplete="off" spellcheck="false"
+                 placeholder="Nome do agente" data-campo="identificacao.nome" data-tipo="texto">
+        </div>
+
+        <div class="campo campo--largo">
+          <label for="campo-jogador">Jogador</label>
+          <input id="campo-jogador" type="text" autocomplete="off" spellcheck="false"
+                 placeholder="Quem joga" data-campo="identificacao.jogador" data-tipo="texto">
+        </div>
+
+        <div class="campo">
+          <label for="campo-origem">Origem</label>
+          <!-- Opções (agrupadas por fonte) geradas por js/ui-classe.js a partir de OP.data.origens -->
+          <select id="campo-origem" data-campo="identificacao.origem" data-tipo="texto"></select>
+          <input id="campo-origem-texto" class="campo__texto-livre" type="text" autocomplete="off" hidden
+                 placeholder="Nome da origem" aria-label="Origem (texto livre)" data-campo="identificacao.origemTexto" data-tipo="texto">
+        </div>
+
+        <div class="campo">
+          <label for="campo-classe">Classe</label>
+          <!-- Opções geradas a partir de OP.data.classes -->
+          <select id="campo-classe" data-campo="identificacao.classe" data-tipo="texto"></select>
+        </div>
+
+        <div class="campo">
+          <label for="campo-trilha">Trilha</label>
+          <!-- Opções (só as da classe, agrupadas por fonte) geradas por js/ui-classe.js -->
+          <select id="campo-trilha" data-campo="identificacao.trilha" data-tipo="texto"></select>
+          <input id="campo-trilha-texto" class="campo__texto-livre" type="text" autocomplete="off" hidden
+                 placeholder="Nome da trilha" aria-label="Trilha (texto livre)" data-campo="identificacao.trilhaTexto" data-tipo="texto">
+        </div>
+
+        <div class="campo">
+          <!-- NEX nas classes comuns; Estágio no Sobrevivente (js/ui-classe.js troca) -->
+          <label for="campo-nex" id="rotulo-nivel">NEX</label>
+          <select id="campo-nex" data-campo="identificacao.nex" data-tipo="inteiro"></select>
+          <select id="campo-estagio" data-campo="identificacao.estagio" data-tipo="inteiro" hidden></select>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== ORIGEM, CLASSE E TRILHA ============== -->
+    <!-- Conteúdo gerado por js/ui-classe.js a partir de data/origens.js, classes.js e trilhas.js.
+         Só nomes e números: as descrições das habilidades o usuário digita. -->
+    <section class="secao secao--identidade" aria-labelledby="titulo-identidade">
+      <div class="secao__cabecalho">
+        <h2 class="secao__titulo" id="titulo-identidade">Origem, classe e trilha</h2>
+        <button type="button" class="botao-barra botao-barra--pequeno" id="botao-fontes" aria-haspopup="dialog"
+                title="Escolha quais livros e aventuras aparecem nas listas de origens e trilhas">Fontes</button>
+      </div>
+
+      <p class="mensagem-acao" id="identidade-mensagem" role="status" aria-live="polite" hidden></p>
+
+      <div class="identidade__grade">
+        <article class="painel painel--origem" aria-labelledby="painel-origem-titulo">
+          <span class="painel__rotulo" id="painel-origem-titulo">Origem</span>
+          <div class="identidade__conteudo" id="conteudo-origem"></div>
+        </article>
+        <article class="painel painel--classe" aria-labelledby="painel-classe-titulo">
+          <span class="painel__rotulo" id="painel-classe-titulo">Classe</span>
+          <div class="identidade__conteudo" id="conteudo-classe"></div>
+        </article>
+        <article class="painel painel--trilha" aria-labelledby="painel-trilha-titulo">
+          <span class="painel__rotulo" id="painel-trilha-titulo">Trilha</span>
+          <div class="identidade__conteudo" id="conteudo-trilha"></div>
+        </article>
+      </div>
+
+      <details class="progressao" id="progressao" open>
+        <summary>
+          <span class="progressao__titulo">Progressão da classe</span>
+          <span class="progressao__proximo" id="progressao-proximo"></span>
+        </summary>
+        <div class="progressao__corpo">
+          <!-- Contadores informativos (não bloqueiam nada) -->
+          <ul class="progressao__contadores" id="progressao-contadores"></ul>
+          <p class="aviso-neutro" id="progressao-sem-classe">Escolha uma <strong>classe</strong> para ver a tabela de progressão.</p>
+          <table class="tabela-progressao" id="tabela-progressao" hidden>
+            <thead>
+              <tr>
+                <th scope="col" id="progressao-coluna">NEX</th>
+                <th scope="col">Ganhos</th>
+              </tr>
+            </thead>
+            <tbody id="corpo-progressao"></tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+
+    <!-- ======================= ATRIBUTOS ======================= -->
+    <section class="secao" aria-labelledby="titulo-atributos">
+      <div class="secao__cabecalho">
+        <h2 class="secao__titulo" id="titulo-atributos">Atributos</h2>
+
+        <div class="secao__controles">
+          <div class="contador" id="contador-pontos" data-estado="pendente">
+            <output class="contador__valor" data-saida="distribuicao.restantes" aria-describedby="contador-rotulo">0</output>
+            <span class="contador__rotulo" id="contador-rotulo">pontos restantes</span>
+          </div>
+
+          <button type="button" class="alternar" id="botao-modo-livre" aria-pressed="false" data-alternar="config.modoLivre"
+                  title="Desliga os avisos de criação. Use para personagens com aumentos de atributo ou regras especiais.">
+            <span class="alternar__trilho" aria-hidden="true"></span>
+            <span>Modo livre</span>
+          </button>
+        </div>
+      </div>
+
+      <p class="secao__info secao__info--linha" id="info-aumentos"></p>
+
+      <div class="avisos" id="avisos-atributos" role="status" aria-live="polite" hidden>
+        <p class="avisos__titulo">Distribuição fora das regras</p>
+        <ul class="avisos__lista" id="lista-avisos"></ul>
+        <p class="avisos__dica">Regra especial ou poder que muda atributos? Ative o <strong>modo livre</strong> para esconder estes avisos.</p>
+      </div>
+
+      <!-- Cartões gerados a partir de OP.data.atributos -->
+      <div class="grade-atributos" id="grade-atributos"></div>
+
+      <p class="secao__nota" id="nota-regras"></p>
+    </section>
+
+    <!-- ======================= RECURSOS ======================= -->
+    <section class="secao" aria-labelledby="titulo-recursos">
+      <div class="secao__cabecalho">
+        <h2 class="secao__titulo" id="titulo-recursos">Recursos</h2>
+        <p class="secao__info" title="Avanços de 5% depois do NEX 5% (no Sobrevivente: estágios depois do 1º)">
+          <span id="rotulo-passos">Passos de NEX</span>: <output data-saida="nex.passos">0</output>
+        </p>
+      </div>
+
+      <p class="aviso-neutro" id="aviso-sem-classe" hidden>
+        Escolha uma <strong>classe</strong> na Identificação para calcular PV, PE e Sanidade.
+      </p>
+
+      <!-- Cartões gerados a partir de OP.data.recursos -->
+      <div class="grade-recursos" id="grade-recursos"></div>
+    </section>
+
+    <!-- =================== DEFESA E DERIVADOS =================== -->
+    <section class="secao" aria-labelledby="titulo-defesa">
+      <h2 class="secao__titulo" id="titulo-defesa">Defesa e derivados</h2>
+
+      <div class="grade-defesa">
+        <!-- Defesa -->
+        <article class="painel painel--defesa">
+          <div class="painel__topo">
+            <div class="painel__titulo">
+              <span class="painel__rotulo">Defesa</span>
+              <p class="painel__composicao" id="composicao-defesa"></p>
+            </div>
+            <output class="painel__valor" data-saida="defesa.total" aria-label="Defesa total">10</output>
+          </div>
+
+          <!-- Somente leitura: vem das proteções equipadas no Inventário -->
+          <p class="painel__info">
+            Proteções equipadas (do inventário):
+            <output data-saida="defesa.protecoesInventario" data-formato="sinal">+0</output>
+            <span class="painel__info-nomes" id="nomes-protecoes"></span>
+          </p>
+
+          <div class="painel__campos">
+            <div class="campo-texto">
+              <label for="defesa-protecao-nome">Proteção manual (nome)</label>
+              <input id="defesa-protecao-nome" class="controle" type="text" placeholder="Nenhuma" autocomplete="off"
+                     data-campo="defesa.protecao.nome" data-tipo="texto">
+            </div>
+
+            <div class="campo-bonus">
+              <label for="defesa-protecao">Bônus de proteção manual</label>
+              <div class="passo">
+                <button type="button" class="passo__botao" tabindex="-1" data-passo="-1" data-alvo="defesa-protecao" aria-label="Diminuir bônus de proteção manual">−</button>
+                <input id="defesa-protecao" class="passo__valor" type="number" step="1"
+                       data-campo="defesa.protecao.defesa" data-tipo="inteiro">
+                <button type="button" class="passo__botao" tabindex="-1" data-passo="1" data-alvo="defesa-protecao" aria-label="Aumentar bônus de proteção manual">+</button>
+              </div>
+            </div>
+
+            <div class="campo-bonus">
+              <label for="defesa-outros">Outros</label>
+              <div class="passo">
+                <button type="button" class="passo__botao" tabindex="-1" data-passo="-1" data-alvo="defesa-outros" aria-label="Diminuir outros bônus de Defesa">−</button>
+                <input id="defesa-outros" class="passo__valor" type="number" step="1"
+                       data-campo="defesa.outros" data-tipo="inteiro">
+                <button type="button" class="passo__botao" tabindex="-1" data-passo="1" data-alvo="defesa-outros" aria-label="Aumentar outros bônus de Defesa">+</button>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Deslocamento -->
+        <article class="painel painel--deslocamento">
+          <div class="painel__topo">
+            <div class="painel__titulo">
+              <span class="painel__rotulo">Deslocamento</span>
+              <p class="painel__composicao" id="composicao-deslocamento"></p>
+            </div>
+          </div>
+
+          <p class="deslocamento__valor">
+            <output data-saida="deslocamento.metros" data-formato="metros">9 m</output>
+            <span class="deslocamento__quadrados" id="texto-quadrados">(6 quadrados)</span>
+          </p>
+
+          <div class="campo-bonus">
+            <label for="deslocamento-bonus">Bônus (metros)</label>
+            <div class="passo" title="Cada clique soma ou tira 1 quadrado (1,5 m)">
+              <button type="button" class="passo__botao" tabindex="-1" data-passo="-1.5" data-alvo="deslocamento-bonus" aria-label="Diminuir 1,5 m de deslocamento">−</button>
+              <input id="deslocamento-bonus" class="passo__valor passo__valor--largo" type="number" step="any"
+                     data-campo="defesa.deslocamentoBonus" data-tipo="decimal">
+              <button type="button" class="passo__botao" tabindex="-1" data-passo="1.5" data-alvo="deslocamento-bonus" aria-label="Aumentar 1,5 m de deslocamento">+</button>
+            </div>
+          </div>
+
+          <!-- Texto preenchido pelo ui.js com os valores de OP.data.config -->
+          <p class="aviso-sobrecarga" data-aviso-sobrecarga hidden></p>
+        </article>
+      </div>
+
+      <h3 class="subtitulo">Reações</h3>
+      <!-- Cartões gerados a partir de OP.data.reacoes -->
+      <div class="grade-reacoes" id="grade-reacoes"></div>
+
+      <h3 class="subtitulo">Testes</h3>
+      <!-- Botões gerados a partir de OP.data.periciasDerivadas; clicar leva à linha da perícia -->
+      <div class="grade-testes" id="grade-testes"></div>
+
+      <details class="resistencias">
+        <summary>
+          <span>Resistências a dano <span class="resistencias__opcional">(opcional)</span></span>
+          <span class="resistencias__contagem" id="contagem-resistencias"></span>
+        </summary>
+        <div class="resistencias__corpo">
+          <p class="secao__nota">Redução de dano por tipo. Deixe 0 nos tipos sem resistência.</p>
+          <!-- Campos gerados a partir de OP.data.tiposDano -->
+          <div class="resistencias__grupos" id="grade-resistencias"></div>
+        </div>
+      </details>
+    </section>
+
+    <!-- ======================= PERÍCIAS ======================= -->
+    <section class="secao" aria-labelledby="titulo-pericias">
+      <div class="secao__cabecalho">
+        <h2 class="secao__titulo" id="titulo-pericias">Perícias</h2>
+
+        <div class="secao__controles">
+          <div class="contador" id="contador-treinamento" data-estado="pendente"
+               title="Perícias treinadas que gastam pontos / pontos disponíveis">
+            <span class="contador__rotulo">Pontos de treinamento</span>
+            <output class="contador__valor" data-saida="treinamento.gastos">0</output>
+            <span class="contador__separador" aria-hidden="true">/</span>
+            <output class="contador__total" data-saida="treinamento.total">—</output>
+          </div>
+
+          <!-- Graus de treinamento (NEX 35% e 70%): Veterano = 1, Expert = 2 -->
+          <div class="contador" id="contador-graus" data-estado="indefinido">
+            <span class="contador__rotulo">Graus</span>
+            <output class="contador__valor" data-saida="graus.usados">0</output>
+            <span class="contador__separador" aria-hidden="true">/</span>
+            <output class="contador__total" data-saida="graus.liberados">0</output>
+          </div>
+
+          <button type="button" class="alternar" id="botao-modo-livre-pericias" aria-pressed="false"
+                  data-alternar="config.modoLivrePericias"
+                  title="Desliga os avisos de pontos de treinamento e de graus.">
+            <span class="alternar__trilho" aria-hidden="true"></span>
+            <span>Modo livre</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="avisos" id="avisos-pericias" role="status" aria-live="polite" hidden>
+        <p class="avisos__titulo">Pontos de treinamento excedidos</p>
+        <p id="texto-aviso-pericias"></p>
+        <p class="avisos__dica">Perícia veio de um poder? Marque <strong>concedida</strong> (as da origem e da classe já são automáticas). Personagem avançado? Ative o <strong>modo livre</strong>.</p>
+      </div>
+
+      <div class="avisos" id="avisos-graus" role="status" aria-live="polite" hidden>
+        <p class="avisos__titulo">Graus de treinamento</p>
+        <ul class="avisos__lista" id="lista-avisos-graus"></ul>
+        <p class="avisos__dica">No NEX 35% e no 70%, perícias treinadas sobem um grau (Treinado → Veterano → Expert): quantidade = base da classe + Intelecto.</p>
+      </div>
+
+      <p class="aviso-neutro" id="aviso-pericias-sem-classe" hidden>
+        Escolha uma <strong>classe</strong> na Identificação para calcular os pontos de treinamento.
+      </p>
+
+      <!-- Bônus manual dos pontos e de onde vem o total -->
+      <div class="pericias__pontos">
+        <div class="campo-bonus">
+          <label for="pontos-treinamento-bonus">Bônus de pontos</label>
+          <div class="passo">
+            <button type="button" class="passo__botao" tabindex="-1" data-passo="-1" data-alvo="pontos-treinamento-bonus" aria-label="Diminuir bônus de pontos de treinamento">−</button>
+            <input id="pontos-treinamento-bonus" class="passo__valor" type="number" step="1"
+                   data-campo="pontosTreinamento.bonus" data-tipo="inteiro">
+            <button type="button" class="passo__botao" tabindex="-1" data-passo="1" data-alvo="pontos-treinamento-bonus" aria-label="Aumentar bônus de pontos de treinamento">+</button>
+          </div>
+        </div>
+        <p class="pericias__composicao" id="composicao-treinamento"></p>
+      </div>
+
+      <!-- Busca e filtro (não são salvos na ficha) -->
+      <div class="pericias__ferramentas">
+        <label class="busca">
+          <span class="visualmente-oculto">Buscar perícia</span>
+          <input type="search" id="busca-pericias" placeholder="Buscar perícia…" autocomplete="off" data-filtro="busca">
+        </label>
+        <label class="caixa">
+          <input type="checkbox" id="filtro-treinadas" data-filtro="treinadas">
+          <span>Mostrar só treinadas</span>
+        </label>
+      </div>
+
+      <!-- Legenda gerada pelo ui.js (mesmos ícones da tabela) -->
+      <p class="legenda" id="legenda-pericias"></p>
+
+      <table class="tabela-pericias">
+        <thead>
+          <tr>
+            <th scope="col"><span class="visualmente-oculto">Indicadores</span></th>
+            <th scope="col">Perícia</th>
+            <th scope="col">Atributo</th>
+            <th scope="col">Dados</th>
+            <th scope="col">Grau</th>
+            <th scope="col">Outros</th>
+            <th scope="col">Bônus</th>
+            <th scope="col">Rolar</th>
+            <th scope="col" title="Concedida: veio da origem, classe ou poder e não gasta pontos">Conc.</th>
+          </tr>
+        </thead>
+        <!-- Linhas geradas a partir de OP.data.pericias -->
+        <tbody id="corpo-pericias"></tbody>
+      </table>
+      <p class="pericias__vazio" id="pericias-vazio" hidden>Nenhuma perícia encontrada.</p>
+    </section>
+
+    <!-- ======================== ATAQUES ======================== -->
+    <section class="secao" aria-labelledby="titulo-ataques">
+      <div class="secao__cabecalho">
+        <h2 class="secao__titulo" id="titulo-ataques">Ataques</h2>
+        <p class="secao__info">Luta (corpo a corpo) ou Pontaria (à distância)</p>
+      </div>
+
+      <!-- Cartões gerados a partir de ficha.ataques -->
+      <div class="ataques__lista" id="lista-ataques" role="list" aria-label="Ataques"></div>
+      <p class="itens__vazio" id="ataques-vazio">Nenhum ataque. Use "Adicionar ataque" para começar.</p>
+      <button type="button" class="botao" data-acao="adicionar-ataque">+ Adicionar ataque</button>
+    </section>
+
+    <!-- ================= HABILIDADES E PODERES ================= -->
+    <section class="secao" aria-labelledby="titulo-habilidades">
+      <div class="secao__cabecalho">
+        <h2 class="secao__titulo" id="titulo-habilidades">Habilidades e poderes</h2>
+        <p class="secao__info">
+          PE atual: <output data-saida="recursos.pe.atual">—</output> / <output data-saida="recursos.pe.max">—</output>
+        </p>
+      </div>
+
+      <!-- Filtro por fonte (gerado a partir de OP.data.fontesHabilidade) e busca: só da tela -->
+      <div class="filtros-linha">
+        <div class="abas" id="abas-habilidades" role="group" aria-label="Filtrar por fonte"></div>
+        <label class="busca">
+          <span class="visualmente-oculto">Buscar habilidade</span>
+          <input type="search" id="busca-habilidades" placeholder="Buscar habilidade…" autocomplete="off" data-filtro-lista="habilidades-busca">
+        </label>
+      </div>
+
+      <!-- Itens gerados a partir de ficha.habilidades -->
+      <div class="habilidades__lista" id="lista-habilidades" role="list" aria-label="Habilidades e poderes"></div>
+      <p class="itens__vazio" id="habilidades-vazio">Nenhuma habilidade. Use "Adicionar habilidade" para cadastrar as suas.</p>
+      <p class="pericias__vazio" id="habilidades-nenhuma" hidden>Nenhuma habilidade com este filtro.</p>
+      <button type="button" class="botao" data-acao="adicionar-habilidade">+ Adicionar habilidade</button>
+    </section>
+
+    <!-- ======================== RITUAIS ======================== -->
+    <section class="secao" aria-labelledby="titulo-rituais">
+      <div class="secao__cabecalho">
+        <h2 class="secao__titulo" id="titulo-rituais">Rituais</h2>
+        <p class="secao__info">Círculos liberados: <strong id="texto-circulos">até o 1º</strong></p>
+      </div>
+
+      <div class="rituais__topo">
+        <!-- DT de rituais -->
+        <article class="painel painel--dt">
+          <div class="painel__topo">
+            <div class="painel__titulo">
+              <span class="painel__rotulo">DT de rituais</span>
+              <p class="painel__composicao" id="composicao-dt"></p>
+            </div>
+            <output class="painel__valor" data-saida="conjuracao.dt.total" aria-label="DT de rituais">—</output>
+          </div>
+          <div class="campo-bonus">
+            <label for="dt-bonus">Bônus de DT</label>
+            <div class="passo">
+              <button type="button" class="passo__botao" tabindex="-1" data-passo="-1" data-alvo="dt-bonus" aria-label="Diminuir bônus de DT">−</button>
+              <input id="dt-bonus" class="passo__valor" type="number" step="1" data-campo="conjuracao.dtBonus" data-tipo="inteiro">
+              <button type="button" class="passo__botao" tabindex="-1" data-passo="1" data-alvo="dt-bonus" aria-label="Aumentar bônus de DT">+</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Afinidade: conexão com um elemento no NEX 50%; a afinidade se desenvolve ao transcender -->
+        <article class="painel painel--afinidade">
+          <span class="painel__rotulo">Afinidade</span>
+          <div class="campo-texto">
+            <label for="afinidade">Elemento conectado</label>
+            <!-- Opção vazia = nenhum elemento (grava null). Não existe afinidade com Medo. -->
+            <select id="afinidade" class="controle" data-campo="conjuracao.elementoConectado" data-tipo="texto" data-padrao=""
+                    title="Não existe afinidade com Medo"></select>
+          </div>
+          <label class="caixa caixa--pequena" title="Só depois de transcender pela primeira vez com o elemento conectado">
+            <input type="checkbox" id="afinidade-desenvolvida" data-campo="conjuracao.afinidadeDesenvolvida" data-tipo="booleano">
+            <span>Afinidade desenvolvida (após transcender)</span>
+          </label>
+          <p class="painel__info" id="dica-afinidade"></p>
+          <p class="painel__info" id="beneficios-afinidade">Com afinidade: rituais do elemento sem componentes ritualísticos,
+            acesso a rituais que exigem afinidade, +2d20 contra efeitos do elemento e −2d20 contra o elemento oposto.</p>
+        </article>
+
+        <!-- PE gasto no turno -->
+        <article class="painel painel--turno" id="painel-turno">
+          <span class="painel__rotulo">Turno</span>
+          <p class="turno__valor">
+            PE gasto neste turno:
+            <output data-saida="conjuracao.peGastoTurno">0</output> / limite <output data-saida="conjuracao.limitePE">1</output>
+          </p>
+          <p class="aviso-sobrecarga" id="aviso-limite-pe" role="status" aria-live="polite" hidden>Limite de PE por turno ultrapassado.</p>
+          <button type="button" class="botao botao--compacto" data-acao="novo-turno">Novo turno</button>
+        </article>
+      </div>
+
+      <!-- Filtro por elemento e busca: só da tela -->
+      <div class="filtros-linha">
+        <label class="filtro-select">
+          <span>Elemento</span>
+          <select id="filtro-elemento" class="controle" data-filtro-lista="rituais-elemento"></select>
+        </label>
+        <label class="busca">
+          <span class="visualmente-oculto">Buscar ritual</span>
+          <input type="search" id="busca-rituais" placeholder="Buscar ritual…" autocomplete="off" data-filtro-lista="rituais-busca">
+        </label>
+      </div>
+
+      <!-- Grupos por círculo (1º ao 4º), gerados pelo ui.js -->
+      <div class="rituais__grupos" id="grupos-rituais"></div>
+      <!-- <datalist> de execução, alcance e duração (data/rituais-campos.js), gerados pelo ui.js -->
+      <div id="sugestoes-ritual"></div>
+      <p class="itens__vazio" id="rituais-vazio">Nenhum ritual. Use "Adicionar ritual" para cadastrar os seus.</p>
+      <button type="button" class="botao" data-acao="adicionar-ritual">+ Adicionar ritual</button>
+    </section>
+
+    <!-- ======================= INVENTÁRIO ======================= -->
+    <section class="secao" aria-labelledby="titulo-inventario">
+      <h2 class="secao__titulo" id="titulo-inventario">Inventário</h2>
+
+      <div class="inventario__topo">
+        <!-- Patente, Pontos de Prestígio, crédito e limites por categoria -->
+        <article class="painel painel--patente">
+          <span class="painel__rotulo">Patente</span>
+
+          <div class="painel__campos">
+            <div class="campo-texto">
+              <label for="inv-patente">Patente</label>
+              <!-- Opções geradas a partir de OP.data.patentes -->
+              <select id="inv-patente" class="controle" data-campo="inventario.patente" data-tipo="texto"></select>
+            </div>
+
+            <div class="campo-texto campo-texto--curto">
+              <label for="inv-pp">Pontos de Prestígio</label>
+              <input id="inv-pp" class="controle controle--numero" type="number" min="0" step="1" inputmode="numeric"
+                     data-campo="inventario.pontosPrestigio" data-tipo="inteiro">
+            </div>
+
+            <div class="campo-texto">
+              <label for="inv-credito">Crédito</label>
+              <!-- Opção vazia = "Padrão da patente" (grava null) -->
+              <select id="inv-credito" class="controle" data-campo="inventario.creditoNivel" data-tipo="texto" data-padrao=""></select>
+            </div>
+          </div>
+
+          <p class="painel__info" id="dica-patente"></p>
+
+          <!-- Contadores gerados a partir de OP.data.categoriasItem (I a IV) -->
+          <div class="limites" id="limites-itens"></div>
+          <div class="avisos" id="avisos-limites" role="status" aria-live="polite" hidden>
+            <p class="avisos__titulo">Limite de itens excedido</p>
+            <ul class="avisos__lista" id="lista-avisos-limites"></ul>
+          </div>
+        </article>
+
+        <!-- Capacidade de carga -->
+        <article class="painel painel--carga" id="painel-carga">
+          <div class="painel__topo">
+            <div class="painel__titulo">
+              <span class="painel__rotulo">Carga</span>
+              <p class="painel__composicao" id="composicao-carga"></p>
+            </div>
+            <p class="carga__valor">
+              <output data-saida="inventario.espacosUsados" data-formato="numero">0</output>
+              <span class="carga__separador">/</span>
+              <output data-saida="inventario.capacidade" data-formato="numero">5</output>
+              <span class="carga__unidade">espaços</span>
+            </p>
+          </div>
+
+          <div class="barra barra--carga" aria-hidden="true">
+            <div class="barra__preenchimento" data-largura="inventario.percentualCarga"></div>
+          </div>
+
+          <div class="campo-bonus">
+            <label for="inv-capacidade-bonus">Bônus de capacidade</label>
+            <div class="passo">
+              <button type="button" class="passo__botao" tabindex="-1" data-passo="-1" data-alvo="inv-capacidade-bonus" aria-label="Diminuir bônus de capacidade">−</button>
+              <input id="inv-capacidade-bonus" class="passo__valor" type="number" step="1"
+                     data-campo="inventario.capacidadeBonus" data-tipo="inteiro">
+              <button type="button" class="passo__botao" tabindex="-1" data-passo="1" data-alvo="inv-capacidade-bonus" aria-label="Aumentar bônus de capacidade">+</button>
+            </div>
+          </div>
+
+          <p class="aviso-sobrecarga" data-aviso-sobrecarga role="status" aria-live="polite" hidden></p>
+        </article>
+      </div>
+
+      <h3 class="subtitulo">Itens</h3>
+      <div class="itens">
+        <!-- Cabeçalho das colunas (só no computador) -->
+        <div class="itens__cabecalho" aria-hidden="true">
+          <span>Nome</span><span>Tipo</span><span>Cat.</span><span>Espaços</span><span>Qtd.</span><span>Detalhes</span><span></span>
+        </div>
+        <!-- Itens gerados a partir de ficha.inventario.itens -->
+        <div class="itens__lista" id="lista-itens" role="list" aria-label="Itens do inventário"></div>
+        <p class="itens__vazio" id="itens-vazio">Nenhum item. Use "Adicionar item" para começar.</p>
+      </div>
+      <button type="button" class="botao" data-acao="adicionar-item">+ Adicionar item</button>
+    </section>
+
+    <!-- ======================= DESCRIÇÃO ======================= -->
+    <section class="secao secao--descricao" aria-labelledby="titulo-descricao">
+      <h2 class="secao__titulo" id="titulo-descricao">Descrição</h2>
+
+      <div class="descricao__grade">
+        <div class="descricao__campo">
+          <label for="desc-aparencia">Aparência</label>
+          <textarea id="desc-aparencia" class="controle" rows="3" placeholder="Como o agente se parece"
+                    data-campo="descricao.aparencia" data-tipo="texto"></textarea>
+        </div>
+        <div class="descricao__campo">
+          <label for="desc-personalidade">Personalidade</label>
+          <textarea id="desc-personalidade" class="controle" rows="3" placeholder="Jeito, manias, valores"
+                    data-campo="descricao.personalidade" data-tipo="texto"></textarea>
+        </div>
+        <div class="descricao__campo">
+          <label for="desc-historico">Histórico</label>
+          <textarea id="desc-historico" class="controle" rows="3" placeholder="De onde o agente veio"
+                    data-campo="descricao.historico" data-tipo="texto"></textarea>
+        </div>
+        <div class="descricao__campo">
+          <label for="desc-objetivo">Objetivo</label>
+          <textarea id="desc-objetivo" class="controle" rows="3" placeholder="O que o agente quer"
+                    data-campo="descricao.objetivo" data-tipo="texto"></textarea>
+        </div>
+        <div class="descricao__campo descricao__campo--largo">
+          <label for="desc-anotacoes">Anotações</label>
+          <textarea id="desc-anotacoes" class="controle" rows="4" placeholder="Pistas, contatos, lembretes da campanha"
+                    data-campo="descricao.anotacoes" data-tipo="texto"></textarea>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="rodape">
+    <p>Ferramenta de fã, não oficial. Nenhum texto do livro de regras é reproduzido aqui.</p>
+  </footer>
+
+  <!-- ================= PAINEL DE ROLAGENS (fixo) ================= -->
+  <!-- Fica fora de #ficha: nada aqui vai para a ficha nem para o auto-save. -->
+  <aside class="rolagens" id="rolagens" aria-label="Rolagens" data-aberto="false">
+    <button type="button" class="rolagens__alca" id="rolagens-alca" aria-expanded="false" aria-controls="rolagens-corpo">
+      <svg class="rolagens__icone" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+        <path d="M8 1.5 14 5v6l-6 3.5L2 11V5z"/><path d="M8 1.5 4.5 7h7z"/><path d="M2 5l2.5 2M14 5l-2.5 2M4.5 7 8 14.5 11.5 7"/>
+      </svg>
+      <span class="rolagens__rotulo">Rolagens</span>
+      <span class="rolagens__ultimo" id="rolagens-ultimo"></span>
+      <span class="rolagens__seta" aria-hidden="true"></span>
+    </button>
+
+    <div class="rolagens__corpo" id="rolagens-corpo" hidden>
+      <!-- Resultado da última rolagem (lido por leitores de tela) -->
+      <div class="rolagens__resultado" id="rolagens-resultado" aria-live="polite" aria-atomic="true">
+        <p class="rolagens__vazio">Role uma perícia, um ataque ou uma fórmula.</p>
+      </div>
+
+      <!-- Opções que valem para as próximas rolagens -->
+      <div class="rolagens__opcoes">
+        <label class="rolagens__campo">
+          <span>Modificador de dados</span>
+          <select class="controle" id="rolagem-mod-dados"></select>
+        </label>
+        <label class="rolagens__campo">
+          <span>Bônus extra <small>(testes)</small></span>
+          <input class="controle controle--numero" id="rolagem-bonus-extra" type="number" step="1" value="0">
+        </label>
+        <label class="rolagens__campo">
+          <span>Defesa/DT do alvo</span>
+          <input class="controle controle--numero" id="rolagem-defesa" type="number" step="1" placeholder="opcional">
+        </label>
+        <button type="button" class="botao-texto" id="rolagem-limpar-opcoes">limpar</button>
+      </div>
+      <p class="rolagens__dica" id="rolagens-dica"></p>
+
+      <!-- Fórmula livre -->
+      <form class="rolagens__formula" id="rolagem-formula-form" autocomplete="off">
+        <label class="visualmente-oculto" for="rolagem-formula">Fórmula de dados</label>
+        <input class="controle" id="rolagem-formula" type="text" placeholder="Fórmula, ex.: 2d6+3" spellcheck="false">
+        <button type="submit" class="botao-rolagem">Rolar</button>
+      </form>
+      <p class="rolagens__erro" id="rolagem-formula-erro" role="alert" hidden></p>
+
+      <!-- Histórico (só nesta aba) -->
+      <div class="rolagens__historico">
+        <div class="rolagens__historico-topo">
+          <h2 class="rolagens__subtitulo">Histórico</h2>
+          <button type="button" class="botao-texto" id="rolagem-limpar-historico">limpar histórico</button>
+        </div>
+        <ol class="rolagens__lista" id="rolagens-historico"></ol>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ================= JANELA "FICHAS" ================= -->
+  <dialog class="dialogo dialogo--fichas" id="dialogo-fichas" aria-labelledby="dialogo-fichas-titulo">
+    <div class="dialogo__corpo">
+      <div class="dialogo__topo">
+        <h2 class="dialogo__titulo" id="dialogo-fichas-titulo">Fichas <span class="dialogo__contagem" id="fichas-contagem"></span></h2>
+        <button type="button" class="botao-icone" data-fechar-fichas aria-label="Fechar">
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>
+        </button>
+      </div>
+
+      <div class="dialogo__acoes-topo">
+        <button type="button" class="botao-barra botao-barra--principal" data-acao-fichas="nova">+ Nova ficha</button>
+        <button type="button" class="botao-barra" data-acao-fichas="importar">Importar</button>
+        <button type="button" class="botao-barra" data-acao-fichas="backup">Backup de todas</button>
+        <!-- Só .json; também dá para arrastar o arquivo para a página -->
+        <input type="file" id="importar-arquivo" accept=".json,application/json" hidden>
+      </div>
+      <p class="dialogo__dica">Para importar, você também pode arrastar um arquivo .json para esta janela. Importar sempre cria fichas novas.</p>
+
+      <p class="mensagem-acao" id="fichas-mensagem" role="status" aria-live="polite" hidden></p>
+
+      <!-- Linhas geradas por js/ui-fichas.js (nomes só por textContent) -->
+      <ul class="fichas__lista" id="lista-fichas" aria-label="Fichas salvas neste navegador"></ul>
+    </div>
+  </dialog>
+
+  <!-- ================= CONFIRMAÇÃO (excluir, importar, ritual de Medo) ================= -->
+  <dialog class="dialogo dialogo--confirmar" id="dialogo-confirmar" aria-labelledby="confirmar-titulo" aria-describedby="confirmar-texto">
+    <form method="dialog" class="dialogo__corpo">
+      <h2 class="dialogo__titulo" id="confirmar-titulo">Confirmar</h2>
+      <p class="dialogo__texto" id="confirmar-texto"></p>
+      <ul class="dialogo__lista" id="confirmar-itens" hidden></ul>
+      <ul class="dialogo__lista dialogo__lista--avisos" id="confirmar-avisos" aria-label="Avisos" hidden></ul>
+      <p class="dialogo__destaque" id="confirmar-destaque" role="alert" hidden></p>
+      <div class="dialogo__botoes">
+        <button type="submit" class="botao-barra" value="cancelar">Cancelar</button>
+        <button type="submit" class="botao-barra botao-barra--principal" id="confirmar-ok" value="confirmar">Confirmar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ================= FONTES (livros e aventuras) ================= -->
+  <dialog class="dialogo dialogo--fontes" id="dialogo-fontes" aria-labelledby="dialogo-fontes-titulo">
+    <div class="dialogo__corpo">
+      <div class="dialogo__topo">
+        <h2 class="dialogo__titulo" id="dialogo-fontes-titulo">Fontes</h2>
+        <button type="button" class="botao-icone" data-fechar-fontes aria-label="Fechar">
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>
+        </button>
+      </div>
+      <p class="dialogo__dica">Desmarque as fontes que sua mesa não usa: as origens e trilhas delas somem das listas
+        (a que já estiver escolhida continua). Vale para todas as fichas deste navegador.</p>
+      <!-- Caixas geradas por js/ui-classe.js a partir de data/fontes.js -->
+      <ul class="fontes__lista" id="lista-fontes"></ul>
+    </div>
+  </dialog>
+
+  <!-- Ordem importa: dados → armazenamento → estado → cálculo → interface → inicialização -->
+  <script src="data/config.js"></script>
+  <script src="data/fontes.js"></script>
+  <script src="data/regras.js"></script>
+  <script src="data/classes.js"></script>
+  <script src="data/origens.js"></script>
+  <script src="data/trilhas.js"></script>
+  <script src="data/pericias.js"></script>
+  <script src="data/danos.js"></script>
+  <script src="data/defesa.js"></script>
+  <script src="data/patentes.js"></script>
+  <script src="data/elementos.js"></script>
+  <script src="data/habilidades.js"></script>
+  <script src="data/resistencias.js"></script>
+  <script src="data/rituais-campos.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/prefs.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/dados.js"></script>
+  <script src="js/calc.js"></script>
+  <script src="js/rolagens.js"></script>
+  <script src="js/fichas.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/ui-fichas.js"></script>
+  <script src="js/ui-classe.js"></script>
+  <script src="js/main.js"></script>
+  <!-- Testes: não rodam sozinhos. Digite OP.runTests() no console. -->
+  <script src="js/tests.js"></script>
+</body>
+</html>

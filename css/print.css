@@ -1,0 +1,1156 @@
+/* ==========================================================================
+   css/print.css — impressão / PDF (A4 retrato)
+   --------------------------------------------------------------------------
+   Carregado só na impressão (<link media="print">). Fundo branco, nada
+   interativo e campos como texto simples.
+   Página 1: cabeçalho, identificação, atributos, recursos, defesa e perícias.
+   Página 2: ataques, habilidades, rituais, inventário e descrição.
+   Antes de imprimir, o js/ui.js abre os blocos recolhidos, tira os filtros,
+   esconde campos vazios (.impressao-vazio) e ajusta a altura das <textarea>;
+   depois desfaz tudo.
+   Obs.: na impressão a largura útil é ~186 mm (~700 px), então as regras de
+   tela para celular (max-width) valem aqui; por isso várias são desfeitas.
+   ========================================================================== */
+
+@page {
+  size: A4 portrait;
+  margin: 12mm;
+}
+
+/* Tema claro: as mesmas variáveis do style.css */
+:root {
+  --cor-fundo: #fff;
+  --cor-fundo-elevado: #fff;
+  --cor-superficie: #fff;
+  --cor-superficie-2: #fff;
+  --cor-borda: #c4c4c4;
+  --cor-borda-forte: #8c8c8c;
+  --cor-texto: #111;
+  --cor-texto-suave: #444;
+  --cor-texto-fraco: #666;
+  --cor-destaque: #8f2f29;
+  --cor-destaque-suave: transparent;
+  --cor-brilho-topo: transparent;
+  --cor-foco: #6e5620;
+  --cor-ok: #33612f;
+  --cor-aviso: #7d5a10;
+  --cor-aviso-fundo: transparent;
+  --cor-aviso-borda: #c7a35a;
+  --cor-erro: #9c3128;
+  --cor-erro-fundo: transparent;
+  --cor-erro-borda: #c98a84;
+  --cor-pv: #b23f38;
+  --cor-pe: #b9681d;
+  --cor-san: #485fb5;
+  --cor-defesa: #4c5e75;
+  --cor-deslocamento: #33612f;
+  --cor-sangue: #a83a33;
+  --cor-morte: #666;
+  --cor-conhecimento: #9a7a1f;
+  --cor-energia: #6b4aa6;
+  --cor-medo: #888;
+  --altura-controle: auto;
+  --sombra: none;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  min-height: 0;
+  padding: 0 !important;
+  font-size: 9.5pt;
+  line-height: 1.25;
+  color: var(--cor-texto);
+  background: #fff !important;
+  background-image: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   Esconde tudo o que é interativo ou só serve na tela
+   -------------------------------------------------------------------------- */
+.barra-topo,
+.faixa,
+.rolagens,
+dialog,
+.rodape,
+body::after,
+.passo__botao,
+.recurso__botoes,
+.alternar,
+.contador,
+.botao,
+.botao-icone,
+.botao-rolagem,
+.botao-texto,
+.aba,
+.pericias__ferramentas,
+.pericias__pontos,
+.filtros-linha,
+.busca,
+.legenda,
+.avisos,
+.aviso-neutro,
+.secao__nota,
+.mensagem-acao,
+.itens__vazio,
+.pericias__vazio,
+.reacao__dica,
+.pericia__rolar,
+.tabela-pericias thead th:nth-child(8),
+.so-celular,
+.ataque__acoes,
+.ataque__erro,
+.item__acoes,
+.habilidade__seta,
+.habilidade__rodape,
+.habilidade__detalhes > .campos-linha:first-child,
+.habilidade__dt-campos,
+#painel-turno,
+.grupo-ritual__vazio,
+.grupo-ritual--vazio,
+.grupo-ritual__bloqueado,
+.ritual__aviso,
+.ritual__medo,
+.ataque__campo--teste-resistencia,
+.ataque__campo--efeito-resistencia,
+.forma[data-ativa="nao"],
+.forma__sempre,
+.forma__cabecalho .caixa,
+.forma__acoes,
+.impressao-vazio {
+  display: none !important;
+}
+
+/* Etapa 9: painéis de origem/classe/trilha e progressão são de consulta
+   (a origem, a classe e a trilha escolhidas aparecem na Identificação);
+   nas formas dos rituais fica só "Requer círculo" e o total. */
+.secao--identidade,
+#info-aumentos,
+#beneficios-afinidade,
+.ataque__campo--custo-base,
+.forma__custos .ataque__campo--custo,
+.forma__base,
+.forma__avisos {
+  display: none !important;
+}
+
+.pericia__fonte {
+  padding: 0 2pt;
+  font-size: 6pt;
+  line-height: 1;
+}
+
+.forma__total,
+.forma__total output {
+  font-size: 8pt;
+}
+
+.forma__afinidade {
+  height: auto;
+}
+
+/* Bônus manuais: o valor já aparece na composição ao lado do total
+   (ex.: "14 inicial + 16 por NEX + 0 bônus = 30") */
+.recurso__bonus,
+.painel--defesa .campo-bonus,
+.painel--deslocamento .campo-bonus,
+.painel--carga .campo-bonus,
+.painel--dt .campo-bonus,
+#dica-patente,
+#dica-afinidade,
+.secao[aria-labelledby="titulo-inventario"] .subtitulo {
+  display: none !important;
+}
+
+/* Setas dos blocos recolhíveis */
+.resistencias summary::before,
+.grupo-ritual > summary::before {
+  display: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   Campos como texto simples (sem caixas); checkboxes continuam visíveis
+   -------------------------------------------------------------------------- */
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+.passo,
+.passo__valor {
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  color: inherit !important;
+  background: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+}
+
+input,
+select,
+textarea {
+  font-size: 9pt !important;
+}
+
+input,
+select {
+  line-height: 1.2;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield !important;
+}
+
+input::-webkit-inner-spin-button,
+input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+::placeholder {
+  color: transparent !important;
+}
+
+/* A altura vem do js/ui.js (beforeprint); onde der, o navegador ajusta sozinho. */
+textarea {
+  width: 100%;
+  min-height: 0 !important;
+  padding: 0 !important;
+  font-family: inherit !important;
+  line-height: 1.25 !important;
+  color: inherit !important;
+  white-space: pre-wrap;
+  background: none !important;
+  border: 0 !important;
+  resize: none !important;
+  overflow: hidden !important;
+}
+
+.caixa {
+  gap: 3pt;
+  font-size: 8pt;
+}
+
+@supports (field-sizing: content) {
+  textarea {
+    field-sizing: content;
+    height: auto !important;
+  }
+}
+
+input[type="checkbox"] {
+  width: 8pt !important;
+  height: 8pt !important;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.controle:disabled,
+.recurso__controles:disabled,
+.pericia--requer-treino .controle,
+.pericia--requer-treino output,
+.pericia--requer-treino .caixa {
+  opacity: 1 !important;
+}
+
+/* --------------------------------------------------------------------------
+   Página e seções
+   -------------------------------------------------------------------------- */
+.pagina {
+  display: block;
+  max-width: none;
+  padding: 0;
+}
+
+.secao {
+  margin: 0 0 4pt;
+  padding: 3pt 7pt 4pt;
+  background: #fff;
+  border: 0.75pt solid #9a9a9a;
+  border-radius: 3pt;
+  box-shadow: none;
+}
+
+.secao__cabecalho {
+  gap: 2pt 8pt;
+}
+
+.secao__titulo {
+  gap: 5pt;
+  font-size: 8pt;
+  letter-spacing: 0.14em;
+  color: #000;
+  break-after: avoid;
+}
+
+.secao__titulo::before {
+  width: 5pt;
+  height: 5pt;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.secao__info,
+.secao__info output {
+  font-size: 7.5pt;
+}
+
+.subtitulo {
+  margin: 4pt 0 2pt;
+  font-size: 7pt;
+}
+
+/* Página 2 começa nos ataques */
+.secao[aria-labelledby="titulo-ataques"] {
+  break-before: page;
+}
+
+/* Cartões e tabelas não se partem entre páginas */
+.atributo,
+.recurso,
+.painel,
+.reacao,
+.teste,
+.tabela-pericias,
+.ataque,
+.habilidade,
+.ritual,
+.forma,
+.item,
+.limite,
+.descricao__campo {
+  break-inside: avoid;
+}
+
+/* Cabeçalho */
+.topo {
+  border: 0;
+}
+
+.topo__conteudo {
+  max-width: none;
+  padding: 0 0 4pt;
+}
+
+.topo__selo {
+  display: none;
+}
+
+.topo__titulo {
+  font-size: 13pt;
+}
+
+.topo__subtitulo {
+  margin-top: 0;
+  font-size: 7pt;
+}
+
+/* Rótulos pequenos */
+.campo label,
+.campo-texto label,
+.campo-bonus label,
+.recurso__bonus label,
+.recurso__perda label,
+.atributo__campo label,
+.ataque__rotulo,
+.descricao__campo label,
+.item__mini span {
+  margin: 0;
+  font-size: 6.5pt;
+  letter-spacing: 0.06em;
+}
+
+/* --------------------------------------------------------------------------
+   Página 1
+   -------------------------------------------------------------------------- */
+
+/* Identificação: uma linha */
+.grade-campos {
+  grid-template-columns: 2fr 1.6fr 1.4fr 1.2fr 1.4fr 0.6fr;
+  gap: 2pt 8pt;
+  margin-top: 3pt;
+}
+
+.campo--largo {
+  grid-column: auto;
+}
+
+.campo .campo__destaque {
+  font-size: 11pt !important;
+  font-weight: 700;
+}
+
+/* Atributos: cinco lado a lado; base e bônus na mesma linha */
+.grade-atributos {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4pt;
+  margin-top: 3pt;
+}
+
+.atributo {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  grid-template-areas:
+    "cab  cab   total"
+    "base bonus total";
+  gap: 1pt 4pt;
+  padding: 3pt 5pt;
+}
+
+.atributo__cabecalho {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 3pt;
+}
+
+.atributo__campo {
+  justify-content: flex-start;
+  gap: 2pt;
+}
+
+.atributo__sigla {
+  font-size: 10pt;
+}
+
+.atributo__nome {
+  font-size: 7pt;
+}
+
+.atributo__total {
+  width: 22pt;
+  height: 22pt;
+}
+
+.atributo__total output {
+  font-size: 13pt;
+}
+
+.atributo__total-rotulo {
+  display: none;
+}
+
+/* Números curtos: largura fixa pequena (input "auto" ocuparia ~20 caracteres) */
+.passo__valor,
+.controle--numero {
+  width: 3em !important;
+  font-size: 9pt !important;
+  text-align: left !important;
+}
+
+/* Recursos: três lado a lado, barras coloridas */
+.grade-recursos {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4pt;
+  margin-top: 3pt;
+}
+
+.recurso {
+  gap: 2pt;
+  padding: 3pt 6pt 4pt;
+  border-top-width: 2pt;
+}
+
+.recurso__cabecalho {
+  gap: 4pt;
+}
+
+.recurso__titulo {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 4pt;
+}
+
+.recurso__controles {
+  gap: 2pt;
+}
+
+.recurso__valores {
+  gap: 3pt;
+}
+
+.recurso__bonus,
+.recurso__perda {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 3pt;
+}
+
+.recurso__sigla {
+  font-size: 10pt;
+}
+
+.recurso__nome,
+.recurso__info,
+.recurso__info output {
+  font-size: 7pt;
+}
+
+.recurso__info {
+  padding: 0 4pt;
+}
+
+.recurso__atual {
+  width: 2.6em;
+  font-size: 14pt !important;
+  font-weight: 700;
+  text-align: right;
+}
+
+.recurso__separador,
+.recurso__max {
+  font-size: 11pt;
+}
+
+.barra,
+.barra__preenchimento {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.barra {
+  height: 5pt;
+}
+
+.recurso__rodape {
+  gap: 1pt 8pt;
+  margin-top: 0;
+  padding-top: 2pt;
+}
+
+.recurso__composicao {
+  flex-basis: 100%;
+  font-size: 7pt;
+}
+
+.recurso__detalhe {
+  display: none;
+}
+
+.recurso__perda-valor {
+  font-size: 9pt;
+}
+
+.recurso__perda .controle {
+  width: 3em;
+}
+
+/* Defesa e derivados */
+.grade-defesa {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 4pt;
+  margin-top: 3pt;
+}
+
+.painel {
+  gap: 3pt;
+  padding: 4pt 6pt;
+  border-top-width: 2pt;
+}
+
+.painel__rotulo {
+  font-size: 10pt;
+}
+
+.painel__composicao,
+.painel__info,
+.painel__info output {
+  margin-top: 0;
+  font-size: 7pt;
+}
+
+.painel__valor {
+  min-width: 28pt;
+  height: 28pt;
+  font-size: 17pt;
+}
+
+.painel__campos {
+  gap: 2pt 8pt;
+}
+
+/* Campos dos painéis: "Rótulo valor" na mesma linha */
+.campo-texto,
+.campo-bonus {
+  flex: 0 1 auto;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 3pt;
+}
+
+.campo-texto .controle {
+  width: auto;
+  min-width: 4em;
+}
+
+/* "Reações" e "Testes": os cartões já dizem o que são */
+.secao[aria-labelledby="titulo-defesa"] .subtitulo {
+  display: none;
+}
+
+.grade-reacoes,
+.grade-testes {
+  margin-top: 3pt;
+}
+
+.deslocamento__valor output {
+  font-size: 13pt;
+}
+
+.deslocamento__quadrados {
+  font-size: 8pt;
+}
+
+.aviso-sobrecarga {
+  padding: 1pt 4pt;
+  font-size: 7.5pt;
+}
+
+.grade-reacoes {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4pt;
+}
+
+.reacao {
+  gap: 0;
+  padding: 2pt 5pt;
+}
+
+.reacao__nome {
+  font-size: 7pt;
+}
+
+.reacao__valor {
+  font-size: 9pt;
+}
+
+.reacao__detalhe {
+  font-size: 7pt;
+}
+
+.grade-testes {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4pt;
+}
+
+.teste {
+  padding: 2pt 4pt;
+}
+
+.teste__ir {
+  padding: 0;
+}
+
+.teste__nome {
+  font-size: 8pt;
+}
+
+.teste__bonus {
+  font-size: 11pt;
+}
+
+.teste__dados {
+  font-size: 7pt;
+}
+
+.resistencias {
+  margin-top: 3pt;
+  border: 0;
+}
+
+.resistencias summary {
+  padding: 0;
+  font-size: 7pt;
+}
+
+.resistencias__corpo {
+  padding: 0;
+}
+
+.resistencias__grupos {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0 6pt;
+}
+
+.resistencias__grupo {
+  padding: 0 4pt 2pt;
+}
+
+.resistencias__grupo legend {
+  font-size: 6.5pt;
+}
+
+.resistencia {
+  padding: 0;
+  font-size: 7.5pt;
+}
+
+/* Perícias: volta a ser tabela (a regra de celular a transforma em cartões) */
+.tabela-pericias {
+  display: table !important;
+  margin-top: 2pt;
+  font-size: 8.5pt;
+  line-height: 1.1;
+}
+
+.tabela-pericias .icone,
+.tabela-pericias .caixa input {
+  vertical-align: middle;
+}
+
+.tabela-pericias thead {
+  position: static !important;
+  display: table-header-group !important;
+  width: auto !important;
+  height: auto !important;
+  overflow: visible !important;
+  clip: auto !important;
+}
+
+.tabela-pericias tbody {
+  display: table-row-group !important;
+}
+
+.tabela-pericias .pericia {
+  display: table-row !important;
+  padding: 0;
+  background: none;
+  border: 0;
+  animation: none;
+}
+
+.tabela-pericias thead th {
+  padding: 1pt 3pt;
+  font-size: 6.5pt;
+}
+
+.tabela-pericias .pericia > td,
+.tabela-pericias .pericia > th {
+  display: table-cell !important;
+  padding: 0 3pt !important;
+  vertical-align: middle;
+  border-bottom: 0.5pt solid #ccc !important;
+}
+
+/* "requer treinamento": a linha já aparece esmaecida */
+.pericia__requer {
+  display: none !important;
+}
+
+.pericia [data-rotulo]::before {
+  display: none !important;
+}
+
+.pericia__nome-conteudo {
+  min-height: 0;
+  gap: 0 4pt;
+  line-height: 1.1;
+}
+
+.pericia__indicadores {
+  width: auto;
+}
+
+.icone {
+  width: 8pt;
+  height: 8pt;
+}
+
+.pericia .controle,
+.pericia .pericia__especialidade {
+  width: auto !important;
+  font-size: 8.5pt !important;
+  line-height: 1.1 !important;
+}
+
+.pericia .controle--numero {
+  width: 3em !important;
+}
+
+.pericia__dados output {
+  font-size: 7.5pt;
+  line-height: 1.1;
+}
+
+.pericia__bonus output {
+  font-size: 8.5pt !important;
+  line-height: 1;
+}
+
+.pericia__carga {
+  padding: 0 2pt;
+  font-size: 6.5pt;
+  line-height: 1;
+}
+
+.pericia__concedida {
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   Página 2
+   -------------------------------------------------------------------------- */
+
+/* Campos dos cartões: "Rótulo valor" na mesma linha */
+.ataque__linha,
+.campos-linha {
+  gap: 1pt 10pt;
+}
+
+.ataque__campo {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 3pt;
+}
+
+.ataque__campo > .ataque__rotulo {
+  flex: none;
+  white-space: nowrap;
+}
+
+.ataque__campo > .controle,
+.ataque__campo > output,
+.ataque__campo > .passo,
+.ataque__campo > .ataque__municao {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+}
+
+.habilidade .controle {
+  width: 100%;
+}
+
+/* Ataques e rituais: cada campo do tamanho do texto (o js/ui.js ajusta o size) */
+.ataque .controle,
+.ritual .controle {
+  width: auto;
+  max-width: 100%;
+}
+
+/* Textos longos continuam em bloco, sem o rótulo repetido */
+.ataque__campo--descricao,
+.ataque__campo--efeito {
+  flex-direction: column;
+  gap: 0;
+}
+
+.habilidade .ataque__campo--descricao > .ataque__rotulo,
+.forma .ataque__campo--efeito > .ataque__rotulo {
+  display: none;
+}
+
+/* Crítico: o rótulo já mostra "19/x2" */
+.ataque__critico {
+  display: none;
+}
+
+/* Ataques: todos os campos fluem juntos (sem as 4 linhas da tela) */
+.ataques__lista {
+  gap: 3pt;
+  margin-top: 3pt;
+}
+
+.ataque {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 1pt 10pt;
+  padding: 3pt 6pt;
+  border-left-width: 2pt;
+}
+
+.ataque__linha {
+  display: contents;
+}
+
+.ataque .ataque__campo {
+  flex: 0 1 auto;
+}
+
+/* "Outros" já está somado no teste */
+.ataque__campo--outros {
+  display: none;
+}
+
+.ataque__teste {
+  height: auto;
+  font-size: 9pt;
+}
+
+.ataque__municao {
+  height: auto;
+}
+
+/* Habilidades: o resumo (nome, fonte, custo, DT) e o texto */
+.habilidades__lista {
+  gap: 3pt;
+  margin-top: 3pt;
+}
+
+.habilidade {
+  gap: 1pt;
+  padding: 3pt 6pt;
+  border-left-width: 2pt;
+}
+
+.habilidade__alternar {
+  min-height: 0;
+  padding: 0;
+}
+
+.habilidade__nome {
+  font-size: 9.5pt;
+}
+
+.selo-fonte {
+  padding: 0 4pt;
+  font-size: 6.5pt;
+}
+
+.habilidade__meta {
+  font-size: 7.5pt;
+}
+
+.habilidade__detalhes {
+  gap: 1pt;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.habilidade--aberta {
+  padding-bottom: 3pt;
+}
+
+/* Rituais */
+.rituais__topo {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4pt;
+  margin-top: 3pt;
+}
+
+.rituais__grupos {
+  gap: 3pt;
+  margin-top: 3pt;
+}
+
+.grupo-ritual {
+  background: none;
+  border: 0;
+}
+
+.grupo-ritual > summary {
+  min-height: 0;
+  padding: 1pt 0;
+}
+
+.grupo-ritual__titulo {
+  font-size: 7.5pt;
+}
+
+.grupo-ritual__lista {
+  gap: 3pt;
+  padding: 0;
+}
+
+/* Ritual: nome, círculo, elemento, resistência e detalhes fluem juntos; formas embaixo */
+.ritual {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 1pt 10pt;
+  padding: 3pt 6pt;
+  border-left-width: 2pt;
+}
+
+.ritual__cabecalho,
+.ritual__detalhes,
+.ritual__resistencia-campos {
+  display: contents;
+}
+
+.ritual .ataque__campo {
+  flex: 0 1 auto;
+}
+
+.ritual__resistencia {
+  flex: none;
+  padding: 0 4pt;
+  font-size: 8pt;
+}
+
+.ritual__formas {
+  flex: 1 1 100%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 3pt;
+  padding-top: 2pt;
+}
+
+.forma {
+  gap: 1pt;
+  padding: 2pt 4pt;
+}
+
+.forma__cabecalho {
+  min-height: 0;
+}
+
+.forma__corpo {
+  gap: 1pt;
+}
+
+/* Custo e dano da forma na mesma linha */
+.forma .campos-linha {
+  flex-wrap: nowrap;
+}
+
+.forma .ataque__campo > .passo,
+.forma .ataque__campo--dano {
+  flex: 0 1 auto;
+}
+
+.forma .forma__dano {
+  width: 6em !important;
+}
+
+/* DT e afinidade dos rituais: painéis baixos */
+.rituais__topo .painel {
+  padding: 2pt 6pt;
+}
+
+.rituais__topo .painel__valor {
+  min-width: 20pt;
+  height: 20pt;
+  font-size: 13pt;
+}
+
+.forma__nome {
+  font-size: 7pt;
+}
+
+/* Inventário: itens em linhas, com cabeçalho */
+.inventario__topo {
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 4pt;
+  margin-top: 3pt;
+}
+
+.limites {
+  gap: 3pt;
+}
+
+.limite {
+  padding: 0 5pt;
+}
+
+.limite__rotulo {
+  font-size: 6.5pt;
+}
+
+.limite__valor {
+  font-size: 9pt;
+}
+
+.carga__valor output {
+  font-size: 13pt;
+}
+
+.itens__cabecalho,
+.item {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 0.9fr) minmax(0, 0.4fr) minmax(0, 0.55fr) minmax(0, 0.4fr) minmax(0, 2.7fr) 0;
+  grid-template-areas:
+    "nome tipo cat esp qtd det acoes"
+    "desc desc desc desc desc desc desc";
+  column-gap: 6pt;
+  row-gap: 0;
+}
+
+.itens__cabecalho {
+  display: grid;
+  padding: 0 0 1pt;
+  font-size: 6.5pt;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cor-texto-suave);
+  border-bottom: 0.75pt solid #8c8c8c;
+}
+
+.itens__lista {
+  display: block;
+}
+
+.item {
+  align-items: center;
+  padding: 1pt 0;
+  background: none;
+  border: 0;
+  border-bottom: 0.5pt solid #ccc;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.item [data-rotulo]::before {
+  display: none;
+}
+
+.item__tipo,
+.item__categoria,
+.item__espacos,
+.item__quantidade,
+.item__detalhes,
+.item__descricao {
+  margin-top: 0;
+}
+
+.item[data-tipo-item] .item__detalhes {
+  display: block;
+}
+
+.item__det--protecao {
+  gap: 0 6pt;
+}
+
+.item__det--protecao .caixa {
+  height: auto;
+}
+
+/* "Patente" já aparece no campo logo abaixo */
+.painel--patente > .painel__rotulo {
+  display: none;
+}
+
+.item .item__mini {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 2pt;
+}
+
+.item .item__mini .controle {
+  width: 3em;
+}
+
+.item--equipada .item__nome {
+  padding-left: 0;
+}
+
+/* Descrição: rótulo à esquerda do texto */
+.descricao__grade {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2pt 10pt;
+  margin-top: 3pt;
+}
+
+.descricao__campo {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0 4pt;
+}
+
+.descricao__campo--largo {
+  grid-column: 1 / -1;
+}

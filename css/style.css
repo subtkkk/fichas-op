@@ -5241,12 +5241,16 @@ body.arrastando-arquivo::after {
 }
 
 /* Somente treinada sem treinamento: esmaecida (o aviso continua legível) */
-.pericia--requer-treino .pericia__rotulo,
 .pericia--requer-treino .pericia__indicadores,
 .pericia--requer-treino .controle,
 .pericia--requer-treino output,
 .pericia--requer-treino .caixa {
   opacity: 0.62; /* esmaecida, mas ainda legível (contraste ≥ 4,5:1) */
+}
+
+/* O nome é apagado pela cor, não por transparência (legível em qualquer fundo) */
+.pericia--requer-treino .pericia__rotulo {
+  color: var(--papel-3);
 }
 
 .pericia--requer-treino .controle:focus {

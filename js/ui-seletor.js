@@ -297,9 +297,9 @@ window.OP = window.OP || {};
       dono.appendChild(painel.fundo);
       dono.appendChild(painel.caixa);
     }
-    const tema = item.botao.closest('[data-tema]');
-    if (tema) painel.caixa.setAttribute('data-tema', tema.getAttribute('data-tema'));
-    else painel.caixa.removeAttribute('data-tema');
+    const tema = item.botao.closest('[data-elemento]');
+    if (tema) painel.caixa.setAttribute('data-elemento', tema.getAttribute('data-elemento'));
+    else painel.caixa.removeAttribute('data-elemento');
 
     painel.titulo.textContent = item.nome || 'Escolha';
     const comBusca = opcoes.length > MINIMO_BUSCA;

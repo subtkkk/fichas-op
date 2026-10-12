@@ -64,7 +64,54 @@ window.OP.data = window.OP.data || {};
     // PV confirmado pelo Guia (Combatente NEX 15%, VIG 3 → 37); PE por simetria.
     // A SAN não soma atributo. No Sobrevivente (estágios) nada soma atributo
     // por estágio, seguindo o texto literal.
-    progressaoSomaAtributo: { pv: true, pe: true }
+    progressaoSomaAtributo: { pv: true, pe: true },
+
+    // ---- Etapa 10: estados de saúde e sanidade ----
+    // Ferido = de 99% a 51% do PV máximo; machucado = de 50% a 1%;
+    // ileso = PV cheio; morrendo = 0 PV. CONFIRMADO pelo Guia: ferido quando
+    // o PV está ACIMA de (máximo × feridoAcimaDe).
+    estadoSaude: { feridoAcimaDe: 0.5 },
+
+    // Turnos morrendo na mesma cena até a morte: morre ao iniciar o 3º turno
+    // morrendo. CONFIRMADO pelo Guia. Uma característica do Guia eleva para 4;
+    // por isso a ficha tem um bônus (condicoes.bonusLimiteMorrendo).
+    limiteTurnosMorrendo: 3,
+
+    // "Perturbado": SAN atual igual ou abaixo de (máximo × este valor).
+    // CONFERIR NO LIVRO: o Guia cita o estado, mas não o limite.
+    sanidadePerturbadoAte: 0.5,
+
+    // "Dano massivo": dano de uma só vez igual ou maior que (PV máximo × este
+    // valor). CONFERIR NO LIVRO: o Guia cita "dano massivo" sem definir.
+    // Provisório: metade do PV máximo. O site só avisa, não automatiza nada.
+    danoMassivoFracao: 0.5,
+
+    // Retrato da biografia: tamanho máximo do texto (data URL) guardado na ficha.
+    retratoMaxChars: 400000,
+
+    // ---- Etapa 10: descanso ----
+    descanso: {
+      // Condições de descanso (a escolhida fica em ficha.descanso.condicao).
+      condicoes: [
+        { id: 'precaria',    nome: 'Precária' },
+        { id: 'normal',      nome: 'Normal' },
+        { id: 'confortavel', nome: 'Confortável' },
+        { id: 'luxuosa',     nome: 'Luxuosa' }
+      ],
+      // Meditação (poder Meditação Ocultista): PE recuperados = limite de PE
+      // por turno × este número. Guia: normal = dobro do limite (NEX 35%,
+      // limite 7 → 14 PE); precária = metade; confortável = "triplicada";
+      // luxuosa = "quadruplicada". CONFERIR: "triplicada/quadruplicada" pode
+      // significar 3× e 4× o limite (como está) ou 3× e 4× o valor normal.
+      meditacaoPorLimitePE: { precaria: 1, normal: 2, confortavel: 3, luxuosa: 4 },
+      // Dormir. CONFERIR NO LIVRO: a ação "dormir" não consta no Guia.
+      // Provisório, copiado da Meditação; é só uma sugestão editável na tela.
+      dormir: {
+        pvPorLimitePE: { precaria: 1, normal: 2, confortavel: 3, luxuosa: 4 },
+        pePorLimitePE: { precaria: 1, normal: 2, confortavel: 3, luxuosa: 4 },
+        san: { precaria: 0, normal: 0, confortavel: 0, luxuosa: 0 }
+      }
+    }
   };
 
   /** Tipos de item do inventário (os campos extras aparecem conforme o tipo). */

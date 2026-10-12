@@ -132,7 +132,7 @@ window.OP = window.OP || {};
   }
 
   function dadosTema(id) {
-    return (OP.data.temas || []).find(function (tema) { return tema.id === id; }) || OP.data.temas[0];
+    return (OP.data.temasFicha || []).find(function (tema) { return tema.id === id; }) || OP.data.temasFicha[0];
   }
 
   /** Baixa um texto como arquivo (Blob + <a download>; funciona em file://). */

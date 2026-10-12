@@ -6,7 +6,7 @@
    { fontes: { livro: true, SaH: false, ... }, temas: { idFicha: "sangue", ... } }
    - Fontes desligadas escondem origens e trilhas daquela fonte nos selects
      (a escolhida nunca some). Padrão: todas ligadas.
-   - Temas: aparência escolhida para cada ficha (data/temas.js). Só visual:
+   - Temas: aparência elemental de cada ficha (data/temas-ficha.js). Só visual:
      não muda nenhuma regra. Padrão: o primeiro tema (neutro).
    ========================================================================== */
 window.OP = window.OP || {};
@@ -29,7 +29,7 @@ window.OP = window.OP || {};
 
   /** Ids dos temas conhecidos (data/temas.js). */
   function idsTemas() {
-    return (OP.data.temas || []).map(function (tema) { return tema.id; });
+    return (OP.data.temasFicha || []).map(function (tema) { return tema.id; });
   }
 
   function temaPadrao() {

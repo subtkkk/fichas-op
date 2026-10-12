@@ -17,8 +17,8 @@
 <body data-vista="central">
   <a class="pular" href="#conteudo">Pular para o conteúdo</a>
 
-  <!-- Atmosfera: luz ambiente, textura e grão. Na ficha, segue o tema (data-tema, js/ui-dossie.js). -->
-  <div class="atmosfera" id="atmosfera" data-tema="neutro" aria-hidden="true">
+  <!-- Atmosfera: luz ambiente, textura e grão. Na ficha, segue o tema (data-elemento, js/ui-dossie.js). -->
+  <div class="atmosfera" id="atmosfera" data-elemento="neutro" aria-hidden="true">
     <div class="atmosfera__base"></div>
     <div class="atmosfera__tema"></div>
     <div class="atmosfera__detalhe"></div>
@@ -248,8 +248,8 @@
     </section>
 
     <!-- ================= FICHA ================= -->
-    <!-- data-tema: tema visual escolhido para esta ficha (js/ui-dossie.js). Só aparência. -->
-    <div class="vista vista--ficha" id="vista-ficha" data-vista-id="ficha" data-tema="neutro" aria-labelledby="ficha-titulo">
+    <!-- data-elemento: tema elemental escolhido para esta ficha (js/ui-dossie.js). Só aparência. -->
+    <div class="vista vista--ficha" id="vista-ficha" data-vista-id="ficha" data-elemento="neutro" aria-labelledby="ficha-titulo">
       <h1 class="visualmente-oculto" id="ficha-titulo" data-foco-tela tabindex="-1">Ficha do agente</h1>
 
       <!-- Cabeçalho só da impressão (na tela, o dossiê abaixo faz esse papel) -->
@@ -1156,6 +1156,8 @@
   <script src="data/resistencias.js"></script>
   <script src="data/rituais-campos.js"></script>
   <script src="data/temas.js"></script>
+  <script src="data/temas-ficha.js"></script>
+  <script src="data/condicoes.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/prefs.js"></script>
   <script src="js/state.js"></script>
@@ -1172,5 +1174,6 @@
   <script src="js/main.js"></script>
   <!-- Testes: não rodam sozinhos. Digite OP.runTests() no console. -->
   <script src="js/tests.js"></script>
+  <script src="js/tests-etapa10.js"></script>
 </body>
 </html>

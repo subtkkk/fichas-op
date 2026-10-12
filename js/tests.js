@@ -355,7 +355,7 @@ window.OP = window.OP || {};
       ficha.conjuracao.afinidadeDesenvolvida = true;
       ficha.identificacao.origem = 'academico';
       ficha.identificacao.trilha = 'ocultista-graduado';
-      ficha.descricao.historico = 'Veio de longe.';
+      ficha.biografia.historico = 'Veio de longe.';
       return ficha;
     }
 
@@ -796,7 +796,7 @@ window.OP = window.OP || {};
           const indice = OP.fichas.prepararIndice();
           const ficha = OP.fichas.ler(indice.fichas[0].id);
           return [indice.fichas.length, indice.atualId === indice.fichas[0].id, falso.getItem('op_ficha_atual') !== null,
-            ficha.identificacao.nome, ficha.recursos.pv.bonusMax, ficha.descricao.historico].join('/');
+            ficha.identificacao.nome, ficha.recursos.pv.bonusMax, ficha.biografia.historico].join('/');
         }, function (falso) { falso.setItem('op_ficha_atual', JSON.stringify(fichaEtapa1)); });
       }, esperado: '1/true/true/Agente Antigo/2/Começou na Etapa 1.' },
       { nome: 'E8 · Migração não repete: segunda vez usa o índice', obtido: function () {
@@ -907,7 +907,7 @@ window.OP = window.OP || {};
       { nome: 'E9 · Importar ficha da versão 8 com afinidade antiga', obtido: function () { const r = importarTexto(JSON.stringify({ formato: 'op-ficha', versao: 8, ficha: { versaoModelo: 8, conjuracao: { afinidade: 'energia' }, identificacao: { origem: 'Militar' } } })); return r.ok + '/' + r.fichas[0].conjuracao.elementoConectado + '/' + r.fichas[0].identificacao.origem; }, esperado: 'true/energia/militar' },
 
       { nome: 'Gerador restaurado após os testes', obtido: function () { const g = OP.dados.getRng(); return comDados([0], function () { return true; }) && OP.dados.getRng() === g; }, esperado: true }
-    ]);
+    ]).concat(OP.testesEtapa10 ? OP.testesEtapa10({ fichaDeTeste: fichaDeTeste }) : []);
   }
 
   /** Roda todas as verificações e mostra o resultado no console. */

@@ -9,7 +9,7 @@
      botões −/+ desligados enquanto não há classe (o máximo é desconhecido)
      e a janela de ajuste (−5…+5, dano/cura de N e desfazer o último);
    - índice: rola até a seção e marca a seção visível (aria-current);
-   - tema: data-tema na ficha e no painel de rolagens. SÓ APARÊNCIA: não
+   - tema: data-elemento na ficha e no painel de rolagens. SÓ APARÊNCIA: não
      muda afinidade, regras nem nenhum valor da ficha. A escolha fica nas
      preferências do navegador (OP.prefs), por ficha.
    ========================================================================== */
@@ -31,7 +31,7 @@ window.OP = window.OP || {};
   }
 
   function dadosTema(id) {
-    return OP.data.temas.find(function (tema) { return tema.id === id; }) || OP.data.temas[0];
+    return OP.data.temasFicha.find(function (tema) { return tema.id === id; }) || OP.data.temasFicha[0];
   }
 
   /* ------------------------------------------------------------------------
@@ -41,7 +41,7 @@ window.OP = window.OP || {};
   function montarSeletorTema() {
     const caixa = refs.opcoesTema;
     caixa.textContent = '';
-    OP.data.temas.forEach(function (tema) {
+    OP.data.temasFicha.forEach(function (tema) {
       const rotulo = document.createElement('label');
       rotulo.className = 'seletor-tema__opcao';
       rotulo.setAttribute('data-tema-opcao', tema.id);
@@ -121,9 +121,9 @@ window.OP = window.OP || {};
 
   function trocarTema(tema) {
     temaAplicado = tema.id;
-    refs.vista.setAttribute('data-tema', tema.id);
-    refs.rolagens.setAttribute('data-tema', tema.id);
-    refs.atmosfera.setAttribute('data-tema', tema.id);
+    refs.vista.setAttribute('data-elemento', tema.id);
+    refs.rolagens.setAttribute('data-elemento', tema.id);
+    refs.atmosfera.setAttribute('data-elemento', tema.id);
     document.body.setAttribute('data-tema-ficha', tema.id);
     refs.seloIcone.setAttribute('href', '#ic-' + tema.id);
     definirTexto(refs.temaAtual, tema.nome);

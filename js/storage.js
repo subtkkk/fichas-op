@@ -97,11 +97,55 @@ window.OP = window.OP || {};
     try {
       estado.armazenamento.setItem(k, texto);
       delete estado.sobreposicao[k];
+      estado.falhaPorCota = false;
       return true;
     } catch (erro) {
       estado.sobreposicao[k] = texto;
+      estado.falhaPorCota = ehErroDeCota(erro);
       return false;
     }
+  }
+
+  /** O erro é de armazenamento cheio (QuotaExceededError, ou o equivalente do Firefox)? */
+  function ehErroDeCota(erro) {
+    if (!erro) return false;
+    return erro.name === 'QuotaExceededError' || erro.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+      erro.code === 22 || erro.code === 1014;
+  }
+
+  /** A última gravação que falhou foi por falta de espaço (cota)? */
+  function falhaPorCota() {
+    return estado.falhaPorCota === true;
+  }
+
+  /**
+   * Bytes aproximados usados num armazenamento parecido com o localStorage
+   * (length, key(i), getItem(k)): soma de (chave + valor).length × 2, porque
+   * o navegador guarda cada caractere em 2 bytes. Função pura.
+   */
+  function estimarUso(armazenamento) {
+    let total = 0;
+    try {
+      const quantidade = Number(armazenamento.length) || 0;
+      for (let i = 0; i < quantidade; i++) {
+        const chave = armazenamento.key(i);
+        if (typeof chave !== 'string') continue;
+        const valor = armazenamento.getItem(chave);
+        total += (chave.length + (typeof valor === 'string' ? valor.length : 0)) * 2;
+      }
+    } catch (erro) {
+      // armazenamento ilegível: devolve o que deu para somar
+    }
+    return total;
+  }
+
+  // Cota habitual do localStorage dos navegadores (varia; só uma referência).
+  const COTA_APROXIMADA = 5 * 1024 * 1024;
+
+  /** { usado, limite, fracao, modo } do armazenamento em uso (para a tela de configurações). */
+  function uso() {
+    const usado = estimarUso(estado.armazenamento);
+    return { usado: usado, limite: COTA_APROXIMADA, fracao: usado / COTA_APROXIMADA, modo: estado.modo };
   }
 
   /** Apaga a chave (da memória e do armazenamento). Devolve true se deu certo. */
@@ -161,6 +205,10 @@ window.OP = window.OP || {};
     remover: remover,
     chaves: chaves,
     modo: modo,
+    falhaPorCota: falhaPorCota,
+    estimarUso: estimarUso,
+    uso: uso,
+    COTA_APROXIMADA: COTA_APROXIMADA,
     usar: usar,
     criarMemoria: criarMemoria
   };

@@ -19,7 +19,7 @@
     7. Estrutura do app, Central,     14. Movimento, transparência e
        Arquivo                            contraste (preferências do sistema)
    Os temas são SÓ visuais: mudam tokens de cor, luz e textura dentro de
-   [data-tema] (a ficha, o painel de rolagens e a atmosfera). A barra
+   [data-elemento] (a ficha, o painel de rolagens e a atmosfera). A barra
    global, a Central e o Arquivo mantêm a identidade institucional.
    A impressão não usa este arquivo (css/print-base.css + css/print.css).
    ========================================================================== */
@@ -228,17 +228,17 @@
 
 /* ==========================================================================
    3. TEMAS ELEMENTAIS — interpretações artísticas com a mesma estrutura.
-      Aplicados em .vista--ficha, .rolagens e .atmosfera (data-tema).
+      Aplicados em .vista--ficha, .rolagens e .atmosfera (data-elemento).
    ========================================================================== */
 
-[data-tema] {
+[data-elemento] {
   --acento-suave: color-mix(in oklab, var(--acento) 14%, transparent);
   --acento-linha: color-mix(in oklab, var(--acento) 42%, transparent);
   --brilho: color-mix(in oklab, var(--acento) 28%, transparent);
 }
 
 /* Arquivo (neutro): grafite, latão e um carimbo vermelho */
-[data-tema="neutro"] {
+[data-elemento="neutro"] {
   --acento: #c9a45c;
   --acento-claro: #e3c58a;
   --acento-2: #c4483e;
@@ -249,7 +249,7 @@
 }
 
 /* Sangue: carmesim, vermelho profundo, preto; luz avermelhada e orgânica */
-[data-tema="sangue"] {
+[data-elemento="sangue"] {
   /* Carmesim puxado para o rosado: o vermelho-alaranjado é de PV (sinal fixo) */
   --acento: #e5476f;
   --acento-claro: #ff8aa3;
@@ -263,7 +263,7 @@
 }
 
 /* Morte: violetas fechados, cinzas frios, névoa difusa */
-[data-tema="morte"] {
+[data-elemento="morte"] {
   --acento: #ab9bd3;
   --acento-claro: #cfc3f0;
   --acento-2: #5e5a6e;
@@ -279,7 +279,7 @@
 }
 
 /* Conhecimento: dourado envelhecido, amarelo controlado e grafite; diagramas */
-[data-tema="conhecimento"] {
+[data-elemento="conhecimento"] {
   --acento: #e3c04e;
   --acento-claro: #f7df8f;
   --acento-2: #8a6a2a;
@@ -290,7 +290,7 @@
 }
 
 /* Energia: violeta elétrico, magenta e ciano; brilhos pontuais */
-[data-tema="energia"] {
+[data-elemento="energia"] {
   --acento: #b571ff;
   --acento-claro: #d9adff;
   --acento-2: #2fe0ff;
@@ -303,7 +303,7 @@
 }
 
 /* Medo: preto profundo, branco pálido e cinzas neutros; quase silêncio */
-[data-tema="medo"] {
+[data-elemento="medo"] {
   --acento: #ebe8e1;
   --acento-claro: #ffffff;
   --acento-2: #7d7d7d;
@@ -552,7 +552,7 @@ body[data-vista="ficha"] .atmosfera__base {
 }
 
 /* Sangue: manchas orgânicas e vinheta rubra */
-.atmosfera[data-tema="sangue"] .atmosfera__detalhe {
+.atmosfera[data-elemento="sangue"] .atmosfera__detalhe {
   background:
     radial-gradient(circle at 88% 78%, rgba(120, 10, 14, 0.22), transparent 26%),
     radial-gradient(circle at 18% 64%, rgba(150, 18, 18, 0.12), transparent 22%),
@@ -560,7 +560,7 @@ body[data-vista="ficha"] .atmosfera__base {
 }
 
 /* Morte: névoa difusa em camadas frias */
-.atmosfera[data-tema="morte"] .atmosfera__detalhe {
+.atmosfera[data-elemento="morte"] .atmosfera__detalhe {
   background:
     radial-gradient(ellipse 60% 22% at 30% 72%, rgba(190, 185, 215, 0.055), transparent 70%),
     radial-gradient(ellipse 50% 18% at 78% 40%, rgba(190, 185, 215, 0.045), transparent 70%),
@@ -568,7 +568,7 @@ body[data-vista="ficha"] .atmosfera__base {
 }
 
 /* Conhecimento: diagrama geométrico, como um arquivo catalogado */
-.atmosfera[data-tema="conhecimento"] .atmosfera__detalhe {
+.atmosfera[data-elemento="conhecimento"] .atmosfera__detalhe {
   background-image:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320' fill='none' stroke='%23dcb45a' stroke-opacity='0.07'%3E%3Ccircle cx='160' cy='160' r='110'/%3E%3Ccircle cx='160' cy='160' r='56'/%3E%3Cpath d='M0 160h320M160 0v320M42 42l236 236M278 42 42 278'/%3E%3Cpath d='M160 50 255 215H65z'/%3E%3C/svg%3E"),
     linear-gradient(rgba(220, 180, 90, 0.025) 1px, transparent 1px),
@@ -579,7 +579,7 @@ body[data-vista="ficha"] .atmosfera__base {
 }
 
 /* Energia: feixes direcionados de violeta, magenta e ciano */
-.atmosfera[data-tema="energia"] .atmosfera__detalhe {
+.atmosfera[data-elemento="energia"] .atmosfera__detalhe {
   background:
     linear-gradient(115deg, transparent 30%, rgba(176, 107, 255, 0.07) 45%, transparent 60%),
     linear-gradient(115deg, transparent 58%, rgba(255, 70, 210, 0.05) 66%, transparent 74%),
@@ -587,13 +587,13 @@ body[data-vista="ficha"] .atmosfera__base {
 }
 
 /* Medo: escuridão quase total e um silêncio pálido no centro */
-.atmosfera[data-tema="medo"] .atmosfera__detalhe {
+.atmosfera[data-elemento="medo"] .atmosfera__detalhe {
   background:
     radial-gradient(ellipse 50% 40% at 50% 35%, rgba(255, 255, 255, 0.025), transparent 70%),
     radial-gradient(ellipse 130% 110% at 50% 50%, transparent 45%, rgba(0, 0, 0, 0.75) 100%);
 }
 
-body[data-vista="ficha"] .atmosfera[data-tema="medo"] .atmosfera__base {
+body[data-vista="ficha"] .atmosfera[data-elemento="medo"] .atmosfera__base {
   opacity: 0.15;
 }
 
@@ -3821,7 +3821,7 @@ body.arrastando-arquivo::after {
   box-shadow: inset 0 0 0 1px rgba(201, 74, 64, 0.15);
 }
 
-[data-tema="medo"] .dossie__carimbo {
+[data-elemento="medo"] .dossie__carimbo {
   color: var(--papel-2);
 }
 
@@ -7328,20 +7328,20 @@ body.arrastando-arquivo::after {
    ========================================================================== */
 
 /* ---- Sangue: orgânico, quente; um batimento ao interagir ---- */
-[data-tema="sangue"] {
+[data-elemento="sangue"] {
   --raio-2: 8px;
   --raio-3: 14px;
 }
 
-[data-tema="sangue"] .painel,
-[data-tema="sangue"] .ataque,
-[data-tema="sangue"] .ritual,
-[data-tema="sangue"] .recurso,
-[data-tema="sangue"] .atributo {
+[data-elemento="sangue"] .painel,
+[data-elemento="sangue"] .ataque,
+[data-elemento="sangue"] .ritual,
+[data-elemento="sangue"] .recurso,
+[data-elemento="sangue"] .atributo {
   box-shadow: var(--sombra-1), inset 0 -34px 46px -34px rgba(170, 18, 18, 0.42);
 }
 
-[data-tema="sangue"] .ficha__conteudo .secao--dossie::after {
+[data-elemento="sangue"] .ficha__conteudo .secao--dossie::after {
   top: -120px;
   right: -60px;
   width: 460px;
@@ -7355,16 +7355,16 @@ body.arrastando-arquivo::after {
   mask-image: none;
 }
 
-[data-tema="sangue"] .ficha__conteudo .secao::before {
+[data-elemento="sangue"] .ficha__conteudo .secao::before {
   background: linear-gradient(90deg, var(--acento) 0%, rgba(150, 20, 20, 0.5) 16%, var(--linha-1) 55%, transparent 100%);
 }
 
-[data-tema="sangue"] .atributos__mostrador {
+[data-elemento="sangue"] .atributos__mostrador {
   filter: drop-shadow(0 0 22px rgba(190, 20, 20, 0.3));
 }
 
-[data-tema="sangue"] .botao-rolagem:hover,
-[data-tema="sangue"] .botao-icone--rolar:hover {
+[data-elemento="sangue"] .botao-rolagem:hover,
+[data-elemento="sangue"] .botao-icone--rolar:hover {
   animation: batimento 1.1s var(--curva) 1;
 }
 
@@ -7377,41 +7377,41 @@ body.arrastando-arquivo::after {
 }
 
 /* ---- Morte: névoa, cinzas frios; tudo um pouco mais lento ---- */
-[data-tema="morte"] {
+[data-elemento="morte"] {
   --dur-2: 320ms;
   --dur-3: 520ms;
 }
 
-[data-tema="morte"] .painel,
-[data-tema="morte"] .atributo,
-[data-tema="morte"] .recurso,
-[data-tema="morte"] .ataque,
-[data-tema="morte"] .ritual,
-[data-tema="morte"] .habilidade,
-[data-tema="morte"] .reacao,
-[data-tema="morte"] .teste {
+[data-elemento="morte"] .painel,
+[data-elemento="morte"] .atributo,
+[data-elemento="morte"] .recurso,
+[data-elemento="morte"] .ataque,
+[data-elemento="morte"] .ritual,
+[data-elemento="morte"] .habilidade,
+[data-elemento="morte"] .reacao,
+[data-elemento="morte"] .teste {
   background:
     radial-gradient(120% 60% at 50% 0%, rgba(205, 198, 232, 0.08), transparent 70%),
     color-mix(in oklab, var(--tinta-superficie) 84%, transparent);
 }
 
-[data-tema="morte"] .ficha__conteudo .secao--dossie::after {
+[data-elemento="morte"] .ficha__conteudo .secao--dossie::after {
   background: repeating-radial-gradient(circle, transparent 0 13px, rgba(171, 155, 211, 0.12) 13px 14px);
   filter: blur(1.4px);
 }
 
-[data-tema="morte"] .ficha__conteudo .secao::before {
+[data-elemento="morte"] .ficha__conteudo .secao::before {
   height: 1px;
   background: linear-gradient(90deg, rgba(171, 155, 211, 0.45), rgba(171, 155, 211, 0.08) 45%, transparent 85%);
 }
 
 /* Morte: o anel de marcas se desfaz em névoa */
-[data-tema="morte"] .mostrador__marcas {
+[data-elemento="morte"] .mostrador__marcas {
   filter: blur(0.6px);
 }
 
 /* ---- Conhecimento: papel quadriculado, diagramas e numeração editorial ---- */
-[data-tema="conhecimento"] .ficha__conteudo {
+[data-elemento="conhecimento"] .ficha__conteudo {
   background-image:
     linear-gradient(rgba(227, 192, 78, 0.035) 1px, transparent 1px),
     linear-gradient(90deg, rgba(227, 192, 78, 0.035) 1px, transparent 1px);
@@ -7419,7 +7419,7 @@ body.arrastando-arquivo::after {
   background-position: -1px -1px;
 }
 
-[data-tema="conhecimento"] .ficha__conteudo .secao__titulo::before {
+[data-elemento="conhecimento"] .ficha__conteudo .secao__titulo::before {
   content: "§ " counter(secao, upper-roman);
   font-family: var(--fonte-display);
   font-size: 15px;
@@ -7429,13 +7429,13 @@ body.arrastando-arquivo::after {
   transform: translateY(-4px);
 }
 
-[data-tema="conhecimento"] .secao__titulo,
-[data-tema="conhecimento"] .grupo-ritual__titulo {
+[data-elemento="conhecimento"] .secao__titulo,
+[data-elemento="conhecimento"] .grupo-ritual__titulo {
   font-style: italic;
   font-weight: 500;
 }
 
-[data-tema="conhecimento"] .ficha__conteudo .secao--dossie::after {
+[data-elemento="conhecimento"] .ficha__conteudo .secao--dossie::after {
   top: -70px;
   right: -40px;
   width: 340px;
@@ -7445,20 +7445,20 @@ body.arrastando-arquivo::after {
 }
 
 /* Conhecimento: o mostrador ganha o diagrama que liga os cinco dados */
-[data-tema="conhecimento"] .mostrador__diagrama {
+[data-elemento="conhecimento"] .mostrador__diagrama {
   display: inline;
 }
 
-[data-tema="conhecimento"] .ficha__conteudo .secao::before {
+[data-elemento="conhecimento"] .ficha__conteudo .secao::before {
   background: repeating-linear-gradient(90deg, var(--acento-linha) 0 6px, transparent 6px 10px);
   -webkit-mask-image: linear-gradient(90deg, #000 30%, transparent);
   mask-image: linear-gradient(90deg, #000 30%, transparent);
 }
 
 /* ---- Energia: gradientes direcionados e brilhos pontuais nos ativos ---- */
-[data-tema="energia"] .botao-rolagem:not(.botao-rolagem--dano):not(.botao-rolagem--usar):not(.botao-rolagem--conjurar):not(.botao-rolagem--secundario):not(.botao-rolagem--bloqueado),
-[data-tema="energia"] .aba[aria-pressed="true"],
-[data-tema="energia"] .botao-icone--rolar:hover:not(:disabled) {
+[data-elemento="energia"] .botao-rolagem:not(.botao-rolagem--dano):not(.botao-rolagem--usar):not(.botao-rolagem--conjurar):not(.botao-rolagem--secundario):not(.botao-rolagem--bloqueado),
+[data-elemento="energia"] .aba[aria-pressed="true"],
+[data-elemento="energia"] .botao-icone--rolar:hover:not(:disabled) {
   color: #fff;
   background: linear-gradient(115deg, #8b4dff 0%, #e04ad6 50%, #2fd7ff 100%);
   background-size: 220% 100%;
@@ -7467,50 +7467,50 @@ body.arrastando-arquivo::after {
   transition: background-position var(--dur-4) var(--curva-saida), box-shadow var(--dur-2) var(--curva);
 }
 
-[data-tema="energia"] .botao-rolagem:not(.botao-rolagem--dano):not(.botao-rolagem--usar):not(.botao-rolagem--conjurar):not(.botao-rolagem--secundario):not(.botao-rolagem--bloqueado):hover {
+[data-elemento="energia"] .botao-rolagem:not(.botao-rolagem--dano):not(.botao-rolagem--usar):not(.botao-rolagem--conjurar):not(.botao-rolagem--secundario):not(.botao-rolagem--bloqueado):hover {
   background-position: 100% 50%;
   box-shadow: 0 0 0 3px rgba(181, 113, 255, 0.18), 0 10px 30px -8px rgba(224, 74, 214, 0.6), 0 0 22px -6px rgba(47, 224, 255, 0.7);
 }
 
-[data-tema="energia"] .ficha__conteudo .secao::before {
+[data-elemento="energia"] .ficha__conteudo .secao::before {
   background: linear-gradient(90deg, #b571ff 0%, #ff4fd8 22%, #2fe0ff 42%, transparent 78%);
   box-shadow: 0 0 10px rgba(181, 113, 255, 0.55);
 }
 
-[data-tema="energia"] .ficha__conteudo .secao--dossie::after {
+[data-elemento="energia"] .ficha__conteudo .secao--dossie::after {
   background:
     radial-gradient(circle at 70% 30%, rgba(47, 224, 255, 0.16), transparent 40%),
     repeating-linear-gradient(115deg, transparent 0 20px, rgba(181, 113, 255, 0.12) 20px 21px);
 }
 
-[data-tema="energia"] .atributo__total output,
-[data-tema="energia"] .painel__valor,
-[data-tema="energia"] .resultado__total {
+[data-elemento="energia"] .atributo__total output,
+[data-elemento="energia"] .painel__valor,
+[data-elemento="energia"] .resultado__total {
   text-shadow: 0 0 18px rgba(47, 224, 255, 0.55), 0 0 2px rgba(181, 113, 255, 0.8);
 }
 
-[data-tema="energia"] .indice__item[aria-current="location"]::before,
-[data-tema="energia"] .painel::before,
-[data-tema="energia"] .ataque::before {
+[data-elemento="energia"] .indice__item[aria-current="location"]::before,
+[data-elemento="energia"] .painel::before,
+[data-elemento="energia"] .ataque::before {
   background: linear-gradient(180deg, #2fe0ff, #b571ff 50%, #ff4fd8);
 }
 
-[data-tema="energia"] .painel::before {
+[data-elemento="energia"] .painel::before {
   background: linear-gradient(90deg, #2fe0ff, #b571ff 50%, #ff4fd8);
 }
 
-[data-tema="energia"] :focus-visible {
+[data-elemento="energia"] :focus-visible {
   outline-color: var(--acento-2);
 }
 
 /* ---- Medo: silêncio visual; quase nada brilha ---- */
-[data-tema="medo"] {
+[data-elemento="medo"] {
   --brilho: transparent;
   --sombra-2: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
   --sombra-3: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
 }
 
-[data-tema="medo"] .ficha__conteudo .secao--dossie::after {
+[data-elemento="medo"] .ficha__conteudo .secao--dossie::after {
   top: -300px;
   right: -300px;
   width: 600px;
@@ -7521,45 +7521,45 @@ body.arrastando-arquivo::after {
   mask-image: none;
 }
 
-[data-tema="medo"] .ficha__conteudo .secao::before {
+[data-elemento="medo"] .ficha__conteudo .secao::before {
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.2), transparent 38%);
 }
 
-[data-tema="medo"] .secao__titulo {
+[data-elemento="medo"] .secao__titulo {
   font-weight: 500;
   letter-spacing: 0.035em;
 }
 
-[data-tema="medo"] .painel::before,
-[data-tema="medo"] .ataque::before,
-[data-tema="medo"] .ritual::before,
-[data-tema="medo"] .recurso::before,
-[data-tema="medo"] .indice__item[aria-current="location"]::before,
-[data-tema="medo"] .mini-vital__preenchido,
-[data-tema="medo"] .vital__barra .barra__preenchimento,
-[data-tema="medo"] .recurso .barra__preenchimento {
+[data-elemento="medo"] .painel::before,
+[data-elemento="medo"] .ataque::before,
+[data-elemento="medo"] .ritual::before,
+[data-elemento="medo"] .recurso::before,
+[data-elemento="medo"] .indice__item[aria-current="location"]::before,
+[data-elemento="medo"] .mini-vital__preenchido,
+[data-elemento="medo"] .vital__barra .barra__preenchimento,
+[data-elemento="medo"] .recurso .barra__preenchimento {
   box-shadow: none;
 }
 
-[data-tema="medo"] .mostrador__anel,
-[data-tema="medo"] .mostrador__trilho {
+[data-elemento="medo"] .mostrador__anel,
+[data-elemento="medo"] .mostrador__trilho {
   stroke: rgba(255, 255, 255, 0.12);
 }
 
-[data-tema="medo"] .secao--atributos[data-modo="mesa"] .atributo__dado {
+[data-elemento="medo"] .secao--atributos[data-modo="mesa"] .atributo__dado {
   filter: drop-shadow(0 12px 16px rgba(0, 0, 0, 0.55));
 }
 
-[data-tema="medo"] .dossie__monograma {
+[data-elemento="medo"] .dossie__monograma {
   font-weight: 500;
   letter-spacing: 0.14em;
 }
 
-[data-tema="medo"] .dossie__selo-anel {
+[data-elemento="medo"] .dossie__selo-anel {
   filter: none;
 }
 
-.atmosfera[data-tema="medo"] .atmosfera__grao {
+.atmosfera[data-elemento="medo"] .atmosfera__grao {
   opacity: 0.07;
 }
 

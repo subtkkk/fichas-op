@@ -829,7 +829,7 @@ window.OP = window.OP || {};
   /** Dados de uma perícia: { qtd, modo } ("maior" ou "menor"). */
   function periciaDados(ficha, idPericia) {
     const atributo = atributoDaPericia(ficha, idPericia);
-    return dadosPorAtributo(atributo ? totalAtributo(ficha, atributo) : 0);
+    return resolverReserva(atributo ? totalAtributo(ficha, atributo) : 0, dadosCondicoesPericia(ficha, idPericia));
   }
 
   /** Texto dos dados: { qtd: 3, modo: 'maior' } → "3d20 maior". */
@@ -888,6 +888,7 @@ window.OP = window.OP || {};
       atributoPadrao: definicao.atributoPadrao || null,
       atributoAlterado: atributo !== definicao.atributoPadrao,
       dados: periciaDados(ficha, idPericia),
+      dadosCondicoes: dadosCondicoesPericia(ficha, idPericia), // soma de dados das condições (negativa = menos dados)
       grau: grau,
       grauSalvo: grauDaPericia(ficha, idPericia),
       concedidaPor: fonteConcedida(ficha, idPericia), // 'classe' | 'origem' | null
@@ -951,7 +952,7 @@ window.OP = window.OP || {};
   /**
    * Defesa parte por parte:
    * base + AGI (total) + proteções equipadas (inventário) + bônus de proteção
-   * manual + outros − sobrecarga.
+   * manual + outros − sobrecarga + condições (modificadoresCondicoes).
    */
   function composicaoDefesa(ficha) {
     const regras = OP.data.regrasDefesa;
@@ -963,10 +964,11 @@ window.OP = window.OP || {};
       protecoesInventario: defesaProtecoes(ficha),
       protecao: numero(defesa.protecao && defesa.protecao.defesa), // bônus de proteção manual
       outros: numero(defesa.outros),
-      sobrecarga: sobrecarregado(ficha) ? numero(OP.data.config.sobrecarga.defesa) : 0
+      sobrecarga: sobrecarregado(ficha) ? numero(OP.data.config.sobrecarga.defesa) : 0,
+      condicoes: modificadoresCondicoes(ficha).defesa // soma das condições ativas (sugestões a conferir)
     };
     composicao.total = composicao.base + composicao.valorAtributo + composicao.protecoesInventario +
-      composicao.protecao + composicao.outros - composicao.sobrecarga;
+      composicao.protecao + composicao.outros - composicao.sobrecarga + composicao.condicoes;
     return composicao;
   }
 
@@ -1021,6 +1023,8 @@ window.OP = window.OP || {};
   /**
    * Deslocamento = config.deslocamentoBase + bônus manual (metros)
    * − (sobrecarregado ? config.sobrecarga.deslocamento : 0), nunca abaixo de 0.
+   * Depois da sobrecarga, multiplica pelo deslocamento das condições
+   * (0,5 = metade; 0 = não se move).
    * Só quadrados inteiros contam (ex.: 10 m = 6 quadrados). CONFERIR NO LIVRO
    */
   function deslocamento(ficha) {
@@ -1028,10 +1032,15 @@ window.OP = window.OP || {};
     const base = numero(config.deslocamentoBase);
     const bonus = numero(defesaSalva(ficha).deslocamentoBonus);
     const sobrecarga = sobrecarregado(ficha) ? numero(config.sobrecarga.deslocamento) : 0;
-    const metros = Math.max(0, base + bonus - sobrecarga);
+    const multiplicador = modificadoresCondicoes(ficha).deslocamentoMult;
+    const metrosAntes = Math.max(0, base + bonus - sobrecarga);
+    const metros = Math.round(metrosAntes * multiplicador * 100) / 100;
     // a pequena folga evita erro de arredondamento (ex.: 10,5 / 1,5)
     const quadrados = Math.floor(metros / OP.data.regrasDefesa.metrosPorQuadrado + 1e-9);
-    return { base: base, bonus: bonus, sobrecarga: sobrecarga, metros: metros, quadrados: quadrados };
+    return {
+      base: base, bonus: bonus, sobrecarga: sobrecarga, metros: metros, quadrados: quadrados,
+      multiplicador: multiplicador, metrosAntesCondicoes: metrosAntes
+    };
   }
 
   /** Dados e bônus de uma perícia (para Iniciativa, Fortitude, Reflexos e Vontade). */
@@ -1061,7 +1070,7 @@ window.OP = window.OP || {};
   function testePericia(ficha, idPericia, modDados) {
     const atributo = atributoDaPericia(ficha, idPericia);
     return {
-      dados: resolverReserva(atributo ? totalAtributo(ficha, atributo) : 0, modDados || 0),
+      dados: resolverReserva(atributo ? totalAtributo(ficha, atributo) : 0, numero(modDados) + dadosCondicoesPericia(ficha, idPericia)),
       bonus: periciaBonus(ficha, idPericia)
     };
   }
@@ -1809,6 +1818,596 @@ window.OP = window.OP || {};
   }
 
   /* ------------------------------------------------------------------------
+     Etapa 10 · Condições e estados
+     Tudo puro. O catálogo (OP.data.condicoes) é lido a cada chamada, nunca
+     guardado: os testes trocam o catálogo temporariamente.
+     Os efeitos do catálogo são SUGESTÕES a conferir (campo "conferir").
+     ------------------------------------------------------------------------ */
+
+  const IDS_ATRIBUTOS_COND = ['agi', 'for', 'int', 'pre', 'vig'];
+
+  function condicoesSalvas(ficha) {
+    const c = ficha && ficha.condicoes;
+    return c !== null && typeof c === 'object' && !Array.isArray(c) ? c : {};
+  }
+
+  /** Lista de condições ativas: aceita a ficha, o objeto ficha.condicoes ou a própria lista. */
+  function listaAtivas(entrada) {
+    let lista = entrada;
+    if (entrada && !Array.isArray(entrada) && typeof entrada === 'object') {
+      lista = entrada.condicoes !== undefined && entrada.ativas === undefined ? entrada.condicoes.ativas : entrada.ativas;
+    }
+    return (Array.isArray(lista) ? lista : []).filter(function (item) {
+      return item !== null && typeof item === 'object' && typeof item.id === 'string';
+    });
+  }
+
+  function definicaoCondicao(id) {
+    return (OP.data.condicoes || []).find(function (c) { return c.id === id; }) || null;
+  }
+
+  /**
+   * Ids das condições em vigor, já com as implicadas (campo `implica`),
+   * sem repetir e sem laço infinito. A condição "personalizada" não entra
+   * (cada uma tem os próprios números).
+   */
+  function condicoesEfetivas(condicoes) {
+    const vistos = Object.create(null);
+    const resultado = [];
+    function visitar(id) {
+      if (vistos[id]) return;
+      const definicao = definicaoCondicao(id);
+      if (!definicao) return;
+      vistos[id] = true;
+      resultado.push(id);
+      (Array.isArray(definicao.implica) ? definicao.implica : []).forEach(visitar);
+    }
+    listaAtivas(condicoes).forEach(function (item) { visitar(item.id); });
+    return resultado;
+  }
+
+  function siglaAtributoCond(id) {
+    const atributo = (OP.data.atributos || []).find(function (a) { return a.id === id; });
+    return atributo ? atributo.sigla : String(id).toUpperCase();
+  }
+
+  function textoMenos(n) {
+    return (n < 0 ? '−' : '+') + Math.abs(n);
+  }
+
+  function formatarMult(mult) {
+    return String(Math.round(mult * 100) / 100).replace('.', ',');
+  }
+
+  /** Resumo dos números de um efeito: "−1d20 em perícias; Defesa −2". '' se não houver efeito. */
+  function resumoEfeitos(efeitos) {
+    if (!efeitos || typeof efeitos !== 'object') return '';
+    const partes = [];
+    const dadosPericias = numero(efeitos.dadosPericias);
+    if (dadosPericias) partes.push(textoMenos(dadosPericias) + 'd20 em perícias');
+    const atributos = efeitos.dadosAtributos && typeof efeitos.dadosAtributos === 'object' ? efeitos.dadosAtributos : {};
+    const porValor = {};
+    IDS_ATRIBUTOS_COND.forEach(function (id) {
+      const valor = numero(atributos[id]);
+      if (valor) (porValor[valor] = porValor[valor] || []).push(siglaAtributoCond(id));
+    });
+    Object.keys(porValor).sort(function (a, b) { return Number(a) - Number(b); }).forEach(function (valor) {
+      const siglas = porValor[valor];
+      const lista = siglas.length > 1 ? siglas.slice(0, -1).join(', ') + ' e ' + siglas[siglas.length - 1] : siglas[0];
+      partes.push(textoMenos(Number(valor)) + 'd20 em testes de ' + lista);
+    });
+    const defesa = numero(efeitos.defesa);
+    if (defesa) partes.push('Defesa ' + textoMenos(defesa));
+    if (efeitos.deslocamentoMult !== undefined && efeitos.deslocamentoMult !== null) {
+      const mult = numero(efeitos.deslocamentoMult);
+      if (mult === 0) partes.push('não se move');
+      else if (mult === 0.5) partes.push('deslocamento pela metade');
+      else if (mult !== 1) partes.push('deslocamento × ' + formatarMult(mult));
+    }
+    return partes.join('; ');
+  }
+
+  function efeitosDaPersonalizada(p) {
+    const dados = p && typeof p === 'object' ? p : {};
+    const efeitos = {};
+    if (numero(dados.dadosPericias)) efeitos.dadosPericias = numero(dados.dadosPericias);
+    if (numero(dados.defesa)) efeitos.defesa = numero(dados.defesa);
+    if (dados.deslocamentoMult !== undefined && dados.deslocamentoMult !== null && numero(dados.deslocamentoMult) !== 1) {
+      efeitos.deslocamentoMult = numero(dados.deslocamentoMult);
+    }
+    return efeitos;
+  }
+
+  function modificadoresNeutros() {
+    return { dadosPericias: 0, dadosAtributos: { agi: 0, for: 0, int: 0, pre: 0, vig: 0 }, defesa: 0, deslocamentoMult: 1, origens: [] };
+  }
+
+  /**
+   * Junta os efeitos de uma família: por campo (e por atributo) vale o PIOR
+   * valor (o menor; para o deslocamento, o menor multiplicador).
+   * Devolve { efeitos, contribui: [bool por membro] }.
+   */
+  function piorDaFamilia(membros) {
+    const efeitos = { dadosAtributos: {} };
+    const contribui = membros.map(function () { return false; });
+    function pior(leitor, vazio) {
+      let melhor = null;
+      membros.forEach(function (membro) {
+        const valor = leitor(membro.efeitos);
+        if (valor === undefined) return;
+        if (melhor === null || valor < melhor) melhor = valor;
+      });
+      membros.forEach(function (membro, indice) {
+        const valor = leitor(membro.efeitos);
+        if (valor !== undefined && valor === melhor) contribui[indice] = true;
+      });
+      return melhor === null ? vazio : melhor;
+    }
+    efeitos.dadosPericias = pior(function (e) { return e && e.dadosPericias !== undefined ? numero(e.dadosPericias) : undefined; }, 0);
+    efeitos.defesa = pior(function (e) { return e && e.defesa !== undefined ? numero(e.defesa) : undefined; }, 0);
+    efeitos.deslocamentoMult = pior(function (e) { return e && e.deslocamentoMult !== undefined ? numero(e.deslocamentoMult) : undefined; }, 1);
+    IDS_ATRIBUTOS_COND.forEach(function (id) {
+      efeitos.dadosAtributos[id] = pior(function (e) {
+        return e && e.dadosAtributos && e.dadosAtributos[id] !== undefined ? numero(e.dadosAtributos[id]) : undefined;
+      }, 0);
+    });
+    return { efeitos: efeitos, contribui: contribui };
+  }
+
+  /**
+   * Soma dos efeitos de todas as condições da ficha:
+   * { dadosPericias, dadosAtributos: {agi,for,int,pre,vig}, defesa, deslocamentoMult,
+   *   origens: [{ condicao, texto }] }.
+   * - da mesma família não se acumulam (vale a pior); sem família, somam;
+   * - cada id conta uma vez (condicoesEfetivas); as personalizadas somam;
+   * - com ficha.condicoes.aplicarEfeitos falso, tudo neutro (0 e multiplicador 1).
+   */
+  function modificadoresCondicoes(ficha) {
+    const salvas = condicoesSalvas(ficha);
+    const resultado = modificadoresNeutros();
+    if (salvas.aplicarEfeitos === false) return resultado;
+
+    const itens = condicoesEfetivas(salvas).map(function (id) {
+      const definicao = definicaoCondicao(id);
+      return { nome: definicao.nome, familia: definicao.familia || null, efeitos: definicao.efeitos || null };
+    });
+    listaAtivas(salvas).forEach(function (item) {
+      if (item.id !== 'personalizada') return;
+      const nome = item.personalizada && String(item.personalizada.nome || '').trim();
+      itens.push({ nome: nome || 'Condição personalizada', familia: null, efeitos: efeitosDaPersonalizada(item.personalizada) });
+    });
+
+    const aplicados = []; // efeitos que entram na soma
+    const grupos = Object.create(null);
+    itens.forEach(function (item) {
+      if (!item.efeitos) return;
+      if (item.familia) (grupos[item.familia] = grupos[item.familia] || []).push(item);
+      else {
+        aplicados.push(item.efeitos);
+        const texto = resumoEfeitos(item.efeitos);
+        if (texto) resultado.origens.push({ condicao: item.nome, texto: texto });
+      }
+    });
+    Object.keys(grupos).forEach(function (familia) {
+      const membros = grupos[familia];
+      const junto = piorDaFamilia(membros);
+      aplicados.push(junto.efeitos);
+      membros.forEach(function (membro, indice) {
+        const texto = resumoEfeitos(membro.efeitos);
+        if (!texto) return;
+        resultado.origens.push({
+          condicao: membro.nome,
+          texto: junto.contribui[indice] ? texto : texto + ' (não acumula: vale a pior da família)'
+        });
+      });
+    });
+
+    aplicados.forEach(function (efeitos) {
+      resultado.dadosPericias += numero(efeitos.dadosPericias);
+      resultado.defesa += numero(efeitos.defesa);
+      if (efeitos.deslocamentoMult !== undefined && efeitos.deslocamentoMult !== null) {
+        resultado.deslocamentoMult *= numero(efeitos.deslocamentoMult);
+      }
+      IDS_ATRIBUTOS_COND.forEach(function (id) {
+        if (efeitos.dadosAtributos) resultado.dadosAtributos[id] += numero(efeitos.dadosAtributos[id]);
+      });
+    });
+    return resultado;
+  }
+
+  /**
+   * Dados a somar (negativo = tirar) num teste: teste de PERÍCIA = dadosPericias
+   * + dadosAtributos do atributo da perícia; teste PURO de atributo = só dadosAtributos.
+   */
+  function modificadorDadosTeste(mod, opcoes) {
+    const o = opcoes || {};
+    const m = mod || {};
+    const doAtributo = m.dadosAtributos && o.atributo ? numero(m.dadosAtributos[o.atributo]) : 0;
+    return Math.trunc((o.ehPericia ? numero(m.dadosPericias) : 0) + doAtributo);
+  }
+
+  /** Dados das condições no teste de uma perícia da ficha. */
+  function dadosCondicoesPericia(ficha, idPericia) {
+    return modificadorDadosTeste(modificadoresCondicoes(ficha), { atributo: atributoDaPericia(ficha, idPericia), ehPericia: true });
+  }
+
+  /** Rodadas: reduz 1 de cada condição com contagem, remove as que chegam a 0. Não altera a ficha. */
+  function passarRodada(ficha) {
+    const ativas = [];
+    const removidas = [];
+    listaAtivas(condicoesSalvas(ficha)).forEach(function (item) {
+      if (item.rodadas === null || item.rodadas === undefined) {
+        ativas.push(item);
+        return;
+      }
+      const restantes = Math.trunc(numero(item.rodadas)) - 1;
+      if (restantes <= 0) removidas.push(item);
+      else ativas.push(Object.assign({}, item, { rodadas: restantes }));
+    });
+    return { ativas: ativas, removidas: removidas };
+  }
+
+  /** Fim da cena: sai quem tem "até o fim da cena" e os turnos morrendo voltam a 0. Não altera a ficha. */
+  function fimDaCena(ficha) {
+    const ativas = [];
+    const removidas = [];
+    listaAtivas(condicoesSalvas(ficha)).forEach(function (item) {
+      if (item.ateFimCena === true) removidas.push(item);
+      else ativas.push(item);
+    });
+    return { ativas: ativas, removidas: removidas, turnosMorrendo: 0 };
+  }
+
+  /** Saúde pelo PV: "ileso" | "ferido" | "machucado" | "morrendo". */
+  function estadoSaude(pv, pvMaximo) {
+    const atual = numero(pv);
+    const maximo = numero(pvMaximo);
+    if (maximo <= 0) return 'ileso';
+    if (atual <= 0) return 'morrendo';
+    if (atual >= maximo) return 'ileso';
+    return atual > maximo * numero(OP.data.config.estadoSaude.feridoAcimaDe) ? 'ferido' : 'machucado';
+  }
+
+  /** Sanidade pela SAN: "sao" | "perturbado" | "enlouquecendo". CONFERIR NO LIVRO (limite em config). */
+  function estadoSanidade(san, sanMaximo) {
+    const atual = numero(san);
+    const maximo = numero(sanMaximo);
+    if (maximo <= 0) return 'sao';
+    if (atual <= 0) return 'enlouquecendo';
+    return atual <= maximo * numero(OP.data.config.sanidadePerturbadoAte) ? 'perturbado' : 'sao';
+  }
+
+  /** Limite de turnos morrendo: o do config + o bônus da ficha (características). */
+  function limiteMorrendo(ficha) {
+    return Math.max(1, Math.trunc(numero(OP.data.config.limiteTurnosMorrendo)) + Math.max(0, Math.trunc(numero(condicoesSalvas(ficha).bonusLimiteMorrendo))));
+  }
+
+  /** { morrendo, turnos, limite, morto }: morrendo = PV atual 0 (com classe escolhida). */
+  function statusMorrendo(ficha) {
+    const pv = estadoRecurso(ficha, 'pv');
+    const morrendo = Boolean(pv.classeDefinida) && numero(pv.atual) <= 0;
+    const turnos = Math.max(0, Math.trunc(numero(condicoesSalvas(ficha).turnosMorrendo)));
+    const limite = limiteMorrendo(ficha);
+    return { morrendo: morrendo, turnos: turnos, limite: limite, morto: morrendo && turnos >= limite };
+  }
+
+  /** Turnos morrendo depois de iniciar mais um turno (não passa do limite). */
+  function proximoTurnoMorrendo(ficha) {
+    const status = statusMorrendo(ficha);
+    return Math.min(status.turnos + 1, status.limite);
+  }
+
+  /** Dano em PV: { pv, massivo, morrendo }. PV nunca abaixo de 0. Dano massivo: CONFERIR NO LIVRO. */
+  function aplicarDano(pv, pvMaximo, dano) {
+    const atual = numero(pv);
+    const maximo = numero(pvMaximo);
+    const quantia = Math.max(0, numero(dano));
+    const novo = Math.max(0, atual - quantia);
+    return {
+      pv: novo,
+      massivo: quantia > 0 && maximo > 0 && quantia >= maximo * numero(OP.data.config.danoMassivoFracao),
+      morrendo: maximo > 0 && novo <= 0
+    };
+  }
+
+  /** Cura em PV: sobe até o máximo; PV acima do máximo (temporário) não diminui. */
+  function aplicarCura(pv, pvMaximo, cura) {
+    const atual = numero(pv);
+    const maximo = numero(pvMaximo);
+    if (atual >= maximo) return atual;
+    return Math.min(maximo, atual + Math.max(0, numero(cura)));
+  }
+
+  /** Condição de descanso conhecida (senão "normal"). */
+  function condicaoDescansoValida(id) {
+    const lista = OP.data.config.descanso.condicoes;
+    return lista.some(function (c) { return c.id === id; }) ? id : 'normal';
+  }
+
+  /**
+   * Sugestão de recuperação num descanso: { pv, pe, san }.
+   * tipo "meditacao": só PE = limite de PE por turno × config.descanso.meditacaoPorLimitePE.
+   * tipo "dormir": CONFERIR NO LIVRO (provisório, copiado da Meditação; editável na tela).
+   */
+  function recuperacaoDescanso(ficha, tipo, condicao) {
+    const cfg = OP.data.config.descanso;
+    const id = condicaoDescansoValida(condicao);
+    const limite = limitePEporTurno(ficha);
+    if (tipo === 'meditacao') return { pv: 0, pe: limite * numero(cfg.meditacaoPorLimitePE[id]), san: 0 };
+    return {
+      pv: limite * numero(cfg.dormir.pvPorLimitePE[id]),
+      pe: limite * numero(cfg.dormir.pePorLimitePE[id]),
+      san: numero(cfg.dormir.san[id])
+    };
+  }
+
+  /** Novo valor atual depois de recuperar `ganho`: sobe até o máximo; nunca desce; acima do máximo não muda. */
+  function recuperarAteMaximo(estado, ganho) {
+    const salvo = atualSalvo(estado.atual);
+    const atual = salvo === null ? estado.max : salvo;
+    if (atual >= estado.max) return atual;
+    return Math.min(estado.max, atual + Math.max(0, Math.trunc(numero(ganho))));
+  }
+
+  /**
+   * Valores atuais de PV, PE e SAN depois de recuperar { pv, pe, san }.
+   * Sem classe escolhida (máximos desconhecidos) devolve o que está salvo.
+   */
+  function aplicarRecuperacao(ficha, recuperacao) {
+    const r = recuperacao || {};
+    const resultado = {};
+    ['pv', 'pe', 'san'].forEach(function (id) {
+      const estado = estadoRecurso(ficha, id);
+      const salvo = atualSalvo(ficha.recursos && ficha.recursos[id] ? ficha.recursos[id].atual : null);
+      resultado[id] = estado.classeDefinida ? recuperarAteMaximo({ atual: salvo, max: estado.max }, r[id]) : salvo;
+    });
+    return resultado;
+  }
+
+  /** Tudo de condições e estados que a tela precisa. */
+  function estadoCondicoes(ficha) {
+    const salvas = condicoesSalvas(ficha);
+    const pv = estadoRecurso(ficha, 'pv');
+    const san = estadoRecurso(ficha, 'san');
+    const mod = modificadoresCondicoes(ficha);
+    const ativas = listaAtivas(salvas).map(function (item) {
+      if (item.id === 'personalizada') {
+        const p = item.personalizada && typeof item.personalizada === 'object' ? item.personalizada : {};
+        return {
+          id: 'personalizada', nome: String(p.nome || '').trim() || 'Condição personalizada', categoria: '',
+          categoriaNome: 'Personalizada', resumo: resumoEfeitos(efeitosDaPersonalizada(p)), conferir: false, familia: null
+        };
+      }
+      const definicao = definicaoCondicao(item.id);
+      if (!definicao) return null;
+      return {
+        id: definicao.id, nome: definicao.nome, categoria: definicao.categoria,
+        categoriaNome: (OP.data.categoriasCondicao || {})[definicao.categoria] || '',
+        resumo: resumoEfeitos(definicao.efeitos), conferir: definicao.conferir === true,
+        familia: definicao.familia || null,
+        implica: (definicao.implica || []).map(function (id) { const d = definicaoCondicao(id); return d ? d.nome : id; })
+      };
+    });
+    const efetivas = condicoesEfetivas(salvas);
+    return {
+      saude: pv.classeDefinida ? estadoSaude(pv.atual, pv.max) : 'ileso',
+      sanidade: san.classeDefinida ? estadoSanidade(san.atual, san.max) : 'sao',
+      morrendo: statusMorrendo(ficha),
+      mod: mod,
+      efetivas: efetivas,
+      ativas: ativas,
+      aplicarEfeitos: salvas.aplicarEfeitos !== false,
+      temConferir: salvas.aplicarEfeitos !== false && efetivas.some(function (id) {
+        const d = definicaoCondicao(id);
+        return d && d.conferir === true && resumoEfeitos(d.efeitos) !== '';
+      })
+    };
+  }
+
+  /**
+   * Correções do que as condições guardam: turnos morrendo inteiros de 0 a 20,
+   * bônus do limite de 0 a 10 e turnos zerados quando o PV volta a ser maior que 0.
+   */
+  function correcoesCondicoes(ficha) {
+    const correcoes = [];
+    const salvas = condicoesSalvas(ficha);
+    if (!Object.keys(salvas).length) return correcoes;
+    const pv = estadoRecurso(ficha, 'pv');
+    let turnos = limitarEntre(Math.trunc(numero(salvas.turnosMorrendo)), 0, 20);
+    if (pv.classeDefinida && numero(pv.atual) > 0) turnos = 0;
+    if (turnos !== salvas.turnosMorrendo) correcoes.push({ caminho: 'condicoes.turnosMorrendo', valor: turnos });
+    const bonus = limitarEntre(Math.trunc(numero(salvas.bonusLimiteMorrendo)), 0, 10);
+    if (bonus !== salvas.bonusLimiteMorrendo) correcoes.push({ caminho: 'condicoes.bonusLimiteMorrendo', valor: bonus });
+    return correcoes;
+  }
+
+  /* ------------------------------------------------------------------------
+     Etapa 10 · Números digitados, cores e retrato
+     ------------------------------------------------------------------------ */
+
+  /**
+   * Lê um número digitado. Aceita vírgula decimal ("1,5"), ponto, espaços e o
+   * sinal de menos tipográfico (−). Inválido → opcoes.padrao (undefined se
+   * não informado). opcoes: { inteiro (Math.round), min, max, padrao }.
+   */
+  function lerNumero(texto, opcoes) {
+    const o = opcoes || {};
+    let valor;
+    if (typeof texto === 'number') {
+      valor = texto;
+    } else {
+      let t = String(texto === null || texto === undefined ? '' : texto)
+        .replace(/[\s ]/g, '').replace(/[−‒–]/g, '-');
+      if (t.indexOf(',') !== -1 && t.indexOf('.') !== -1) {
+        // "1.234,5" (ponto de milhar) ou "1,234.5" (vírgula de milhar): vale o último separador
+        t = t.lastIndexOf(',') > t.lastIndexOf('.') ? t.replace(/\./g, '').replace(',', '.') : t.replace(/,/g, '');
+      } else {
+        t = t.replace(',', '.');
+      }
+      valor = /^[+-]?(\d+\.?\d*|\.\d+)$/.test(t) ? Number(t) : NaN;
+    }
+    if (!Number.isFinite(valor)) return o.padrao;
+    if (o.inteiro) valor = Math.round(valor);
+    if (typeof o.min === 'number' && valor < o.min) valor = o.min;
+    if (typeof o.max === 'number' && valor > o.max) valor = o.max;
+    return valor;
+  }
+
+  function luminanciaRelativa(hex) {
+    const m = /^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/.exec(String(hex).trim());
+    if (!m) return null;
+    const canais = [m[1], m[2], m[3]].map(function (c) {
+      const v = parseInt(c, 16) / 255;
+      return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * canais[0] + 0.7152 * canais[1] + 0.0722 * canais[2];
+  }
+
+  /** Razão de contraste WCAG entre duas cores "#rrggbb" (1 a 21; a ordem não importa). null se a cor for inválida. */
+  function contrasteWCAG(corA, corB) {
+    const a = luminanciaRelativa(corA);
+    const b = luminanciaRelativa(corB);
+    if (a === null || b === null) return null;
+    return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+  }
+
+  /** Retrato aceito: data URL de imagem PNG, JPEG ou WEBP em base64, dentro do limite. Nada de SVG, HTML ou outros esquemas. */
+  function retratoValido(texto) {
+    return typeof texto === 'string' && texto.length > 0 && texto.length <= numero(OP.data.config.retratoMaxChars) &&
+      /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+\/=]+$/.test(texto);
+  }
+
+  /* ------------------------------------------------------------------------
+     Etapa 10 · Verificações centralizadas (avisos que não bloqueiam nada)
+     Reúne o que já existe em outras funções; nenhuma regra é refeita aqui.
+     ------------------------------------------------------------------------ */
+
+  function palavraPontos(n) {
+    return Math.abs(n) === 1 ? 'ponto' : 'pontos';
+  }
+
+  /**
+   * Lista de { codigo, severidade: 'aviso' | 'info', secao, campo, mensagem }.
+   * secao: parte final do id da seção ("atributos" → #secao-atributos);
+   * campo: id do campo na tela ou null; ref (opcional): id da perícia, do ritual
+   * ou do item a que o aviso se refere. Em "modo livre" a lista é vazia
+   * (e no modo livre das perícias, só as verificações de perícias saem).
+   */
+  function verificarFicha(ficha) {
+    if (!ficha || typeof ficha !== 'object') return [];
+    const config = ficha.config || {};
+    if (config.modoLivre === true) return [];
+    const lista = [];
+    function aviso(codigo, secao, campo, mensagem, ref) {
+      const item = { codigo: codigo, severidade: 'aviso', secao: secao, campo: campo, mensagem: mensagem };
+      if (ref) item.ref = ref;
+      lista.push(item);
+    }
+
+    // Identificação
+    correcoesIdentificacao(ficha).forEach(function (c) {
+      if (c.caminho === 'identificacao.nex') aviso('nex-invalido', 'identificacao', 'campo-nex', 'NEX fora da tabela (' + ficha.identificacao.nex + '%).');
+      if (c.caminho === 'identificacao.estagio') aviso('estagio-invalido', 'identificacao', 'campo-estagio', 'Estágio fora do intervalo da classe.');
+    });
+
+    // Atributos
+    const dist = analisarDistribuicao(ficha);
+    const primeiro = dist.acimaDoMaximo.concat(dist.abaixoDoMinimo, dist.reduzidos)[0] || idsAtributos()[0];
+    if (dist.restantes < 0) {
+      aviso('atributos-pontos', 'atributos', 'atr-' + primeiro + '-base',
+        'Atributos: ' + (-dist.restantes) + ' ' + palavraPontos(-dist.restantes) + ' gastos além do permitido (' + dist.permitidos + ').');
+    }
+    if (dist.acimaDoMaximo.length) {
+      aviso('atributo-acima-max', 'atributos', 'atr-' + dist.acimaDoMaximo[0] + '-base',
+        'Atributo acima do máximo (' + dist.maximo + '): ' + dist.acimaDoMaximo.map(function (id) { return id.toUpperCase(); }).join(', ') + '.');
+    }
+    if (dist.abaixoDoMinimo.length) {
+      aviso('atributo-abaixo-min', 'atributos', 'atr-' + dist.abaixoDoMinimo[0] + '-base',
+        'Atributo abaixo do mínimo: ' + dist.abaixoDoMinimo.map(function (id) { return id.toUpperCase(); }).join(', ') + '.');
+    }
+    if (dist.reducoesEmExcesso > 0) {
+      aviso('atributos-reduzidos', 'atributos', 'atr-' + dist.reduzidos[0] + '-base',
+        'Atributos reduzidos em excesso: ' + dist.reduzidos.map(function (id) { return id.toUpperCase(); }).join(', ') + '.');
+    }
+
+    // Recursos: atual acima do máximo (a tela corrige sozinha; o aviso vale para dados importados)
+    OP.data.recursos.forEach(function (definicao) {
+      const estado = estadoRecurso(ficha, definicao.id);
+      const salvo = atualSalvo(ficha.recursos && ficha.recursos[definicao.id] ? ficha.recursos[definicao.id].atual : null);
+      if (estado.classeDefinida && salvo !== null && salvo > estado.max) {
+        aviso(definicao.id + '-acima-max', 'recursos', 'rec-' + definicao.id + '-atual',
+          definicao.sigla + ' atual (' + salvo + ') acima do máximo (' + estado.max + ').');
+      }
+    });
+
+    // Condições: turnos morrendo e efeitos sugeridos
+    const morrendo = statusMorrendo(ficha);
+    if (numero(condicoesSalvas(ficha).turnosMorrendo) > morrendo.limite) {
+      aviso('turnos-morrendo-acima', 'condicoes', 'cond-morrendo',
+        'Turnos morrendo (' + condicoesSalvas(ficha).turnosMorrendo + ') acima do limite (' + morrendo.limite + ').');
+    }
+    if (estadoCondicoes(ficha).temConferir) {
+      lista.push({
+        codigo: 'condicoes-conferir', severidade: 'info', secao: 'condicoes', campo: 'cond-aplicar',
+        mensagem: 'Há condições com efeito sugerido a conferir no livro (dados, Defesa ou deslocamento já aplicados).'
+      });
+    }
+
+    // Perícias
+    if (config.modoLivrePericias !== true) {
+      const treino = estadoTreinamento(ficha);
+      if (treino.excedido) {
+        aviso('pericias-pontos', 'pericias', 'busca-pericias',
+          'Perícias: ' + (treino.gastos - treino.total) + ' ' + palavraPontos(treino.gastos - treino.total) + ' de treinamento além do total (' + treino.total + ').');
+      }
+      const graus = estadoGraus(ficha);
+      if (graus.excedido) {
+        aviso('graus-excedidos', 'pericias', 'busca-pericias', 'Graus de treinamento: ' + graus.usados + ' usados para ' + graus.liberados + ' liberados.');
+      }
+      graus.avisos.forEach(function (a) {
+        aviso('grau-fora-nex', 'pericias', null,
+          a.nome + ' em ' + a.nomeGrau + (a.nivelNecessario !== null ? ': exige NEX ' + a.nivelNecessario + '%.' : ': a classe não ganha graus de treinamento.'), a.id);
+      });
+    }
+
+    // Rituais
+    const rituais = Array.isArray(ficha.rituais) ? ficha.rituais : [];
+    estadoRituais(ficha).forEach(function (estado, indice) {
+      const ritual = rituais[indice] || {};
+      const nome = String(ritual.nome || '').trim() || 'ritual sem nome';
+      if (estado.alemDoCirculo) {
+        aviso('ritual-fora-circulo', 'rituais', null, 'Ritual "' + nome + '": ' + numero(ritual.circulo) + 'º círculo além do que o NEX libera.', ritual.id);
+      }
+      OP.data.formasRitual.forEach(function (forma) {
+        if (!estado.formas[forma.id].ativa) return; // forma desligada não gera aviso
+        estado.formas[forma.id].avisos.forEach(function (a) {
+          aviso(a.tipo === 'afinidade' ? 'ritual-sem-afinidade' : 'ritual-forma-circulo', 'rituais', null,
+            'Ritual "' + nome + '" (' + forma.nome + '): ' + a.texto, ritual.id);
+        });
+      });
+    });
+    const conjuracao = estadoConjuracao(ficha);
+    if (conjuracao.passouLimite) {
+      aviso('limite-pe-turno', 'rituais', null, 'PE gasto no turno (' + conjuracao.peGastoTurno + ') acima do limite (' + conjuracao.limitePE + ').');
+    }
+
+    // Inventário
+    const inventario = estadoInventario(ficha);
+    if (inventario.sobrecarregado) {
+      aviso('sobrecarga', 'inventario', null, 'Sobrecarregado: ' + inventario.espacosUsados + ' de ' + inventario.capacidade + ' espaços.');
+    }
+    inventario.limites.forEach(function (limite) {
+      if (!limite.excedeu) return;
+      if (limite.limite === 0) {
+        aviso('categoria-acima-patente', 'inventario', 'inv-patente', 'Itens de categoria ' + limite.categoria + ' acima da patente (a patente não permite).');
+      } else {
+        aviso('limite-itens', 'inventario', 'inv-patente', 'Categoria ' + limite.categoria + ': ' + limite.usados + ' itens para o limite de ' + limite.limite + '.');
+      }
+    });
+    return lista;
+  }
+
+  /* ------------------------------------------------------------------------
      Tudo de uma vez
      ------------------------------------------------------------------------ */
 
@@ -1819,7 +2418,8 @@ window.OP = window.OP || {};
       correcoesPericias(ficha),
       correcoesInventario(ficha),
       correcoesAtaques(ficha),
-      correcoesConjuracao(ficha)
+      correcoesConjuracao(ficha),
+      correcoesCondicoes(ficha)
     );
   }
 
@@ -1869,7 +2469,8 @@ window.OP = window.OP || {};
       ataques: estadoAtaques(ficha),
       habilidades: estadoHabilidades(ficha),
       conjuracao: estadoConjuracao(ficha),
-      rituais: estadoRituais(ficha)
+      rituais: estadoRituais(ficha),
+      condicoes: estadoCondicoes(ficha)
     };
   }
 
@@ -1981,6 +2582,28 @@ window.OP = window.OP || {};
     deslocamento: deslocamento,
     derivadasPericia: derivadasPericia,
     resistenciasAtivas: resistenciasAtivas,
+    // Etapa 10
+    condicoesEfetivas: condicoesEfetivas,
+    modificadoresCondicoes: modificadoresCondicoes,
+    modificadorDadosTeste: modificadorDadosTeste,
+    resumoEfeitos: resumoEfeitos,
+    estadoCondicoes: estadoCondicoes,
+    correcoesCondicoes: correcoesCondicoes,
+    passarRodada: passarRodada,
+    fimDaCena: fimDaCena,
+    estadoSaude: estadoSaude,
+    estadoSanidade: estadoSanidade,
+    statusMorrendo: statusMorrendo,
+    proximoTurnoMorrendo: proximoTurnoMorrendo,
+    aplicarDano: aplicarDano,
+    aplicarCura: aplicarCura,
+    condicaoDescansoValida: condicaoDescansoValida,
+    recuperacaoDescanso: recuperacaoDescanso,
+    aplicarRecuperacao: aplicarRecuperacao,
+    verificarFicha: verificarFicha,
+    lerNumero: lerNumero,
+    contrasteWCAG: contrasteWCAG,
+    retratoValido: retratoValido,
     correcoes: correcoes,
     calcularTudo: calcularTudo
   };

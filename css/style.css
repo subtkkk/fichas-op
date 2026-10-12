@@ -9269,3 +9269,564 @@ html[data-vista="ficha"] {
     min-height: 44px;
   }
 }
+
+/* ==========================================================================
+   15. ETAPA 10 — condições, estados, descanso, biografia e verificações
+       Só usa os tokens da paleta (nada de cor fixa aqui).
+   ========================================================================== */
+
+/* ---- Estados (saúde e sanidade): texto + ícone, nunca só cor ---- */
+.estados {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 var(--e4);
+  padding: 0;
+  list-style: none;
+}
+
+.estado {
+  --cor-estado: var(--ok);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 14px;
+  font-size: 14px;
+  background: color-mix(in oklab, var(--cor-estado) 9%, transparent);
+  border: 1px solid color-mix(in oklab, var(--cor-estado) 45%, transparent);
+  border-radius: var(--raio-2);
+}
+
+.estado[data-nivel="1"] { --cor-estado: var(--aviso); }
+.estado[data-nivel="2"] { --cor-estado: var(--aviso); }
+.estado[data-nivel="3"] { --cor-estado: var(--erro); }
+
+.estado__icone {
+  width: 22px;
+  height: 22px;
+  color: var(--cor-estado);
+}
+
+.estado__texto strong {
+  font-weight: 600;
+}
+
+.cond-mensagem {
+  min-height: 0;
+  margin: 0 0 var(--e3);
+  color: var(--papel-2);
+}
+
+.cond-mensagem:empty {
+  display: none;
+}
+
+/* ---- Morrendo e Enlouquecendo ---- */
+.alerta-estado {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 0 var(--e4);
+  padding: 14px 16px;
+  background: var(--erro-fundo);
+  border: 1px solid var(--erro-borda);
+  border-left-width: 4px;
+  border-radius: var(--raio-2);
+}
+
+.alerta-estado__titulo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  color: var(--erro);
+}
+
+.alerta-estado__titulo .icone-ui {
+  width: 22px;
+  height: 22px;
+}
+
+.alerta-estado__titulo output {
+  font: 600 15px var(--fonte-mono);
+}
+
+.alerta-estado__morto,
+.alerta-estado__nota {
+  font-size: 13px;
+  color: var(--papel-2);
+}
+
+.alerta-estado__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.alerta-estado__campo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.alerta-estado__campo label {
+  font-size: 13px;
+  color: var(--papel-2);
+}
+
+.alerta-estado__campo .controle {
+  width: 72px;
+}
+
+/* ---- Condições ativas ---- */
+.cond-lista {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 var(--e4);
+  padding: 0;
+  list-style: none;
+}
+
+.cond-cartao {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  background: color-mix(in oklab, var(--tinta-3) 80%, transparent);
+  border: 1px solid var(--linha-2);
+  border-radius: var(--raio-2);
+}
+
+.cond-cartao__topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cond-cartao__titulo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  min-width: 0;
+}
+
+.cond-cartao__nome {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.cond-cartao__categoria {
+  font: 500 var(--t-micro) / 1.2 var(--fonte-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+}
+
+.selo--conferir {
+  color: var(--aviso);
+  cursor: help;
+}
+
+.cond-cartao__resumo {
+  font-size: 14px;
+  color: var(--papel);
+}
+
+.cond-cartao__implica {
+  font-size: 13px;
+  color: var(--papel-2);
+}
+
+.cond-cartao__campos {
+  display: grid;
+  grid-template-columns: 110px auto minmax(0, 1fr);
+  align-items: end;
+  gap: 10px 16px;
+}
+
+.cond-cartao__campos .campo-texto {
+  flex: none;
+}
+
+.cond-cartao__campos .caixa {
+  min-height: 44px;
+}
+
+.cond-aplicar {
+  margin: 0 0 var(--e3);
+}
+
+.cond-adicionar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 460px;
+}
+
+.cond-adicionar label {
+  font: 500 var(--t-micro) / 1.25 var(--fonte-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+}
+
+.cond-adicionar__linha {
+  display: flex;
+  gap: 8px;
+}
+
+.cond-adicionar__linha .controle {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.cond-personalizada {
+  max-width: 640px;
+  margin-top: var(--e4);
+  padding: 14px 16px;
+  background: color-mix(in oklab, var(--tinta-3) 80%, transparent);
+  border: 1px solid var(--linha-2);
+  border-radius: var(--raio-2);
+}
+
+.cond-personalizada .subtitulo {
+  margin-top: 0;
+}
+
+.cond-personalizada__grade {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.cond-personalizada__botoes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: var(--e4);
+}
+
+/* Selo "cond.": campo afetado por uma condição */
+.selo-cond {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 0 5px;
+  font: 600 10px/1.7 var(--fonte-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--aviso);
+  border: 1px solid var(--aviso-borda);
+  border-radius: var(--raio-1);
+  vertical-align: middle;
+  cursor: help;
+}
+
+/* ---- Ajuste de PV: aviso de dano massivo ---- */
+.vital-folha__massivo {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--aviso);
+}
+
+.vital-folha__massivo:empty {
+  display: none;
+}
+
+/* ---- Descanso ---- */
+.dialogo--descanso {
+  width: min(520px, calc(100vw - 24px));
+}
+
+.dialogo--descanso .dialogo__corpo {
+  gap: 14px;
+}
+
+.descanso__tipo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.descanso__tipo legend {
+  width: 100%;
+  margin-bottom: 4px;
+  padding: 0;
+  font: 500 var(--t-micro) / 1.25 var(--fonte-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+}
+
+.descanso__tipo .caixa {
+  min-height: 44px;
+}
+
+.descanso__tipo .dialogo__dica {
+  width: 100%;
+}
+
+.descanso__valores {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.descanso__cena {
+  min-height: 44px;
+}
+
+/* ---- Verificações ---- */
+.verificacoes {
+  margin: 0 0 var(--e6);
+  background: var(--aviso-fundo);
+  border: 1px solid var(--aviso-borda);
+  border-radius: var(--raio-2);
+}
+
+.verificacoes__resumo {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 16px;
+  font-weight: 600;
+  color: var(--aviso);
+  cursor: pointer;
+}
+
+.verificacoes__lista {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 4px 16px 8px;
+  list-style: none;
+}
+
+.verificacao {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-top: 1px solid var(--linha-1);
+}
+
+.verificacao__icone {
+  color: var(--aviso);
+}
+
+.verificacao--info .verificacao__icone {
+  color: var(--papel-2);
+}
+
+.verificacao__texto {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--papel);
+}
+
+.verificacoes__nota {
+  margin: 0;
+  padding: 0 16px 12px;
+  font-size: 12.5px;
+  color: var(--papel-3);
+}
+
+/* ---- Biografia ---- */
+.bio__topo {
+  display: grid;
+  grid-template-columns: minmax(0, 200px) minmax(0, 1fr);
+  gap: var(--e6);
+  align-items: start;
+}
+
+.bio__retrato {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bio__moldura {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: color-mix(in oklab, var(--tinta-3) 80%, transparent);
+  border: 1px dashed var(--linha-3);
+  border-radius: var(--raio-2);
+}
+
+.bio__moldura[data-tem-retrato="true"] {
+  border-style: solid;
+}
+
+.bio__imagem {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bio__sem-imagem {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font: 500 var(--t-micro) / 1.25 var(--fonte-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+}
+
+.bio__retrato-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bio__arquivo {
+  position: relative;
+  display: inline-flex;
+}
+
+.bio__arquivo-campo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  border: 0;
+  opacity: 0;
+}
+
+.bio__arquivo-campo:focus-visible + label {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+.bio__pessoas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--e6);
+  margin-top: var(--e4);
+}
+
+.bio__itens {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 var(--e3);
+  padding: 0;
+  list-style: none;
+}
+
+.bio__pessoa {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.bio__diario {
+  margin-top: var(--e6);
+}
+
+.bio__entradas {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bio__entrada {
+  background: color-mix(in oklab, var(--tinta-3) 80%, transparent);
+  border: 1px solid var(--linha-2);
+  border-radius: var(--raio-2);
+}
+
+.bio__resumo {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  min-height: 44px;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.bio__resumo-data {
+  font: 600 13px var(--fonte-mono);
+  color: var(--acento);
+}
+
+.bio__resumo-titulo {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+
+.bio__entrada-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 14px 14px;
+}
+
+.bio__entrada-campos {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.campo-texto--cheio {
+  flex: 1 1 100%;
+}
+
+/* Campos com rótulo dentro das colunas/grades novas: altura do próprio conteúdo */
+.dialogo--descanso .campo-texto,
+.cond-cartao__campos .campo-texto,
+.cond-personalizada .campo-texto,
+.bio__entrada-corpo .campo-texto,
+.bio__entrada-campos .campo-texto {
+  flex: none;
+}
+
+/* Campos de texto longos crescem com o conteúdo (onde o navegador sabe; senão o JS ajusta) */
+#ficha textarea {
+  field-sizing: content;
+  min-height: 3.2em;
+  overflow-y: hidden;
+  resize: vertical;
+}
+
+@media (max-width: 719px) {
+  .cond-cartao__campos,
+  .cond-personalizada__grade,
+  .bio__topo,
+  .bio__pessoas,
+  .bio__entrada-campos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bio__retrato {
+    max-width: 240px;
+  }
+
+  .bio__pessoa {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .bio__pessoa .controle:nth-child(2) {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}

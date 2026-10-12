@@ -47,6 +47,12 @@
     <symbol id="ic-seta" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
     <symbol id="ic-fontes" viewBox="0 0 24 24"><path d="M4 4.5h6.5a2.5 2.5 0 0 1 2.5 2.5v13a2 2 0 0 0-2-2H4z"/><path d="M20 4.5h-4.5A2.5 2.5 0 0 0 13 7v13a2 2 0 0 1 2-2h5z"/></symbol>
     <symbol id="ic-fechar" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="ic-estado-0" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="m8.5 12.3 2.5 2.5 4.6-5"/></symbol>
+    <symbol id="ic-estado-1" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4v16" /><path d="M12 4a8 8 0 0 0 0 16z"/></symbol>
+    <symbol id="ic-estado-2" viewBox="0 0 24 24"><path d="M12 3.5 21.5 20h-19z"/><path d="M12 10v4.5M12 17.2v.3"/></symbol>
+    <symbol id="ic-estado-3" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="m8.8 8.8 6.4 6.4M15.2 8.8l-6.4 6.4"/></symbol>
+    <symbol id="ic-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 11v5M12 7.8v.3"/></symbol>
+    <symbol id="ic-descanso" viewBox="0 0 24 24"><path d="M19.5 14.5A7.5 7.5 0 0 1 9.5 4.5a7.5 7.5 0 1 0 10 10z"/></symbol>
     <symbol id="ic-dado" viewBox="0 0 16 16"><path d="M8 1.5 14 5v6l-6 3.5L2 11V5z"/><path d="M8 1.5 4.5 7h7z"/><path d="M2 5l2.5 2M14 5l-2.5 2M4.5 7 8 14.5 11.5 7"/></symbol>
   </svg>
 
@@ -94,8 +100,8 @@
 
     <!-- Avisos fixos (não somem sozinhos) -->
     <div class="faixa faixa--erro" id="faixa-falha-salvamento" role="alert" hidden>
-      <p class="faixa__texto"><strong>Não foi possível salvar neste navegador.</strong>
-        A ficha continua funcionando, mas as mudanças se perdem ao fechar a página.</p>
+      <p class="faixa__texto"><strong id="faixa-falha-titulo">Não foi possível salvar neste navegador.</strong>
+        <span id="faixa-falha-detalhe">A ficha continua funcionando, mas as mudanças se perdem ao fechar a página.</span></p>
       <button type="button" class="botao botao--pequeno" id="botao-backup-agora">Exportar backup agora</button>
     </div>
     <div class="faixa faixa--aviso" id="faixa-outra-aba" role="status" hidden>
@@ -179,6 +185,7 @@
           <aside class="central__bloco central__bloco--status" aria-labelledby="central-status-titulo">
             <h2 class="rotulo-bloco" id="central-status-titulo">Situação do arquivo</h2>
             <dl class="status-arquivo" id="central-status"></dl>
+            <p class="aviso-neutro" id="central-uso-aviso" role="status" hidden></p>
             <div class="central__status-acoes">
               <button type="button" class="botao botao--pequeno" data-acao-app="backup">
                 <svg class="icone-ui" aria-hidden="true"><use href="#ic-backup"/></svg>Backup de todas
@@ -311,7 +318,7 @@
                   <dt>Defesa</dt><dd><output data-saida="defesa.total">10</output></dd>
                 </div>
                 <div class="hud__derivado" title="Deslocamento">
-                  <dt>Desloc.</dt><dd><output data-saida="deslocamento.metros" data-formato="metros">9 m</output></dd>
+                  <dt>Desloc.</dt><dd><output data-saida="deslocamento" data-formato="deslocamento">9 m (6 q)</output></dd>
                 </div>
                 <div class="hud__derivado" id="hud-turno" title="PE gastos neste turno / limite por turno">
                   <dt>PE/turno</dt><dd><output data-saida="conjuracao.peGastoTurno">0</output><span class="hud__barra-fina">/</span><output data-saida="conjuracao.limitePE">1</output></dd>
@@ -326,13 +333,14 @@
                 <li><a class="indice__item" href="#secao-identidade" data-ir-secao="secao-identidade"><span class="indice__num" aria-hidden="true">02</span>Origem e classe</a></li>
                 <li><a class="indice__item" href="#secao-atributos" data-ir-secao="secao-atributos"><span class="indice__num" aria-hidden="true">03</span>Atributos</a></li>
                 <li><a class="indice__item" href="#secao-recursos" data-ir-secao="secao-recursos"><span class="indice__num" aria-hidden="true">04</span>Recursos</a></li>
-                <li><a class="indice__item" href="#secao-defesa" data-ir-secao="secao-defesa"><span class="indice__num" aria-hidden="true">05</span>Defesa</a></li>
-                <li><a class="indice__item" href="#secao-pericias" data-ir-secao="secao-pericias"><span class="indice__num" aria-hidden="true">06</span>Perícias</a></li>
-                <li><a class="indice__item" href="#secao-ataques" data-ir-secao="secao-ataques"><span class="indice__num" aria-hidden="true">07</span>Ataques</a></li>
-                <li><a class="indice__item" href="#secao-habilidades" data-ir-secao="secao-habilidades"><span class="indice__num" aria-hidden="true">08</span>Habilidades</a></li>
-                <li><a class="indice__item" href="#secao-rituais" data-ir-secao="secao-rituais"><span class="indice__num" aria-hidden="true">09</span>Rituais</a></li>
-                <li><a class="indice__item" href="#secao-inventario" data-ir-secao="secao-inventario"><span class="indice__num" aria-hidden="true">10</span>Inventário</a></li>
-                <li><a class="indice__item" href="#secao-descricao" data-ir-secao="secao-descricao"><span class="indice__num" aria-hidden="true">11</span>Descrição</a></li>
+                <li><a class="indice__item" href="#secao-condicoes" data-ir-secao="secao-condicoes"><span class="indice__num" aria-hidden="true">05</span>Condições</a></li>
+                <li><a class="indice__item" href="#secao-defesa" data-ir-secao="secao-defesa"><span class="indice__num" aria-hidden="true">06</span>Defesa</a></li>
+                <li><a class="indice__item" href="#secao-pericias" data-ir-secao="secao-pericias"><span class="indice__num" aria-hidden="true">07</span>Perícias</a></li>
+                <li><a class="indice__item" href="#secao-ataques" data-ir-secao="secao-ataques"><span class="indice__num" aria-hidden="true">08</span>Ataques</a></li>
+                <li><a class="indice__item" href="#secao-habilidades" data-ir-secao="secao-habilidades"><span class="indice__num" aria-hidden="true">09</span>Habilidades</a></li>
+                <li><a class="indice__item" href="#secao-rituais" data-ir-secao="secao-rituais"><span class="indice__num" aria-hidden="true">10</span>Rituais</a></li>
+                <li><a class="indice__item" href="#secao-inventario" data-ir-secao="secao-inventario"><span class="indice__num" aria-hidden="true">11</span>Inventário</a></li>
+                <li><a class="indice__item" href="#secao-biografia" data-ir-secao="secao-biografia"><span class="indice__num" aria-hidden="true">12</span>Biografia</a></li>
               </ol>
             </nav>
           </div>
@@ -366,15 +374,25 @@
               <span id="vital-ultimo" role="status"></span>
               <button type="button" class="botao-texto vital-folha__desfazer" id="vital-desfazer">Desfazer</button>
             </p>
+            <p class="vital-folha__massivo" id="vital-massivo" role="status"></p>
             <dl class="vital-folha__derivados">
               <div><dt>Defesa</dt><dd><output data-saida="defesa.total">10</output></dd></div>
-              <div><dt>Deslocamento</dt><dd><output data-saida="deslocamento.metros" data-formato="metros">9 m</output></dd></div>
+              <div><dt>Deslocamento</dt><dd><output data-saida="deslocamento" data-formato="deslocamento">9 m (6 q)</output></dd></div>
               <div><dt>PE por turno</dt><dd><output data-saida="conjuracao.peGastoTurno">0</output> / <output data-saida="conjuracao.limitePE">1</output></dd></div>
             </dl>
           </div>
         </dialog>
 
         <div class="pagina ficha__conteudo">
+
+          <!-- Etapa 10 · js/ui-verificacoes.js: avisos que não bloqueiam nada. Some em "modo livre" ou sem avisos. -->
+          <details class="verificacoes" id="verificacoes" hidden>
+            <summary class="verificacoes__resumo">
+              <span class="verificacoes__titulo">Verificações (<span id="verificacoes-contagem" aria-live="polite">0</span>)</span>
+            </summary>
+            <ul class="verificacoes__lista" id="verificacoes-lista"></ul>
+            <p class="verificacoes__nota">Avisos não bloqueiam nada: servem para você conferir a ficha. O modo livre os esconde.</p>
+          </details>
 
           <!-- ===================== IDENTIFICAÇÃO (capa do dossiê) ===================== -->
           <section class="secao secao--dossie" id="secao-identificacao" aria-labelledby="titulo-identificacao">
@@ -603,6 +621,116 @@
             </section>
           </div>
 
+          <!-- =================== CONDIÇÕES E ESTADOS =================== -->
+          <!-- Etapa 10 · js/ui-condicoes.js. Os efeitos numéricos são SUGESTÕES a conferir no livro. -->
+          <section class="secao secao--condicoes" id="secao-condicoes" aria-labelledby="titulo-condicoes">
+            <div class="secao__cabecalho">
+              <h2 class="secao__titulo" id="titulo-condicoes">Condições e estados</h2>
+              <div class="secao__controles">
+                <button type="button" class="botao botao--pequeno" id="botao-descansar" aria-haspopup="dialog">
+                  <svg class="icone-ui" aria-hidden="true" focusable="false"><use href="#ic-descanso"/></svg>Descansar
+                </button>
+                <button type="button" class="botao botao--pequeno" id="cond-passar-rodada">Passar rodada</button>
+                <button type="button" class="botao botao--pequeno" id="cond-fim-cena">Fim da cena</button>
+              </div>
+            </div>
+
+            <!-- Saúde e Sanidade: sempre texto + ícone, nunca só cor -->
+            <ul class="estados" id="cond-estados" aria-label="Estados atuais">
+              <li class="estado" id="cond-estado-saude" data-nivel="0">
+                <svg class="icone-ui estado__icone" aria-hidden="true" focusable="false"><use href="#ic-estado-0"/></svg>
+                <span class="estado__texto">Saúde: <strong id="cond-saude-texto">Ileso</strong></span>
+              </li>
+              <li class="estado" id="cond-estado-sanidade" data-nivel="0">
+                <svg class="icone-ui estado__icone" aria-hidden="true" focusable="false"><use href="#ic-estado-0"/></svg>
+                <span class="estado__texto">Sanidade: <strong id="cond-sanidade-texto">Sã</strong></span>
+              </li>
+            </ul>
+
+            <p class="secao__nota cond-mensagem" id="cond-mensagem"></p>
+
+            <!-- Morrendo (PV em 0). O que acontece depois é decisão da mesa. -->
+            <div class="alerta-estado alerta-estado--morrendo" id="cond-morrendo" hidden>
+              <p class="alerta-estado__titulo" role="alert">
+                <svg class="icone-ui" aria-hidden="true" focusable="false"><use href="#ic-estado-3"/></svg>
+                <span><strong>Morrendo</strong> · turno <output id="cond-turno-valor">0</output> de <output id="cond-turno-limite">3</output></span>
+              </p>
+              <p class="alerta-estado__morto" id="cond-morto" hidden>Limite de turnos atingido. A ficha não trava: o que acontece agora é decisão da mesa.</p>
+              <div class="alerta-estado__acoes">
+                <button type="button" class="botao botao--pequeno" id="cond-turno-mais">Próximo turno morrendo</button>
+                <button type="button" class="botao botao--pequeno" id="cond-turno-menos">Voltar 1</button>
+                <button type="button" class="botao botao--pequeno" id="cond-turno-zerar">Zerar</button>
+              </div>
+              <div class="alerta-estado__campo">
+                <label for="cond-bonus-limite">Bônus no limite (características)</label>
+                <input id="cond-bonus-limite" class="controle controle--numero" type="number" min="0" max="10" step="1" inputmode="numeric"
+                       data-campo="condicoes.bonusLimiteMorrendo" data-tipo="inteiro">
+              </div>
+            </div>
+
+            <!-- Sanidade em 0 -->
+            <div class="alerta-estado alerta-estado--louco" id="cond-enlouquecendo" hidden>
+              <p class="alerta-estado__titulo" role="alert">
+                <svg class="icone-ui" aria-hidden="true" focusable="false"><use href="#ic-estado-3"/></svg>
+                <span><strong>Enlouquecendo</strong> · Sanidade em 0</span>
+              </p>
+              <label class="caixa">
+                <input type="checkbox" id="cond-insano" data-campo="condicoes.insano" data-tipo="booleano">
+                <span>Insano</span>
+              </label>
+              <p class="alerta-estado__nota">O que acontece depois é decisão da mesa; a ficha só registra.</p>
+            </div>
+
+            <!-- Condições ativas -->
+            <h3 class="subtitulo" id="cond-ativas-titulo">Condições ativas</h3>
+            <p class="secao__nota" id="cond-vazio">Nenhuma condição ativa.</p>
+            <ul class="cond-lista" id="cond-lista" aria-labelledby="cond-ativas-titulo"></ul>
+
+            <label class="caixa cond-aplicar">
+              <input type="checkbox" id="cond-aplicar" data-campo="condicoes.aplicarEfeitos" data-tipo="booleano">
+              <span>Aplicar efeitos das condições</span>
+            </label>
+            <p class="secao__nota" id="cond-so-lembrete" hidden>Os efeitos estão desligados: a lista vale só como lembrete e nada muda nos testes, na Defesa ou no deslocamento.</p>
+
+            <div class="cond-adicionar">
+              <label for="cond-escolha">Adicionar condição</label>
+              <div class="cond-adicionar__linha">
+                <select id="cond-escolha" class="controle"></select>
+                <button type="button" class="botao botao--primario" id="cond-adicionar">Adicionar</button>
+              </div>
+            </div>
+
+            <form class="cond-personalizada" id="cond-personalizada" hidden>
+              <h3 class="subtitulo" id="cond-pers-titulo">Condição personalizada</h3>
+              <div class="cond-personalizada__grade" role="group" aria-labelledby="cond-pers-titulo">
+                <div class="campo-texto">
+                  <label for="cond-pers-nome">Nome</label>
+                  <input id="cond-pers-nome" class="controle" type="text" maxlength="80" autocomplete="off" placeholder="Ex.: Queimado">
+                </div>
+                <div class="campo-texto">
+                  <label for="cond-pers-dados">Dados a menos em perícias</label>
+                  <input id="cond-pers-dados" class="controle controle--numero" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" enterkeyhint="done" placeholder="0">
+                </div>
+                <div class="campo-texto">
+                  <label for="cond-pers-defesa">Defesa (use − para tirar)</label>
+                  <input id="cond-pers-defesa" class="controle controle--numero" type="text" autocomplete="off" spellcheck="false" enterkeyhint="done" placeholder="0">
+                </div>
+                <div class="campo-texto">
+                  <label for="cond-pers-desloc">Deslocamento</label>
+                  <select id="cond-pers-desloc" class="controle">
+                    <option value="1">Normal</option>
+                    <option value="0.5">Metade</option>
+                    <option value="0">Zero</option>
+                  </select>
+                </div>
+              </div>
+              <div class="cond-personalizada__botoes">
+                <button type="button" class="botao" id="cond-pers-cancelar">Cancelar</button>
+                <button type="submit" class="botao botao--primario" id="cond-pers-ok">Adicionar personalizada</button>
+              </div>
+            </form>
+          </section>
+
           <!-- =================== DEFESA E DERIVADOS =================== -->
           <section class="secao secao--defesa" id="secao-defesa" aria-labelledby="titulo-defesa">
             <h2 class="secao__titulo" id="titulo-defesa">Defesa e derivados</h2>
@@ -672,7 +800,8 @@
                   <label for="deslocamento-bonus">Bônus (metros)</label>
                   <div class="passo" title="Cada clique soma ou tira 1 quadrado (1,5 m)">
                     <button type="button" class="passo__botao" tabindex="-1" data-passo="-1.5" data-alvo="deslocamento-bonus" aria-label="Diminuir 1,5 m de deslocamento">−</button>
-                    <input id="deslocamento-bonus" class="passo__valor passo__valor--largo" type="number" step="any"
+                    <input id="deslocamento-bonus" class="passo__valor passo__valor--largo" type="text" inputmode="decimal"
+                           autocomplete="off" spellcheck="false" enterkeyhint="done"
                            data-campo="defesa.deslocamentoBonus" data-tipo="decimal">
                     <button type="button" class="passo__botao" tabindex="-1" data-passo="1.5" data-alvo="deslocamento-bonus" aria-label="Aumentar 1,5 m de deslocamento">+</button>
                   </div>
@@ -1006,36 +1135,87 @@
             <button type="button" class="botao botao--adicionar" data-acao="adicionar-item">+ Adicionar item</button>
           </section>
 
-          <!-- ======================= DESCRIÇÃO ======================= -->
-          <section class="secao secao--descricao" id="secao-descricao" aria-labelledby="titulo-descricao">
-            <h2 class="secao__titulo" id="titulo-descricao">Descrição</h2>
+          <!-- ======================= BIOGRAFIA ======================= -->
+          <!-- Etapa 10 · js/ui-biografia.js (antiga "Descrição"). Retrato, textos, aliados, rivais e diário. -->
+          <section class="secao secao--biografia" id="secao-biografia" aria-labelledby="titulo-biografia">
+            <h2 class="secao__titulo" id="titulo-biografia">Biografia</h2>
 
-            <div class="descricao__grade">
-              <div class="descricao__campo">
-                <label for="desc-aparencia">Aparência</label>
-                <textarea id="desc-aparencia" class="controle" rows="3" placeholder="Como o agente se parece"
-                          data-campo="descricao.aparencia" data-tipo="texto"></textarea>
+            <div class="bio__topo">
+              <div class="bio__retrato" id="bio-retrato">
+                <div class="bio__moldura" id="bio-moldura">
+                  <img class="bio__imagem" id="bio-imagem" alt="" hidden>
+                  <span class="bio__sem-imagem" id="bio-sem-imagem" aria-hidden="true">Sem retrato</span>
+                </div>
+                <div class="bio__retrato-acoes">
+                  <span class="bio__arquivo">
+                    <input id="bio-arquivo" class="bio__arquivo-campo" type="file" accept="image/png,image/jpeg,image/webp">
+                    <label class="botao botao--pequeno" for="bio-arquivo">Escolher retrato</label>
+                  </span>
+                  <button type="button" class="botao botao--pequeno botao--fantasma" id="bio-remover-retrato" hidden>Remover</button>
+                </div>
+                <p class="secao__nota" id="bio-retrato-msg" role="status"></p>
               </div>
-              <div class="descricao__campo">
-                <label for="desc-personalidade">Personalidade</label>
-                <textarea id="desc-personalidade" class="controle" rows="3" placeholder="Jeito, manias, valores"
-                          data-campo="descricao.personalidade" data-tipo="texto"></textarea>
+
+              <div class="descricao__grade bio__grade">
+                <div class="descricao__campo">
+                  <label for="bio-aparencia">Aparência</label>
+                  <textarea id="bio-aparencia" class="controle" rows="3" maxlength="5000" placeholder="Como o agente se parece"
+                            data-campo="biografia.aparencia" data-tipo="texto"></textarea>
+                </div>
+                <div class="descricao__campo">
+                  <label for="bio-personalidade">Personalidade</label>
+                  <textarea id="bio-personalidade" class="controle" rows="3" maxlength="5000" placeholder="Jeito, manias, valores"
+                            data-campo="biografia.personalidade" data-tipo="texto"></textarea>
+                </div>
+                <div class="descricao__campo">
+                  <label for="bio-historico">Histórico</label>
+                  <textarea id="bio-historico" class="controle" rows="3" maxlength="5000" placeholder="De onde o agente veio"
+                            data-campo="biografia.historico" data-tipo="texto"></textarea>
+                </div>
+                <div class="descricao__campo">
+                  <label for="bio-objetivo">Objetivo</label>
+                  <textarea id="bio-objetivo" class="controle" rows="3" maxlength="5000" placeholder="O que o agente quer"
+                            data-campo="biografia.objetivo" data-tipo="texto"></textarea>
+                </div>
+                <div class="descricao__campo descricao__campo--largo">
+                  <label for="bio-medos">Medos</label>
+                  <textarea id="bio-medos" class="controle" rows="2" maxlength="5000" placeholder="O que assusta o agente"
+                            data-campo="biografia.medos" data-tipo="texto"></textarea>
+                </div>
               </div>
-              <div class="descricao__campo">
-                <label for="desc-historico">Histórico</label>
-                <textarea id="desc-historico" class="controle" rows="3" placeholder="De onde o agente veio"
-                          data-campo="descricao.historico" data-tipo="texto"></textarea>
+            </div>
+
+            <div class="bio__pessoas">
+              <div class="bio__lista" id="bio-aliados-bloco">
+                <h3 class="subtitulo" id="bio-aliados-titulo">Aliados</h3>
+                <p class="secao__nota" id="bio-aliados-vazio">Ninguém ainda.</p>
+                <ul class="bio__itens" id="bio-aliados" aria-labelledby="bio-aliados-titulo"></ul>
+                <button type="button" class="botao botao--adicionar" id="bio-aliados-adicionar">+ Adicionar aliado</button>
               </div>
-              <div class="descricao__campo">
-                <label for="desc-objetivo">Objetivo</label>
-                <textarea id="desc-objetivo" class="controle" rows="3" placeholder="O que o agente quer"
-                          data-campo="descricao.objetivo" data-tipo="texto"></textarea>
+              <div class="bio__lista" id="bio-rivais-bloco">
+                <h3 class="subtitulo" id="bio-rivais-titulo">Rivais</h3>
+                <p class="secao__nota" id="bio-rivais-vazio">Ninguém ainda.</p>
+                <ul class="bio__itens" id="bio-rivais" aria-labelledby="bio-rivais-titulo"></ul>
+                <button type="button" class="botao botao--adicionar" id="bio-rivais-adicionar">+ Adicionar rival</button>
               </div>
-              <div class="descricao__campo descricao__campo--largo">
-                <label for="desc-anotacoes">Anotações</label>
-                <textarea id="desc-anotacoes" class="controle" rows="4" placeholder="Pistas, contatos, lembretes da campanha"
-                          data-campo="descricao.anotacoes" data-tipo="texto"></textarea>
+            </div>
+
+            <div class="descricao__campo descricao__campo--largo">
+              <label for="bio-notas">Anotações</label>
+              <textarea id="bio-notas" class="controle" rows="4" maxlength="20000" placeholder="Pistas, contatos, lembretes da campanha"
+                        data-campo="biografia.notas" data-tipo="texto"></textarea>
+            </div>
+
+            <div class="bio__diario">
+              <div class="secao__cabecalho">
+                <h3 class="subtitulo" id="bio-diario-titulo">Diário</h3>
+                <div class="secao__controles">
+                  <label class="caixa"><input type="checkbox" id="bio-diario-imprimir"><span>Incluir diário na impressão</span></label>
+                  <button type="button" class="botao botao--pequeno" id="bio-diario-novo">Nova entrada</button>
+                </div>
               </div>
+              <p class="secao__nota" id="bio-diario-vazio">Nenhuma entrada ainda. O diário guarda o que o agente viveu, da mais recente para a mais antiga.</p>
+              <ol class="bio__entradas" id="bio-diario" aria-labelledby="bio-diario-titulo"></ol>
             </div>
           </section>
 
@@ -1106,6 +1286,9 @@
   <!-- Avisos rápidos (resultado de criar, duplicar, exportar, excluir, importar) -->
   <div class="avisos-app" id="avisos-app" role="status" aria-live="polite" aria-atomic="false"></div>
 
+  <!-- Região aria-live única e invisível: rolagens, descanso, rodadas, condições e "Desfazer" (OP.uiApp.anunciar) -->
+  <div class="visualmente-oculto" id="anunciador" role="status" aria-live="polite" aria-atomic="true"></div>
+
   <!-- ================= CONFIRMAÇÃO (excluir, importar, ritual de Medo) ================= -->
   <dialog class="dialogo dialogo--confirmar" id="dialogo-confirmar" aria-labelledby="confirmar-titulo" aria-describedby="confirmar-texto">
     <form method="dialog" class="dialogo__corpo">
@@ -1136,6 +1319,54 @@
       <!-- Caixas geradas por js/ui-classe.js a partir de data/fontes.js -->
       <ul class="fontes__lista" id="lista-fontes"></ul>
     </div>
+  </dialog>
+
+
+  <!-- ================= DESCANSO ================= -->
+  <dialog class="dialogo dialogo--descanso" id="dialogo-descanso" aria-labelledby="descanso-titulo">
+    <form class="dialogo__corpo" id="form-descanso" method="dialog">
+      <div class="dialogo__topo">
+        <h2 class="dialogo__titulo" id="descanso-titulo">Descansar</h2>
+        <button type="button" class="botao-icone" data-fechar-descanso aria-label="Fechar">
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>
+        </button>
+      </div>
+      <p class="dialogo__dica">As quantias abaixo são sugestões que você pode editar. Nenhum limite de uso por interlúdio é automático.</p>
+
+      <div class="campo-texto">
+        <label for="descanso-condicao">Condição de descanso</label>
+        <select id="descanso-condicao" class="controle"></select>
+      </div>
+
+      <fieldset class="descanso__tipo">
+        <legend>O que você faz</legend>
+        <label class="caixa"><input type="radio" name="descanso-tipo" value="dormir" checked><span>Dormir</span></label>
+        <label class="caixa"><input type="radio" name="descanso-tipo" value="meditacao"><span>Meditação</span></label>
+        <p class="dialogo__dica" id="descanso-dica-meditacao">Meditação é um poder de classe: só use se você tiver o poder, uma vez por interlúdio.</p>
+      </fieldset>
+
+      <div class="descanso__valores" role="group" aria-label="Quanto recuperar">
+        <div class="campo-texto"><label for="descanso-pv">PV</label>
+          <input id="descanso-pv" class="controle controle--numero" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" enterkeyhint="next"></div>
+        <div class="campo-texto"><label for="descanso-pe">PE</label>
+          <input id="descanso-pe" class="controle controle--numero" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" enterkeyhint="next"></div>
+        <div class="campo-texto"><label for="descanso-san">SAN</label>
+          <input id="descanso-san" class="controle controle--numero" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" enterkeyhint="done"></div>
+      </div>
+      <p class="dialogo__texto" id="descanso-conta"></p>
+      <p class="dialogo__dica" id="descanso-sem-classe" hidden>Escolha uma classe para calcular os máximos de PV, PE e SAN.</p>
+
+      <label class="caixa descanso__cena">
+        <input type="checkbox" id="descanso-cena">
+        <span>Encerrar a cena</span>
+      </label>
+      <p class="dialogo__dica">Remove as condições marcadas "até o fim da cena" e zera os turnos morrendo.</p>
+
+      <div class="dialogo__botoes">
+        <button type="button" class="botao" data-fechar-descanso>Cancelar</button>
+        <button type="submit" class="botao botao--primario" id="descanso-aplicar" value="aplicar">Aplicar</button>
+      </div>
+    </form>
   </dialog>
 
   <noscript><p class="sem-js">Esta ferramenta precisa de JavaScript para funcionar.</p></noscript>
@@ -1171,6 +1402,9 @@
   <script src="js/ui-dossie.js"></script>
   <script src="js/ui-app.js"></script>
   <script src="js/ui-seletor.js"></script>
+  <script src="js/ui-condicoes.js"></script>
+  <script src="js/ui-biografia.js"></script>
+  <script src="js/ui-verificacoes.js"></script>
   <script src="js/main.js"></script>
   <!-- Testes: não rodam sozinhos. Digite OP.runTests() no console. -->
   <script src="js/tests.js"></script>

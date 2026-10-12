@@ -276,11 +276,39 @@ window.OP = window.OP || {};
     refs.vitalUltimoLinha.hidden = !temUltimo && !refs.vitalMensagem.textContent;
   }
 
+  /**
+   * PV: usa OP.calc.aplicarDano / aplicarCura (PV nunca abaixo de 0 nem acima do
+   * máximo pela cura) e avisa um possível dano massivo, sem automatizar nada.
+   * Devolve { anterior, novo, massivo } ou null. Os outros vitais usam o campo.
+   */
+  function somarVital(id, delta) {
+    if (id !== 'pv' || !refs.derivados || !refs.derivados.recursos) {
+      const feito = OP.ui.somarAoCampo('rec-' + id + '-atual', delta);
+      return feito ? { anterior: feito.anterior, novo: feito.novo, massivo: false } : null;
+    }
+    const estado = refs.derivados.recursos.pv;
+    if (!estado.classeDefinida) return null;
+    const anterior = OP.calc.numero(estado.atual);
+    let novo = anterior;
+    let massivo = false;
+    if (delta < 0) {
+      const dano = OP.calc.aplicarDano(anterior, estado.max, -delta);
+      novo = dano.pv;
+      massivo = dano.massivo;
+    } else {
+      novo = OP.calc.aplicarCura(anterior, estado.max, delta);
+    }
+    if (novo !== anterior) OP.state.atualizar('recursos.pv.atual', novo);
+    return { anterior: anterior, novo: novo, massivo: massivo };
+  }
+
   function ajustarVital(delta) {
     const id = folhaVital.id;
     const recurso = dadosRecurso(id);
     if (!recurso || !delta) return;
-    const resultado = OP.ui.somarAoCampo('rec-' + id + '-atual', delta);
+    const resultado = somarVital(id, delta);
+    definirTexto(refs.vitalMassivo, resultado && resultado.massivo && resultado.novo !== resultado.anterior
+      ? 'Aviso: possível dano massivo (CONFERIR NO LIVRO).' : '');
     if (!resultado) return;
     if (resultado.novo === resultado.anterior) {
       definirTexto(refs.vitalMensagem, recurso.sigla + (delta < 0 ? ' já está no mínimo.' : ' já está no máximo.'));
@@ -294,7 +322,7 @@ window.OP = window.OP || {};
   }
 
   function aplicarQuantia(direcao) {
-    const quantia = Math.floor(Number(refs.vitalQuantia.value));
+    const quantia = OP.calc.lerNumero(refs.vitalQuantia.value, { inteiro: true, min: 0, padrao: 0 });
     if (!(quantia > 0)) {
       definirTexto(refs.vitalMensagem, 'Digite a quantia (um número maior que zero).');
       refs.vitalUltimoLinha.hidden = false;
@@ -332,6 +360,7 @@ window.OP = window.OP || {};
     refs.vitalDesfazer = document.getElementById('vital-desfazer');
     refs.vitalPassos = Array.prototype.slice.call(refs.dialogoVital.querySelectorAll('[data-vital-delta]'));
     refs.vitalEstado = document.getElementById('vital-estado');
+    refs.vitalMassivo = document.getElementById('vital-massivo');
 
     document.querySelectorAll('[data-abrir-vital]').forEach(function (botao) {
       botao.addEventListener('click', function () { abrirFolhaVital(botao.getAttribute('data-abrir-vital')); });
@@ -363,6 +392,7 @@ window.OP = window.OP || {};
     refs.dialogoVital.addEventListener('close', function () {
       folhaVital.id = null;
       definirTexto(refs.vitalMensagem, '');
+      definirTexto(refs.vitalMassivo, '');
     });
   }
 

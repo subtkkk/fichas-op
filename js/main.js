@@ -51,6 +51,9 @@ window.OP = window.OP || {};
     OP.uiClasse.montar();  // origem, classe, trilha e progressão (entra no ciclo de desenho do ui.js)
     OP.uiDossie.montar();  // capa, vitais, índice e tema (também no ciclo de desenho)
     OP.uiSeletor.montar(); // listas de escolha com o painel do dossiê no lugar da nativa
+    OP.uiCondicoes.montar();   // condições, estados e descanso
+    OP.uiBiografia.montar();   // retrato, aliados, rivais e diário
+    OP.uiVerificacoes.montar(); // painel de verificações
     OP.state.aoMudar(aoMudarFicha);
     const corrigiu = redesenhar(OP.state.ficha);
     // Se a ficha salva tinha valores fora dos limites, já grava a versão corrigida.

@@ -294,12 +294,27 @@ window.OP = window.OP || {};
     return item;
   }
 
+  /**
+   * Anuncia um texto para leitores de tela na região aria-live única e
+   * invisível (#anunciador): rolagens, descanso, rodadas, condições, Desfazer.
+   * O texto some e volta para o mesmo aviso ser lido de novo se repetir.
+   */
+  function anunciar(texto) {
+    const regiao = refs.anunciador || document.getElementById('anunciador');
+    if (!regiao || !texto) return;
+    refs.anunciador = regiao;
+    regiao.textContent = '';
+    clearTimeout(refs.timerAnuncio);
+    refs.timerAnuncio = setTimeout(function () { regiao.textContent = String(texto); }, 60);
+  }
+
   /* ------------------------------------------------------------------------
      Montagem
      ------------------------------------------------------------------------ */
 
   function montar() {
     refs.avisos = document.getElementById('avisos-app');
+    refs.anunciador = document.getElementById('anunciador');
     refs.itensNav = Array.prototype.slice.call(document.querySelectorAll('.nav-global__item[data-rota]'));
     refs.navFicha = document.getElementById('nav-ficha');
 
@@ -338,6 +353,7 @@ window.OP = window.OP || {};
     vistaAtual: vistaAtual,
     aoTrocarVista: aoTrocarVista,
     atualizarNav: atualizarNav,
-    aviso: aviso
+    aviso: aviso,
+    anunciar: anunciar
   };
 })(window.OP);

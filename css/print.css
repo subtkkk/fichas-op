@@ -1201,3 +1201,187 @@ input[type="checkbox"] {
 .descricao__campo--largo {
   grid-column: 1 / -1;
 }
+
+/* --------------------------------------------------------------------------
+   Etapa 10: condições e estados, biografia e diário
+   Aparecem no papel: estados, condições ativas (com efeitos, rodadas e nota),
+   retrato, biografia, aliados e rivais. O diário só com a preferência
+   "Incluir diário na impressão" (html[data-diario-impressao="sim"]).
+   -------------------------------------------------------------------------- */
+.verificacoes,
+.cond-adicionar,
+.cond-personalizada,
+.cond-aplicar,
+.cond-mensagem,
+.cond-cartao__topo .botao-icone,
+.alerta-estado__acoes,
+.alerta-estado__campo,
+.alerta-estado__nota,
+.selo-cond,
+.bio__retrato-acoes,
+.bio__moldura[data-tem-retrato="false"],
+#bio-retrato-msg,
+.bio__diario .secao__controles,
+.bio__arquivo {
+  display: none !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: transparent !important;
+}
+
+.estados {
+  display: flex;
+  gap: 10pt;
+  margin: 0 0 4pt;
+}
+
+.estado {
+  min-height: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+}
+
+.alerta-estado {
+  margin: 0 0 4pt;
+  padding: 2pt 0 2pt 6pt;
+  background: none;
+  border: 0;
+  border-left: 2pt solid #8c8c8c;
+}
+
+.alerta-estado__titulo {
+  font-weight: 700;
+  color: #111;
+}
+
+.cond-lista {
+  display: block;
+  margin: 0 0 4pt;
+}
+
+.cond-cartao {
+  display: block;
+  padding: 2pt 0;
+  background: none;
+  border: 0;
+  border-bottom: 0.5pt solid #c4c4c4;
+  break-inside: avoid;
+}
+
+.cond-cartao__topo,
+.cond-cartao__titulo {
+  display: inline;
+}
+
+.cond-cartao__categoria {
+  display: none;
+}
+
+.cond-cartao__campos {
+  display: flex;
+  gap: 8pt;
+}
+
+.cond-cartao__campos .campo-texto {
+  flex: 0 1 auto;
+}
+
+.cond-cartao__campos .campo-texto--largo {
+  flex: 1 1 auto;
+}
+
+.bio__topo {
+  display: block;
+}
+
+.bio__retrato {
+  float: right;
+  width: 32mm;
+  margin: 0 0 4pt 8pt;
+}
+
+.bio__moldura {
+  aspect-ratio: 4 / 5;
+  border: 0.5pt solid #8c8c8c;
+  border-radius: 0;
+}
+
+.bio__imagem {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bio__pessoas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8pt;
+  margin-top: 4pt;
+}
+
+.bio__pessoa {
+  display: block;
+}
+
+.bio__pessoa .controle {
+  display: inline;
+  width: auto !important;
+}
+
+/* Diário: fora do papel, a menos que a preferência esteja ligada */
+.bio__diario {
+  display: none !important;
+}
+
+html[data-diario-impressao="sim"] .bio__diario {
+  display: block !important;
+}
+
+.bio__entrada {
+  margin: 0 0 4pt;
+  border: 0;
+  border-bottom: 0.5pt solid #c4c4c4;
+  break-inside: avoid;
+}
+
+.bio__resumo {
+  display: flex;
+  gap: 8pt;
+  min-height: 0;
+  padding: 0;
+  font-weight: 700;
+  list-style: none;
+}
+
+.bio__resumo::marker,
+.bio__resumo::-webkit-details-marker {
+  display: none;
+}
+
+.bio__entrada-campos,
+.bio__entrada-corpo .campo-texto label,
+.bio__entrada-corpo .botao {
+  display: none !important;
+}
+
+.bio__entrada-corpo {
+  padding: 0;
+}
+
+.estados,
+.cond-lista,
+.bio__itens,
+.bio__entradas {
+  padding: 0;
+  list-style: none !important;
+}
+
+/* Blocos vazios não ocupam o papel */
+.bio__lista:not(:has(li)),
+.secao--condicoes:has(#cond-vazio:not([hidden])) #cond-ativas-titulo,
+#cond-vazio {
+  display: none !important;
+}

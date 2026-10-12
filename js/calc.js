@@ -2180,10 +2180,12 @@ window.OP = window.OP || {};
       }
       const definicao = definicaoCondicao(item.id);
       if (!definicao) return null;
+      // O resumo inclui o que as condições implicadas trazem (ex.: Exausto → Debilitado, Lento e Vulnerável)
+      const sozinha = modificadoresCondicoes({ condicoes: { ativas: [{ id: definicao.id }], aplicarEfeitos: true } });
       return {
         id: definicao.id, nome: definicao.nome, categoria: definicao.categoria,
         categoriaNome: (OP.data.categoriasCondicao || {})[definicao.categoria] || '',
-        resumo: resumoEfeitos(definicao.efeitos), conferir: definicao.conferir === true,
+        resumo: resumoEfeitos(sozinha), conferir: definicao.conferir === true,
         familia: definicao.familia || null,
         implica: (definicao.implica || []).map(function (id) { const d = definicaoCondicao(id); return d ? d.nome : id; })
       };
@@ -2586,6 +2588,7 @@ window.OP = window.OP || {};
     condicoesEfetivas: condicoesEfetivas,
     modificadoresCondicoes: modificadoresCondicoes,
     modificadorDadosTeste: modificadorDadosTeste,
+    dadosCondicoesPericia: dadosCondicoesPericia,
     resumoEfeitos: resumoEfeitos,
     estadoCondicoes: estadoCondicoes,
     correcoesCondicoes: correcoesCondicoes,

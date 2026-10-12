@@ -3,11 +3,16 @@
    --------------------------------------------------------------------------
    Ficam fora da ficha (não vão para exportar/importar), na chave
    "op_prefs" do OP.storage:
-   { fontes: { livro: true, SaH: false, ... }, temas: { idFicha: "sangue", ... } }
+   { fontes: { livro: true, SaH: false, ... }, temas: { idFicha: "sangue", ... },
+     tema: "auto", tamanhoFonte: "m", movimento: "auto", incluirDiarioNaImpressao: false }
    - Fontes desligadas escondem origens e trilhas daquela fonte nos selects
      (a escolhida nunca some). Padrão: todas ligadas.
    - Temas: aparência elemental de cada ficha (data/temas-ficha.js). Só visual:
      não muda nenhuma regra. Padrão: o primeiro tema (neutro).
+   - Aparência do SITE (Etapa 10): tema (data/temas.js: auto, escuro, claro,
+     contraste), tamanhoFonte (p, m, g, gg), movimento (auto, sim, nao) e
+     incluirDiarioNaImpressao. Valor inválido volta ao padrão. Um script no
+     <head> do index.html lê as mesmas chaves antes da primeira pintura.
    ========================================================================== */
 window.OP = window.OP || {};
 
@@ -37,6 +42,22 @@ window.OP = window.OP || {};
     return ids.length ? ids[0] : 'neutro';
   }
 
+  const MOVIMENTOS = ['auto', 'sim', 'nao'];
+
+  /** Ids dos temas do site (data/temas.js) e dos tamanhos de texto. */
+  function idsTemasApp() {
+    return (OP.data.temas || []).map(function (tema) { return tema.id; });
+  }
+
+  function idsTamanhos() {
+    return (OP.data.tamanhosFonte || []).map(function (tamanho) { return tamanho.id; });
+  }
+
+  /** Valor da lista ou o padrão. */
+  function dentroDe(valor, validos, padrao) {
+    return typeof valor === 'string' && validos.indexOf(valor) !== -1 ? valor : padrao;
+  }
+
   /** Preferências salvas, completas e validadas (só fontes e temas conhecidos). */
   function ler() {
     let salvo = null;
@@ -58,7 +79,42 @@ window.OP = window.OP || {};
       const tema = temasSalvos[idFicha];
       if (PADRAO_ID.test(idFicha) && validos.indexOf(tema) !== -1) temas[idFicha] = tema;
     });
-    return { fontes: fontes, temas: temas };
+    const bruto = ehObjeto(salvo) ? salvo : {};
+    return {
+      fontes: fontes,
+      temas: temas,
+      tema: dentroDe(bruto.tema, idsTemasApp(), 'auto'),
+      tamanhoFonte: dentroDe(bruto.tamanhoFonte, idsTamanhos(), 'm'),
+      movimento: dentroDe(bruto.movimento, MOVIMENTOS, 'auto'),
+      incluirDiarioNaImpressao: bruto.incluirDiarioNaImpressao === true
+    };
+  }
+
+  /** Aparência do site: { tema, tamanhoFonte, movimento, incluirDiarioNaImpressao }. */
+  function aparencia() {
+    const prefs = ler();
+    return {
+      tema: prefs.tema,
+      tamanhoFonte: prefs.tamanhoFonte,
+      movimento: prefs.movimento,
+      incluirDiarioNaImpressao: prefs.incluirDiarioNaImpressao
+    };
+  }
+
+  /**
+   * Guarda uma ou mais preferências de aparência (valor inválido é ignorado).
+   * Devolve true se gravou.
+   */
+  function definirAparencia(mudancas) {
+    const prefs = ler();
+    const m = mudancas || {};
+    if (m.tema !== undefined) prefs.tema = dentroDe(m.tema, idsTemasApp(), prefs.tema);
+    if (m.tamanhoFonte !== undefined) prefs.tamanhoFonte = dentroDe(m.tamanhoFonte, idsTamanhos(), prefs.tamanhoFonte);
+    if (m.movimento !== undefined) prefs.movimento = dentroDe(m.movimento, MOVIMENTOS, prefs.movimento);
+    if (m.incluirDiarioNaImpressao !== undefined) prefs.incluirDiarioNaImpressao = m.incluirDiarioNaImpressao === true;
+    const ok = gravar(prefs);
+    avisar(prefs, 'aparencia');
+    return ok;
   }
 
   function gravar(prefs) {
@@ -116,7 +172,7 @@ window.OP = window.OP || {};
     return gravar(prefs);
   }
 
-  /** fn(prefs, tipo) a cada mudança nas preferências (tipo: 'fontes' ou 'temas'). */
+  /** fn(prefs, tipo) a cada mudança nas preferências (tipo: 'fontes', 'temas' ou 'aparencia'). */
   function aoMudar(funcao) {
     ouvintes.push(funcao);
   }
@@ -131,6 +187,8 @@ window.OP = window.OP || {};
     temaPadrao: temaPadrao,
     definirTema: definirTema,
     esquecerTema: esquecerTema,
+    aparencia: aparencia,
+    definirAparencia: definirAparencia,
     aoMudar: aoMudar
   };
 })(window.OP);

@@ -2338,7 +2338,7 @@ window.OP = window.OP || {};
     const c = 'habilidades.' + indice;
     const idDetalhes = 'hab-detalhes-' + indice;
     return '' +
-      '<article class="habilidade" role="listitem" data-habilidade>' +
+      '<div class="habilidade" role="listitem" data-habilidade>' +
         '<div class="habilidade__resumo">' +
           '<button type="button" class="habilidade__alternar" data-alternar-habilidade aria-expanded="false" aria-controls="' + idDetalhes + '">' +
             '<span class="habilidade__seta" aria-hidden="true"></span>' +
@@ -2383,7 +2383,7 @@ window.OP = window.OP || {};
             '<button type="button" class="botao-texto" data-remover-habilidade>Remover habilidade</button>' +
           '</div>' +
         '</div>' +
-      '</article>';
+      '</div>';
   }
 
   function montarHabilidades() {
@@ -2603,7 +2603,7 @@ window.OP = window.OP || {};
   function htmlRitual(indice) {
     const c = 'rituais.' + indice;
     return '' +
-      '<article class="ritual" role="listitem" data-ritual>' +
+      '<div class="ritual" role="listitem" data-ritual>' +
         '<div class="ritual__cabecalho">' +
           htmlCampoAtaque('nome', 'Nome',
             '<input type="text" class="controle ritual__nome" placeholder="Nome do ritual" autocomplete="off" data-campo="' + c + '.nome" data-tipo="texto">') +
@@ -2650,7 +2650,7 @@ window.OP = window.OP || {};
         '<div class="ritual__formas">' +
           OP.data.formasRitual.map(function (definicao) { return htmlForma(indice, definicao); }).join('') +
         '</div>' +
-      '</article>';
+      '</div>';
   }
 
   function htmlGrupoRitual(circulo) {

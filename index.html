@@ -109,10 +109,10 @@
 
       <div class="app-barra__acoes">
         <p class="status-salvamento" id="status-salvamento" role="status"></p>
-        <button type="button" class="botao-barra botao-barra--pequeno app-barra__botao" id="botao-aparencia" aria-haspopup="dialog">
+        <button type="button" class="botao-barra botao-barra--pequeno app-barra__botao" id="botao-aparencia" aria-haspopup="dialog" aria-label="Aparência">
           <svg class="icone-ui" aria-hidden="true" focusable="false"><use href="#ic-aparencia"/></svg><span class="app-barra__botao-texto">Aparência</span>
         </button>
-        <button type="button" class="botao-barra botao-barra--pequeno app-barra__botao" id="botao-sobre" aria-haspopup="dialog">
+        <button type="button" class="botao-barra botao-barra--pequeno app-barra__botao" id="botao-sobre" aria-haspopup="dialog" aria-label="Sobre">
           <svg class="icone-ui" aria-hidden="true" focusable="false"><use href="#ic-info"/></svg><span class="app-barra__botao-texto">Sobre</span>
         </button>
       </div>
@@ -204,7 +204,7 @@
           </section>
 
           <!-- Situação do arquivo neste navegador -->
-          <aside class="central__bloco central__bloco--status" aria-labelledby="central-status-titulo">
+          <section class="central__bloco central__bloco--status" aria-labelledby="central-status-titulo">
             <h3 class="rotulo-bloco" id="central-status-titulo">Situação do arquivo</h3>
             <dl class="status-arquivo" id="central-status"></dl>
             <p class="aviso-neutro" id="central-uso-aviso" role="status" hidden></p>
@@ -216,7 +216,7 @@
                 <svg class="icone-ui" aria-hidden="true"><use href="#ic-fontes"/></svg>Fontes
               </button>
             </div>
-          </aside>
+          </section>
         </div>
       </div>
     </section>

@@ -36,7 +36,11 @@ Precisa de um navegador atual (Chrome, Edge, Safari ou Firefox recentes).
 - Recursos (PV, PE, SAN) com o cálculo do máximo à vista e perda permanente de Sanidade.
 - Defesa, reações, deslocamento e resistências a dano.
 - Perícias com graus de treinamento, pontos, perícias concedidas e penalidade de carga.
-- Ataques, habilidades e poderes, rituais (com formas Discente e Verdadeira, DT, afinidade e custo de Medo), inventário com patente, crédito e carga, e descrição.
+- Ataques, habilidades e poderes, rituais (com formas Discente e Verdadeira, DT, afinidade e custo de Medo), inventário com patente, crédito e carga, e biografia (retrato, aliados, rivais e diário).
+- **Condições e estados:** faixa de Saúde (ileso, ferido, machucado, morrendo) e de Sanidade (sã, perturbada, enlouquecendo), sempre com texto e ícone; bloco de **Morrendo** com a contagem de turnos; cartões de condições com rodadas, "até o fim da cena" e nota; condição personalizada; **Passar rodada** e **Fim da cena**. Os efeitos numéricos do catálogo são **sugestões a conferir no livro** e podem ser desligados em "Aplicar efeitos das condições" (os campos afetados ganham o selo **cond.**).
+- **Descansar:** diálogo com a condição de descanso, Dormir ou Meditação e as quantias de PV, PE e SAN já sugeridas (editáveis). Nada limita o uso por interlúdio.
+- **Biografia:** retrato (reduzido para 320 px e guardado no navegador), aparência, personalidade, histórico, objetivo, medos, aliados, rivais, anotações e **diário** com entradas dobráveis. Entram na exportação e na impressão (o diário só com "Incluir diário na impressão").
+- **Verificações:** painel recolhível no topo da ficha com os avisos que não bloqueiam nada (atributos, pontos, graus, rituais, carga, PV acima do máximo…), com "Ir ao campo". O modo livre os esconde.
 - **Visão de mesa:** perícias em uma linha, e ataques e rituais em resumo com os botões de rolar e conjurar. "Editar" abre o formulário completo.
 - **Ajuste de vitais:** tocar em PV, PE ou SAN abre −5/−1/+1/+5, dano ou cura de uma quantia, e Desfazer. No celular, é uma gaveta.
 - Remover qualquer item da ficha mostra Desfazer por alguns segundos.
@@ -46,8 +50,13 @@ Precisa de um navegador atual (Chrome, Edge, Safari ou Firefox recentes).
 **Rolagens**
 - Painel com o resultado de cada teste (todos os d20 e qual valeu), dano, crítico, modificador de dados, bônus extra, DT do alvo, fórmula livre (ex.: `2d6+3`) e histórico.
 
-**Temas e impressão**
-- Seis temas visuais por ficha: Neutro, Sangue, Morte, Conhecimento, Energia e Medo. Eles mudam só a aparência e nunca as regras.
+**Aparência, celular e acessibilidade**
+- **Aparência** (botão no cabeçalho): tema do site (Automático, Escuro, Claro e Alto contraste), tamanho do texto (14, 16, 18 e 20 px) e animações (Automático, Sim, Não). Fica nas preferências do navegador, nunca na ficha, e vale sem piscar ao recarregar.
+- No celular, a barra de seções fica no rodapé (Resumo, Perícias, Combate, Inventário, Rituais, Biografia e Rolagens), o painel de Rolagens vira uma gaveta e os diálogos de formulário ocupam a tela. Alvos de toque têm 44 px.
+- Tudo funciona só com o teclado (a tecla **?** abre a ajuda), com foco sempre visível. Leitores de tela anunciam rolagens, descanso, rodadas e alertas.
+
+**Temas por ficha e impressão**
+- Seis temas elementais por ficha: Neutro, Sangue, Morte, Conhecimento, Energia e Medo. Eles mudam só a aparência e nunca as regras.
 - **Imprimir / PDF** gera a ficha completa num layout próprio para papel.
 
 ## Onde ficam os dados
@@ -58,16 +67,17 @@ Tudo fica no **próprio navegador** (`localStorage`). Não há servidor nem cont
 |---|---|
 | `op_idx_v2` | Índice das fichas (ordem, ficha aberta) |
 | `op_f_<id>` | Cada ficha |
-| `op_prefs` | Preferências: livros ativos e tema de cada ficha |
+| `op_prefs` | Preferências: livros ativos, tema elemental de cada ficha e aparência do site (tema, tamanho do texto, animações, diário na impressão) |
 | `op_ficha_atual` | Formato antigo, migrado automaticamente |
 
 Isso tem algumas consequências:
 - **Cada aparelho tem as suas fichas.** Para levar uma ficha do celular para o notebook, exporte e importe o `.json`.
-- O tema escolhido fica nas preferências do navegador e **não** vai no arquivo exportado.
+- O tema elemental e a aparência do site ficam nas preferências do navegador e **não** vão no arquivo exportado.
+- O retrato fica dentro da ficha (JPEG pequeno, até 400 mil caracteres). Se o armazenamento do navegador encher, o site avisa e manda exportar a ficha, sem perder o que está na memória. A Central mostra "Armazenamento usado".
 - Sem `localStorage` (por exemplo, alguns modos privados), o site funciona só na memória. Ele avisa que não conseguiu salvar e oferece exportar um backup, e a Central marca o armazenamento como temporário.
 - Arquivos exportados:
   - formato `op-ficha` (`ficha-<nome>.json`) ou `op-backup` (`fichas-backup-AAAA-MM-DD.json`);
-  - versão do modelo 9;
+  - versão do modelo 10 (fichas antigas abrem normalmente: a antiga "Descrição" vira "Biografia");
   - até 2 MB.
 - A importação aceita versões anteriores e recusa as mais novas que o site.
 
@@ -93,15 +103,22 @@ js/
   rolagens.js       Liga a ficha ao motor de dados
   fichas.js         Várias fichas no navegador (salvar, abrir, excluir, exportar)
   storage.js        Acesso ao localStorage (ou memória)
-  prefs.js          Preferências do navegador
+  prefs.js          Preferências do navegador (livros, tema elemental por ficha e aparência do site)
   ui.js             Interface da ficha
   ui-classe.js      Origem, classe, trilha e progressão
   ui-dossie.js      Capa do dossiê, vitais, ajuste de vital, índice e tema
   ui-fichas.js      Central, Arquivo e operações com fichas
   ui-app.js         Navegação entre telas e avisos
   ui-seletor.js     Painel próprio das listas de escolha (no lugar do menu nativo)
+  ui-condicoes.js   Condições, estados, Morrendo e diálogo Descansar
+  ui-biografia.js   Retrato, aliados, rivais e diário
+  ui-verificacoes.js  Painel de verificações
+  ui-aparencia.js   Tema, tamanho do texto, animações, Sobre e ajuda de teclado
+  ui-auditoria.js   Auditorias de layout, contraste e acessibilidade (para os testes)
   tests.js          Verificações das fórmulas
-data/               Dados de jogo (classes, origens, trilhas, perícias, rituais, temas…)
+  tests-etapa10.js  Verificações da Etapa 10
+data/               Dados de jogo (classes, origens, trilhas, perícias, rituais, condições…) e temas
+                    (temas.js = aparência do site; temas-ficha.js = temas elementais por ficha)
 fonts/              Fontes locais (Cormorant Garamond e IBM Plex, licença OFL)
 ```
 
@@ -109,7 +126,8 @@ fonts/              Fontes locais (Cormorant Garamond e IBM Plex, licença OFL)
 
 - HTML, CSS e JavaScript puro, sem dependências e sem etapa de build: edite e recarregue.
 - Os scripts compartilham o objeto global `OP`. O fluxo é `OP.state.atualizar` → `OP.calc` → `OP.ui.desenhar`. As telas ligam os campos por atributos (`data-campo`, `data-saida`, `data-passo`…).
-- **Testes das fórmulas:** abra o site e rode `OP.runTests()` no console do navegador. O esperado é `{ total: 322, aprovados: 322, falhas: 0 }`.
+- **Testes das fórmulas:** abra o site e rode `OP.runTests()` no console do navegador. O esperado é `{ total: 445, aprovados: 445, falhas: 0 }`. Em janela estreita (até 480 px) o teste de layout também confere a rolagem horizontal. As auditorias ficam em `OP.ui.auditarLayout()`, `auditarContraste(tema)`, `auditarAcessibilidade()`, `auditarTitulos()` e `auditarAlvosToque()`.
+- **Cores:** o CSS da tela não tem cor fixa fora de variáveis. As paletas (`--cor-*`, em `#rrggbb`) ficam no começo do `css/style.css`: escuro em `:root`, claro em `[data-tema="claro"]` (e no `@media (prefers-color-scheme: light)` do modo Automático) e alto contraste em `[data-tema="contraste"]`. O `css/print.css` mantém fundo branco e texto preto, qualquer que seja o tema.
 - **Compatibilidade:** fichas salvas e arquivos exportados de versões anteriores precisam continuar abrindo. Mudanças no modelo passam pela migração em `js/state.js`.
 
 ## Design

@@ -529,7 +529,9 @@ window.OP = window.OP || {};
     refs.semClasse.hidden = !semClasse;
     refs.descansoAplicar.disabled = semClasse;
     preencherSugestao();
-    dialogo.showModal();
+    // abrirDialogo devolve o foco ao botão "Descansar" quando o diálogo fecha
+    if (OP.ui.abrirDialogo) OP.ui.abrirDialogo(dialogo, pegar('botao-descansar'));
+    else dialogo.showModal();
     refs.descansoCondicao.focus();
   }
 

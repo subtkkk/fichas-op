@@ -917,7 +917,7 @@ window.OP = window.OP || {};
     }
     // opcao: botão de rádio que grava o número do value quando marcado
     if (campo.dataset.tipo === 'opcao') {
-      return campo.checked ? Math.trunc(Number(campo.value)) : undefined;
+      return campo.checked ? OP.calc.lerNumero(campo.value, { inteiro: true }) : undefined;
     }
     // Escolher o valor padrão grava null ("usar o padrão").
     if (campo.dataset.padrao !== undefined && campo.value === campo.dataset.padrao) return null;

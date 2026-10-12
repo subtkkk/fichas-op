@@ -170,7 +170,8 @@ window.OP = window.OP || {};
     atualizarTitulo(vista);
     if (anterior !== vista || refs.focoPendente) {
       window.scrollTo(0, 0);
-      focarTela(vista);
+      // Na abertura da página o foco não é tirado do começo do documento: o primeiro Tab vai para "Ir para o conteúdo"
+      if (refs.prontos || refs.focoPendente) focarTela(vista);
     }
     ouvintes.forEach(function (funcao) { funcao(vista, anterior); });
   }

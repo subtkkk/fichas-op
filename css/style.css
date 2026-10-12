@@ -2112,6 +2112,17 @@ body[data-vista="ficha"] .vista--ficha {
   to { opacity: 1; transform: none; }
 }
 
+/* A ficha entra só com opacidade: um transform no contêiner prenderia a barra de seções
+   (position: fixed) ao fim da página durante a animação */
+.app-pronto .vista--ficha {
+  animation-name: vista-entrada-ficha;
+}
+
+@keyframes vista-entrada-ficha {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 ::view-transition-old(root) {
   animation: 160ms var(--curva) both vt-sair;
 }
@@ -10780,4 +10791,34 @@ kbd {
   .caixa:has(> span:not(.so-celular)) {
     justify-content: flex-start;
   }
+}
+
+/* Foco visível pelo teclado: contorno de 3 px na cor de foco do tema, também nos campos
+   que trocam o contorno por borda e anel (nunca "outline: none" sem substituto) */
+.controle:focus-visible,
+.campo input:focus-visible,
+.campo select:focus-visible,
+.campo .seletor:focus-visible,
+.busca input:focus-visible,
+.campo-busca input:focus-visible,
+.passo__valor:focus-visible,
+.recurso__atual:focus-visible,
+.seletor:focus-visible,
+.seletor-painel__lista:focus-visible,
+.app-principal:focus-visible,
+.pular:focus-visible {
+  outline: 3px solid var(--cor-foco);
+  outline-offset: 2px;
+}
+
+.cartao-agente:has(.cartao-agente__link:focus-visible) {
+  outline: 3px solid var(--cor-foco);
+  outline-offset: 2px;
+}
+
+:root[data-tema="contraste"] .controle:focus-visible,
+:root[data-tema="contraste"] .seletor:focus-visible,
+:root[data-tema="contraste"] .passo__valor:focus-visible,
+:root[data-tema="contraste"] .recurso__atual:focus-visible {
+  outline-width: 4px;
 }

@@ -116,6 +116,23 @@ window.OP = window.OP || {};
       return fichaDeTeste({ classe: 'combatente', nex: 5, atributos: { agi: 2, for: 2, vig: 3, int: 1, pre: 1 } });
     }
 
+    /** "--a×--b 4.1<4.5, ..." — texto dos pares reprovados (vazio = tudo certo). */
+    function textoFalhas(falhas) {
+      return falhas.map(function (f) { return f.a + '×' + f.b + ' ' + f.razao + '<' + f.minimo; }).join(', ');
+    }
+
+    /** Roda a conta com um armazenamento falso que já guarda as preferências indicadas. */
+    function comPrefs(prefs, conta) {
+      const falso = OP.storage.criarMemoria();
+      falso.setItem(OP.prefs.CHAVE, JSON.stringify(prefs));
+      const anterior = OP.storage.usar(falso);
+      try {
+        return conta();
+      } finally {
+        OP.storage.usar(anterior);
+      }
+    }
+
     const arquivoNovo = { length: 2, key: function (i) { return ['ab', 'x'][i]; }, getItem: function (k) { return { ab: 'cde', x: 'yz' }[k]; } };
 
     return [
@@ -417,6 +434,131 @@ window.OP = window.OP || {};
         const f = OP.state.completarPadroes({ condicoes: { ativas: [p, p] } });
         return [f.condicoes.ativas.length, f.condicoes.ativas[0].uid !== f.condicoes.ativas[1].uid, f.condicoes.ativas[1].personalizada.deslocamentoMult].join('/');
       }, esperado: '2/true/0.5' },
+      // --- Temas, aparência e preferências ---
+      { nome: 'E10 · Contraste (escuro): todos os pares cumprem o mínimo', obtido: function () { return textoFalhas(OP.ui.auditarContraste('escuro')); }, esperado: '' },
+      { nome: 'E10 · Contraste (claro): todos os pares cumprem o mínimo', obtido: function () { return textoFalhas(OP.ui.auditarContraste('claro')); }, esperado: '' },
+      { nome: 'E10 · Contraste (alto contraste): todos os pares cumprem o mínimo alto', obtido: function () { return textoFalhas(OP.ui.auditarContraste('contraste')); }, esperado: '' },
+      { nome: 'E10 · Contraste (automático): cumpre o mínimo', obtido: function () { return textoFalhas(OP.ui.auditarContraste('auto')); }, esperado: '' },
+      { nome: 'E10 · auditarContraste restaura o data-tema do <html>', obtido: function () {
+        const raiz = document.documentElement;
+        const antes = raiz.getAttribute('data-tema');
+        OP.ui.auditarContraste('claro');
+        return raiz.getAttribute('data-tema') === antes;
+      }, esperado: true },
+      { nome: 'E10 · Toda variável dos pares existe (em #rrggbb) nos temas escuro, claro e alto contraste', obtido: function () {
+        const raiz = document.documentElement;
+        const antes = raiz.getAttribute('data-tema');
+        const ruins = [];
+        try {
+          ['escuro', 'claro', 'contraste'].forEach(function (tema) {
+            raiz.setAttribute('data-tema', tema);
+            const estilo = getComputedStyle(raiz);
+            OP.data.paresContraste.forEach(function (par) {
+              [par.a, par.b].forEach(function (nome) {
+                if (!/^#[0-9a-fA-F]{6}$/.test(estilo.getPropertyValue(nome).trim())) ruins.push(tema + ':' + nome);
+              });
+            });
+          });
+        } finally {
+          if (antes === null) raiz.removeAttribute('data-tema');
+          else raiz.setAttribute('data-tema', antes);
+        }
+        return ruins.join(',');
+      }, esperado: '' },
+      { nome: 'E10 · Prefs: sem tema → "auto"; tema "xyz" → "auto"; tamanho "zz" → "m"', obtido: function () {
+        return comPrefs({}, function () { return OP.prefs.ler().tema; }) + '/' +
+          comPrefs({ tema: 'xyz' }, function () { return OP.prefs.ler().tema; }) + '/' +
+          comPrefs({ tamanhoFonte: 'zz' }, function () { return OP.prefs.ler().tamanhoFonte; });
+      }, esperado: 'auto/auto/m' },
+      { nome: 'E10 · Prefs: movimento inválido → "auto"; diário na impressão padrão desligado', obtido: function () {
+        return comPrefs({ movimento: 'talvez' }, function () { const p = OP.prefs.ler(); return p.movimento + '/' + p.incluirDiarioNaImpressao; });
+      }, esperado: 'auto/false' },
+      { nome: 'E10 · Prefs: valores válidos são mantidos', obtido: function () {
+        return comPrefs({ tema: 'contraste', tamanhoFonte: 'gg', movimento: 'nao', incluirDiarioNaImpressao: true }, function () {
+          const p = OP.prefs.ler();
+          return [p.tema, p.tamanhoFonte, p.movimento, p.incluirDiarioNaImpressao].join('/');
+        });
+      }, esperado: 'contraste/gg/nao/true' },
+      { nome: 'E10 · Prefs: definirAparencia ignora valor inválido e guarda o válido', obtido: function () {
+        return comPrefs({}, function () {
+          OP.prefs.definirAparencia({ tema: 'claro', tamanhoFonte: 'zz' });
+          const p = OP.prefs.aparencia();
+          return p.tema + '/' + p.tamanhoFonte;
+        });
+      }, esperado: 'claro/m' },
+      { nome: 'E10 · Prefs de aparência não vão para a ficha exportada', obtido: function () {
+        const texto = JSON.stringify(OP.state.envelopeFicha(fichaValida()));
+        return /tamanhoFonte|movimento|"tema"/.test(texto);
+      }, esperado: false },
+      { nome: 'E10 · aplicarAparencia põe e tira os atributos do <html>', obtido: function () {
+        const raiz = document.documentElement;
+        const antes = ['data-tema', 'data-fonte', 'data-movimento'].map(function (a) { return raiz.getAttribute(a); });
+        try {
+          OP.ui.aplicarAparencia({ tema: 'claro', tamanhoFonte: 'g', movimento: 'nao' });
+          const a = ['data-tema', 'data-fonte', 'data-movimento'].map(function (n) { return raiz.getAttribute(n); }).join('/');
+          OP.ui.aplicarAparencia({ tema: 'auto', tamanhoFonte: 'm', movimento: 'auto' });
+          const b = ['data-tema', 'data-fonte', 'data-movimento'].map(function (n) { return String(raiz.getAttribute(n)); }).join('/');
+          return a + '|' + b;
+        } finally {
+          ['data-tema', 'data-fonte', 'data-movimento'].forEach(function (n, i) {
+            if (antes[i] === null) raiz.removeAttribute(n);
+            else raiz.setAttribute(n, antes[i]);
+          });
+        }
+      }, esperado: 'claro/g/nao|null/m/null' },
+      { nome: 'E10 · Tamanho do texto: data-fonte define o font-size do :root (14, 16, 18, 20 px)', obtido: function () {
+        const raiz = document.documentElement;
+        const antes = raiz.getAttribute('data-fonte');
+        try {
+          return OP.data.tamanhosFonte.map(function (t) {
+            raiz.setAttribute('data-fonte', t.id);
+            return getComputedStyle(raiz).fontSize === t.px + 'px';
+          }).join(',');
+        } finally {
+          if (antes === null) raiz.removeAttribute('data-fonte');
+          else raiz.setAttribute('data-fonte', antes);
+        }
+      }, esperado: 'true,true,true,true' },
+
+      // --- Estrutura da página e acessibilidade (DOM) ---
+      { nome: 'E10 · OP.ui.auditarAcessibilidade() com a ficha renderizada → lista vazia', obtido: function () {
+        return OP.ui.auditarAcessibilidade().map(function (p) { return p.tipo + ' ' + OP.ui.descrever(p.elemento) + ' (' + p.motivo + ')'; }).join('; ');
+      }, esperado: '' },
+      { nome: 'E10 · Existe um único <h1>', obtido: function () { return document.querySelectorAll('h1').length; }, esperado: 1 },
+      { nome: 'E10 · Títulos h2 e h3 sem pular nível', obtido: function () { return OP.ui.auditarTitulos().map(function (t) { return t.de + '→' + t.para; }).join(','); }, esperado: '' },
+      { nome: 'E10 · Landmarks: header, nav, main, aside e footer existem', obtido: function () {
+        return ['header', 'nav', 'main', 'aside', 'footer'].filter(function (tag) { return !document.querySelector(tag); }).join(',');
+      }, esperado: '' },
+      { nome: 'E10 · <html lang="pt-BR">', obtido: function () { return document.documentElement.lang; }, esperado: 'pt-BR' },
+      { nome: 'E10 · "Ir para o conteúdo" é o primeiro elemento focável e aponta para o <main>', obtido: function () {
+        const primeiro = document.querySelector('a[href], button:not([disabled]), input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
+        return Boolean(primeiro) && primeiro.classList.contains('pular') && primeiro.getAttribute('href') === '#conteudo' && Boolean(document.getElementById('conteudo')) &&
+          /conte[úu]do/i.test(primeiro.textContent);
+      }, esperado: true },
+      { nome: 'E10 · Nenhum tabindex positivo', obtido: function () { return document.querySelectorAll('[tabindex]:not([tabindex="0"]):not([tabindex="-1"])').length; }, esperado: 0 },
+      { nome: 'E10 · Toda <img> tem alt', obtido: function () { return document.querySelectorAll('img:not([alt])').length; }, esperado: 0 },
+      { nome: 'E10 · role="alert" só em Morrendo, Enlouquecendo e erro de armazenamento', obtido: function () {
+        return Array.prototype.map.call(document.querySelectorAll('[role="alert"]'), function (e) { return e.id || e.className; }).sort().join(',');
+      }, esperado: ['alerta-estado__titulo', 'alerta-estado__titulo', 'faixa-falha-salvamento'].sort().join(',') },
+      { nome: 'E10 · Região aria-live invisível para anúncios existe', obtido: function () {
+        const r = document.getElementById('anunciador');
+        return Boolean(r) && r.getAttribute('aria-live') === 'polite' && r.classList.contains('visualmente-oculto');
+      }, esperado: true },
+      { nome: 'E10 · Diálogos: todos têm título (aria-labelledby) e são <dialog>', obtido: function () {
+        return Array.prototype.filter.call(document.querySelectorAll('dialog'), function (d) {
+          const alvo = document.getElementById(d.getAttribute('aria-labelledby') || '');
+          return !alvo || !alvo.textContent.trim();
+        }).length;
+      }, esperado: 0 },
+      { nome: 'E10 · Meta color-scheme e viewport-fit=cover', obtido: function () {
+        return document.querySelector('meta[name="color-scheme"]').content + '|' + /viewport-fit=cover/.test(document.querySelector('meta[name="viewport"]').content);
+      }, esperado: 'dark light|true' },
+      { nome: 'E10 · Estimativa do armazenamento em uso é um número', obtido: function () { const u = OP.storage.uso(); return typeof u.usado === 'number' && u.limite === 5 * 1024 * 1024; }, esperado: true },
+      { nome: 'E10 · Layout em janela estreita: nada passa da largura (ou "pulado")', obtido: function () {
+        if (window.innerWidth > 480) return 'pulado: abra com a janela estreita';
+        return OP.ui.auditarLayout().map(function (e) { return OP.ui.descrever(e); }).join(',');
+      }, esperado: window.innerWidth > 480 ? 'pulado: abra com a janela estreita' : '' },
+
       { nome: 'E10 · Ficha de teste exportada e importada mantém condições e biografia', obtido: function () {
         const f = OP.state.completarPadroes(fichaValida());
         f.condicoes.ativas = [OP.state.novaCondicao({ id: 'abalado', rodadas: 3, nota: 'susto' })];

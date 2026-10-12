@@ -131,6 +131,8 @@
   </header>
 
   <main class="app-principal" id="conteudo" tabindex="-1">
+    <!-- O único <h1> da página: cada tela tem o seu título em <h2> -->
+    <h1 class="visualmente-oculto" id="titulo-app">Dossiê, fichas de Ordem Paranormal RPG</h1>
 
     <!-- ================= CENTRAL DE OPERAÇÕES (tela inicial) ================= -->
     <!-- Conteúdo dinâmico gerado por js/ui-fichas.js a partir das fichas salvas (nada inventado). -->
@@ -139,7 +141,7 @@
         <div class="central__heroi">
           <div class="central__texto">
             <p class="sobretitulo"><span class="sobretitulo__ponto" aria-hidden="true"></span>Ordem Paranormal RPG · 1ª edição</p>
-            <h1 class="central__titulo" id="central-titulo" data-foco-tela tabindex="-1">Central de <em>Operações</em></h1>
+            <h2 class="central__titulo" id="central-titulo" data-foco-tela tabindex="-1">Central de <em>Operações</em></h2>
             <p class="central__lead">Registre seus agentes, acompanhe cada missão e role os dados sem sair da ficha.
               Tudo fica guardado neste navegador — exporte um backup quando quiser levar para outro lugar.</p>
             <div class="central__acoes">
@@ -188,14 +190,14 @@
         <div class="central__grade">
           <!-- Continuar: a ficha aberta por último (ou o estado vazio) -->
           <section class="central__bloco central__bloco--continuar" aria-labelledby="central-continuar-titulo">
-            <h2 class="rotulo-bloco" id="central-continuar-titulo">Continuar de onde parou</h2>
+            <h3 class="rotulo-bloco" id="central-continuar-titulo">Continuar de onde parou</h3>
             <div id="central-continuar"></div>
           </section>
 
           <!-- Outras fichas, da mais recente para a mais antiga -->
           <section class="central__bloco central__bloco--recentes" aria-labelledby="central-recentes-titulo">
             <div class="central__bloco-topo">
-              <h2 class="rotulo-bloco" id="central-recentes-titulo">Atualizadas recentemente</h2>
+              <h3 class="rotulo-bloco" id="central-recentes-titulo">Atualizadas recentemente</h3>
               <a class="link-seta" href="#/arquivo">Ver arquivo completo<svg class="icone-ui" aria-hidden="true"><use href="#ic-seta"/></svg></a>
             </div>
             <ol class="recentes" id="central-recentes"></ol>
@@ -203,7 +205,7 @@
 
           <!-- Situação do arquivo neste navegador -->
           <aside class="central__bloco central__bloco--status" aria-labelledby="central-status-titulo">
-            <h2 class="rotulo-bloco" id="central-status-titulo">Situação do arquivo</h2>
+            <h3 class="rotulo-bloco" id="central-status-titulo">Situação do arquivo</h3>
             <dl class="status-arquivo" id="central-status"></dl>
             <p class="aviso-neutro" id="central-uso-aviso" role="status" hidden></p>
             <div class="central__status-acoes">
@@ -225,7 +227,7 @@
         <header class="arquivo__cabecalho">
           <div class="arquivo__titulos">
             <p class="sobretitulo"><span class="sobretitulo__ponto" aria-hidden="true"></span>Registros deste navegador</p>
-            <h1 class="arquivo__titulo" id="arquivo-titulo" data-foco-tela tabindex="-1">Arquivo de agentes</h1>
+            <h2 class="arquivo__titulo" id="arquivo-titulo" data-foco-tela tabindex="-1">Arquivo de agentes</h2>
             <p class="arquivo__contagem" id="arquivo-contagem"></p>
           </div>
           <div class="arquivo__acoes">
@@ -263,7 +265,7 @@
         <p class="arquivo__dica">Dica: arraste um arquivo <strong>.json</strong> para qualquer lugar da página para importar. Se a ficha já estiver aqui, você escolhe entre substituir e manter as duas.</p>
 
         <!-- Cartões gerados por js/ui-fichas.js (nomes só por textContent) -->
-        <h2 class="visualmente-oculto" id="arquivo-lista-titulo">Fichas salvas neste navegador</h2>
+        <h3 class="visualmente-oculto" id="arquivo-lista-titulo">Fichas salvas neste navegador</h3>
         <ul class="arquivo__grade" id="lista-fichas" aria-labelledby="arquivo-lista-titulo"></ul>
         <div class="estado-vazio" id="arquivo-vazio" hidden></div>
         <div class="estado-vazio estado-vazio--compacto" id="arquivo-sem-resultado" hidden>
@@ -277,7 +279,7 @@
     <!-- ================= FICHA ================= -->
     <!-- data-elemento: tema elemental escolhido para esta ficha (js/ui-dossie.js). Só aparência. -->
     <div class="vista vista--ficha" id="vista-ficha" data-vista-id="ficha" data-elemento="neutro" aria-labelledby="ficha-titulo">
-      <h1 class="visualmente-oculto" id="ficha-titulo" data-foco-tela tabindex="-1">Ficha do agente</h1>
+      <h2 class="visualmente-oculto" id="ficha-titulo" data-foco-tela tabindex="-1">Ficha do agente</h2>
 
       <!-- Cabeçalho só da impressão (na tela, o dossiê abaixo faz esse papel) -->
       <header class="topo so-impressao">

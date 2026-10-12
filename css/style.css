@@ -766,12 +766,22 @@ body[data-vista="ficha"] .atmosfera__base {
 /* Conhecimento: diagrama geométrico, como um arquivo catalogado */
 .atmosfera[data-elemento="conhecimento"] .atmosfera__detalhe {
   background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320' fill='none' stroke='%23dcb45a' stroke-opacity='0.07'%3E%3Ccircle cx='160' cy='160' r='110'/%3E%3Ccircle cx='160' cy='160' r='56'/%3E%3Cpath d='M0 160h320M160 0v320M42 42l236 236M278 42 42 278'/%3E%3Cpath d='M160 50 255 215H65z'/%3E%3C/svg%3E"),
     linear-gradient(color-mix(in srgb, var(--acento) 2.5%, transparent) 1px, transparent 1px),
     linear-gradient(90deg, color-mix(in srgb, var(--acento) 2.5%, transparent) 1px, transparent 1px);
-  background-size: 320px 320px, 32px 32px, 32px 32px;
+  background-size: 32px 32px, 32px 32px;
   -webkit-mask-image: radial-gradient(ellipse 90% 80% at 50% 30%, var(--cor-sombra) 20%, transparent 80%);
   mask-image: radial-gradient(ellipse 90% 80% at 50% 30%, var(--cor-sombra) 20%, transparent 80%);
+}
+
+/* O diagrama é uma máscara pintada com o acento (a cor vem da variável) */
+.atmosfera[data-elemento="conhecimento"] .atmosfera__detalhe::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--acento);
+  opacity: 0.07;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320' fill='none' stroke='black'%3E%3Ccircle cx='160' cy='160' r='110'/%3E%3Ccircle cx='160' cy='160' r='56'/%3E%3Cpath d='M0 160h320M160 0v320M42 42l236 236M278 42 42 278'/%3E%3Cpath d='M160 50 255 215H65z'/%3E%3C/svg%3E") 0 0 / 320px 320px repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320' fill='none' stroke='black'%3E%3Ccircle cx='160' cy='160' r='110'/%3E%3Ccircle cx='160' cy='160' r='56'/%3E%3Cpath d='M0 160h320M160 0v320M42 42l236 236M278 42 42 278'/%3E%3Cpath d='M160 50 255 215H65z'/%3E%3C/svg%3E") 0 0 / 320px 320px repeat;
 }
 
 /* Energia: feixes direcionados de violeta, magenta e ciano */
@@ -1225,9 +1235,12 @@ select.controle,
   -webkit-appearance: none;
   padding-right: 30px;
   cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23bab3a6' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--papel-2) 50%),
+    linear-gradient(135deg, var(--papel-2) 50%, transparent 50%);
+  background-size: 5px 5px, 5px 5px;
   background-repeat: no-repeat;
-  background-position: right 10px center;
+  background-position: calc(100% - 15px) 50%, calc(100% - 10px) 50%;
 }
 
 select.controle option,
@@ -1482,6 +1495,7 @@ textarea.controle {
 
 .caixa input[type="checkbox"],
 .caixa input[type="radio"] {
+  position: relative;
   flex: none;
   width: 17px;
   height: 17px;
@@ -1506,8 +1520,17 @@ textarea.controle {
 .caixa input:checked {
   background-color: var(--acento);
   border-color: var(--acento);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.3 5 8.7 9.6 3.4' fill='none' stroke='%230d0b08' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   box-shadow: 0 0 12px -2px var(--brilho);
+}
+
+/* A marca é uma máscara (cor vem da variável): o desenho nunca carrega cor própria */
+.caixa input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--acento-texto);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.3 5 8.7 9.6 3.4' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 100% no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.3 5 8.7 9.6 3.4' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 100% no-repeat;
 }
 
 .caixa input[type="radio"]:checked {
@@ -5651,10 +5674,25 @@ body.arrastando-arquivo::after {
   width: 100%;
   height: var(--altura-controle);
   padding-left: 34px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23938d82' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='m15.5 15.5 5 5'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: 11px center;
-  background-size: 15px;
+}
+
+.busca {
+  position: relative;
+}
+
+.busca::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 11px;
+  z-index: 1;
+  width: 15px;
+  height: 15px;
+  background: var(--papel-3);
+  transform: translateY(-50%);
+  pointer-events: none;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='m15.5 15.5 5 5'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='m15.5 15.5 5 5'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
 .legenda {
@@ -6543,27 +6581,27 @@ body.arrastando-arquivo::after {
 
 .ritual[data-elemento="sangue"] {
   --cor-elemento: var(--el-sangue);
-  --glifo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.2'%3E%3Cpath d='M12 2.8c3.6 4.5 6.2 7.9 6.2 10.9a6.2 6.2 0 0 1-12.4 0c0-3 2.6-6.4 6.2-10.9z'/%3E%3Cpath d='M9.3 14.4a2.8 2.8 0 0 0 2.7 2.6'/%3E%3C/svg%3E");
+  --glifo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.2'%3E%3Cpath d='M12 2.8c3.6 4.5 6.2 7.9 6.2 10.9a6.2 6.2 0 0 1-12.4 0c0-3 2.6-6.4 6.2-10.9z'/%3E%3Cpath d='M9.3 14.4a2.8 2.8 0 0 0 2.7 2.6'/%3E%3C/svg%3E");
 }
 
 .ritual[data-elemento="morte"] {
   --cor-elemento: var(--el-morte);
-  --glifo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.2'%3E%3Cpath d='M12 12a1.2 1.2 0 0 1 2.4 0a2.4 2.4 0 0 1-4.8 0a3.6 3.6 0 0 1 7.2 0a4.8 4.8 0 0 1-9.6 0a6 6 0 0 1 12 0a7.2 7.2 0 0 1-14.4 0'/%3E%3C/svg%3E");
+  --glifo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.2'%3E%3Cpath d='M12 12a1.2 1.2 0 0 1 2.4 0a2.4 2.4 0 0 1-4.8 0a3.6 3.6 0 0 1 7.2 0a4.8 4.8 0 0 1-9.6 0a6 6 0 0 1 12 0a7.2 7.2 0 0 1-14.4 0'/%3E%3C/svg%3E");
 }
 
 .ritual[data-elemento="conhecimento"] {
   --cor-elemento: var(--el-conhecimento);
-  --glifo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.2'%3E%3Cpath d='M12 2.5 21.5 19.5h-19z'/%3E%3Ccircle cx='12' cy='13.6' r='3.1'/%3E%3Cpath d='M12 2.5v8'/%3E%3C/svg%3E");
+  --glifo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.2'%3E%3Cpath d='M12 2.5 21.5 19.5h-19z'/%3E%3Ccircle cx='12' cy='13.6' r='3.1'/%3E%3Cpath d='M12 2.5v8'/%3E%3C/svg%3E");
 }
 
 .ritual[data-elemento="energia"] {
   --cor-elemento: var(--el-energia);
-  --glifo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.2'%3E%3Cpath d='M13.5 2 5 13.6h6.2L10.3 22 19 10.2h-6.3z'/%3E%3C/svg%3E");
+  --glifo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.2'%3E%3Cpath d='M13.5 2 5 13.6h6.2L10.3 22 19 10.2h-6.3z'/%3E%3C/svg%3E");
 }
 
 .ritual[data-elemento="medo"] {
   --cor-elemento: var(--el-medo);
-  --glifo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.2'%3E%3Cpath d='M2.5 12s3.6-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.6 6.5-9.5 6.5S2.5 12 2.5 12z'/%3E%3Cpath d='M12 7.6c1.3 1.6 1.3 7.2 0 8.8-1.3-1.6-1.3-7.2 0-8.8z'/%3E%3C/svg%3E");
+  --glifo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.2'%3E%3Cpath d='M2.5 12s3.6-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.6 6.5-9.5 6.5S2.5 12 2.5 12z'/%3E%3Cpath d='M12 7.6c1.3 1.6 1.3 7.2 0 8.8-1.3-1.6-1.3-7.2 0-8.8z'/%3E%3C/svg%3E");
 }
 
 /* Círculo além do liberado pelo NEX: só um destaque, nada é bloqueado */
@@ -7650,7 +7688,10 @@ body.arrastando-arquivo::after {
   width: 340px;
   height: 340px;
   border-radius: 0;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' fill='none' stroke='%23e3c04e' stroke-opacity='0.22'%3E%3Ccircle cx='100' cy='100' r='92'/%3E%3Ccircle cx='100' cy='100' r='58'/%3E%3Cpath d='M100 8 180 146H20z'/%3E%3Cpath d='M100 8v184M8 100h184M35 35l130 130M165 35 35 165' stroke-dasharray='2 4'/%3E%3Ccircle cx='100' cy='100' r='3' fill='%23e3c04e' fill-opacity='0.3'/%3E%3C/svg%3E") center / contain no-repeat;
+  background: var(--acento);
+  opacity: 1;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' fill='none' stroke='black' stroke-opacity='0.22'%3E%3Ccircle cx='100' cy='100' r='92'/%3E%3Ccircle cx='100' cy='100' r='58'/%3E%3Cpath d='M100 8 180 146H20z'/%3E%3Cpath d='M100 8v184M8 100h184M35 35l130 130M165 35 35 165' stroke-dasharray='2 4'/%3E%3Ccircle cx='100' cy='100' r='3' fill='black' fill-opacity='0.3'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' fill='none' stroke='black' stroke-opacity='0.22'%3E%3Ccircle cx='100' cy='100' r='92'/%3E%3Ccircle cx='100' cy='100' r='58'/%3E%3Cpath d='M100 8 180 146H20z'/%3E%3Cpath d='M100 8v184M8 100h184M35 35l130 130M165 35 35 165' stroke-dasharray='2 4'/%3E%3Ccircle cx='100' cy='100' r='3' fill='black' fill-opacity='0.3'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
 /* Conhecimento: o mostrador ganha o diagrama que liga os cinco dados */

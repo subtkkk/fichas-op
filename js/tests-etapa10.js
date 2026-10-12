@@ -29,10 +29,10 @@ window.OP = window.OP || {};
 
     // Catálogo de TESTE (não usa os números do arquivo real)
     const CATALOGO_TESTE = [
-      { id: 'A', nome: 'A', categoria: 'medo', familia: 'f1', efeitos: { dadosPericias: -1 }, conferir: true },
-      { id: 'B', nome: 'B', categoria: 'medo', familia: 'f1', efeitos: { dadosPericias: -2 }, conferir: true },
-      { id: 'C', nome: 'C', categoria: 'mental', familia: 'f2', efeitos: { dadosAtributos: { for: -1 } }, conferir: true },
-      { id: 'D', nome: 'D', categoria: 'mental', familia: 'f2', efeitos: { dadosAtributos: { for: -2, agi: -2 } }, conferir: true },
+      { id: 'A', nome: 'A', categoria: 'medo', efeitos: { dadosPericias: -1 }, conferir: true },
+      { id: 'B', nome: 'B', categoria: 'medo', efeitos: { dadosPericias: -2 }, conferir: true },
+      { id: 'C', nome: 'C', categoria: 'mental', efeitos: { dadosAtributos: { for: -1 } }, conferir: true },
+      { id: 'D', nome: 'D', categoria: 'mental', efeitos: { dadosAtributos: { for: -2, agi: -2 } }, conferir: true },
       { id: 'E', nome: 'E', categoria: 'defesa', efeitos: { defesa: -2 }, conferir: true },
       { id: 'F', nome: 'F', categoria: 'defesa', efeitos: { defesa: -5 }, conferir: true },
       { id: 'G', nome: 'G', categoria: 'movimento', efeitos: { deslocamentoMult: 0.5 }, conferir: true },
@@ -55,6 +55,11 @@ window.OP = window.OP || {};
         if (ajustar) ajustar(ficha);
         return calc.modificadoresCondicoes(ficha);
       });
+    }
+
+    /** Modificadores com o catálogo REAL (data/condicoes.js). */
+    function reais(ids) {
+      return calc.modificadoresCondicoes(comCondicoes(fichaDeTeste({}), ids));
     }
 
     function juntar(mod, campos) {
@@ -137,7 +142,7 @@ window.OP = window.OP || {};
 
     return [
       // --- Integridade dos dados ---
-      { nome: 'E10 · 31 condições com ids únicos', obtido: function () { return OP.data.condicoes.length + '/' + idsUnicos(OP.data.condicoes); }, esperado: '31/true' },
+      { nome: 'E10 · 35 condições com ids únicos', obtido: function () { return OP.data.condicoes.length + '/' + idsUnicos(OP.data.condicoes); }, esperado: '35/true' },
       { nome: 'E10 · Toda condição tem categoria existente', obtido: function () { return OP.data.condicoes.filter(function (c) { return !OP.data.categoriasCondicao[c.categoria]; }).map(function (c) { return c.id; }).join(','); }, esperado: '' },
       { nome: 'E10 · Todo "implica" aponta para uma condição existente', obtido: function () {
         const ids = OP.data.condicoes.map(function (c) { return c.id; });
@@ -170,23 +175,23 @@ window.OP = window.OP || {};
 
       // --- modificadoresCondicoes (catálogo de teste) ---
       { nome: 'E10 · Condição A → dadosPericias −1', obtido: function () { return modDe(['A']).dadosPericias; }, esperado: -1 },
-      { nome: 'E10 · A + B (mesma família) → dadosPericias −2 (vale a pior)', obtido: function () { return modDe(['A', 'B']).dadosPericias; }, esperado: -2 },
-      { nome: 'E10 · C + D (mesma família) → FOR −2 e AGI −2', obtido: function () { return juntar(modDe(['C', 'D']), ['for', 'agi']); }, esperado: '-2/-2' },
-      { nome: 'E10 · E + F (sem família) → Defesa −7', obtido: function () { return modDe(['E', 'F']).defesa; }, esperado: -7 },
+      { nome: 'E10 · A + B (mesmo efeito) → dadosPericias −2 (vale o mais severo)', obtido: function () { return modDe(['A', 'B']).dadosPericias; }, esperado: -2 },
+      { nome: 'E10 · C + D (mesmo efeito em FOR) → FOR −2 e AGI −2', obtido: function () { return juntar(modDe(['C', 'D']), ['for', 'agi']); }, esperado: '-2/-2' },
+      { nome: 'E10 · E + F (mesmo efeito, Defesa) → −5, não −7', obtido: function () { return modDe(['E', 'F']).defesa; }, esperado: -5 },
       { nome: 'E10 · G → deslocamento × 0,5; G + H → 0', obtido: function () { return modDe(['G']).deslocamentoMult + '/' + modDe(['G', 'H']).deslocamentoMult; }, esperado: '0.5/0' },
       { nome: 'E10 · I + E → Defesa −2 (E conta uma vez) e FOR −1', obtido: function () { return juntar(modDe(['I', 'E']), ['defesa', 'for']); }, esperado: '-2/-1' },
       { nome: 'E10 · "Aplicar efeitos" desligado → tudo neutro', obtido: function () {
         const m = modDe(['A', 'E', 'G', 'C'], function (f) { f.condicoes.aplicarEfeitos = false; });
         return [m.dadosPericias, m.defesa, m.deslocamentoMult, m.dadosAtributos.for, m.origens.length].join('/');
       }, esperado: '0/0/1/0/0' },
-      { nome: 'E10 · Personalizada (−1 dado, −1 Defesa) + A → dadosPericias −2 e Defesa −1', obtido: function () {
+      { nome: 'E10 · Personalizada (−1 dado, −1 Defesa) + A → dados −1 (mesmo efeito) e Defesa −1', obtido: function () {
         const m = modDe(['A', { id: 'personalizada', personalizada: { nome: 'Teste', dadosPericias: -1, defesa: -1, deslocamentoMult: 1 } }]);
         return m.dadosPericias + '/' + m.defesa;
-      }, esperado: '-2/-1' },
-      { nome: 'E10 · Duas personalizadas somam', obtido: function () {
+      }, esperado: '-1/-1' },
+      { nome: 'E10 · Duas personalizadas iguais não se acumulam', obtido: function () {
         const p = { id: 'personalizada', personalizada: { nome: 'P', dadosPericias: -1, defesa: 0, deslocamentoMult: 1 } };
         return modDe([p, p]).dadosPericias;
-      }, esperado: -2 },
+      }, esperado: -1 },
       { nome: 'E10 · condicoesEfetivas resolve "implica" sem repetir', obtido: function () {
         return comCatalogo(CATALOGO_TESTE, function () { return calc.condicoesEfetivas(comCondicoes(fichaDeTeste({}), ['I', 'E', 'I']).condicoes).slice().sort().join(','); });
       }, esperado: 'C,E,I' },
@@ -248,6 +253,87 @@ window.OP = window.OP || {};
           return calc.deslocamento(sobre).metros + '/' + calc.deslocamento(leve).metros + '/' + calc.deslocamento(leve).quadrados;
         });
       }, esperado: '3/4.5/3' },
+
+      // --- Condições do livro (catálogo real) ---
+      { nome: 'E10 · Toda condição do catálogo tem texto do livro', obtido: function () { return OP.data.condicoes.filter(function (c) { return !c.descricao; }).map(function (c) { return c.id; }).join(','); }, esperado: '' },
+      { nome: 'E10 · Catálogo real: nenhum efeito pendente de conferência', obtido: function () { return OP.data.condicoes.filter(function (c) { return c.conferir; }).length; }, esperado: 0 },
+      { nome: 'E10 · Desprevenido + Vulnerável → Defesa −5, não −7 (livro)', obtido: function () { return reais(['desprevenido', 'vulneravel']).defesa; }, esperado: -5 },
+      { nome: 'E10 · Indefeso (−10) + Desprevenido (−5) → Defesa −10', obtido: function () { return reais(['indefeso', 'desprevenido']).defesa; }, esperado: -10 },
+      { nome: 'E10 · Abalado + Apavorado → −2d20 em perícias (vale o mais severo)', obtido: function () { return reais(['abalado', 'apavorado']).dadosPericias; }, esperado: -2 },
+      { nome: 'E10 · Efeitos diferentes se acumulam: Abalado + Fraco → perícia de FOR −2, de INT −1', obtido: function () {
+        const f = comCondicoes(fichaDeTeste({ atributos: { for: 3, int: 3 } }), ['abalado', 'fraco']);
+        return calc.dadosCondicoesPericia(f, 'atletismo') + '/' + calc.dadosCondicoesPericia(f, 'ciencias');
+      }, esperado: '-2/-1' },
+      { nome: 'E10 · Cego + Debilitado → AGI e FOR −2 (mesmo efeito, não −4); VIG −2 só do Debilitado', obtido: function () { return juntar(reais(['cego', 'debilitado']), ['agi', 'for']) + '/' + reais(['cego', 'debilitado']).dadosAtributos.vig; }, esperado: '-2/-2/-2' },
+      { nome: 'E10 · Cego implica Desprevenido e Lento (Defesa −5, deslocamento × 0,5)', obtido: function () { const m = reais(['cego']); return m.defesa + '/' + m.deslocamentoMult; }, esperado: '-5/0.5' },
+      { nome: 'E10 · Surdo: −1d20 só em Iniciativa', obtido: function () {
+        const f = comCondicoes(fichaDeTeste({ atributos: { agi: 3, pre: 3 } }), ['surdo']);
+        return calc.periciaDados(f, 'iniciativa').qtd + '/' + calc.periciaDados(f, 'reflexos').qtd + '/' + calc.periciaDados(f, 'percepcao').qtd;
+      }, esperado: '2/3/3' },
+      { nome: 'E10 · Fascinado (−2) + Ofuscado (−1) em Percepção → −2 (vale o mais severo)', obtido: function () {
+        const f = comCondicoes(fichaDeTeste({ atributos: { pre: 3 } }), ['fascinado', 'ofuscado']);
+        return calc.dadosCondicoesPericia(f, 'percepcao');
+      }, esperado: -2 },
+      { nome: 'E10 · Desprevenido: −1d20 em Reflexos', obtido: function () {
+        const f = comCondicoes(fichaDeTeste({ atributos: { agi: 3 } }), ['desprevenido']);
+        return calc.periciaDados(f, 'reflexos').qtd + '/' + calc.periciaDados(f, 'acrobacia').qtd;
+      }, esperado: '2/3' },
+      { nome: 'E10 · Ofuscado: −1d20 em ataques (Luta e Pontaria) e em Percepção', obtido: function () {
+        const f = comCondicoes(fichaDeTeste({ atributos: { for: 3, agi: 3, pre: 3 } }), ['ofuscado']);
+        return [calc.ataqueTeste(f, { pericia: 'luta', testeBonus: 0 }, 0).dados.qtd, calc.ataqueTeste(f, { pericia: 'pontaria', testeBonus: 0 }, 0).dados.qtd, calc.periciaDados(f, 'percepcao').qtd].join('/');
+      }, esperado: '2/2/2' },
+      { nome: 'E10 · Caído: −2d20 só nos ataques corpo a corpo', obtido: function () {
+        const f = comCondicoes(fichaDeTeste({ atributos: { for: 3, agi: 3 } }), ['caido']);
+        return calc.ataqueTeste(f, { pericia: 'luta', testeBonus: 0 }, 0).dados.qtd + '/' + calc.ataqueTeste(f, { pericia: 'pontaria', testeBonus: 0 }, 0).dados.qtd + '/' + calc.periciaDados(f, 'luta').qtd;
+      }, esperado: '1/3/3' },
+      { nome: 'E10 · Agarrado (−1) + Caído (−2) em ataque corpo a corpo → −2 (mesmo efeito); à distância → −1', obtido: function () {
+        const m = reais(['agarrado', 'caido']);
+        return m.dadosAtaqueCorpoACorpo + '/' + m.dadosAtaque;
+      }, esperado: '-2/-1' },
+      { nome: 'E10 · Caído: Defesa −5 contra corpo a corpo, +5 à distância, 0 em geral', obtido: function () {
+        const f = comCondicoes(fichaDeTeste({}), ['caido']);
+        const d = calc.composicaoDefesa(f);
+        const base = calc.defesaTotal(fichaDeTeste({}));
+        return [d.total - base, d.totalCorpoACorpo - base, d.totalDistancia - base].join('/');
+      }, esperado: '0/-5/5' },
+      { nome: 'E10 · Caído + Desprevenido: contra corpo a corpo vale −5 (não −10); à distância −5 + 5 = 0', obtido: function () {
+        const m = reais(['caido', 'desprevenido']);
+        return m.defesa + '/' + m.defesaCorpoACorpo + '/' + m.defesaDistancia;
+      }, esperado: '-5/-5/0' },
+      { nome: 'E10 · Caído: deslocamento máximo 1,5 m (1 quadrado)', obtido: function () {
+        const d = calc.deslocamento(comCondicoes(fichaDeTeste({}), ['caido']));
+        return d.metros + '/' + d.quadrados;
+      }, esperado: '1.5/1' },
+      { nome: 'E10 · Lento: 9 m → 4,5 m; com +1,5 m de bônus (10,5) → 4,5 m (arredonda para baixo)', obtido: function () {
+        const a = comCondicoes(fichaDeTeste({}), ['lento']);
+        const b = comCondicoes(fichaDeTeste({}), ['lento']);
+        b.defesa.deslocamentoBonus = 1.5;
+        return calc.deslocamento(a).metros + '/' + calc.deslocamento(b).metros;
+      }, esperado: '4.5/4.5' },
+      { nome: 'E10 · Imóvel e Paralisado: deslocamento 0', obtido: function () {
+        return calc.deslocamento(comCondicoes(fichaDeTeste({}), ['imovel'])).metros + '/' + calc.deslocamento(comCondicoes(fichaDeTeste({}), ['paralisado'])).metros;
+      }, esperado: '0/0' },
+      { nome: 'E10 · Paralisado implica Imóvel e Indefeso (Defesa −10)', obtido: function () { return reais(['paralisado']).defesa + '/' + calc.condicoesEfetivas(comCondicoes(fichaDeTeste({}), ['paralisado']).condicoes).slice().sort().join(','); }, esperado: '-10/desprevenido,imovel,indefeso,paralisado' },
+      { nome: 'E10 · Petrificado: inconsciente, indefeso, resistência a dano 10', obtido: function () { const m = reais(['petrificado']); return m.defesa + '/' + m.resistenciaDano; }, esperado: '-10/10' },
+      { nome: 'E10 · Exausto + Fraco → FOR −2 (Debilitado vale mais que Fraco)', obtido: function () { return reais(['exausto', 'fraco']).dadosAtributos.for; }, esperado: -2 },
+      { nome: 'E10 · Alquebrado: +1 PE só no que já custa PE', obtido: function () {
+        const f = comCondicoes(fichaDeTeste({}), ['alquebrado']);
+        return [calc.custoComCondicoes(f, 2), calc.custoComCondicoes(f, 0), calc.custoComCondicoes(fichaDeTeste({}), 2)].join('/');
+      }, esperado: '3/0/2' },
+      { nome: 'E10 · Alquebrado: o plano de conjurar um ritual de 1º círculo custa 2 PE (1 + 1)', obtido: function () {
+        const f = comCondicoes(fichaDeTeste({ classe: 'ocultista', nex: 35 }), ['alquebrado']);
+        const ritual = OP.state.novoRitual({ nome: 'Teste', circulo: 1 });
+        return calc.planoConjuracao(f, ritual, 'padrao').pe;
+      }, esperado: 2 },
+      { nome: 'E10 · Condições sem efeito numérico (Doente, Em Chamas…) não mudam os números', obtido: function () {
+        const m = reais(['doente', 'emchamas', 'sangrando', 'asfixiado', 'confuso']);
+        return [m.dadosPericias, m.defesa, m.deslocamentoMult, m.origens.length].join('/');
+      }, esperado: '0/0/1/0' },
+      { nome: 'E10 · estadoCondicoes traz lembretes e texto do livro', obtido: function () {
+        const e = calc.estadoCondicoes(comCondicoes(fichaDeTeste({}), ['emchamas']));
+        return e.ativas[0].lembretes.length > 0 && e.ativas[0].descricao.indexOf('1d6') !== -1;
+      }, esperado: true },
+      { nome: 'E10 · Resumo de efeitos: Caído', obtido: function () { return calc.resumoEfeitos(OP.data.condicoes.find(function (c) { return c.id === 'caido'; }).efeitos); }, esperado: '−2d20 em ataques corpo a corpo; Defesa −5 contra corpo a corpo; Defesa +5 contra ataques à distância; deslocamento máximo 1,5 m' },
 
       // --- Dano e cura ---
       { nome: 'E10 · aplicarDano: PV 10/20 com dano 4 → 6; dano 15 → 0 e morrendo', obtido: function () {
@@ -361,9 +447,11 @@ window.OP = window.OP || {};
         return calc.verificarFicha(fichaMorrendo(0, 9)).map(function (v) { return v.codigo; }).join(',');
       }, esperado: 'turnos-morrendo-acima' },
       { nome: 'E10 · verificarFicha: condição com efeito "conferir" aplicado → linha "info"', obtido: function () {
-        const f = comCondicoes(fichaValida(), ['abalado']);
-        const v = calc.verificarFicha(f).filter(function (x) { return x.codigo === 'condicoes-conferir'; });
-        return v.length + '/' + (v[0] && v[0].severidade);
+        return comCatalogo(CATALOGO_TESTE, function () {
+          const f = comCondicoes(fichaValida(), ['A']);
+          const v = calc.verificarFicha(f).filter(function (x) { return x.codigo === 'condicoes-conferir'; });
+          return v.length + '/' + (v[0] && v[0].severidade);
+        });
       }, esperado: '1/info' },
       { nome: 'E10 · verificarFicha: sem aplicar efeitos não há linha "info"', obtido: function () {
         const f = comCondicoes(fichaValida(), ['abalado']);

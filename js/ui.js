@@ -1656,10 +1656,21 @@ window.OP = window.OP || {};
     definirTexto(refs.composicaoDeslocamento, formatarNumero(desloc.base) + ' m base' +
       (desloc.bonus < 0 ? ' − ' : ' + ') + formatarNumero(Math.abs(desloc.bonus)) + ' m de bônus' +
       (desloc.sobrecarga ? ' − ' + formatarNumero(desloc.sobrecarga) + ' m de sobrecarga' : '') +
-      (desloc.multiplicador !== 1 ? ' × ' + formatarNumero(desloc.multiplicador) + ' (condições)' : ''));
+      (desloc.multiplicador !== 1 ? ' × ' + formatarNumero(desloc.multiplicador) + ' (condições)' : '') +
+      (desloc.maximo !== null ? ' · máximo ' + formatarNumero(desloc.maximo) + ' m (condições)' : ''));
     definirTexto(refs.textoQuadrados, '(' + desloc.quadrados + ' ' + plural(desloc.quadrados, 'quadrado', 'quadrados') + ')');
 
     desenharReacoes(defesa);
+
+    // Defesa contra um tipo de ataque, só quando as condições a diferenciam (ex.: Caído)
+    const contraTipos = [];
+    if (defesa.totalCorpoACorpo !== defesa.total) contraTipos.push('corpo a corpo ' + defesa.totalCorpoACorpo);
+    if (defesa.totalDistancia !== defesa.total) contraTipos.push('à distância ' + defesa.totalDistancia);
+    definirTexto(refs.defesaPorTipo, contraTipos.length ? 'Contra ataques ' + contraTipos.join(' · ') + ' (condições)' : '');
+    if (refs.defesaPorTipo.hidden !== !contraTipos.length) refs.defesaPorTipo.hidden = !contraTipos.length;
+    const resistenciaCond = derivados.condicoes.mod.resistenciaDano;
+    definirTexto(refs.resistenciaCondicoes, resistenciaCond ? 'Condições: resistência a dano ' + resistenciaCond + ' contra todos os tipos (não entra nos campos abaixo).' : '');
+    if (refs.resistenciaCondicoes.hidden !== !resistenciaCond) refs.resistenciaCondicoes.hidden = !resistenciaCond;
 
     refs.testes.forEach(function (botao) {
       botao.classList.toggle('teste--treinado', derivados.pericias[botao.dataset.teste].treinada);
@@ -2451,7 +2462,7 @@ window.OP = window.OP || {};
       definirTexto(el.fonte, nomeNaLista(OP.data.fontesHabilidade, habilidade.fonte) || 'Outro');
       if (el.artigo.dataset.fonte !== habilidade.fonte) el.artigo.dataset.fonte = habilidade.fonte;
 
-      const custo = OP.calc.numero(habilidade.custoPE);
+      const custo = OP.calc.custoComCondicoes(ficha, habilidade.custoPE);
       const meta = [custo > 0 ? custo + ' PE' : 'sem custo'];
       const ativacao = nomeNaLista(OP.data.ativacoes, habilidade.ativacao);
       if (ativacao) meta.push(ativacao);
@@ -2872,7 +2883,7 @@ window.OP = window.OP || {};
         definirTexto(forma.erro, info.danoErro);
         if (forma.botaoDano.hidden === info.danoValido) forma.botaoDano.hidden = !info.danoValido;
         // Medo: a Sanidade aparece no botão; a perda permanente fica no lembrete do cartão.
-        definirTexto(forma.textoConjurar, 'Conjurar · ' + (info.custo > 0 ? info.custo + ' PE' : 'sem custo') +
+        definirTexto(forma.textoConjurar, 'Conjurar · ' + (info.custoComCondicoes > 0 ? info.custoComCondicoes + ' PE' : 'sem custo') +
           (info.san ? ' · ' + info.san + ' SAN' : ''));
       });
 
@@ -3196,6 +3207,8 @@ window.OP = window.OP || {};
     refs.buscaPericias = document.getElementById('busca-pericias');
     refs.filtroTreinadas = document.getElementById('filtro-treinadas');
     refs.composicaoDefesa = document.getElementById('composicao-defesa');
+    refs.defesaPorTipo = document.getElementById('defesa-por-tipo');
+    refs.resistenciaCondicoes = document.getElementById('resistencia-condicoes');
     refs.composicaoDeslocamento = document.getElementById('composicao-deslocamento');
     refs.textoQuadrados = document.getElementById('texto-quadrados');
     refs.contagemResistencias = document.getElementById('contagem-resistencias');

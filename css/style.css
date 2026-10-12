@@ -9697,6 +9697,29 @@ html[data-vista="ficha"] {
   color: var(--papel-2);
 }
 
+.cond-cartao__lembretes {
+  font-size: 0.8125rem;
+  color: var(--papel-2);
+}
+
+.cond-cartao__livro {
+  font-size: 0.8125rem;
+  color: var(--papel-2);
+}
+
+.cond-cartao__livro summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  color: var(--papel);
+}
+
+.cond-cartao__livro-texto {
+  margin: 0 0 8px;
+  line-height: 1.5;
+}
+
 .cond-cartao__campos {
   display: grid;
   grid-template-columns: 110px auto minmax(0, 1fr);

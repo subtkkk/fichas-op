@@ -965,10 +965,14 @@ window.OP = window.OP || {};
       protecao: numero(defesa.protecao && defesa.protecao.defesa), // bônus de proteção manual
       outros: numero(defesa.outros),
       sobrecarga: sobrecarregado(ficha) ? numero(OP.data.config.sobrecarga.defesa) : 0,
-      condicoes: modificadoresCondicoes(ficha).defesa // soma das condições ativas (sugestões a conferir)
+      condicoes: modificadoresCondicoes(ficha).defesa // o mais severo entre as condições ativas
     };
     composicao.total = composicao.base + composicao.valorAtributo + composicao.protecoesInventario +
       composicao.protecao + composicao.outros - composicao.sobrecarga + composicao.condicoes;
+    // Defesa contra um tipo de ataque (Caído: −5 contra corpo a corpo, +5 contra à distância)
+    const mod = modificadoresCondicoes(ficha);
+    composicao.totalCorpoACorpo = composicao.total - composicao.condicoes + mod.defesaCorpoACorpo;
+    composicao.totalDistancia = composicao.total - composicao.condicoes + mod.defesaDistancia;
     return composicao;
   }
 
@@ -1032,14 +1036,22 @@ window.OP = window.OP || {};
     const base = numero(config.deslocamentoBase);
     const bonus = numero(defesaSalva(ficha).deslocamentoBonus);
     const sobrecarga = sobrecarregado(ficha) ? numero(config.sobrecarga.deslocamento) : 0;
-    const multiplicador = modificadoresCondicoes(ficha).deslocamentoMult;
+    const mod = modificadoresCondicoes(ficha);
+    const multiplicador = mod.deslocamentoMult;
+    const maximo = mod.deslocamentoMax;
+    const passo = OP.data.regrasDefesa.metrosPorQuadrado;
     const metrosAntes = Math.max(0, base + bonus - sobrecarga);
-    const metros = Math.round(metrosAntes * multiplicador * 100) / 100;
+    // Reduzir (Lento) arredonda para baixo, para o incremento de 1,5 m (um quadrado)
+    let metros = multiplicador < 1
+      ? Math.floor(metrosAntes * multiplicador / passo + 1e-9) * passo
+      : Math.round(metrosAntes * multiplicador * 100) / 100;
+    if (maximo !== null && maximo !== undefined) metros = Math.min(metros, Math.max(0, numero(maximo)));
+    metros = Math.round(metros * 100) / 100;
     // a pequena folga evita erro de arredondamento (ex.: 10,5 / 1,5)
-    const quadrados = Math.floor(metros / OP.data.regrasDefesa.metrosPorQuadrado + 1e-9);
+    const quadrados = Math.floor(metros / passo + 1e-9);
     return {
       base: base, bonus: bonus, sobrecarga: sobrecarga, metros: metros, quadrados: quadrados,
-      multiplicador: multiplicador, metrosAntesCondicoes: metrosAntes
+      multiplicador: multiplicador, maximo: maximo === undefined ? null : maximo, metrosAntesCondicoes: metrosAntes
     };
   }
 
@@ -1080,10 +1092,11 @@ window.OP = window.OP || {};
    * na ficha) e bonus = periciaBonus(perícia) + testeBonus do ataque.
    */
   function ataqueTeste(ficha, ataque, modDados) {
-    const teste = testePericia(ficha, ataque.pericia, modDados || 0);
+    // dadosCondicoesAtaque já traz as condições da perícia e as de ataque (ex.: Agarrado, Caído)
+    const atributo = atributoDaPericia(ficha, ataque.pericia);
     return {
-      dados: teste.dados,
-      bonus: teste.bonus + numero(ataque.testeBonus)
+      dados: resolverReserva(atributo ? totalAtributo(ficha, atributo) : 0, numero(modDados) + dadosCondicoesAtaque(ficha, ataque)),
+      bonus: periciaBonus(ficha, ataque.pericia) + numero(ataque.testeBonus)
     };
   }
 
@@ -1357,7 +1370,7 @@ window.OP = window.OP || {};
     const regra = OP.data.config.medo;
     const custo = custoForma(ritual, idForma);
     const projecao = projetarCustos(ficha, {
-      pe: custo,
+      pe: custoComCondicoes(ficha, custo),
       san: medo && regra.sanPorCusto ? custo : 0,
       permanente: medo ? inteiroNaoNegativo(regra.perdaPermanente[idForma]) : 0
     });
@@ -1518,6 +1531,7 @@ window.OP = window.OP || {};
         formas[definicao.id] = {
           ativa: definicao.id === 'padrao' || forma.ativa === true,
           custo: custo,
+          custoComCondicoes: custoComCondicoes(ficha, custo),
           adicional: definicao.id === 'padrao' ? 0 : inteiroNaoNegativo(forma.custoAdicional),
           requerCirculo: definicao.id === 'padrao' ? null : circuloValido(forma.requerCirculo),
           requerAfinidade: definicao.id !== 'padrao' && forma.requerAfinidade === true,
@@ -1879,13 +1893,28 @@ window.OP = window.OP || {};
     return String(Math.round(mult * 100) / 100).replace('.', ',');
   }
 
+  function nomeDaPericiaCond(id) {
+    const definicao = definicaoPericia(id);
+    return definicao ? definicao.nome : String(id);
+  }
+
+  function textoMetros(n) {
+    return String(Math.round(n * 100) / 100).replace('.', ',') + ' m';
+  }
+
+  /** Objeto (nunca nulo) dentro de um campo de efeitos. */
+  function mapaDe(efeitos, campo) {
+    const valor = efeitos && efeitos[campo];
+    return valor !== null && typeof valor === 'object' && !Array.isArray(valor) ? valor : {};
+  }
+
   /** Resumo dos números de um efeito: "−1d20 em perícias; Defesa −2". '' se não houver efeito. */
   function resumoEfeitos(efeitos) {
     if (!efeitos || typeof efeitos !== 'object') return '';
     const partes = [];
     const dadosPericias = numero(efeitos.dadosPericias);
     if (dadosPericias) partes.push(textoMenos(dadosPericias) + 'd20 em perícias');
-    const atributos = efeitos.dadosAtributos && typeof efeitos.dadosAtributos === 'object' ? efeitos.dadosAtributos : {};
+    const atributos = mapaDe(efeitos, 'dadosAtributos');
     const porValor = {};
     IDS_ATRIBUTOS_COND.forEach(function (id) {
       const valor = numero(atributos[id]);
@@ -1896,14 +1925,27 @@ window.OP = window.OP || {};
       const lista = siglas.length > 1 ? siglas.slice(0, -1).join(', ') + ' e ' + siglas[siglas.length - 1] : siglas[0];
       partes.push(textoMenos(Number(valor)) + 'd20 em testes de ' + lista);
     });
+    const porPericia = mapaDe(efeitos, 'dadosPorPericia');
+    Object.keys(porPericia).forEach(function (id) {
+      if (numero(porPericia[id])) partes.push(textoMenos(numero(porPericia[id])) + 'd20 em ' + nomeDaPericiaCond(id));
+    });
+    if (numero(efeitos.dadosAtaque)) partes.push(textoMenos(numero(efeitos.dadosAtaque)) + 'd20 em ataques');
+    if (numero(efeitos.dadosAtaqueCorpoACorpo)) partes.push(textoMenos(numero(efeitos.dadosAtaqueCorpoACorpo)) + 'd20 em ataques corpo a corpo');
     const defesa = numero(efeitos.defesa);
     if (defesa) partes.push('Defesa ' + textoMenos(defesa));
+    if (numero(efeitos.defesaCorpoACorpo)) partes.push('Defesa ' + textoMenos(numero(efeitos.defesaCorpoACorpo)) + ' contra corpo a corpo');
+    if (numero(efeitos.defesaDistancia)) partes.push('Defesa ' + textoMenos(numero(efeitos.defesaDistancia)) + ' contra ataques à distância');
     if (efeitos.deslocamentoMult !== undefined && efeitos.deslocamentoMult !== null) {
       const mult = numero(efeitos.deslocamentoMult);
       if (mult === 0) partes.push('não se move');
       else if (mult === 0.5) partes.push('deslocamento pela metade');
       else if (mult !== 1) partes.push('deslocamento × ' + formatarMult(mult));
     }
+    if (efeitos.deslocamentoMax !== undefined && efeitos.deslocamentoMax !== null) {
+      partes.push('deslocamento máximo ' + textoMetros(numero(efeitos.deslocamentoMax)));
+    }
+    if (numero(efeitos.custoPE)) partes.push(textoMenos(numero(efeitos.custoPE)) + ' PE no custo de habilidades e rituais');
+    if (numero(efeitos.resistenciaDano)) partes.push('resistência a dano ' + numero(efeitos.resistenciaDano));
     return partes.join('; ');
   }
 
@@ -1919,48 +1961,133 @@ window.OP = window.OP || {};
   }
 
   function modificadoresNeutros() {
-    return { dadosPericias: 0, dadosAtributos: { agi: 0, for: 0, int: 0, pre: 0, vig: 0 }, defesa: 0, deslocamentoMult: 1, origens: [] };
+    return {
+      dadosPericias: 0,
+      dadosAtributos: { agi: 0, for: 0, int: 0, pre: 0, vig: 0 },
+      dadosPorPericia: {},
+      dadosAtaque: 0,
+      dadosAtaqueCorpoACorpo: 0, // total nos ataques corpo a corpo (já com o de todos os ataques)
+      defesa: 0,
+      defesaCorpoACorpo: 0, // total contra corpo a corpo (já com o geral)
+      defesaDistancia: 0, // total contra ataques à distância (já com o geral)
+      deslocamentoMult: 1,
+      deslocamentoMax: null,
+      custoPE: 0,
+      resistenciaDano: 0,
+      origens: []
+    };
   }
 
   /**
-   * Junta os efeitos de uma família: por campo (e por atributo) vale o PIOR
-   * valor (o menor; para o deslocamento, o menor multiplicador).
-   * Devolve { efeitos, contribui: [bool por membro] }.
+   * Efeitos de uma condição como pares { chave: valor } (só os diferentes de neutro).
+   * Chaves: campos simples, "atr.<id>" e "per.<idPericia>".
    */
-  function piorDaFamilia(membros) {
-    const efeitos = { dadosAtributos: {} };
-    const contribui = membros.map(function () { return false; });
-    function pior(leitor, vazio) {
-      let melhor = null;
-      membros.forEach(function (membro) {
-        const valor = leitor(membro.efeitos);
-        if (valor === undefined) return;
-        if (melhor === null || valor < melhor) melhor = valor;
-      });
-      membros.forEach(function (membro, indice) {
-        const valor = leitor(membro.efeitos);
-        if (valor !== undefined && valor === melhor) contribui[indice] = true;
-      });
-      return melhor === null ? vazio : melhor;
-    }
-    efeitos.dadosPericias = pior(function (e) { return e && e.dadosPericias !== undefined ? numero(e.dadosPericias) : undefined; }, 0);
-    efeitos.defesa = pior(function (e) { return e && e.defesa !== undefined ? numero(e.defesa) : undefined; }, 0);
-    efeitos.deslocamentoMult = pior(function (e) { return e && e.deslocamentoMult !== undefined ? numero(e.deslocamentoMult) : undefined; }, 1);
-    IDS_ATRIBUTOS_COND.forEach(function (id) {
-      efeitos.dadosAtributos[id] = pior(function (e) {
-        return e && e.dadosAtributos && e.dadosAtributos[id] !== undefined ? numero(e.dadosAtributos[id]) : undefined;
-      }, 0);
+  function chavesDeEfeitos(efeitos) {
+    const chaves = {};
+    if (!efeitos || typeof efeitos !== 'object') return chaves;
+    ['dadosPericias', 'dadosAtaque', 'dadosAtaqueCorpoACorpo', 'defesa', 'defesaCorpoACorpo', 'defesaDistancia',
+      'custoPE', 'resistenciaDano'].forEach(function (campo) {
+      if (numero(efeitos[campo])) chaves[campo] = numero(efeitos[campo]);
     });
-    return { efeitos: efeitos, contribui: contribui };
+    ['deslocamentoMult', 'deslocamentoMax'].forEach(function (campo) {
+      if (efeitos[campo] !== undefined && efeitos[campo] !== null) chaves[campo] = numero(efeitos[campo]);
+    });
+    const atributos = mapaDe(efeitos, 'dadosAtributos');
+    IDS_ATRIBUTOS_COND.forEach(function (id) {
+      if (numero(atributos[id])) chaves['atr.' + id] = numero(atributos[id]);
+    });
+    const porPericia = mapaDe(efeitos, 'dadosPorPericia');
+    Object.keys(porPericia).forEach(function (id) {
+      if (numero(porPericia[id])) chaves['per.' + id] = numero(porPericia[id]);
+    });
+    return chaves;
   }
 
   /**
-   * Soma dos efeitos de todas as condições da ficha:
-   * { dadosPericias, dadosAtributos: {agi,for,int,pre,vig}, defesa, deslocamentoMult,
-   *   origens: [{ condicao, texto }] }.
-   * - da mesma família não se acumulam (vale a pior); sem família, somam;
-   * - cada id conta uma vez (condicoesEfetivas); as personalizadas somam;
-   * - com ficha.condicoes.aplicarEfeitos falso, tudo neutro (0 e multiplicador 1).
+   * Como cada efeito acumula (Clarificações de regras: efeitos iguais não se
+   * acumulam, vale o mais severo; penalidades e bônus se acumulam entre si):
+   * - soma: vale a pior penalidade (menor valor negativo) + o melhor bônus (maior positivo);
+   * - min / max: vale o menor / o maior (deslocamento, custo em PE, resistência).
+   */
+  function regraDeAcumulo(chave) {
+    if (chave === 'deslocamentoMult' || chave === 'deslocamentoMax') return 'min';
+    if (chave === 'custoPE' || chave === 'resistenciaDano') return 'max';
+    return 'soma';
+  }
+
+  /**
+   * Junta os efeitos de várias condições por chave.
+   * Devolve { valores: { chave: valorFinal }, contribui: [bool por item] }.
+   */
+  function resolverAcumulo(itens) {
+    const porChave = Object.create(null);
+    itens.forEach(function (item, indice) {
+      const chaves = chavesDeEfeitos(item.efeitos);
+      Object.keys(chaves).forEach(function (chave) {
+        (porChave[chave] = porChave[chave] || []).push({ indice: indice, valor: chaves[chave] });
+      });
+    });
+    const valores = {};
+    const contribui = itens.map(function () { return false; });
+    Object.keys(porChave).forEach(function (chave) {
+      const lista = porChave[chave];
+      const regra = regraDeAcumulo(chave);
+      let escolhidos;
+      if (regra === 'min' || regra === 'max') {
+        const alvo = lista.reduce(function (a, b) { return (regra === 'min' ? b.valor < a : b.valor > a) ? b.valor : a; }, lista[0].valor);
+        valores[chave] = alvo;
+        escolhidos = [alvo];
+      } else {
+        const negativos = lista.filter(function (x) { return x.valor < 0; }).map(function (x) { return x.valor; });
+        const positivos = lista.filter(function (x) { return x.valor > 0; }).map(function (x) { return x.valor; });
+        const pior = negativos.length ? Math.min.apply(null, negativos) : 0;
+        const melhor = positivos.length ? Math.max.apply(null, positivos) : 0;
+        valores[chave] = pior + melhor;
+        escolhidos = [];
+        if (negativos.length) escolhidos.push(pior);
+        if (positivos.length) escolhidos.push(melhor);
+      }
+      lista.forEach(function (x) {
+        if (escolhidos.indexOf(x.valor) !== -1) contribui[x.indice] = true;
+      });
+    });
+    return { valores: valores, contribui: contribui };
+  }
+
+  /**
+   * Resultado de modificadoresCondicoes escrito como efeitos (para resumoEfeitos):
+   * os totais contra corpo a corpo e à distância só aparecem quando diferem do geral.
+   */
+  function efeitosDeModificadores(mod) {
+    const efeitos = {
+      dadosPericias: mod.dadosPericias, dadosAtributos: mod.dadosAtributos, dadosPorPericia: mod.dadosPorPericia,
+      dadosAtaque: mod.dadosAtaque, defesa: mod.defesa, deslocamentoMult: mod.deslocamentoMult,
+      deslocamentoMax: mod.deslocamentoMax, custoPE: mod.custoPE, resistenciaDano: mod.resistenciaDano
+    };
+    if (mod.dadosAtaqueCorpoACorpo !== mod.dadosAtaque) efeitos.dadosAtaqueCorpoACorpo = mod.dadosAtaqueCorpoACorpo;
+    if (mod.defesaCorpoACorpo !== mod.defesa) efeitos.defesaCorpoACorpo = mod.defesaCorpoACorpo - mod.defesa;
+    if (mod.defesaDistancia !== mod.defesa) efeitos.defesaDistancia = mod.defesaDistancia - mod.defesa;
+    return efeitos;
+  }
+
+  /** Dois efeitos do mesmo tipo (geral e específico) não se acumulam: vale o pior; sinais opostos se somam. */
+  function combinarEfeitos(a, b) {
+    if (a < 0 && b < 0) return Math.min(a, b);
+    if (a > 0 && b > 0) return Math.max(a, b);
+    return a + b;
+  }
+
+  /**
+   * Efeitos de todas as condições da ficha:
+   * { dadosPericias, dadosAtributos: {agi,for,int,pre,vig}, dadosPorPericia: {id: n},
+   *   dadosAtaque, dadosAtaqueCorpoACorpo, defesa, defesaCorpoACorpo, defesaDistancia,
+   *   deslocamentoMult, deslocamentoMax, custoPE, resistenciaDano, origens: [{ condicao, texto }] }.
+   * - efeitos iguais não se acumulam: por efeito vale o mais severo (resolverAcumulo);
+   *   efeitos diferentes se somam;
+   * - cada id conta uma vez (condicoesEfetivas, com as implicadas); as personalizadas entram como as demais;
+   * - dadosAtaqueCorpoACorpo, defesaCorpoACorpo e defesaDistancia já são os TOTAIS contra esse tipo
+   *   de ataque (geral e específico não se acumulam);
+   * - com ficha.condicoes.aplicarEfeitos falso, tudo neutro.
    */
   function modificadoresCondicoes(ficha) {
     const salvas = condicoesSalvas(ficha);
@@ -1969,66 +2096,80 @@ window.OP = window.OP || {};
 
     const itens = condicoesEfetivas(salvas).map(function (id) {
       const definicao = definicaoCondicao(id);
-      return { nome: definicao.nome, familia: definicao.familia || null, efeitos: definicao.efeitos || null };
+      return { nome: definicao.nome, efeitos: definicao.efeitos || null };
     });
     listaAtivas(salvas).forEach(function (item) {
       if (item.id !== 'personalizada') return;
       const nome = item.personalizada && String(item.personalizada.nome || '').trim();
-      itens.push({ nome: nome || 'Condição personalizada', familia: null, efeitos: efeitosDaPersonalizada(item.personalizada) });
+      itens.push({ nome: nome || 'Condição personalizada', efeitos: efeitosDaPersonalizada(item.personalizada) });
     });
 
-    const aplicados = []; // efeitos que entram na soma
-    const grupos = Object.create(null);
-    itens.forEach(function (item) {
-      if (!item.efeitos) return;
-      if (item.familia) (grupos[item.familia] = grupos[item.familia] || []).push(item);
-      else {
-        aplicados.push(item.efeitos);
-        const texto = resumoEfeitos(item.efeitos);
-        if (texto) resultado.origens.push({ condicao: item.nome, texto: texto });
-      }
+    const junto = resolverAcumulo(itens);
+    const v = junto.valores;
+    function valor(chave, padrao) { return v[chave] !== undefined ? v[chave] : padrao; }
+    resultado.dadosPericias = valor('dadosPericias', 0);
+    IDS_ATRIBUTOS_COND.forEach(function (id) { resultado.dadosAtributos[id] = valor('atr.' + id, 0); });
+    Object.keys(v).forEach(function (chave) {
+      if (chave.indexOf('per.') === 0) resultado.dadosPorPericia[chave.slice(4)] = v[chave];
     });
-    Object.keys(grupos).forEach(function (familia) {
-      const membros = grupos[familia];
-      const junto = piorDaFamilia(membros);
-      aplicados.push(junto.efeitos);
-      membros.forEach(function (membro, indice) {
-        const texto = resumoEfeitos(membro.efeitos);
-        if (!texto) return;
-        resultado.origens.push({
-          condicao: membro.nome,
-          texto: junto.contribui[indice] ? texto : texto + ' (não acumula: vale a pior da família)'
-        });
-      });
-    });
+    resultado.dadosAtaque = valor('dadosAtaque', 0);
+    resultado.dadosAtaqueCorpoACorpo = combinarEfeitos(resultado.dadosAtaque, valor('dadosAtaqueCorpoACorpo', 0));
+    resultado.defesa = valor('defesa', 0);
+    resultado.defesaCorpoACorpo = combinarEfeitos(resultado.defesa, valor('defesaCorpoACorpo', 0));
+    resultado.defesaDistancia = combinarEfeitos(resultado.defesa, valor('defesaDistancia', 0));
+    resultado.deslocamentoMult = valor('deslocamentoMult', 1);
+    resultado.deslocamentoMax = valor('deslocamentoMax', null);
+    resultado.custoPE = valor('custoPE', 0);
+    resultado.resistenciaDano = valor('resistenciaDano', 0);
 
-    aplicados.forEach(function (efeitos) {
-      resultado.dadosPericias += numero(efeitos.dadosPericias);
-      resultado.defesa += numero(efeitos.defesa);
-      if (efeitos.deslocamentoMult !== undefined && efeitos.deslocamentoMult !== null) {
-        resultado.deslocamentoMult *= numero(efeitos.deslocamentoMult);
-      }
-      IDS_ATRIBUTOS_COND.forEach(function (id) {
-        if (efeitos.dadosAtributos) resultado.dadosAtributos[id] += numero(efeitos.dadosAtributos[id]);
+    itens.forEach(function (item, indice) {
+      const texto = resumoEfeitos(item.efeitos);
+      if (!texto) return;
+      resultado.origens.push({
+        condicao: item.nome,
+        texto: junto.contribui[indice] ? texto : texto + ' (não acumula: vale o mais severo)'
       });
     });
     return resultado;
   }
 
   /**
-   * Dados a somar (negativo = tirar) num teste: teste de PERÍCIA = dadosPericias
-   * + dadosAtributos do atributo da perícia; teste PURO de atributo = só dadosAtributos.
+   * Dados a somar (negativo = tirar) num teste. opcoes:
+   * - ehPericia: soma dadosPericias (e dadosPorPericia da perícia idPericia);
+   * - atributo: soma dadosAtributos desse atributo (vale também no teste puro de atributo);
+   * - ataque: "corpo" (Luta) ou "distancia"/true: soma os dados de ataque das condições.
    */
   function modificadorDadosTeste(mod, opcoes) {
     const o = opcoes || {};
     const m = mod || {};
     const doAtributo = m.dadosAtributos && o.atributo ? numero(m.dadosAtributos[o.atributo]) : 0;
-    return Math.trunc((o.ehPericia ? numero(m.dadosPericias) : 0) + doAtributo);
+    const daPericia = o.ehPericia && o.idPericia && m.dadosPorPericia ? numero(m.dadosPorPericia[o.idPericia]) : 0;
+    let doAtaque = 0;
+    if (o.ataque === 'corpo') doAtaque = numero(m.dadosAtaqueCorpoACorpo);
+    else if (o.ataque) doAtaque = numero(m.dadosAtaque);
+    return Math.trunc((o.ehPericia ? numero(m.dadosPericias) : 0) + doAtributo + daPericia + doAtaque);
   }
 
   /** Dados das condições no teste de uma perícia da ficha. */
   function dadosCondicoesPericia(ficha, idPericia) {
-    return modificadorDadosTeste(modificadoresCondicoes(ficha), { atributo: atributoDaPericia(ficha, idPericia), ehPericia: true });
+    return modificadorDadosTeste(modificadoresCondicoes(ficha), {
+      atributo: atributoDaPericia(ficha, idPericia), ehPericia: true, idPericia: idPericia
+    });
+  }
+
+  /** Dados das condições num ataque: os da perícia do ataque (Luta ou Pontaria) mais os dos testes de ataque. */
+  function dadosCondicoesAtaque(ficha, ataque) {
+    const idPericia = ataque && ataque.pericia;
+    return modificadorDadosTeste(modificadoresCondicoes(ficha), {
+      atributo: atributoDaPericia(ficha, idPericia), ehPericia: true, idPericia: idPericia,
+      ataque: idPericia === 'luta' ? 'corpo' : 'distancia'
+    });
+  }
+
+  /** Acréscimo no custo de PE (Alquebrado) — só vale para o que já custa PE. */
+  function custoComCondicoes(ficha, custoBase) {
+    const base = Math.max(0, Math.trunc(numero(custoBase)));
+    return base > 0 ? base + Math.max(0, Math.trunc(modificadoresCondicoes(ficha).custoPE)) : base;
   }
 
   /** Rodadas: reduz 1 de cada condição com contagem, remove as que chegam a 0. Não altera a ficha. */
@@ -2175,7 +2316,8 @@ window.OP = window.OP || {};
         const p = item.personalizada && typeof item.personalizada === 'object' ? item.personalizada : {};
         return {
           id: 'personalizada', nome: String(p.nome || '').trim() || 'Condição personalizada', categoria: '',
-          categoriaNome: 'Personalizada', resumo: resumoEfeitos(efeitosDaPersonalizada(p)), conferir: false, familia: null
+          categoriaNome: 'Personalizada', resumo: resumoEfeitos(efeitosDaPersonalizada(p)), conferir: false,
+          lembretes: [], descricao: ''
         };
       }
       const definicao = definicaoCondicao(item.id);
@@ -2185,8 +2327,9 @@ window.OP = window.OP || {};
       return {
         id: definicao.id, nome: definicao.nome, categoria: definicao.categoria,
         categoriaNome: (OP.data.categoriasCondicao || {})[definicao.categoria] || '',
-        resumo: resumoEfeitos(sozinha), conferir: definicao.conferir === true,
-        familia: definicao.familia || null,
+        resumo: resumoEfeitos(efeitosDeModificadores(sozinha)), conferir: definicao.conferir === true,
+        lembretes: Array.isArray(definicao.lembretes) ? definicao.lembretes.slice() : [],
+        descricao: typeof definicao.descricao === 'string' ? definicao.descricao : '',
         implica: (definicao.implica || []).map(function (id) { const d = definicaoCondicao(id); return d ? d.nome : id; })
       };
     });
@@ -2518,6 +2661,7 @@ window.OP = window.OP || {};
     correcoesEscolhas: correcoesEscolhas,
     custoBaseRitual: custoBaseRitual,
     custoForma: custoForma,
+    custoComCondicoes: custoComCondicoes,
     custoAdicionalSugerido: custoAdicionalSugerido,
     avisosForma: avisosForma,
     composicaoRecurso: composicaoRecurso,
@@ -2589,6 +2733,7 @@ window.OP = window.OP || {};
     modificadoresCondicoes: modificadoresCondicoes,
     modificadorDadosTeste: modificadorDadosTeste,
     dadosCondicoesPericia: dadosCondicoesPericia,
+    dadosCondicoesAtaque: dadosCondicoesAtaque,
     resumoEfeitos: resumoEfeitos,
     estadoCondicoes: estadoCondicoes,
     correcoesCondicoes: correcoesCondicoes,

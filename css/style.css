@@ -10822,3 +10822,24 @@ kbd {
 :root[data-tema="contraste"] .recurso__atual:focus-visible {
   outline-width: 4px;
 }
+
+/* Central e Arquivo: alvos de toque de 44 px */
+@media (max-width: 1023px), (pointer: coarse) {
+  .link-seta,
+  .campo-busca input,
+  .segmentado__opcao,
+  .cartao-agente__link,
+  .cartao-agente__acao,
+  .recente__link {
+    min-height: 44px;
+  }
+
+  .link-seta {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .segmentado__opcao {
+    min-width: 44px;
+  }
+}

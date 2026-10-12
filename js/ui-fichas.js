@@ -132,7 +132,7 @@ window.OP = window.OP || {};
   }
 
   function dadosTema(id) {
-    return (OP.data.temas || []).find(function (tema) { return tema.id === id; }) || OP.data.temas[0];
+    return (OP.data.temasFicha || []).find(function (tema) { return tema.id === id; }) || OP.data.temasFicha[0];
   }
 
   /** Baixa um texto como arquivo (Blob + <a download>; funciona em file://). */
@@ -440,6 +440,15 @@ window.OP = window.OP || {};
 
     // Situação do arquivo neste navegador (dados reais)
     const memoria = OP.storage.modo() === 'memoria';
+    const uso = OP.storage.uso();
+    const avisoUso = uso.fracao > LIMITE_AVISO_USO;
+    if (refs.avisoUso) {
+      refs.avisoUso.hidden = !avisoUso;
+      if (avisoUso) {
+        refs.avisoUso.textContent = 'Aviso: o armazenamento deste navegador está em ' + Math.round(uso.fracao * 100) +
+          '% da cota. Exporte um backup e apague fichas ou retratos que não usa mais.';
+      }
+    }
     const ultima = ordenadas.length && ordenadas[0].atualizadoEm ? tempoRelativo(ordenadas[0].atualizadoEm) : '—';
     const fontes = OP.prefs.fontesAtivas();
     const totalFontes = Object.keys(fontes).length;
@@ -447,9 +456,22 @@ window.OP = window.OP || {};
     substituirFilhos(refs.statusArquivo, [
       linhaStatus('Agentes registrados', String(lista.length)),
       linhaStatus('Armazenamento', memoria ? 'Temporário — some ao fechar' : 'Neste navegador', memoria ? 'alerta' : 'ok'),
+      linhaStatus('Armazenamento usado', textoUso(uso), uso.fracao > LIMITE_AVISO_USO ? 'alerta' : 'ok'),
       linhaStatus('Última atualização', ultima),
       linhaStatus('Fontes ativas', ativas + ' de ' + totalFontes)
     ]);
+  }
+
+  // Aviso quando o armazenamento passa de 80% da cota aproximada
+  const LIMITE_AVISO_USO = 0.8;
+
+  /** "412 KB de ~5 MB" / "1,3 MB de ~5 MB". */
+  function textoUso(uso) {
+    const mb = uso.usado / (1024 * 1024);
+    const usado = mb >= 1
+      ? (Math.round(mb * 10) / 10).toString().replace('.', ',') + ' MB'
+      : Math.max(1, Math.round(uso.usado / 1024)) + ' KB';
+    return usado + ' de ~' + Math.round(uso.limite / (1024 * 1024)) + ' MB';
   }
 
   /* ------------------------------------------------------------------------
@@ -901,6 +923,16 @@ window.OP = window.OP || {};
     }
     // A faixa fica até uma gravação dar certo (mesmo enquanto digita).
     refs.faixaFalha.hidden = !status.falhou;
+    if (status.falhou) {
+      // Armazenamento cheio (QuotaExceededError) tem aviso próprio: manda exportar; os dados seguem em memória
+      const cota = OP.storage.falhaPorCota();
+      const titulo = cota ? 'Armazenamento cheio: não foi possível salvar.' : 'Não foi possível salvar neste navegador.';
+      const detalhe = cota
+        ? 'Exporte a ficha agora para não perder nada: ela continua aberta e em memória, mas as mudanças se perdem ao fechar a página. Apague fichas ou retratos para liberar espaço.'
+        : 'A ficha continua funcionando, mas as mudanças se perdem ao fechar a página.';
+      if (refs.faixaFalhaTitulo.textContent !== titulo) refs.faixaFalhaTitulo.textContent = titulo;
+      if (refs.faixaFalhaDetalhe.textContent !== detalhe) refs.faixaFalhaDetalhe.textContent = detalhe;
+    }
   }
 
   /* ------------------------------------------------------------------------
@@ -979,6 +1011,9 @@ window.OP = window.OP || {};
     refs.nome = document.getElementById('nome-ficha-atual');
     refs.status = document.getElementById('status-salvamento');
     refs.faixaFalha = document.getElementById('faixa-falha-salvamento');
+    refs.faixaFalhaTitulo = document.getElementById('faixa-falha-titulo');
+    refs.faixaFalhaDetalhe = document.getElementById('faixa-falha-detalhe');
+    refs.avisoUso = document.getElementById('central-uso-aviso');
     refs.faixaOutraAba = document.getElementById('faixa-outra-aba');
     refs.navContagem = document.getElementById('nav-contagem');
 

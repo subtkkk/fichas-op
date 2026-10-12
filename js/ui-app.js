@@ -27,7 +27,14 @@ window.OP = window.OP || {};
   const refs = {};
   const ouvintes = [];
 
+  /**
+   * Menos movimento? A escolha do usuário em "Aparência" (data-movimento: "nao" reduz,
+   * "sim" mantém) vale mais que o pedido do sistema (prefers-reduced-motion).
+   */
   function reduzMovimento() {
+    const escolha = document.documentElement.getAttribute('data-movimento');
+    if (escolha === 'nao') return true;
+    if (escolha === 'sim') return false;
     return Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   }
 
@@ -134,7 +141,7 @@ window.OP = window.OP || {};
     if (vista === 'ficha') {
       const ficha = OP.state.ficha;
       const nome = ficha && ficha.identificacao ? String(ficha.identificacao.nome || '').trim() : '';
-      document.title = nome ? nome + ' · Ficha de Agente' : 'Ficha de Agente · Ordem Paranormal';
+      document.title = (nome || 'Sem nome') + ' — Ficha Ordem Paranormal';
     } else {
       document.title = TITULOS[vista] || TITULOS.central;
     }
@@ -163,7 +170,8 @@ window.OP = window.OP || {};
     atualizarTitulo(vista);
     if (anterior !== vista || refs.focoPendente) {
       window.scrollTo(0, 0);
-      focarTela(vista);
+      // Na abertura da página o foco não é tirado do começo do documento: o primeiro Tab vai para "Ir para o conteúdo"
+      if (refs.prontos || refs.focoPendente) focarTela(vista);
     }
     ouvintes.forEach(function (funcao) { funcao(vista, anterior); });
   }
@@ -240,7 +248,7 @@ window.OP = window.OP || {};
     const t = DURACAO_AVISO[tipo] ? tipo : 'ok';
     const item = document.createElement('div');
     item.className = 'aviso-app aviso-app--' + t;
-    item.setAttribute('role', t === 'erro' ? 'alert' : 'status');
+    item.setAttribute('role', 'status'); // role="alert" fica só para Morrendo, Enlouquecendo e erro de armazenamento
 
     const marca = document.createElement('span');
     marca.className = 'aviso-app__marca';
@@ -249,7 +257,8 @@ window.OP = window.OP || {};
 
     const corpo = document.createElement('p');
     corpo.className = 'aviso-app__texto';
-    corpo.textContent = String(texto);
+    // Avisos começam com "Aviso:" (nada só por cor)
+    corpo.textContent = t === 'aviso' && !/^aviso:/i.test(String(texto)) ? 'Aviso: ' + String(texto) : String(texto);
     item.appendChild(corpo);
 
     if (o.acao && typeof o.acao.fazer === 'function') {
@@ -294,12 +303,27 @@ window.OP = window.OP || {};
     return item;
   }
 
+  /**
+   * Anuncia um texto para leitores de tela na região aria-live única e
+   * invisível (#anunciador): rolagens, descanso, rodadas, condições, Desfazer.
+   * O texto some e volta para o mesmo aviso ser lido de novo se repetir.
+   */
+  function anunciar(texto) {
+    const regiao = refs.anunciador || document.getElementById('anunciador');
+    if (!regiao || !texto) return;
+    refs.anunciador = regiao;
+    regiao.textContent = '';
+    clearTimeout(refs.timerAnuncio);
+    refs.timerAnuncio = setTimeout(function () { regiao.textContent = String(texto); }, 60);
+  }
+
   /* ------------------------------------------------------------------------
      Montagem
      ------------------------------------------------------------------------ */
 
   function montar() {
     refs.avisos = document.getElementById('avisos-app');
+    refs.anunciador = document.getElementById('anunciador');
     refs.itensNav = Array.prototype.slice.call(document.querySelectorAll('.nav-global__item[data-rota]'));
     refs.navFicha = document.getElementById('nav-ficha');
 
@@ -338,6 +362,8 @@ window.OP = window.OP || {};
     vistaAtual: vistaAtual,
     aoTrocarVista: aoTrocarVista,
     atualizarNav: atualizarNav,
-    aviso: aviso
+    aviso: aviso,
+    anunciar: anunciar,
+    reduzMovimento: reduzMovimento
   };
 })(window.OP);

@@ -113,7 +113,7 @@ window.OP = window.OP || {};
   function mostrarMensagem(tipo, texto) {
     refs.mensagem.hidden = !texto;
     refs.mensagem.dataset.tipo = tipo;
-    refs.mensagem.textContent = texto;
+    refs.mensagem.textContent = tipo === 'aviso' && texto && !/^aviso:/i.test(texto) ? 'Aviso: ' + texto : texto;
   }
 
   /* ------------------------------------------------------------------------

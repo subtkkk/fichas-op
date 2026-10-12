@@ -80,6 +80,7 @@ window.OP = window.OP || {};
     if (o.bonusExtra) partes.push({ rotulo: 'extra', valor: o.bonusExtra });
     const resultado = montarTeste(nome, teste.dados, partes, o);
     resultado.subtipo = 'pericia';
+    resultado.condicoesDados = OP.calc.dadosCondicoesPericia(ficha, idPericia); // −1 = "condições: −1d20"
     return resultado;
   }
 
@@ -109,6 +110,7 @@ window.OP = window.OP || {};
 
     const resultado = montarTeste(titulo, teste.dados, partes, o);
     resultado.subtipo = 'ataque';
+    resultado.condicoesDados = OP.calc.dadosCondicoesPericia(ficha, ataque.pericia);
     resultado.idAtaque = ataque.id;
     resultado.critMargem = inteiro(ataque.critMargem);
     resultado.critico = OP.calc.ehCritico(resultado.escolhido, ataque.critMargem);

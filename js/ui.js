@@ -658,7 +658,8 @@ window.OP = window.OP || {};
             htmlOpcoesCategoria() + '</select>' +
         '</div>' +
         '<div class="item__espacos" data-rotulo="Espaços">' +
-          '<input type="number" min="0" step="any" class="controle controle--numero" aria-label="Espaços por unidade"' +
+          '<input type="text" inputmode="decimal" min="0" autocomplete="off" spellcheck="false" enterkeyhint="done"' +
+            ' class="controle controle--numero" aria-label="Espaços por unidade"' +
             ' data-campo="' + caminho + '.espacos" data-tipo="decimal">' +
         '</div>' +
         '<div class="item__quantidade" data-rotulo="Qtd.">' +
@@ -886,6 +887,16 @@ window.OP = window.OP || {};
      Leitura e escrita de campos
      ------------------------------------------------------------------------ */
 
+  /** min e max (atributos HTML) de um campo, no formato do OP.calc.lerNumero. */
+  function limitesDoCampo(campo) {
+    const limites = {};
+    const minimo = campo.getAttribute('min');
+    const maximo = campo.getAttribute('max');
+    if (minimo !== null && minimo !== '' && Number.isFinite(Number(minimo))) limites.min = Number(minimo);
+    if (maximo !== null && maximo !== '' && Number.isFinite(Number(maximo))) limites.max = Number(maximo);
+    return limites;
+  }
+
   /**
    * Converte o conteúdo de um campo para o valor do estado.
    * Devolve undefined quando a entrada está incompleta (ex.: vazio ou só "-").
@@ -893,22 +904,20 @@ window.OP = window.OP || {};
   function lerCampo(campo) {
     if (campo.dataset.tipo === 'booleano') return campo.checked;
     if (campo.dataset.tipo === 'decimal') {
-      if (campo.value.trim() === '') return undefined;
-      const decimal = Number(campo.value.replace(',', '.'));
-      if (!Number.isFinite(decimal)) return undefined;
+      // aceita "1,5", "1.5" e o menos tipográfico (OP.calc.lerNumero); campo incompleto → undefined
+      const decimal = OP.calc.lerNumero(campo.value, limitesDoCampo(campo));
+      if (decimal === undefined) return undefined;
       // duas casas bastam (ex.: 1,5 m) e evitam sobras como 0,30000000000000004
-      return limitar(Math.round(decimal * 100) / 100, campo.getAttribute('min'), campo.getAttribute('max'));
+      return Math.round(decimal * 100) / 100;
     }
     if (campo.dataset.tipo === 'inteiro' || campo.dataset.tipo === 'inteiroOpcional') {
       // inteiroOpcional: campo vazio grava null ("automático", ex.: custo base do ritual)
       if (campo.value.trim() === '') return campo.dataset.tipo === 'inteiroOpcional' ? null : undefined;
-      const valor = Math.trunc(Number(campo.value));
-      if (!Number.isFinite(valor)) return undefined;
-      return limitar(valor, campo.getAttribute('min'), campo.getAttribute('max'));
+      return OP.calc.lerNumero(campo.value, Object.assign({ inteiro: true }, limitesDoCampo(campo)));
     }
     // opcao: botão de rádio que grava o número do value quando marcado
     if (campo.dataset.tipo === 'opcao') {
-      return campo.checked ? Math.trunc(Number(campo.value)) : undefined;
+      return campo.checked ? OP.calc.lerNumero(campo.value, { inteiro: true }) : undefined;
     }
     // Escolher o valor padrão grava null ("usar o padrão").
     if (campo.dataset.padrao !== undefined && campo.value === campo.dataset.padrao) return null;
@@ -1087,7 +1096,7 @@ window.OP = window.OP || {};
     if (!elementos) return;
     if (elementos.linha.hidden) limparFiltros();
 
-    const semAnimacao = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const semAnimacao = OP.uiApp ? OP.uiApp.reduzMovimento() : (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     elementos.linha.scrollIntoView({ behavior: semAnimacao ? 'auto' : 'smooth', block: 'center' });
     destacarLinha(elementos.linha);
 
@@ -1109,41 +1118,56 @@ window.OP = window.OP || {};
   }
 
   // Como cada lista se chama no aviso de remoção
+  // chave: campo que identifica o elemento (padrão "id"); campoNome: campo que o nomeia (padrão "nome")
   const REMOCOES = {
     'ataques': { removido: 'Ataque removido', semNome: 'ataque sem nome' },
     'inventario.itens': { removido: 'Item removido', semNome: 'item sem nome' },
     'habilidades': { removido: 'Habilidade removida', semNome: 'habilidade sem nome' },
-    'rituais': { removido: 'Ritual removido', semNome: 'ritual sem nome' }
+    'rituais': { removido: 'Ritual removido', semNome: 'ritual sem nome' },
+    'condicoes.ativas': { removido: 'Condição removida', semNome: 'condição', chave: 'uid' },
+    'biografia.aliados': { removido: 'Aliado removido', semNome: 'aliado sem nome' },
+    'biografia.rivais': { removido: 'Rival removido', semNome: 'rival sem nome' },
+    'biografia.diario': { removido: 'Entrada do diário removida', semNome: 'entrada sem título', campoNome: 'titulo' }
   };
+
+  // Só a ÚLTIMA remoção pode ser desfeita (guardada em memória, não vai para a ficha).
+  let ultimaRemocao = null;
 
   /**
    * Tira um elemento de uma lista da ficha e mostra um aviso com "Desfazer"
-   * (o texto digitado pelo jogador não se perde num toque errado). Desfazer
-   * devolve o elemento à mesma posição, se a mesma ficha ainda estiver aberta.
+   * por 10 s (o texto digitado pelo jogador não se perde num toque errado).
+   * Desfazer devolve o elemento à mesma posição, se a mesma ficha ainda
+   * estiver aberta e se nenhuma remoção mais nova aconteceu.
+   * nomeAviso (opcional): nome a mostrar no aviso, quando o elemento não tem "nome".
    */
-  function removerComDesfazer(caminho, id) {
+  function removerComDesfazer(caminho, id, nomeAviso) {
     const lista = OP.state.obter(caminho);
     if (!Array.isArray(lista)) return;
-    const posicao = lista.findIndex(function (elemento) { return elemento.id === id; });
+    const textos = REMOCOES[caminho] || { removido: 'Removido', semNome: 'sem nome' };
+    const chave = textos.chave || 'id';
+    const posicao = lista.findIndex(function (elemento) { return elemento[chave] === id; });
     if (posicao === -1) return;
     const removido = lista[posicao];
     const idFicha = OP.fichas.idAtual();
-    OP.state.atualizar(caminho, lista.filter(function (elemento) { return elemento.id !== id; }));
+    const marca = {};
+    ultimaRemocao = marca;
+    OP.state.atualizar(caminho, lista.filter(function (elemento) { return elemento[chave] !== id; }));
 
-    const textos = REMOCOES[caminho] || { removido: 'Removido', semNome: 'sem nome' };
-    const nome = String(removido.nome || '').trim() || textos.semNome;
+    const nome = String(nomeAviso || removido[textos.campoNome || 'nome'] || '').trim() || textos.semNome;
     if (!OP.uiApp || typeof OP.uiApp.aviso !== 'function') return;
     OP.uiApp.aviso('ok', textos.removido + ': ' + nome + '.', {
-      duracao: 9000,
+      duracao: 10000,
       acao: {
         rotulo: 'Desfazer',
         fazer: function () {
-          if (OP.fichas.idAtual() !== idFicha) return;
+          if (ultimaRemocao !== marca || OP.fichas.idAtual() !== idFicha) return;
+          ultimaRemocao = null;
           const atual = OP.state.obter(caminho);
-          if (!Array.isArray(atual) || atual.some(function (elemento) { return elemento.id === id; })) return;
+          if (!Array.isArray(atual) || atual.some(function (elemento) { return elemento[chave] === id; })) return;
           const nova = atual.slice();
           nova.splice(Math.min(posicao, nova.length), 0, removido);
           OP.state.atualizar(caminho, nova);
+          OP.uiApp.anunciar('Desfeito: ' + nome + ' voltou.');
         }
       }
     });
@@ -1396,6 +1420,7 @@ window.OP = window.OP || {};
     if (formato === 'sinal') return formatarComSinal(valor);
     if (formato === 'dados') return OP.calc.formatarDados(valor);
     if (formato === 'metros') return formatarNumero(valor) + ' m';
+    if (formato === 'deslocamento') return formatarNumero(valor.metros) + ' m (' + valor.quadrados + ' q)';
     if (formato === 'numero') return formatarNumero(valor);
     if (formato === 'limite') return OP.calc.numero(valor) === 0 ? '—' : String(valor); // "—" = não permitida
     if (formato === 'teste') return OP.calc.formatarDados(valor.dados) + ' ' + formatarComSinal(valor.bonus);
@@ -1621,7 +1646,8 @@ window.OP = window.OP || {};
       parteComSinal('proteções', defesa.protecoesInventario) +
       parteComSinal('manual', defesa.protecao) +
       parteComSinal('outros', defesa.outros) +
-      (defesa.sobrecarga ? ' − sobrecarga ' + defesa.sobrecarga : ''));
+      (defesa.sobrecarga ? ' − sobrecarga ' + defesa.sobrecarga : '') +
+      (defesa.condicoes ? parteComSinal('condições', defesa.condicoes) : ''));
 
     const nomes = derivados.inventario.nomesProtecoes.map(function (nome) { return nome || 'sem nome'; });
     definirTexto(refs.nomesProtecoes, nomes.length ? '(' + nomes.join(', ') + ')' : '');
@@ -1629,7 +1655,8 @@ window.OP = window.OP || {};
     const desloc = derivados.deslocamento;
     definirTexto(refs.composicaoDeslocamento, formatarNumero(desloc.base) + ' m base' +
       (desloc.bonus < 0 ? ' − ' : ' + ') + formatarNumero(Math.abs(desloc.bonus)) + ' m de bônus' +
-      (desloc.sobrecarga ? ' − ' + formatarNumero(desloc.sobrecarga) + ' m de sobrecarga' : ''));
+      (desloc.sobrecarga ? ' − ' + formatarNumero(desloc.sobrecarga) + ' m de sobrecarga' : '') +
+      (desloc.multiplicador !== 1 ? ' × ' + formatarNumero(desloc.multiplicador) + ' (condições)' : ''));
     definirTexto(refs.textoQuadrados, '(' + desloc.quadrados + ' ' + plural(desloc.quadrados, 'quadrado', 'quadrados') + ')');
 
     desenharReacoes(defesa);
@@ -1686,7 +1713,7 @@ window.OP = window.OP || {};
   }
 
   function textoSobrecarga(sobrecarga) {
-    return 'Sobrecarregado: −' + sobrecarga.defesa + ' Defesa, −' + formatarNumero(sobrecarga.deslocamento) +
+    return 'Aviso: sobrecarregado, −' + sobrecarga.defesa + ' Defesa, −' + formatarNumero(sobrecarga.deslocamento) +
       ' m de deslocamento, −' + sobrecarga.pericias + ' em perícias com carga';
   }
 
@@ -1914,9 +1941,9 @@ window.OP = window.OP || {};
   function opcoesRolagem() {
     const defesa = refs.rolagemDefesa.value.trim();
     return {
-      modDados: Math.trunc(Number(refs.rolagemMod.value)) || 0,
-      bonusExtra: Math.trunc(Number(refs.rolagemBonus.value)) || 0,
-      defesaAlvo: defesa === '' || !Number.isFinite(Number(defesa)) ? null : Number(defesa)
+      modDados: OP.calc.lerNumero(refs.rolagemMod.value, { inteiro: true, padrao: 0 }),
+      bonusExtra: OP.calc.lerNumero(refs.rolagemBonus.value, { inteiro: true, padrao: 0 }),
+      defesaAlvo: defesa === '' ? null : OP.calc.lerNumero(defesa, { padrao: null })
     };
   }
 
@@ -1983,8 +2010,11 @@ window.OP = window.OP || {};
   }
 
   function criarResultadoTeste(resultado) {
+    const detalhesDados = [];
+    if (resultado.modDados) detalhesDados.push('modificador ' + formatarComSinal(resultado.modDados));
+    if (resultado.condicoesDados) detalhesDados.push('condições: ' + formatarComSinal(resultado.condicoesDados) + 'd20');
     const regra = resultado.qtd + 'd20, fica o ' + resultado.modo +
-      (resultado.modDados ? ' (modificador ' + formatarComSinal(resultado.modDados) + ')' : '');
+      (detalhesDados.length ? ' (' + detalhesDados.join('; ') + ')' : '');
     const conta = resultado.escolhido + resultado.partesBonus.map(function (parte) {
       return parteComSinal(parte.rotulo, parte.valor);
     }).join('');
@@ -2076,15 +2106,46 @@ window.OP = window.OP || {};
       : [criarElemento('li', 'historico__vazio', 'Nenhuma rolagem ainda.')]);
   }
 
-  /** Mostra um resultado no painel (abre o painel) e guarda no histórico. */
+  /** Frase para o leitor de tela: "Atletismo: 3d20 [4, 17, 9], fica o 17. Total 21". */
+  function anunciarResultado(resultado) {
+    if (!OP.uiApp || typeof OP.uiApp.anunciar !== 'function') return;
+    let frase = resultado.titulo + ': ' + resumoHistorico(resultado) + '. Total ' + resultado.total;
+    if (resultado.critico) frase += ', crítico';
+    const alvo = resultado.tipo === 'teste' ? textoAlvo(resultado) : '';
+    if (alvo) frase += '. ' + alvo;
+    OP.uiApp.anunciar(frase);
+  }
+
+  /** Tela estreita: o painel de Rolagens é uma gaveta que cobre a ficha (abaixo de 900 px). */
+  function emGaveta() {
+    return Boolean(window.matchMedia && window.matchMedia('(max-width: 899px)').matches);
+  }
+
+  /**
+   * Mostra um resultado no painel e guarda no histórico. Com a gaveta fechada
+   * numa tela estreita, a rolagem não cobre a ficha: o resultado aparece num aviso
+   * curto (aria-live) com o atalho "Detalhes" para abrir a gaveta.
+   */
   function mostrarResultado(resultado) {
-    abrirPainel(true);
+    const soAviso = emGaveta() && refs.painel.dataset.aberto !== 'true';
+    if (!soAviso) abrirPainel(true);
     if (!resultado.ok) {
       substituirFilhos(refs.resultado, [criarResultadoErro(resultado)]);
+      if (soAviso && OP.uiApp) OP.uiApp.aviso('aviso', 'Aviso: ' + (resultado.erro || 'não foi possível rolar.'));
       return;
     }
     substituirFilhos(refs.resultado, [resultado.tipo === 'teste' ? criarResultadoTeste(resultado) : criarResultadoFormula(resultado)]);
     definirTexto(refs.ultimo, 'último: ' + resultado.total + (resultado.critico ? ' (crítico)' : ''));
+    if (soAviso && OP.uiApp) {
+      const alvo = resultado.tipo === 'teste' ? textoAlvo(resultado) : '';
+      OP.uiApp.aviso('ok', resultado.titulo + ': ' + resumoHistorico(resultado) + ' · total ' + resultado.total +
+        (resultado.critico ? ' (crítico)' : '') + (alvo ? ' · ' + alvo : ''), {
+        duracao: 6000,
+        acao: { rotulo: 'Detalhes', fazer: function () { abrirPainel(true); } }
+      });
+    } else {
+      anunciarResultado(resultado);
+    }
 
     historico.unshift({
       titulo: resultado.titulo,
@@ -2174,11 +2235,17 @@ window.OP = window.OP || {};
   }
 
   /** Mensagem curta na tela (após usar/conjurar): tipo "ok", "aviso" ou "erro". */
+  /** Avisos começam com "Aviso:" (nada só por cor). */
+  function comPrefixoAviso(texto) {
+    const t = String(texto || '');
+    return /^aviso:/i.test(t) ? t : 'Aviso: ' + t;
+  }
+
   function mostrarMensagem(elemento, mensagem) {
     if (!elemento) return;
     elemento.hidden = false;
     elemento.dataset.tipo = mensagem.tipo;
-    elemento.textContent = mensagem.texto;
+    elemento.textContent = mensagem.tipo === 'aviso' ? comPrefixoAviso(mensagem.texto) : mensagem.texto;
   }
 
   /** Texto da mensagem de um gasto (OP.state.aplicarCustos): PE e, nos rituais de Medo, Sanidade. */
@@ -2271,7 +2338,7 @@ window.OP = window.OP || {};
     const c = 'habilidades.' + indice;
     const idDetalhes = 'hab-detalhes-' + indice;
     return '' +
-      '<article class="habilidade" role="listitem" data-habilidade>' +
+      '<div class="habilidade" role="listitem" data-habilidade>' +
         '<div class="habilidade__resumo">' +
           '<button type="button" class="habilidade__alternar" data-alternar-habilidade aria-expanded="false" aria-controls="' + idDetalhes + '">' +
             '<span class="habilidade__seta" aria-hidden="true"></span>' +
@@ -2316,7 +2383,7 @@ window.OP = window.OP || {};
             '<button type="button" class="botao-texto" data-remover-habilidade>Remover habilidade</button>' +
           '</div>' +
         '</div>' +
-      '</article>';
+      '</div>';
   }
 
   function montarHabilidades() {
@@ -2536,7 +2603,7 @@ window.OP = window.OP || {};
   function htmlRitual(indice) {
     const c = 'rituais.' + indice;
     return '' +
-      '<article class="ritual" role="listitem" data-ritual>' +
+      '<div class="ritual" role="listitem" data-ritual>' +
         '<div class="ritual__cabecalho">' +
           htmlCampoAtaque('nome', 'Nome',
             '<input type="text" class="controle ritual__nome" placeholder="Nome do ritual" autocomplete="off" data-campo="' + c + '.nome" data-tipo="texto">') +
@@ -2583,7 +2650,7 @@ window.OP = window.OP || {};
         '<div class="ritual__formas">' +
           OP.data.formasRitual.map(function (definicao) { return htmlForma(indice, definicao); }).join('') +
         '</div>' +
-      '</article>';
+      '</div>';
   }
 
   function htmlGrupoRitual(circulo) {
@@ -2765,7 +2832,7 @@ window.OP = window.OP || {};
       el.cartao.classList.toggle('ritual--alem', estado.alemDoCirculo);
       if (el.aviso.hidden === estado.alemDoCirculo) el.aviso.hidden = !estado.alemDoCirculo;
       definirTexto(el.aviso, estado.alemDoCirculo
-        ? 'O ' + ordinal(ritual.circulo) + ' círculo ainda não está liberado pelo NEX (liberado: ' +
+        ? 'Aviso: o ' + ordinal(ritual.circulo) + ' círculo ainda não está liberado pelo NEX (liberado: ' +
           (conj.circulosLiberados ? 'até o ' + ordinal(conj.circulosLiberados) : 'nenhum') + '). Dá para cadastrar e conjurar mesmo assim.'
         : '');
 
@@ -2796,7 +2863,7 @@ window.OP = window.OP || {};
         const ativa = info.ativa ? 'sim' : 'nao';
         if (forma.bloco.dataset.ativa !== ativa) forma.bloco.dataset.ativa = ativa;
         // Avisos da forma (círculo exigido / afinidade): não bloqueiam
-        desenharListaTextos(forma.avisos, info.avisos.map(function (aviso) { return aviso.texto; }));
+        desenharListaTextos(forma.avisos, info.avisos.map(function (aviso) { return comPrefixoAviso(aviso.texto); }));
         if (forma.avisos.hidden === (info.avisos.length > 0)) forma.avisos.hidden = info.avisos.length === 0;
         const invalido = info.temDano && !info.danoValido;
         forma.dano.classList.toggle('controle--invalido', invalido);
@@ -3164,7 +3231,23 @@ window.OP = window.OP || {};
    * Guarda as listas de elementos ligados ao estado (campos, saídas, barras...).
    * Roda depois de gerar HTML: na montagem e quando a lista de itens muda.
    */
+  /**
+   * Teclado do celular nos campos numéricos: sem autocompletar nem corretor,
+   * tecla "ok" no lugar de "enter" e teclado numérico quando o campo não aceita
+   * negativos (um campo que aceita "−" mantém o teclado padrão do type=number).
+   */
+  function ajustarCampoNumerico(campo) {
+    if (campo.dataset.teclado) return;
+    campo.dataset.teclado = 'sim';
+    if (!campo.hasAttribute('autocomplete')) campo.setAttribute('autocomplete', 'off');
+    campo.setAttribute('spellcheck', 'false');
+    if (!campo.hasAttribute('enterkeyhint')) campo.setAttribute('enterkeyhint', 'done');
+    const minimo = campo.getAttribute('min');
+    if (!campo.hasAttribute('inputmode') && minimo !== null && minimo !== '' && Number(minimo) >= 0) campo.setAttribute('inputmode', 'numeric');
+  }
+
   function coletarLigacoes() {
+    selecionarTodos('input[type="number"], input[data-tipo="decimal"], input[data-tipo="inteiro"]').forEach(ajustarCampoNumerico);
     refs.campos = selecionarTodos('[data-campo]', refs.raiz);
     refs.saidas = selecionarTodos('[data-saida]', refs.raiz);
     refs.cartoes = selecionarTodos('[data-atributo]', refs.raiz);
@@ -3229,6 +3312,9 @@ window.OP = window.OP || {};
     registrarExtensao: registrarExtensao,
     coletarLigacoes: coletarLigacoes,
     somarAoCampo: somarAoCampo,
+    removerDeLista: removerComDesfazer,
+    abrirRolagens: function (aberto) { abrirPainel(aberto !== false); },
+    formatarNumero: formatarNumero,
     criarElemento: criarElemento,
     substituirFilhos: substituirFilhos,
     desenharListaTextos: desenharListaTextos

@@ -236,6 +236,10 @@ Os acentos dos temas elementais, aplicados só dentro de `[data-tema]` (ficha, p
 
 **A Regra do Tema Só Visual.** Um tema troca tokens de cor, luz e textura dentro de `[data-tema]` e nada mais. Barra global, Central e Arquivo nunca mudam com ele.
 
+### Temas do site (Etapa 10)
+
+Os tokens acima descrevem o tema **Escuro**, que continua sendo o padrão de identidade. O site também tem **Claro**, **Alto contraste** e **Automático** (segue o sistema), escolhidos em "Aparência" e guardados no navegador. Tudo isso vive em variáveis `--cor-*` em `#rrggbb`, no começo do `css/style.css`: o CSS dos componentes não tem cor fixa, só `var(--…)` e `color-mix()` sobre elas. Os tokens desta página (tintas, papel, acento) são derivados dessas variáveis. Os temas elementais por ficha (`data-elemento`) mudam só o acento e a luz, e também têm uma versão por tema do site. O alto contraste usa fundos sólidos, bordas de 2 px e foco de 4 px. Nenhuma informação depende só de cor: estados têm texto e ícone, e avisos começam com "Aviso:".
+
 ## Typography
 
 **Display Font:** Cormorant Garamond (com Georgia e serifas do sistema)

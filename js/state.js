@@ -28,7 +28,10 @@ window.OP = window.OP || {};
   //     versatilidade e escolhas de perícias; conjuracao.afinidade →
   //     elementoConectado + afinidadeDesenvolvida; ritual com custoBase e
   //     formas com custoAdicional, requerCirculo e requerAfinidade
-  const VERSAO_MODELO = 9;
+  // v10: condicoes (ativas, turnos morrendo, bônus do limite, insano, aplicar efeitos),
+  //     descanso e biografia (retrato, textos, aliados, rivais e diário);
+  //     "descricao" virou "biografia" (anotacoes → notas)
+  const VERSAO_MODELO = 10;
   // Segmentos de caminho e chaves recusados, para nunca mexer em protótipos.
   const CHAVES_PROIBIDAS = ['__proto__', 'prototype', 'constructor'];
   // Ids de fichas e de itens de lista: letras, números, "_" e "-" (até 64).
@@ -40,6 +43,27 @@ window.OP = window.OP || {};
   const LIMITE_TEXTO = 5000;
   const LIMITE_LISTA = 500;
   const LIMITE_ARQUIVO = 2 * 1024 * 1024;
+
+  // Etapa 10: limites próprios de algumas listas e textos (o resto usa LIMITE_LISTA e LIMITE_TEXTO).
+  const MAX_CONDICOES = 50;
+  const MAX_DIARIO = 200;
+  const MAX_PESSOAS = 100; // aliados e rivais
+  const LIMITES_LISTA = {
+    'condicoes.ativas': MAX_CONDICOES,
+    'biografia.diario': MAX_DIARIO,
+    'biografia.aliados': MAX_PESSOAS,
+    'biografia.rivais': MAX_PESSOAS
+  };
+  const LIMITES_TEXTO = {
+    'biografia.notas': 20000,
+    'biografia.diario[].texto': 20000,
+    'biografia.diario[].titulo': 200,
+    'biografia.diario[].data': 10,
+    'biografia.aliados[].nome': 200,
+    'biografia.rivais[].nome': 200,
+    'condicoes.ativas[].nota': 500,
+    'condicoes.ativas[].personalizada.nome': 80
+  };
 
   const ouvintes = [];
   let contadorIds = 0; // junto com a hora, garante ids únicos (itens, ataques...)
@@ -351,7 +375,35 @@ window.OP = window.OP || {};
     };
   }
 
-  /** A ficha completa, com todas as seções das Etapas 1 a 9. */
+  /**
+   * Condição ativa. id do catálogo (OP.data.condicoes) ou "personalizada",
+   * que usa o bloco `personalizada` (dadosPericias e defesa negativos tiram
+   * dados/Defesa; deslocamentoMult 1 = normal, 0.5 = metade, 0 = não se move).
+   * rodadas: null (sem contagem) ou 1 a 99.
+   * uid: chave única desta entrada na ficha (a personalizada pode repetir o id).
+   */
+  function condicaoAtivaPadrao() {
+    return {
+      uid: '',
+      id: '',
+      rodadas: null,
+      ateFimCena: false,
+      nota: '',
+      personalizada: { nome: '', dadosPericias: 0, defesa: 0, deslocamentoMult: 1 }
+    };
+  }
+
+  /** Aliado ou rival da biografia. */
+  function pessoaPadrao() {
+    return { id: '', nome: '', nota: '' };
+  }
+
+  /** Entrada do diário: data "AAAA-MM-DD" (texto livre se vier de fora). */
+  function entradaDiarioPadrao() {
+    return { id: '', data: '', titulo: '', texto: '' };
+  }
+
+  /** A ficha completa, com todas as seções das Etapas 1 a 10. */
   function modeloVazio() {
     return {
       id: '',                     // id da ficha no navegador (preenchido por js/fichas.js)
@@ -403,12 +455,31 @@ window.OP = window.OP || {};
       rituais: [],                // lista de rituais (ver ritualPadrao)
       conjuracao: novaConjuracao(),
 
-      descricao: {
+      // Etapa 10: condições e estados. turnosMorrendo conta os turnos já iniciados
+      // com PV 0; bonusLimiteMorrendo soma ao limite do config (características).
+      condicoes: {
+        ativas: [],
+        turnosMorrendo: 0,
+        bonusLimiteMorrendo: 0,
+        insano: false,
+        aplicarEfeitos: true
+      },
+
+      // Etapa 10: condição de descanso escolhida (config.descanso.condicoes)
+      descanso: { condicao: 'normal' },
+
+      // Etapa 10: biografia (antiga "descricao"). retrato: data URL validada.
+      biografia: {
+        retrato: '',
         aparencia: '',
         personalidade: '',
         historico: '',
         objetivo: '',
-        anotacoes: ''
+        medos: '',
+        aliados: [],
+        rivais: [],
+        notas: '',
+        diario: []
       }
     };
   }
@@ -418,7 +489,11 @@ window.OP = window.OP || {};
     'inventario.itens': itemPadrao,
     ataques: ataquePadrao,
     habilidades: habilidadePadrao,
-    rituais: ritualPadrao
+    rituais: ritualPadrao,
+    'condicoes.ativas': condicaoAtivaPadrao,
+    'biografia.aliados': pessoaPadrao,
+    'biografia.rivais': pessoaPadrao,
+    'biografia.diario': entradaDiarioPadrao
   };
 
   /* ------------------------------------------------------------------------
@@ -448,6 +523,21 @@ window.OP = window.OP || {};
 
   function novaHabilidade(dados) {
     return criarComMolde(habilidadePadrao, 'hab', dados);
+  }
+
+  /** Condição ativa nova (id do catálogo ou "personalizada"); o uid é sempre novo. */
+  function novaCondicao(dados) {
+    const condicao = mesclarComPadrao(condicaoAtivaPadrao(), dados);
+    condicao.uid = novoId('cond');
+    return condicao;
+  }
+
+  function novaPessoa(dados) {
+    return criarComMolde(pessoaPadrao, 'pes', dados);
+  }
+
+  function novaEntradaDiario(dados) {
+    return criarComMolde(entradaDiarioPadrao, 'dia', dados);
   }
 
   function novoRitual(dados) {
@@ -642,6 +732,26 @@ window.OP = window.OP || {};
     delete conjuracao.afinidade;
   }
 
+  /**
+   * Etapa 9 → 10: move o conteúdo de `descricao` para `biografia`
+   * (aparencia, personalidade, historico, objetivo e anotacoes → notas).
+   * ALTERA o objeto recebido.
+   */
+  function migrarDescricao(salvo) {
+    const antiga = salvo.descricao;
+    if (!ehObjetoSimples(antiga)) return;
+    if (!ehObjetoSimples(salvo.biografia)) salvo.biografia = {};
+    const bio = salvo.biografia;
+    [['aparencia', 'aparencia'], ['personalidade', 'personalidade'], ['historico', 'historico'],
+      ['objetivo', 'objetivo'], ['anotacoes', 'notas']].forEach(function (par) {
+      const velho = typeof antiga[par[0]] === 'string' ? antiga[par[0]] : '';
+      if (velho.trim() === '') return;
+      const novo = typeof bio[par[1]] === 'string' ? bio[par[1]] : '';
+      if (novo.trim() === '') bio[par[1]] = velho;
+      else if (novo !== velho) bio[par[1]] = novo + '\n\n' + velho;
+    });
+  }
+
   /** Versão do modelo em que os dados foram salvos (1 se não informada). */
   function versaoDosDados(salvo) {
     if (typeof salvo.versaoModelo === 'number' && Number.isFinite(salvo.versaoModelo)) return salvo.versaoModelo;
@@ -680,10 +790,81 @@ window.OP = window.OP || {};
     if (ehObjetoSimples(salvo.identificacao)) migrarIdentificacao(salvo.identificacao);
     if (ehObjetoSimples(salvo.conjuracao)) migrarConjuracao(salvo.conjuracao);
 
+    // v9 → v10: "descricao" virou "biografia" (anotacoes → notas). Nada se perde:
+    // se os dois lados têm texto, o texto antigo vai depois do novo.
+    if (temPropria(salvo, 'descricao')) {
+      migrarDescricao(salvo);
+      delete salvo.descricao;
+    }
+
     // v7 → v8: "versao" passou a se chamar "versaoModelo".
     delete salvo.versao;
     salvo.versaoModelo = VERSAO_MODELO;
     return salvo;
+  }
+
+  /** Número inteiro limitado a [minimo, maximo]; não numérico vira `padrao`. */
+  function inteiroEntre(valor, minimo, maximo, padrao) {
+    const n = Math.trunc(Number(valor));
+    if (!Number.isFinite(n)) return padrao;
+    return Math.min(Math.max(n, minimo), maximo);
+  }
+
+  /**
+   * Confere o bloco de condições (ficha já completa ou sanitizada):
+   * ids só do catálogo ou "personalizada" (outros saem; o mesmo id do catálogo
+   * não repete), rodadas inteiro de 1 a 99 ou null, turnos morrendo de 0 a 20,
+   * no máximo 50 condições e números da personalizada em faixas razoáveis.
+   * Devolve quantas condições saíram. ALTERA o objeto.
+   */
+  function normalizarCondicoes(ficha, rel) {
+    const c = ficha.condicoes;
+    const catalogo = OP.data.condicoes || [];
+    const vistos = Object.create(null);
+    const uids = Object.create(null);
+    let removidas = 0;
+    c.ativas = (Array.isArray(c.ativas) ? c.ativas : []).filter(function (item) {
+      const ok = ehObjetoSimples(item) && (item.id === 'personalizada' ||
+        (typeof item.id === 'string' && catalogo.some(function (d) { return d.id === item.id; }) && !vistos[item.id]));
+      if (ok && item.id !== 'personalizada') vistos[item.id] = true;
+      if (!ok) removidas += 1;
+      return ok;
+    }).slice(0, MAX_CONDICOES).map(function (item) {
+      item.uid = idValido(item.uid) && !uids[item.uid] ? item.uid : novoId('cond');
+      uids[item.uid] = true;
+      const bruto = item.rodadas;
+      item.rodadas = bruto === null || bruto === undefined ? null : inteiroEntre(bruto, 1, 99, null);
+      item.ateFimCena = item.ateFimCena === true;
+      item.nota = typeof item.nota === 'string' ? item.nota.slice(0, LIMITES_TEXTO['condicoes.ativas[].nota']) : '';
+      const p = ehObjetoSimples(item.personalizada) ? item.personalizada : {};
+      item.personalizada = {
+        nome: typeof p.nome === 'string' ? p.nome.slice(0, LIMITES_TEXTO['condicoes.ativas[].personalizada.nome']) : '',
+        dadosPericias: inteiroEntre(p.dadosPericias, -10, 10, 0),
+        defesa: inteiroEntre(p.defesa, -50, 50, 0),
+        deslocamentoMult: [0, 0.5, 1].indexOf(Number(p.deslocamentoMult)) !== -1 ? Number(p.deslocamentoMult) : 1
+      };
+      return item;
+    });
+    if (removidas && rel) anotar(rel.descartados, 'condicoes.ativas');
+    c.turnosMorrendo = inteiroEntre(c.turnosMorrendo, 0, 20, 0);
+    c.bonusLimiteMorrendo = inteiroEntre(c.bonusLimiteMorrendo, 0, 10, 0);
+    c.insano = c.insano === true;
+    c.aplicarEfeitos = c.aplicarEfeitos !== false;
+    return removidas;
+  }
+
+  /** Confere a biografia: retrato só se for uma imagem em data URL válida; o resto vira "" . ALTERA o objeto. */
+  function normalizarBiografia(ficha, rel) {
+    const b = ficha.biografia;
+    if (b.retrato !== '' && !OP.calc.retratoValido(b.retrato)) {
+      b.retrato = '';
+      if (rel) anotar(rel.corrigidos, 'biografia.retrato');
+    }
+  }
+
+  /** Condição de descanso conhecida (senão "normal"). ALTERA o objeto. */
+  function normalizarDescanso(ficha) {
+    ficha.descanso.condicao = OP.calc.condicaoDescansoValida(ficha.descanso.condicao);
   }
 
   /**
@@ -703,6 +884,12 @@ window.OP = window.OP || {};
     completa.ataques = normalizarLista(completa.ataques, novoAtaque, 'atq');
     completa.habilidades = normalizarLista(completa.habilidades, novaHabilidade, 'hab');
     completa.rituais = normalizarLista(completa.rituais, novoRitual, 'rit');
+    completa.biografia.aliados = normalizarLista(completa.biografia.aliados, novaPessoa, 'pes').slice(0, MAX_PESSOAS);
+    completa.biografia.rivais = normalizarLista(completa.biografia.rivais, novaPessoa, 'pes').slice(0, MAX_PESSOAS);
+    completa.biografia.diario = normalizarLista(completa.biografia.diario, novaEntradaDiario, 'dia').slice(0, MAX_DIARIO);
+    normalizarCondicoes(completa);
+    normalizarBiografia(completa);
+    normalizarDescanso(completa);
     return completa;
   }
 
@@ -722,7 +909,8 @@ window.OP = window.OP || {};
     conjunto: 'numero',
     elemento: 'texto',
     custoBase: 'numero',
-    requerCirculo: 'numero'
+    requerCirculo: 'numero',
+    rodadas: 'numero'
   };
 
   // Listas de valores simples (ids de perícia ou null), não de objetos.
@@ -749,6 +937,13 @@ window.OP = window.OP || {};
     mapa[caminho.length > 80 ? caminho.slice(0, 77) + '…' : caminho] = true;
   }
 
+  /** Tamanho máximo do texto de um campo: o do retrato, o próprio do campo ou o geral. */
+  function limiteTexto(caminho) {
+    // Retrato grande demais não é cortado (um corte deixaria a imagem corrompida): normalizarBiografia recusa.
+    if (caminho === 'biografia.retrato') return Infinity;
+    return temPropria(LIMITES_TEXTO, caminho) ? LIMITES_TEXTO[caminho] : LIMITE_TEXTO;
+  }
+
   function sanitizarTexto(valor, padrao, caminho, rel) {
     let texto;
     if (typeof valor === 'string') texto = valor;
@@ -759,9 +954,10 @@ window.OP = window.OP || {};
       anotar(rel.corrigidos, caminho);
       return padrao;
     }
-    if (texto.length > LIMITE_TEXTO) {
+    const limite = limiteTexto(caminho);
+    if (texto.length > limite) {
       anotar(rel.textos, caminho);
-      texto = texto.slice(0, LIMITE_TEXTO);
+      texto = texto.slice(0, limite);
     }
     return texto;
   }
@@ -792,9 +988,10 @@ window.OP = window.OP || {};
     }
     const molde = MOLDES_LISTA[caminho.replace(/\[\]/g, '')];
     let lista = valor;
-    if (lista.length > LIMITE_LISTA) {
+    const limiteLista = temPropria(LIMITES_LISTA, caminho) ? LIMITES_LISTA[caminho] : LIMITE_LISTA;
+    if (lista.length > limiteLista) {
       anotar(rel.listas, caminho);
-      lista = lista.slice(0, LIMITE_LISTA);
+      lista = lista.slice(0, limiteLista);
     }
     // Listas de ids (escolhas de perícias): texto curto ou null
     if (LISTAS_SIMPLES[caminho]) {
@@ -859,8 +1056,8 @@ window.OP = window.OP || {};
     const textos = [];
     if (Object.keys(rel.ignorados).length) textos.push('Campos ignorados (não existem nesta ficha): ' + listaCurta(rel.ignorados) + '.');
     if (Object.keys(rel.corrigidos).length) textos.push('Valores inválidos trocados pelo padrão: ' + listaCurta(rel.corrigidos) + '.');
-    if (Object.keys(rel.textos).length) textos.push('Textos cortados em ' + LIMITE_TEXTO + ' caracteres: ' + listaCurta(rel.textos) + '.');
-    if (Object.keys(rel.listas).length) textos.push('Listas cortadas em ' + LIMITE_LISTA + ' itens: ' + listaCurta(rel.listas) + '.');
+    if (Object.keys(rel.textos).length) textos.push('Textos cortados no tamanho máximo (' + LIMITE_TEXTO + ' caracteres na maioria dos campos): ' + listaCurta(rel.textos) + '.');
+    if (Object.keys(rel.listas).length) textos.push('Listas cortadas no limite de itens (' + LIMITE_LISTA + ' na maioria): ' + listaCurta(rel.listas) + '.');
     if (Object.keys(rel.descartados).length) textos.push('Entradas inválidas descartadas em: ' + listaCurta(rel.descartados) + '.');
     return textos;
   }
@@ -881,6 +1078,9 @@ window.OP = window.OP || {};
     if (!ehObjetoSimples(base)) base = {};
     base = migrar(base);
     const resultado = sanitizarValor(modeloVazio(), base, '', rel);
+    normalizarCondicoes(resultado, rel);
+    normalizarBiografia(resultado, rel);
+    normalizarDescanso(resultado);
     if (Array.isArray(avisos)) Array.prototype.push.apply(avisos, textosRelatorio(rel));
     return resultado;
   }
@@ -1109,6 +1309,10 @@ window.OP = window.OP || {};
     novoAtaque: novoAtaque,
     novaHabilidade: novaHabilidade,
     novoRitual: novoRitual,
+    novaCondicao: novaCondicao,
+    novaPessoa: novaPessoa,
+    novaEntradaDiario: novaEntradaDiario,
+    LIMITES: { condicoes: MAX_CONDICOES, diario: MAX_DIARIO, pessoas: MAX_PESSOAS, textoDiario: 20000, textoNotas: 20000, texto: LIMITE_TEXTO },
     aplicarCustos: aplicarCustos,
     gastarPE: gastarPE,
     novoTurno: novoTurno,

@@ -9,7 +9,7 @@
      botões −/+ desligados enquanto não há classe (o máximo é desconhecido)
      e a janela de ajuste (−5…+5, dano/cura de N e desfazer o último);
    - índice: rola até a seção e marca a seção visível (aria-current);
-   - tema: data-tema na ficha e no painel de rolagens. SÓ APARÊNCIA: não
+   - tema: data-elemento na ficha e no painel de rolagens. SÓ APARÊNCIA: não
      muda afinidade, regras nem nenhum valor da ficha. A escolha fica nas
      preferências do navegador (OP.prefs), por ficha.
    ========================================================================== */
@@ -23,7 +23,7 @@ window.OP = window.OP || {};
   let idDesenhado = null;
 
   function reduzMovimento() {
-    return Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    return OP.uiApp ? OP.uiApp.reduzMovimento() : Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   }
 
   function definirTexto(elemento, texto) {
@@ -31,7 +31,7 @@ window.OP = window.OP || {};
   }
 
   function dadosTema(id) {
-    return OP.data.temas.find(function (tema) { return tema.id === id; }) || OP.data.temas[0];
+    return OP.data.temasFicha.find(function (tema) { return tema.id === id; }) || OP.data.temasFicha[0];
   }
 
   /* ------------------------------------------------------------------------
@@ -41,7 +41,7 @@ window.OP = window.OP || {};
   function montarSeletorTema() {
     const caixa = refs.opcoesTema;
     caixa.textContent = '';
-    OP.data.temas.forEach(function (tema) {
+    OP.data.temasFicha.forEach(function (tema) {
       const rotulo = document.createElement('label');
       rotulo.className = 'seletor-tema__opcao';
       rotulo.setAttribute('data-tema-opcao', tema.id);
@@ -121,9 +121,9 @@ window.OP = window.OP || {};
 
   function trocarTema(tema) {
     temaAplicado = tema.id;
-    refs.vista.setAttribute('data-tema', tema.id);
-    refs.rolagens.setAttribute('data-tema', tema.id);
-    refs.atmosfera.setAttribute('data-tema', tema.id);
+    refs.vista.setAttribute('data-elemento', tema.id);
+    refs.rolagens.setAttribute('data-elemento', tema.id);
+    refs.atmosfera.setAttribute('data-elemento', tema.id);
     document.body.setAttribute('data-tema-ficha', tema.id);
     refs.seloIcone.setAttribute('href', '#ic-' + tema.id);
     definirTexto(refs.temaAtual, tema.nome);
@@ -276,11 +276,39 @@ window.OP = window.OP || {};
     refs.vitalUltimoLinha.hidden = !temUltimo && !refs.vitalMensagem.textContent;
   }
 
+  /**
+   * PV: usa OP.calc.aplicarDano / aplicarCura (PV nunca abaixo de 0 nem acima do
+   * máximo pela cura) e avisa um possível dano massivo, sem automatizar nada.
+   * Devolve { anterior, novo, massivo } ou null. Os outros vitais usam o campo.
+   */
+  function somarVital(id, delta) {
+    if (id !== 'pv' || !refs.derivados || !refs.derivados.recursos) {
+      const feito = OP.ui.somarAoCampo('rec-' + id + '-atual', delta);
+      return feito ? { anterior: feito.anterior, novo: feito.novo, massivo: false } : null;
+    }
+    const estado = refs.derivados.recursos.pv;
+    if (!estado.classeDefinida) return null;
+    const anterior = OP.calc.numero(estado.atual);
+    let novo = anterior;
+    let massivo = false;
+    if (delta < 0) {
+      const dano = OP.calc.aplicarDano(anterior, estado.max, -delta);
+      novo = dano.pv;
+      massivo = dano.massivo;
+    } else {
+      novo = OP.calc.aplicarCura(anterior, estado.max, delta);
+    }
+    if (novo !== anterior) OP.state.atualizar('recursos.pv.atual', novo);
+    return { anterior: anterior, novo: novo, massivo: massivo };
+  }
+
   function ajustarVital(delta) {
     const id = folhaVital.id;
     const recurso = dadosRecurso(id);
     if (!recurso || !delta) return;
-    const resultado = OP.ui.somarAoCampo('rec-' + id + '-atual', delta);
+    const resultado = somarVital(id, delta);
+    definirTexto(refs.vitalMassivo, resultado && resultado.massivo && resultado.novo !== resultado.anterior
+      ? 'Aviso: possível dano massivo (CONFERIR NO LIVRO).' : '');
     if (!resultado) return;
     if (resultado.novo === resultado.anterior) {
       definirTexto(refs.vitalMensagem, recurso.sigla + (delta < 0 ? ' já está no mínimo.' : ' já está no máximo.'));
@@ -294,7 +322,7 @@ window.OP = window.OP || {};
   }
 
   function aplicarQuantia(direcao) {
-    const quantia = Math.floor(Number(refs.vitalQuantia.value));
+    const quantia = OP.calc.lerNumero(refs.vitalQuantia.value, { inteiro: true, min: 0, padrao: 0 });
     if (!(quantia > 0)) {
       definirTexto(refs.vitalMensagem, 'Digite a quantia (um número maior que zero).');
       refs.vitalUltimoLinha.hidden = false;
@@ -332,6 +360,7 @@ window.OP = window.OP || {};
     refs.vitalDesfazer = document.getElementById('vital-desfazer');
     refs.vitalPassos = Array.prototype.slice.call(refs.dialogoVital.querySelectorAll('[data-vital-delta]'));
     refs.vitalEstado = document.getElementById('vital-estado');
+    refs.vitalMassivo = document.getElementById('vital-massivo');
 
     document.querySelectorAll('[data-abrir-vital]').forEach(function (botao) {
       botao.addEventListener('click', function () { abrirFolhaVital(botao.getAttribute('data-abrir-vital')); });
@@ -363,12 +392,31 @@ window.OP = window.OP || {};
     refs.dialogoVital.addEventListener('close', function () {
       folhaVital.id = null;
       definirTexto(refs.vitalMensagem, '');
+      definirTexto(refs.vitalMassivo, '');
     });
   }
 
   /* ------------------------------------------------------------------------
-     Índice das seções
+     Barra de seções (nav "Seções da ficha"): Resumo, Perícias, Combate,
+     Inventário, Rituais, Biografia e Rolagens. A seção atual recebe
+     aria-current="true" por IntersectionObserver (sem suporte, só não destaca).
      ------------------------------------------------------------------------ */
+
+  // Cada seção da ficha pertence a um item da barra
+  const GRUPO_DA_SECAO = {
+    'secao-identificacao': 'resumo',
+    'secao-identidade': 'resumo',
+    'secao-atributos': 'resumo',
+    'secao-recursos': 'resumo',
+    'secao-condicoes': 'resumo',
+    'secao-pericias': 'pericias',
+    'secao-defesa': 'combate',
+    'secao-ataques': 'combate',
+    'secao-habilidades': 'combate',
+    'secao-inventario': 'inventario',
+    'secao-rituais': 'rituais',
+    'secao-biografia': 'biografia'
+  };
 
   function irParaSecao(id) {
     const secao = document.getElementById(id);
@@ -385,16 +433,18 @@ window.OP = window.OP || {};
       }
     }
     refs.secaoAtiva = id;
-    marcarSecao(id);
+    marcarGrupo(GRUPO_DA_SECAO[id]);
   }
 
-  /** Marca no índice a seção visível e, no celular, traz o item para a vista. */
-  function marcarSecao(id) {
+  /** Marca na barra o item do grupo (e, no celular, traz o item para a vista). */
+  function marcarGrupo(grupo) {
+    if (!grupo || refs.grupoAtivo === grupo) return;
+    refs.grupoAtivo = grupo;
     refs.itensIndice.forEach(function (item) {
-      if (item.getAttribute('data-ir-secao') === id) item.setAttribute('aria-current', 'location');
+      if (item.getAttribute('data-grupo') === grupo) item.setAttribute('aria-current', 'true');
       else item.removeAttribute('aria-current');
     });
-    const ativo = refs.indice.querySelector('[aria-current="location"]');
+    const ativo = refs.indice.querySelector('[aria-current="true"]');
     const lista = refs.indice.querySelector('.indice__lista');
     if (ativo && lista && lista.scrollWidth > lista.clientWidth + 4) {
       const alvo = ativo.offsetLeft - (lista.clientWidth - ativo.offsetWidth) / 2;
@@ -403,61 +453,36 @@ window.OP = window.OP || {};
   }
 
   /**
-   * Scrollspy: a seção ativa é a última cujo topo já passou da "linha de
-   * leitura" (um terço da área visível, abaixo do que fica preso no topo).
-   * Lido no máximo uma vez por quadro (requestAnimationFrame).
+   * IntersectionObserver: a seção que cruza a "linha de leitura" (uma faixa fina
+   * a ~30% da altura da janela) é a atual; no fim da página, a última.
    */
-  function secaoNaLeitura() {
-    const topoFixo = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--topo-fixo')) || 0;
-    const linha = topoFixo + (window.innerHeight - topoFixo) * 0.33;
-    // Seções lado a lado (atributos e recursos) têm o mesmo topo: formam um
-    // grupo; vale a já marcada (ex.: a que foi clicada no índice) ou a 1ª.
-    let grupo = refs.secoes.length ? [refs.secoes[0]] : [];
-    let topoGrupo = -Infinity;
-    for (let i = 0; i < refs.secoes.length; i++) {
-      const topo = refs.secoes[i].getBoundingClientRect().top;
-      if (topo > linha) continue;
-      if (topo > topoGrupo + 2) {
-        grupo = [refs.secoes[i]];
-        topoGrupo = topo;
-      } else if (Math.abs(topo - topoGrupo) <= 2) {
-        grupo.push(refs.secoes[i]);
-      }
-    }
-    let ativa = grupo[0] || null;
-    for (let i = 0; i < grupo.length; i++) {
-      if (grupo[i].id === refs.secaoAtiva) ativa = grupo[i];
-    }
-    // No fim da página, a última seção (mesmo curta) é a ativa
-    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
-      ativa = refs.secoes[refs.secoes.length - 1];
-    }
-    return ativa;
-  }
-
-  function ligarScrollspy() {
-    refs.secoes = refs.itensIndice
-      .map(function (item) { return document.getElementById(item.getAttribute('data-ir-secao')); })
-      .filter(Boolean);
-    let agendado = false;
-    function atualizar() {
-      agendado = false;
+  function ligarSecaoAtual() {
+    refs.secoes = Object.keys(GRUPO_DA_SECAO).map(function (id) { return document.getElementById(id); }).filter(Boolean);
+    if (!('IntersectionObserver' in window)) return; // sem suporte: só não destaca
+    const cruzando = new Set();
+    const observador = new IntersectionObserver(function (entradas) {
+      entradas.forEach(function (entrada) {
+        if (entrada.isIntersecting) cruzando.add(entrada.target);
+        else cruzando.delete(entrada.target);
+      });
       if (document.body.dataset.vista !== 'ficha') return;
-      const ativa = secaoNaLeitura();
-      if (ativa && ativa.id !== refs.secaoAtiva) {
-        refs.secaoAtiva = ativa.id;
-        marcarSecao(ativa.id);
+      const atual = refs.secoes.filter(function (secao) { return cruzando.has(secao); }).pop();
+      if (atual) {
+        refs.secaoAtiva = atual.id;
+        marcarGrupo(GRUPO_DA_SECAO[atual.id]);
       }
-    }
-    function agendar() {
-      if (agendado) return;
+    }, { rootMargin: '-28% 0px -64% 0px', threshold: 0 });
+    refs.secoes.forEach(function (secao) { observador.observe(secao); });
+    // No fim da página a última seção (mesmo curta) é a atual
+    let agendado = false;
+    window.addEventListener('scroll', function () {
+      if (agendado || document.body.dataset.vista !== 'ficha') return;
       agendado = true;
-      window.requestAnimationFrame(atualizar);
-    }
-    window.addEventListener('scroll', agendar, { passive: true });
-    window.addEventListener('resize', agendar);
-    OP.uiApp.aoTrocarVista(function (vista) { if (vista === 'ficha') agendar(); });
-    agendar();
+      window.requestAnimationFrame(function () {
+        agendado = false;
+        if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) marcarGrupo('biografia');
+      });
+    }, { passive: true });
   }
 
   /**
@@ -494,7 +519,7 @@ window.OP = window.OP || {};
     refs.hudSemClasse = document.getElementById('hud-sem-classe');
     refs.hudTurno = document.getElementById('hud-turno');
     refs.indice = document.querySelector('.indice');
-    refs.itensIndice = Array.prototype.slice.call(document.querySelectorAll('[data-ir-secao]'));
+    refs.itensIndice = Array.prototype.slice.call(document.querySelectorAll('.indice__item'));
     refs.vitais = {};
     document.querySelectorAll('[data-vital]').forEach(function (elemento) {
       refs.vitais[elemento.getAttribute('data-vital')] = elemento;
@@ -504,12 +529,21 @@ window.OP = window.OP || {};
     montarFolhaVital();
 
     refs.indice.addEventListener('click', function (evento) {
+      const rolagens = evento.target.closest('[data-ir-rolagens]');
+      if (rolagens) {
+        evento.preventDefault();
+        // "Rolagens" abre o painel (gaveta no celular) e leva o foco para a alça
+        OP.ui.abrirRolagens(true);
+        const alca = document.getElementById('rolagens-alca');
+        if (alca) alca.focus();
+        return;
+      }
       const link = evento.target.closest('[data-ir-secao]');
       if (!link) return;
       evento.preventDefault(); // não mexe no #hash (ele guarda a rota)
       irParaSecao(link.getAttribute('data-ir-secao'));
     });
-    ligarScrollspy();
+    ligarSecaoAtual();
     medirTrilho();
 
     // O tema da ficha aberta mudou nas preferências: acompanha

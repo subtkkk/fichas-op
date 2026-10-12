@@ -9800,6 +9800,11 @@ html[data-vista="ficha"] {
   flex: none;
 }
 
+.campo-texto textarea.controle {
+  height: auto;
+  min-height: 7em;
+}
+
 /* Campos de texto longos crescem com o conteúdo (onde o navegador sabe; senão o JS ajusta) */
 #ficha textarea {
   field-sizing: content;

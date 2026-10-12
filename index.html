@@ -241,7 +241,7 @@
               <svg class="icone-ui" aria-hidden="true"><use href="#ic-backup"/></svg>Backup de todas
             </button>
             <!-- Só .json; também dá para arrastar o arquivo para a página -->
-            <input type="file" id="importar-arquivo" accept=".json,application/json" hidden>
+            <input type="file" id="importar-arquivo" accept=".json,application/json" aria-label="Importar ficha ou backup (arquivo .json)" hidden>
           </div>
         </header>
 
@@ -296,6 +296,9 @@
       <div class="ficha-layout" id="ficha">
 
         <!-- ============ TRILHO: vitais sempre à mão + índice das seções ============ -->
+        <!-- Etapa 10: a coluna lateral (a partir de 1024 px) reúne o painel do agente e a barra de seções;
+             abaixo disso a barra de seções vira a barra fixa do rodapé. -->
+        <div class="lateral">
         <aside class="trilho" aria-label="Painel do agente">
           <div class="trilho__corpo">
             <section class="hud" aria-labelledby="hud-titulo">
@@ -348,25 +351,20 @@
               </dl>
               <p class="hud__aviso" id="hud-sem-classe" hidden>Escolha uma classe para calcular os vitais.</p>
             </section>
-
-            <nav class="indice" aria-label="Seções da ficha">
-              <ol class="indice__lista">
-                <li><a class="indice__item" href="#secao-identificacao" data-ir-secao="secao-identificacao"><span class="indice__num" aria-hidden="true">01</span>Identificação</a></li>
-                <li><a class="indice__item" href="#secao-identidade" data-ir-secao="secao-identidade"><span class="indice__num" aria-hidden="true">02</span>Origem e classe</a></li>
-                <li><a class="indice__item" href="#secao-atributos" data-ir-secao="secao-atributos"><span class="indice__num" aria-hidden="true">03</span>Atributos</a></li>
-                <li><a class="indice__item" href="#secao-recursos" data-ir-secao="secao-recursos"><span class="indice__num" aria-hidden="true">04</span>Recursos</a></li>
-                <li><a class="indice__item" href="#secao-condicoes" data-ir-secao="secao-condicoes"><span class="indice__num" aria-hidden="true">05</span>Condições</a></li>
-                <li><a class="indice__item" href="#secao-defesa" data-ir-secao="secao-defesa"><span class="indice__num" aria-hidden="true">06</span>Defesa</a></li>
-                <li><a class="indice__item" href="#secao-pericias" data-ir-secao="secao-pericias"><span class="indice__num" aria-hidden="true">07</span>Perícias</a></li>
-                <li><a class="indice__item" href="#secao-ataques" data-ir-secao="secao-ataques"><span class="indice__num" aria-hidden="true">08</span>Ataques</a></li>
-                <li><a class="indice__item" href="#secao-habilidades" data-ir-secao="secao-habilidades"><span class="indice__num" aria-hidden="true">09</span>Habilidades</a></li>
-                <li><a class="indice__item" href="#secao-rituais" data-ir-secao="secao-rituais"><span class="indice__num" aria-hidden="true">10</span>Rituais</a></li>
-                <li><a class="indice__item" href="#secao-inventario" data-ir-secao="secao-inventario"><span class="indice__num" aria-hidden="true">11</span>Inventário</a></li>
-                <li><a class="indice__item" href="#secao-biografia" data-ir-secao="secao-biografia"><span class="indice__num" aria-hidden="true">12</span>Biografia</a></li>
-              </ol>
-            </nav>
           </div>
         </aside>
+        <nav class="indice" aria-label="Seções da ficha">
+          <ol class="indice__lista">
+            <li><a class="indice__item" href="#secao-identificacao" data-ir-secao="secao-identificacao" data-grupo="resumo"><span class="indice__num" aria-hidden="true">01</span>Resumo</a></li>
+            <li><a class="indice__item" href="#secao-pericias" data-ir-secao="secao-pericias" data-grupo="pericias"><span class="indice__num" aria-hidden="true">02</span>Perícias</a></li>
+            <li><a class="indice__item" href="#secao-defesa" data-ir-secao="secao-defesa" data-grupo="combate"><span class="indice__num" aria-hidden="true">03</span>Combate</a></li>
+            <li><a class="indice__item" href="#secao-inventario" data-ir-secao="secao-inventario" data-grupo="inventario"><span class="indice__num" aria-hidden="true">04</span>Inventário</a></li>
+            <li><a class="indice__item" href="#secao-rituais" data-ir-secao="secao-rituais" data-grupo="rituais"><span class="indice__num" aria-hidden="true">05</span>Rituais</a></li>
+            <li><a class="indice__item" href="#secao-biografia" data-ir-secao="secao-biografia" data-grupo="biografia"><span class="indice__num" aria-hidden="true">06</span>Biografia</a></li>
+            <li><a class="indice__item" href="#rolagens" data-ir-rolagens data-grupo="rolagens"><span class="indice__num" aria-hidden="true">07</span>Rolagens</a></li>
+          </ol>
+        </nav>
+        </div>
 
         <!-- Ajuste de um vital (abre pelo topo de PV, PE ou SAN; no celular é uma gaveta) -->
         <dialog class="dialogo dialogo--vital" id="dialogo-vital" aria-labelledby="vital-titulo">
@@ -598,7 +596,7 @@
               <p class="secao__info secao__info--linha" id="info-aumentos"></p>
 
               <div class="avisos" id="avisos-atributos" role="status" aria-live="polite" hidden>
-                <p class="avisos__titulo">Distribuição fora das regras</p>
+                <p class="avisos__titulo">Aviso: distribuição fora das regras</p>
                 <ul class="avisos__lista" id="lista-avisos"></ul>
                 <p class="avisos__dica">Regra especial ou poder que muda atributos? Ative o <strong>modo livre</strong> para esconder estes avisos.</p>
               </div>
@@ -893,13 +891,13 @@
             </div>
 
             <div class="avisos" id="avisos-pericias" role="status" aria-live="polite" hidden>
-              <p class="avisos__titulo">Pontos de treinamento excedidos</p>
+              <p class="avisos__titulo">Aviso: pontos de treinamento excedidos</p>
               <p id="texto-aviso-pericias"></p>
               <p class="avisos__dica">Perícia veio de um poder? Marque <strong>concedida</strong> (as da origem e da classe já são automáticas). Personagem avançado? Ative o <strong>modo livre</strong>.</p>
             </div>
 
             <div class="avisos" id="avisos-graus" role="status" aria-live="polite" hidden>
-              <p class="avisos__titulo">Graus de treinamento</p>
+              <p class="avisos__titulo">Aviso: graus de treinamento</p>
               <ul class="avisos__lista" id="lista-avisos-graus"></ul>
               <p class="avisos__dica">No NEX 35% e no 70%, perícias treinadas sobem um grau (Treinado → Veterano → Expert): quantidade = base da classe + Intelecto.</p>
             </div>
@@ -1047,7 +1045,7 @@
                   PE gasto neste turno:
                   <output data-saida="conjuracao.peGastoTurno">0</output> / limite <output data-saida="conjuracao.limitePE">1</output>
                 </p>
-                <p class="aviso-sobrecarga" id="aviso-limite-pe" role="status" aria-live="polite" hidden>Limite de PE por turno ultrapassado.</p>
+                <p class="aviso-sobrecarga" id="aviso-limite-pe" role="status" aria-live="polite" hidden>Aviso: limite de PE por turno ultrapassado.</p>
                 <button type="button" class="botao botao--compacto" data-acao="novo-turno">Novo turno</button>
               </article>
             </div>
@@ -1106,7 +1104,7 @@
                 <!-- Contadores gerados a partir de OP.data.categoriasItem (I a IV) -->
                 <div class="limites" id="limites-itens"></div>
                 <div class="avisos" id="avisos-limites" role="status" aria-live="polite" hidden>
-                  <p class="avisos__titulo">Limite de itens excedido</p>
+                  <p class="avisos__titulo">Aviso: limite de itens excedido</p>
                   <ul class="avisos__lista" id="lista-avisos-limites"></ul>
                 </div>
               </article>
@@ -1292,7 +1290,7 @@
         <input class="controle" id="rolagem-formula" type="text" placeholder="Fórmula, ex.: 2d6+3" spellcheck="false">
         <button type="submit" class="botao-rolagem">Rolar</button>
       </form>
-      <p class="rolagens__erro" id="rolagem-formula-erro" role="alert" hidden></p>
+      <p class="rolagens__erro" id="rolagem-formula-erro" role="status" hidden></p>
 
       <!-- Histórico (só nesta aba) -->
       <div class="rolagens__historico">
@@ -1318,7 +1316,7 @@
       <p class="dialogo__texto" id="confirmar-texto"></p>
       <ul class="dialogo__lista" id="confirmar-itens" hidden></ul>
       <ul class="dialogo__lista dialogo__lista--avisos" id="confirmar-avisos" aria-label="Avisos" hidden></ul>
-      <p class="dialogo__destaque" id="confirmar-destaque" role="alert" hidden></p>
+      <p class="dialogo__destaque" id="confirmar-destaque" role="status" hidden></p>
       <div class="dialogo__botoes">
         <button type="submit" class="botao" value="cancelar">Cancelar</button>
         <button type="submit" class="botao" id="confirmar-alternativa" value="alternativa" hidden>Alternativa</button>
@@ -1511,6 +1509,7 @@
   <script src="js/ui-biografia.js"></script>
   <script src="js/ui-verificacoes.js"></script>
   <script src="js/ui-aparencia.js"></script>
+  <script src="js/ui-auditoria.js"></script>
   <script src="js/main.js"></script>
   <!-- Testes: não rodam sozinhos. Digite OP.runTests() no console. -->
   <script src="js/tests.js"></script>

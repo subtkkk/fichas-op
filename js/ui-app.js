@@ -141,7 +141,7 @@ window.OP = window.OP || {};
     if (vista === 'ficha') {
       const ficha = OP.state.ficha;
       const nome = ficha && ficha.identificacao ? String(ficha.identificacao.nome || '').trim() : '';
-      document.title = nome ? nome + ' · Ficha de Agente' : 'Ficha de Agente · Ordem Paranormal';
+      document.title = (nome || 'Sem nome') + ' — Ficha Ordem Paranormal';
     } else {
       document.title = TITULOS[vista] || TITULOS.central;
     }
@@ -247,7 +247,7 @@ window.OP = window.OP || {};
     const t = DURACAO_AVISO[tipo] ? tipo : 'ok';
     const item = document.createElement('div');
     item.className = 'aviso-app aviso-app--' + t;
-    item.setAttribute('role', t === 'erro' ? 'alert' : 'status');
+    item.setAttribute('role', 'status'); // role="alert" fica só para Morrendo, Enlouquecendo e erro de armazenamento
 
     const marca = document.createElement('span');
     marca.className = 'aviso-app__marca';
@@ -256,7 +256,8 @@ window.OP = window.OP || {};
 
     const corpo = document.createElement('p');
     corpo.className = 'aviso-app__texto';
-    corpo.textContent = String(texto);
+    // Avisos começam com "Aviso:" (nada só por cor)
+    corpo.textContent = t === 'aviso' && !/^aviso:/i.test(String(texto)) ? 'Aviso: ' + String(texto) : String(texto);
     item.appendChild(corpo);
 
     if (o.acao && typeof o.acao.fazer === 'function') {

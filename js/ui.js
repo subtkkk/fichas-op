@@ -1713,7 +1713,7 @@ window.OP = window.OP || {};
   }
 
   function textoSobrecarga(sobrecarga) {
-    return 'Sobrecarregado: −' + sobrecarga.defesa + ' Defesa, −' + formatarNumero(sobrecarga.deslocamento) +
+    return 'Aviso: sobrecarregado, −' + sobrecarga.defesa + ' Defesa, −' + formatarNumero(sobrecarga.deslocamento) +
       ' m de deslocamento, −' + sobrecarga.pericias + ' em perícias com carga';
   }
 
@@ -2116,16 +2116,36 @@ window.OP = window.OP || {};
     OP.uiApp.anunciar(frase);
   }
 
-  /** Mostra um resultado no painel (abre o painel) e guarda no histórico. */
+  /** Tela estreita: o painel de Rolagens é uma gaveta que cobre a ficha (abaixo de 900 px). */
+  function emGaveta() {
+    return Boolean(window.matchMedia && window.matchMedia('(max-width: 899px)').matches);
+  }
+
+  /**
+   * Mostra um resultado no painel e guarda no histórico. Com a gaveta fechada
+   * numa tela estreita, a rolagem não cobre a ficha: o resultado aparece num aviso
+   * curto (aria-live) com o atalho "Detalhes" para abrir a gaveta.
+   */
   function mostrarResultado(resultado) {
-    abrirPainel(true);
+    const soAviso = emGaveta() && refs.painel.dataset.aberto !== 'true';
+    if (!soAviso) abrirPainel(true);
     if (!resultado.ok) {
       substituirFilhos(refs.resultado, [criarResultadoErro(resultado)]);
+      if (soAviso && OP.uiApp) OP.uiApp.aviso('aviso', 'Aviso: ' + (resultado.erro || 'não foi possível rolar.'));
       return;
     }
     substituirFilhos(refs.resultado, [resultado.tipo === 'teste' ? criarResultadoTeste(resultado) : criarResultadoFormula(resultado)]);
     definirTexto(refs.ultimo, 'último: ' + resultado.total + (resultado.critico ? ' (crítico)' : ''));
-    anunciarResultado(resultado);
+    if (soAviso && OP.uiApp) {
+      const alvo = resultado.tipo === 'teste' ? textoAlvo(resultado) : '';
+      OP.uiApp.aviso('ok', resultado.titulo + ': ' + resumoHistorico(resultado) + ' · total ' + resultado.total +
+        (resultado.critico ? ' (crítico)' : '') + (alvo ? ' · ' + alvo : ''), {
+        duracao: 6000,
+        acao: { rotulo: 'Detalhes', fazer: function () { abrirPainel(true); } }
+      });
+    } else {
+      anunciarResultado(resultado);
+    }
 
     historico.unshift({
       titulo: resultado.titulo,
@@ -2215,11 +2235,17 @@ window.OP = window.OP || {};
   }
 
   /** Mensagem curta na tela (após usar/conjurar): tipo "ok", "aviso" ou "erro". */
+  /** Avisos começam com "Aviso:" (nada só por cor). */
+  function comPrefixoAviso(texto) {
+    const t = String(texto || '');
+    return /^aviso:/i.test(t) ? t : 'Aviso: ' + t;
+  }
+
   function mostrarMensagem(elemento, mensagem) {
     if (!elemento) return;
     elemento.hidden = false;
     elemento.dataset.tipo = mensagem.tipo;
-    elemento.textContent = mensagem.texto;
+    elemento.textContent = mensagem.tipo === 'aviso' ? comPrefixoAviso(mensagem.texto) : mensagem.texto;
   }
 
   /** Texto da mensagem de um gasto (OP.state.aplicarCustos): PE e, nos rituais de Medo, Sanidade. */
@@ -2806,7 +2832,7 @@ window.OP = window.OP || {};
       el.cartao.classList.toggle('ritual--alem', estado.alemDoCirculo);
       if (el.aviso.hidden === estado.alemDoCirculo) el.aviso.hidden = !estado.alemDoCirculo;
       definirTexto(el.aviso, estado.alemDoCirculo
-        ? 'O ' + ordinal(ritual.circulo) + ' círculo ainda não está liberado pelo NEX (liberado: ' +
+        ? 'Aviso: o ' + ordinal(ritual.circulo) + ' círculo ainda não está liberado pelo NEX (liberado: ' +
           (conj.circulosLiberados ? 'até o ' + ordinal(conj.circulosLiberados) : 'nenhum') + '). Dá para cadastrar e conjurar mesmo assim.'
         : '');
 
@@ -2837,7 +2863,7 @@ window.OP = window.OP || {};
         const ativa = info.ativa ? 'sim' : 'nao';
         if (forma.bloco.dataset.ativa !== ativa) forma.bloco.dataset.ativa = ativa;
         // Avisos da forma (círculo exigido / afinidade): não bloqueiam
-        desenharListaTextos(forma.avisos, info.avisos.map(function (aviso) { return aviso.texto; }));
+        desenharListaTextos(forma.avisos, info.avisos.map(function (aviso) { return comPrefixoAviso(aviso.texto); }));
         if (forma.avisos.hidden === (info.avisos.length > 0)) forma.avisos.hidden = info.avisos.length === 0;
         const invalido = info.temDano && !info.danoValido;
         forma.dano.classList.toggle('controle--invalido', invalido);
@@ -3287,6 +3313,7 @@ window.OP = window.OP || {};
     coletarLigacoes: coletarLigacoes,
     somarAoCampo: somarAoCampo,
     removerDeLista: removerComDesfazer,
+    abrirRolagens: function (aberto) { abrirPainel(aberto !== false); },
     formatarNumero: formatarNumero,
     criarElemento: criarElemento,
     substituirFilhos: substituirFilhos,

@@ -3670,16 +3670,16 @@ body.arrastando-arquivo::after {
   background: color-mix(in srgb, var(--cor-texto) 4%, transparent);
 }
 
-.indice__item[aria-current="location"] {
+.indice__item[aria-current="true"] {
   color: var(--papel);
   background: var(--acento-suave);
 }
 
-.indice__item[aria-current="location"] .indice__num {
+.indice__item[aria-current="true"] .indice__num {
   color: var(--acento);
 }
 
-.indice__item[aria-current="location"]::before {
+.indice__item[aria-current="true"]::before {
   content: "";
   position: absolute;
   top: 6px;
@@ -4832,7 +4832,7 @@ body.arrastando-arquivo::after {
 }
 
 /* Com largura: os cartões de edição formam um pentágono */
-@container atributos (min-width: 540px) {
+@container atributos (min-width: 720px) {
   .grade-atributos {
     grid-template-columns: repeat(6, minmax(0, 1fr));
     grid-template-rows: repeat(3, minmax(0, 1fr));
@@ -7739,7 +7739,7 @@ body.arrastando-arquivo::after {
   text-shadow: 0 0 18px color-mix(in srgb, var(--acento-2) 55%, transparent), 0 0 2px color-mix(in srgb, var(--acento) 80%, transparent);
 }
 
-[data-elemento="energia"] .indice__item[aria-current="location"]::before,
+[data-elemento="energia"] .indice__item[aria-current="true"]::before,
 [data-elemento="energia"] .painel::before,
 [data-elemento="energia"] .ataque::before {
   background: linear-gradient(180deg, var(--acento-2), var(--acento) 50%, var(--acento-3));
@@ -7780,7 +7780,7 @@ body.arrastando-arquivo::after {
 [data-elemento="medo"] .ataque::before,
 [data-elemento="medo"] .ritual::before,
 [data-elemento="medo"] .recurso::before,
-[data-elemento="medo"] .indice__item[aria-current="location"]::before,
+[data-elemento="medo"] .indice__item[aria-current="true"]::before,
 [data-elemento="medo"] .mini-vital__preenchido,
 [data-elemento="medo"] .vital__barra .barra__preenchimento,
 [data-elemento="medo"] .recurso .barra__preenchimento {
@@ -8266,9 +8266,9 @@ html[data-vista="ficha"] {
   color: var(--papel-4);
 }
 
-/* A partir de 1024px: o painel aberto vira uma coluna à direita e a ficha
-   se estreita ao lado dele, em vez de ficar coberta */
-@media (min-width: 1024px) {
+/* A partir de 1360px: o painel aberto vira uma coluna à direita e a ficha
+   se estreita ao lado dele, em vez de ficar coberta (abaixo disso ele flutua) */
+@media (min-width: 1360px) {
   /* Só a área da ficha abre espaço; a barra global continua inteira */
   body.com-painel-rolagens[data-vista="ficha"] .vista--ficha {
     padding-right: 412px;
@@ -8284,19 +8284,6 @@ html[data-vista="ficha"] {
 
   .rolagens[data-aberto="true"] .rolagens__corpo {
     flex: 1;
-  }
-}
-
-/* Faixa de vitais estreitada pelo painel: os vitais viram botões de ajuste */
-@media (min-width: 1024px) and (max-width: 1199px) {
-  body.com-painel-rolagens[data-vista="ficha"] .hud__derivados,
-  body.com-painel-rolagens[data-vista="ficha"] .vital__botoes {
-    display: none;
-  }
-
-  body.com-painel-rolagens[data-vista="ficha"] .vital__topo {
-    background: color-mix(in srgb, var(--cor-texto) 3.5%, transparent);
-    border-color: var(--linha-1);
   }
 }
 
@@ -8890,8 +8877,8 @@ html[data-vista="ficha"] {
    13. RESPONSIVO
    ========================================================================== */
 
-/* Tablet e notebook estreito: o trilho vira uma faixa presa no topo */
-@media (max-width: 1199px) {
+/* Tablet e celular: o trilho vira uma faixa presa no topo e a barra de seções vai para o rodapé */
+@media (max-width: 1023px) {
   :root {
     --margem-pagina: 1.5rem;
     --topo-fixo: calc(var(--barra-altura) + var(--altura-trilho, 104px));
@@ -8970,11 +8957,11 @@ html[data-vista="ficha"] {
     border-radius: var(--raio-pilula);
   }
 
-  .indice__item[aria-current="location"] {
+  .indice__item[aria-current="true"] {
     border-color: var(--acento-linha);
   }
 
-  .indice__item[aria-current="location"]::before {
+  .indice__item[aria-current="true"]::before {
     display: none;
   }
 
@@ -9400,10 +9387,6 @@ html[data-vista="ficha"] {
 }
 
 @media (max-width: 380px) {
-  .nav-global__item .icone-ui {
-    display: none;
-  }
-
   .central__titulo {
     font-size: 2.75rem;
   }
@@ -10330,4 +10313,471 @@ kbd {
 :root[data-tema="contraste"] .ficha__conteudo .secao--dossie::after,
 :root[data-tema="contraste"] .ficha__conteudo .secao::before {
   display: none;
+}
+
+/* ==========================================================================
+   17. ETAPA 10 — celular: barra de seções, gaveta de Rolagens, alvos de toque
+       Mobile-first na prática: abaixo de 600 px, 1 coluna; de 600 a 1023 px,
+       2 colunas onde cabem; a partir de 1024 px, a coluna lateral.
+   ========================================================================== */
+:root {
+  --barra-secoes: 3.5rem; /* altura da barra de seções no rodapé (abaixo de 1024 px) */
+  --seguro-topo: env(safe-area-inset-top, 0px);
+  --seguro-base: env(safe-area-inset-bottom, 0px);
+  --seguro-esq: env(safe-area-inset-left, 0px);
+  --seguro-dir: env(safe-area-inset-right, 0px);
+}
+
+/* Barra global: respeita a área segura (entalhes e barras do sistema) */
+.app-barra {
+  padding-top: var(--seguro-topo);
+  padding-right: var(--seguro-dir);
+  padding-left: var(--seguro-esq);
+}
+
+/* ---- Coluna lateral (a partir de 1024 px): painel do agente + barra de seções ---- */
+.lateral {
+  display: contents;
+}
+
+@media (min-width: 1024px) {
+  .lateral {
+    position: sticky;
+    top: calc(var(--barra-altura) + 20px);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-height: calc(100vh - var(--barra-altura) - 40px);
+    max-height: calc(100dvh - var(--barra-altura) - 40px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--linha-2) transparent;
+  }
+
+  .lateral .trilho {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .lateral .indice {
+    padding: 12px;
+    background:
+      radial-gradient(140% 60% at 0% 0%, var(--acento-suave), transparent 60%),
+      var(--vidro-reflexo),
+      color-mix(in oklab, var(--tinta-superficie) 70%, transparent);
+    -webkit-backdrop-filter: var(--vidro-desfoque);
+    backdrop-filter: var(--vidro-desfoque);
+    border: 1px solid var(--vidro-borda);
+    border-radius: var(--raio-3);
+    box-shadow: var(--sombra-2);
+  }
+
+  .lateral .indice__lista {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .lateral .indice__item {
+    min-height: 2.25rem;
+  }
+}
+
+/* ---- Abaixo de 1024 px: a barra de seções é a barra fixa do rodapé ---- */
+@media (max-width: 1023px) {
+  .indice {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 60;
+    margin: 0;
+    padding: 6px calc(10px + var(--seguro-dir)) calc(6px + var(--seguro-base)) calc(10px + var(--seguro-esq));
+    background: color-mix(in srgb, var(--tinta-1) 96%, transparent);
+    -webkit-backdrop-filter: var(--vidro-desfoque);
+    backdrop-filter: var(--vidro-desfoque);
+    border-top: 1px solid var(--linha-2);
+    box-shadow: 0 -10px 30px -20px color-mix(in srgb, var(--cor-sombra) 80%, transparent);
+  }
+
+  .indice__lista {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    padding: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    border-top: 0;
+    scrollbar-width: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .indice__item {
+    flex: none;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 14px;
+    font-size: 0.875rem;
+    border: 1px solid var(--linha-1);
+    border-radius: var(--raio-pilula);
+  }
+
+  /* O resto da página abre espaço para a barra (e para o botão de Rolagens) */
+  body[data-vista="ficha"] .ficha__conteudo {
+    padding-bottom: calc(var(--barra-secoes) + 5rem + var(--seguro-base));
+  }
+
+  html[data-vista="ficha"] {
+    scroll-padding-bottom: calc(var(--barra-secoes) + 1.5rem + var(--seguro-base));
+  }
+
+  /* Rolagens entre 900 e 1023 px: painel flutuante acima da barra */
+  .rolagens {
+    right: calc(16px + var(--seguro-dir));
+    bottom: calc(var(--barra-secoes) + 16px + var(--seguro-base));
+  }
+}
+
+/* ---- Rolagens abaixo de 900 px: botão flutuante e gaveta inferior (até 70% da altura) ---- */
+@media (max-width: 899px) {
+  .rolagens[data-aberto="false"] {
+    right: calc(12px + var(--seguro-dir));
+    bottom: calc(var(--barra-secoes) + 12px + var(--seguro-base));
+    left: auto;
+    width: auto;
+    max-height: none;
+    border-width: 1px;
+    border-radius: var(--raio-pilula);
+  }
+
+  .rolagens[data-aberto="true"] {
+    right: 0;
+    bottom: calc(var(--barra-secoes) + var(--seguro-base));
+    left: 0;
+    width: auto;
+    max-height: 70vh;
+    max-height: 70dvh;
+    border-width: 1px 0 0;
+    border-radius: var(--raio-4) var(--raio-4) 0 0;
+  }
+
+  .rolagens__alca {
+    min-height: 48px;
+    padding-bottom: 0;
+  }
+
+  .rolagens[data-aberto="true"] .rolagens__alca {
+    border-radius: 0;
+  }
+
+  /* O resultado de uma rolagem com a gaveta fechada aparece como aviso curto (aria-live) */
+  .avisos-app {
+    bottom: calc(var(--barra-secoes) + 76px + var(--seguro-base));
+  }
+}
+
+/* ---- Alvos de toque de pelo menos 44 × 44 px (espaço de 8 px entre eles) e campos de 16 px ---- */
+@media (max-width: 1023px), (pointer: coarse) {
+  .botao,
+  .botao-barra,
+  .botao-texto,
+  .botao-rolagem,
+  .botao--adicionar,
+  .alternar,
+  .aba,
+  .seletor,
+  .controle,
+  .passo__valor,
+  .campo input,
+  .campo select,
+  .busca input,
+  .caixa,
+  .vital__topo,
+  summary {
+    min-height: 44px;
+  }
+
+  .botao-icone,
+  .passo__botao,
+  .vital__botao,
+  .recurso__botao,
+  .vital-folha__passo {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .passo {
+    gap: 8px;
+  }
+
+  .recurso__botoes,
+  .vital__botoes,
+  .alerta-estado__acoes,
+  .secao__controles,
+  .dialogo__botoes {
+    gap: 8px;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  select,
+  textarea,
+  .controle,
+  .seletor,
+  .passo__valor,
+  .recurso__atual {
+    font-size: max(16px, 1rem);
+  }
+}
+
+/* ---- Abaixo de 600 px: diálogos de formulário em tela cheia, com o Fechar fixo no topo ---- */
+@media (max-width: 599px) {
+  .dialogo--descanso,
+  .dialogo--aparencia,
+  .dialogo--sobre,
+  .dialogo--ajuda,
+  .dialogo--fontes {
+    width: 100%;
+    max-width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100vh;
+    max-height: 100dvh;
+    margin: 0;
+    border-width: 0;
+    border-radius: 0;
+  }
+
+  .dialogo--descanso .dialogo__topo,
+  .dialogo--aparencia .dialogo__topo,
+  .dialogo--sobre .dialogo__topo,
+  .dialogo--ajuda .dialogo__topo,
+  .dialogo--fontes .dialogo__topo {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    margin: calc(-1 * var(--e4)) calc(-1 * var(--e4)) var(--e3);
+    padding: calc(var(--e3) + var(--seguro-topo)) var(--e4) var(--e3);
+    background: var(--tinta-2);
+    border-bottom: 1px solid var(--linha-2);
+  }
+
+  .dialogo--descanso .dialogo__corpo,
+  .dialogo--aparencia .dialogo__corpo,
+  .dialogo--sobre .dialogo__corpo,
+  .dialogo--ajuda .dialogo__corpo,
+  .dialogo--fontes .dialogo__corpo {
+    padding-bottom: calc(var(--e4) + var(--seguro-base));
+  }
+
+  /* Barra global: só ícones (os nomes seguem para leitores de tela) */
+  .nav-global__rotulo,
+  .app-barra__botao-texto {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .nav-global__item,
+  .app-barra__botao {
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  .descanso__valores {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .cond-adicionar__linha {
+    flex-wrap: wrap;
+  }
+
+  .cond-adicionar__linha .botao {
+    flex: 1 1 100%;
+  }
+}
+
+/* Tela de 600 a 1023 px: duas colunas onde há espaço (condições e biografia) */
+@media (min-width: 600px) and (max-width: 1023px) {
+  .cond-lista {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+
+/* Atributos no celular: 2 colunas; o rótulo fica em cima e o − 2 + ocupa a largura do cartão */
+@media (max-width: 599px) {
+  .atributo__campo {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .atributo__campo .passo {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .atributo__campo .passo__valor {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+  }
+}
+
+/* Alvos de toque: o que ainda ficava abaixo de 44 px */
+@media (max-width: 1023px), (pointer: coarse) {
+  .pular {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .marca {
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .seletor-tema__opcao {
+    width: 44px;
+    height: 44px;
+  }
+
+  .recurso__detalhes-titulo,
+  .glossario__titulo {
+    min-height: 44px;
+  }
+
+  .recurso__atual {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .passo__valor {
+    min-width: 44px;
+  }
+
+  .botao--pequeno,
+  .botao-barra--pequeno {
+    min-height: 44px;
+  }
+}
+
+/* Texto corrido em foco: o botão "link" dentro de frase não precisa de 44 px (alvo em linha) */
+.link {
+  display: inline;
+}
+
+/* Atributos no celular: − valor + juntos (3 × 44 px) cabem no cartão de 2 colunas */
+@media (max-width: 599px) {
+  .atributo {
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+
+  .atributo .passo {
+    gap: 0;
+  }
+
+  .atributo .passo__valor {
+    min-width: 44px;
+  }
+}
+
+/* Seletor de tema da ficha: quebra a linha quando os seis botões de 44 px não cabem (320 px) */
+@media (max-width: 1023px), (pointer: coarse) {
+  .seletor-tema__opcoes {
+    flex-wrap: wrap;
+    max-width: 100%;
+    border-radius: var(--raio-3);
+  }
+}
+
+/* − valor + com 44 px de altura (o contêiner acompanha os botões) */
+@media (max-width: 1023px), (pointer: coarse) {
+  .passo {
+    height: auto;
+    min-height: 44px;
+  }
+
+  .passo__botao,
+  .passo__valor {
+    height: auto;
+    min-height: 44px;
+  }
+
+  .passo__valor {
+    text-align: center;
+  }
+
+  /* No celular o cartão de atributo precisa de espaço para − valor + */
+  .atributo {
+    width: min(100%, 15rem);
+  }
+}
+
+/* Tablet (600 a 1023 px): barra global, vitais e cartões de atributo com alvos de 44 px */
+@media (max-width: 1023px), (pointer: coarse) {
+  .nav-global__item,
+  .app-barra__botao,
+  .habilidade__alternar {
+    height: auto;
+    min-height: 44px;
+  }
+
+  .vital__topo {
+    min-width: 44px;
+  }
+
+  .atributo {
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+
+  .atributo__campo {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .atributo__campo .passo {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .atributo__campo .passo__valor {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 44px;
+  }
+
+  .atributo .passo {
+    gap: 0;
+  }
+}
+
+@media (max-width: 1023px), (pointer: coarse) {
+  .nav-global__item {
+    min-width: 44px;
+    justify-content: center;
+  }
+
+  .caixa {
+    min-width: 44px;
+    justify-content: center;
+  }
+
+  .caixa:has(> span:not(.so-celular)) {
+    justify-content: flex-start;
+  }
 }

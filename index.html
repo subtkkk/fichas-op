@@ -3,19 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="color-scheme" content="dark">
+  <meta name="color-scheme" content="dark light">
   <meta name="theme-color" content="#0a0b0d">
   <title>Dossiê · Fichas de Ordem Paranormal</title>
+  <!-- Aparência antes da primeira pintura (sem piscar): lê "op_prefs" e define data-tema, data-fonte e data-movimento
+       no <html>. A mesma lógica está em OP.ui.aplicarAparencia (js/ui-aparencia.js). -->
+  <script>
+    (function () {
+      try {
+        var p = JSON.parse(localStorage.getItem('op_prefs') || 'null');
+        if (!p || typeof p !== 'object') return;
+        var d = document.documentElement;
+        if (p.tema === 'escuro' || p.tema === 'claro' || p.tema === 'contraste') d.setAttribute('data-tema', p.tema);
+        if (p.tamanhoFonte === 'p' || p.tamanhoFonte === 'm' || p.tamanhoFonte === 'g' || p.tamanhoFonte === 'gg') d.setAttribute('data-fonte', p.tamanhoFonte);
+        if (p.movimento === 'sim' || p.movimento === 'nao') d.setAttribute('data-movimento', p.movimento);
+      } catch (e) { /* sem armazenamento: usa o padrão */ }
+    })();
+  </script>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230a0b0d'/%3E%3Cg fill='none' stroke='%23c9a45c' stroke-width='1.4'%3E%3Ccircle cx='16' cy='16' r='12'/%3E%3Cpath d='M16 7 25 16 16 25 7 16z'/%3E%3Ccircle cx='16' cy='16' r='2.6' fill='%23c9a45c'/%3E%3C/g%3E%3C/svg%3E">
-  <link rel="preload" href="fonts/ibm-plex-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="fonts/cormorant-garamond-latin.woff2" as="font" type="font/woff2" crossorigin>
   <!-- Tela: design system novo. Impressão: a base antiga (print-base.css) + os ajustes do print.css. -->
   <link rel="stylesheet" href="css/style.css" media="screen">
   <link rel="stylesheet" href="css/print-base.css" media="print">
   <link rel="stylesheet" href="css/print.css" media="print">
 </head>
 <body data-vista="central">
-  <a class="pular" href="#conteudo">Pular para o conteúdo</a>
+  <a class="pular" href="#conteudo">Ir para o conteúdo</a>
 
   <!-- Atmosfera: luz ambiente, textura e grão. Na ficha, segue o tema (data-elemento, js/ui-dossie.js). -->
   <div class="atmosfera" id="atmosfera" data-elemento="neutro" aria-hidden="true">
@@ -47,6 +59,8 @@
     <symbol id="ic-seta" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
     <symbol id="ic-fontes" viewBox="0 0 24 24"><path d="M4 4.5h6.5a2.5 2.5 0 0 1 2.5 2.5v13a2 2 0 0 0-2-2H4z"/><path d="M20 4.5h-4.5A2.5 2.5 0 0 0 13 7v13a2 2 0 0 1 2-2h5z"/></symbol>
     <symbol id="ic-fechar" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="ic-aparencia" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4v16"/><path d="M12 4a8 8 0 0 1 0 16z" /></symbol>
+    <symbol id="ic-teclado" viewBox="0 0 24 24"><rect x="2.5" y="6.5" width="19" height="11" rx="1.8"/><path d="M6 10.2h.1M9.5 10.2h.1M13 10.2h.1M16.5 10.2h.1M7 14h10"/></symbol>
     <symbol id="ic-estado-0" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="m8.5 12.3 2.5 2.5 4.6-5"/></symbol>
     <symbol id="ic-estado-1" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4v16" /><path d="M12 4a8 8 0 0 0 0 16z"/></symbol>
     <symbol id="ic-estado-2" viewBox="0 0 24 24"><path d="M12 3.5 21.5 20h-19z"/><path d="M12 10v4.5M12 17.2v.3"/></symbol>
@@ -95,6 +109,12 @@
 
       <div class="app-barra__acoes">
         <p class="status-salvamento" id="status-salvamento" role="status"></p>
+        <button type="button" class="botao-barra botao-barra--pequeno app-barra__botao" id="botao-aparencia" aria-haspopup="dialog">
+          <svg class="icone-ui" aria-hidden="true" focusable="false"><use href="#ic-aparencia"/></svg><span class="app-barra__botao-texto">Aparência</span>
+        </button>
+        <button type="button" class="botao-barra botao-barra--pequeno app-barra__botao" id="botao-sobre" aria-haspopup="dialog">
+          <svg class="icone-ui" aria-hidden="true" focusable="false"><use href="#ic-info"/></svg><span class="app-barra__botao-texto">Sobre</span>
+        </button>
       </div>
     </div>
 
@@ -1322,6 +1342,89 @@
   </dialog>
 
 
+
+  <!-- ================= APARÊNCIA (guardada no navegador, nunca na ficha) ================= -->
+  <dialog class="dialogo dialogo--aparencia" id="dialogo-aparencia" aria-labelledby="aparencia-titulo">
+    <div class="dialogo__corpo">
+      <div class="dialogo__topo">
+        <h2 class="dialogo__titulo" id="aparencia-titulo">Aparência</h2>
+        <button type="button" class="botao-icone" data-fechar-dialogo aria-label="Fechar">
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>
+        </button>
+      </div>
+      <p class="dialogo__dica">Vale para todas as fichas deste navegador e não entra na ficha exportada. Cada escolha vale na hora.</p>
+      <fieldset class="aparencia__grupo" id="aparencia-tema">
+        <legend>Tema</legend>
+        <div class="aparencia__opcoes" id="aparencia-tema-opcoes"></div>
+      </fieldset>
+      <fieldset class="aparencia__grupo" id="aparencia-fonte">
+        <legend>Tamanho do texto</legend>
+        <div class="aparencia__opcoes" id="aparencia-fonte-opcoes"></div>
+      </fieldset>
+      <fieldset class="aparencia__grupo" id="aparencia-movimento">
+        <legend>Animações</legend>
+        <div class="aparencia__opcoes" id="aparencia-movimento-opcoes"></div>
+        <p class="dialogo__dica">Automático segue o pedido do sistema por menos movimento.</p>
+      </fieldset>
+      <div class="dialogo__botoes">
+        <button type="button" class="botao botao--primario" data-fechar-dialogo>Pronto</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ================= SOBRE ================= -->
+  <dialog class="dialogo dialogo--sobre" id="dialogo-sobre" aria-labelledby="sobre-titulo">
+    <div class="dialogo__corpo">
+      <div class="dialogo__topo">
+        <h2 class="dialogo__titulo" id="sobre-titulo">Sobre</h2>
+        <button type="button" class="botao-icone" data-fechar-dialogo aria-label="Fechar">
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>
+        </button>
+      </div>
+      <p class="dialogo__texto">Projeto de fã, <strong>não oficial</strong>, para a ficha de Ordem Paranormal RPG. “Ordem Paranormal” e os seus elementos pertencem aos respectivos detentores.</p>
+      <p class="dialogo__texto">O site guarda só nomes e números, tudo neste navegador, e <strong>não substitui o livro</strong>: descrições de condições, poderes e rituais são digitadas por quem joga.</p>
+      <dl class="sobre__dados">
+        <div><dt>Versão do site</dt><dd id="sobre-versao">—</dd></div>
+        <div><dt>Versão do modelo da ficha</dt><dd id="sobre-modelo">—</dd></div>
+        <div><dt>Armazenamento usado</dt><dd id="sobre-uso">—</dd></div>
+      </dl>
+      <p class="aviso-neutro" id="sobre-uso-aviso" role="status" hidden></p>
+      <div class="dialogo__botoes">
+        <button type="button" class="botao" id="sobre-backup">
+          <svg class="icone-ui" aria-hidden="true"><use href="#ic-backup"/></svg>Exportar backup
+        </button>
+        <button type="button" class="botao" id="sobre-teclado">
+          <svg class="icone-ui" aria-hidden="true"><use href="#ic-teclado"/></svg>Ajuda de teclado
+        </button>
+        <button type="button" class="botao botao--primario" data-fechar-dialogo>Fechar</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ================= AJUDA DE TECLADO (tecla ?) ================= -->
+  <dialog class="dialogo dialogo--ajuda" id="dialogo-ajuda" aria-labelledby="ajuda-titulo">
+    <div class="dialogo__corpo">
+      <div class="dialogo__topo">
+        <h2 class="dialogo__titulo" id="ajuda-titulo">Ajuda de teclado</h2>
+        <button type="button" class="botao-icone" data-fechar-dialogo aria-label="Fechar">
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>
+        </button>
+      </div>
+      <dl class="ajuda__teclas">
+        <div><dt><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></dt><dd>Vai ao próximo campo ou volta ao anterior.</dd></div>
+        <div><dt><kbd>Enter</kbd> / <kbd>Espaço</kbd></dt><dd>Aciona o botão ou abre a lista em foco.</dd></div>
+        <div><dt><kbd>Esc</kbd></dt><dd>Fecha o diálogo, a lista ou o painel de Rolagens e devolve o foco ao botão que abriu.</dd></div>
+        <div><dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Escolhe uma opção numa lista aberta.</dd></div>
+        <div><dt><kbd>/</kbd></dt><dd>No Arquivo, vai para a busca.</dd></div>
+        <div><dt><kbd>?</kbd></dt><dd>Abre esta ajuda (fora de campos de texto).</dd></div>
+      </dl>
+      <p class="dialogo__dica">O primeiro Tab de cada página leva a “Ir para o conteúdo”.</p>
+      <div class="dialogo__botoes">
+        <button type="button" class="botao botao--primario" data-fechar-dialogo>Fechar</button>
+      </div>
+    </div>
+  </dialog>
+
   <!-- ================= DESCANSO ================= -->
   <dialog class="dialogo dialogo--descanso" id="dialogo-descanso" aria-labelledby="descanso-titulo">
     <form class="dialogo__corpo" id="form-descanso" method="dialog">
@@ -1405,6 +1508,7 @@
   <script src="js/ui-condicoes.js"></script>
   <script src="js/ui-biografia.js"></script>
   <script src="js/ui-verificacoes.js"></script>
+  <script src="js/ui-aparencia.js"></script>
   <script src="js/main.js"></script>
   <!-- Testes: não rodam sozinhos. Digite OP.runTests() no console. -->
   <script src="js/tests.js"></script>

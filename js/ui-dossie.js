@@ -23,7 +23,7 @@ window.OP = window.OP || {};
   let idDesenhado = null;
 
   function reduzMovimento() {
-    return Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    return OP.uiApp ? OP.uiApp.reduzMovimento() : Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   }
 
   function definirTexto(elemento, texto) {

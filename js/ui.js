@@ -1096,7 +1096,7 @@ window.OP = window.OP || {};
     if (!elementos) return;
     if (elementos.linha.hidden) limparFiltros();
 
-    const semAnimacao = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const semAnimacao = OP.uiApp ? OP.uiApp.reduzMovimento() : (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     elementos.linha.scrollIntoView({ behavior: semAnimacao ? 'auto' : 'smooth', block: 'center' });
     destacarLinha(elementos.linha);
 

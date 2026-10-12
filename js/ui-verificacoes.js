@@ -19,7 +19,7 @@ window.OP = window.OP || {};
   let ultimaFicha = null;
 
   function reduzMovimento() {
-    return Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    return OP.uiApp ? OP.uiApp.reduzMovimento() : Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   }
 
   function criar(tag, classe, texto) {

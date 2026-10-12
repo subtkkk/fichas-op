@@ -27,7 +27,14 @@ window.OP = window.OP || {};
   const refs = {};
   const ouvintes = [];
 
+  /**
+   * Menos movimento? A escolha do usuário em "Aparência" (data-movimento: "nao" reduz,
+   * "sim" mantém) vale mais que o pedido do sistema (prefers-reduced-motion).
+   */
   function reduzMovimento() {
+    const escolha = document.documentElement.getAttribute('data-movimento');
+    if (escolha === 'nao') return true;
+    if (escolha === 'sim') return false;
     return Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   }
 
@@ -354,6 +361,7 @@ window.OP = window.OP || {};
     aoTrocarVista: aoTrocarVista,
     atualizarNav: atualizarNav,
     aviso: aviso,
-    anunciar: anunciar
+    anunciar: anunciar,
+    reduzMovimento: reduzMovimento
   };
 })(window.OP);

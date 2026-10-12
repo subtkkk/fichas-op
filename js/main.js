@@ -54,6 +54,7 @@ window.OP = window.OP || {};
     OP.uiCondicoes.montar();   // condições, estados e descanso
     OP.uiBiografia.montar();   // retrato, aliados, rivais e diário
     OP.uiVerificacoes.montar(); // painel de verificações
+    OP.uiAparencia.montar();   // tema, tamanho do texto, animações, Sobre e ajuda de teclado
     OP.state.aoMudar(aoMudarFicha);
     const corrigiu = redesenhar(OP.state.ficha);
     // Se a ficha salva tinha valores fora dos limites, já grava a versão corrigida.

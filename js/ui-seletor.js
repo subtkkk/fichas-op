@@ -42,7 +42,7 @@ window.OP = window.OP || {};
   }
 
   function reduzMovimento() {
-    return Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    return OP.uiApp ? OP.uiApp.reduzMovimento() : Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   }
 
   /** Nome do campo para leitores de tela e para o título da gaveta. */

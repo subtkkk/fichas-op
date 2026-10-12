@@ -7,6 +7,9 @@
 window.OP = window.OP || {};
 window.OP.data = window.OP.data || {};
 
+// Versão do site (aparece em "Sobre"). A versão do modelo da ficha fica em js/state.js (OP.state.VERSAO_MODELO).
+window.OP.versao = '0.10.0';
+
 (function (data) {
   'use strict';
 

@@ -348,9 +348,9 @@ input[type="checkbox"] {
   font-size: 8pt;
 }
 
-/* Página 2 começa nos ataques */
+/* Sem quebra forçada: ataques e habilidades preenchem o resto da página das perícias */
 .secao[aria-labelledby="titulo-ataques"] {
-  break-before: page;
+  break-before: auto;
 }
 
 /* Cartões e tabelas não se partem entre páginas */
@@ -1491,5 +1491,37 @@ html[data-diario-impressao="sim"] .bio__diario {
   details > summary::marker {
     display: none;
     content: "";
+  }
+}
+
+/* ---- Rodada 4: resumo recolhido não imprime, rótulos do atributo sem colidir, perícias de treino em preto ---- */
+@media print {
+  .defesa-detalhes > summary {
+    display: none !important;
+  }
+
+  .atributo {
+    gap: 2pt 8pt;
+  }
+
+  .atributo__campo {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+
+  .atributo__campo label {
+    font-size: 7pt;
+    letter-spacing: 0.02em;
+  }
+
+  .pericia--requer-treino > .pericia__nome,
+  .pericia--requer-treino .pericia__rotulo,
+  .pericia--requer-treino .pericia__nome {
+    color: #000 !important;
+    opacity: 1 !important;
+  }
+
+  .itens:has(#lista-itens:empty) .itens__cabecalho {
+    display: none !important;
   }
 }

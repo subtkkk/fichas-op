@@ -200,6 +200,7 @@ window.OP = window.OP || {};
     const nivel = classe && classe.unidadeProgressao === 'estagio'
       ? 'Estágio ' + OP.calc.numero(ficha.identificacao.estagio)
       : 'NEX ' + OP.calc.numero(ficha.identificacao.nex) + '%';
+    if (refs.avisoClasse) refs.avisoClasse.hidden = Boolean(classe);
     definirTexto(refs.trilhoAgente, [nome || 'Sem nome', classe ? classe.nome : 'escolha a classe', nivel].join(' · '));
     // Outra ficha: o primeiro valor dela não é uma variação
     if (ficha.id !== idDesenhado) Object.keys(ultimoValor).forEach(function (id) { delete ultimoValor[id]; });
@@ -464,6 +465,7 @@ window.OP = window.OP || {};
     refs.tituloTela = document.getElementById('ficha-titulo');
     refs.campoNome = document.getElementById('campo-nome');
     refs.trilhoAgente = document.getElementById('trilho-agente');
+    refs.avisoClasse = document.getElementById('aviso-classe');
     refs.hudSemClasse = document.getElementById('hud-sem-classe');
     refs.hudTurno = document.getElementById('hud-turno');
     refs.vitais = {};

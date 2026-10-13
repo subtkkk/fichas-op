@@ -3836,11 +3836,11 @@ body.arrastando-arquivo::after {
   color: var(--papel);
   background:
     radial-gradient(circle at 50% 30%, color-mix(in oklab, var(--cor-painel) 18%, transparent), transparent 70%),
-    color-mix(in srgb, var(--cor-sombra) 30%, transparent);
+    color-mix(in srgb, var(--cor-texto) 6%, transparent);
   border: 1px solid color-mix(in oklab, var(--cor-painel) 45%, transparent);
   border-radius: var(--raio-2);
   text-shadow: 0 0 22px color-mix(in oklab, var(--cor-painel) 60%, transparent);
-  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--cor-sombra) 35%, transparent);
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--cor-texto) 6%, transparent);
 }
 
 .painel__campos {
@@ -7981,7 +7981,7 @@ html[data-transicao="tema"]::view-transition-new(root) {
   padding: 14px 16px;
   background:
     radial-gradient(100% 80% at 100% 0%, var(--acento-suave), transparent 60%),
-    color-mix(in srgb, var(--cor-sombra) 32%, transparent);
+    color-mix(in srgb, var(--cor-texto) 6%, transparent);
   border: 1px solid var(--linha-2);
   border-radius: var(--raio-3);
   animation: resultado-entrada 340ms var(--curva-saida);
@@ -12267,13 +12267,6 @@ button.trilho__agente::after {
   }
 }
 
-@media (min-width: 700px) and (max-width: 1279px) {
-  .tabela-pericias {
-    max-width: 680px;
-    margin-inline: auto;
-  }
-}
-
 @media (max-width: 400px) {
   /* Testes em uma coluna: o nome do teste aparece inteiro */
   .ficha-layout .grade-testes {
@@ -12384,4 +12377,210 @@ button.trilho__agente::after {
     padding-top: 8px;
     padding-bottom: 8px;
   }
+}
+
+/* ==========================================================================
+   22. REVISÃO DE DESIGN (rodada 4) — edição em telas baixas, abas no 1280, navegação, paisagem
+   ========================================================================== */
+
+/* Edição de perícias em telas baixas: o bloco de pontos vira uma linha só */
+@media (min-width: 1280px) and (max-height: 800px) {
+  .ficha-layout .zona--per .pericias__pontos {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+    margin: 4px 0;
+    padding: 4px 10px;
+  }
+
+  .ficha-layout .zona--per .pericias__composicao {
+    margin: 0;
+    font-size: 0.75rem;
+  }
+
+  .ficha-layout .zona--per .contador,
+  .ficha-layout .zona--per .alternar {
+    padding-inline: 8px;
+  }
+
+  .ficha-layout .zona--per .contador {
+    gap: 5px;
+  }
+
+  .zona--per .secao__cabecalho {
+    margin-bottom: 4px;
+  }
+
+  .zona--per .secao__controles {
+    gap: 6px;
+  }
+}
+
+/* Abas: com a contagem de condições, "Combate" nunca é cortada no 1280 */
+@container (max-width: 520px) {
+  .aba-pagina {
+    padding: 0 6px;
+    gap: 3px;
+    letter-spacing: 0;
+  }
+}
+
+/* ---- Celular e tablet, na mesa: os atributos são uma fileira de cinco d20 (um toque rola o teste) e vêm primeiro ---- */
+@media (max-width: 1279px) {
+  #secao-atributos {
+    order: 1;
+  }
+
+  #secao-testes {
+    order: 2;
+  }
+
+  .secao--atributos[data-modo="mesa"] .atributos__palco {
+    width: 100%;
+    aspect-ratio: auto;
+    margin: 0;
+  }
+
+  .secao--atributos[data-modo="mesa"] .atributos__palco::before,
+  .secao--atributos[data-modo="mesa"] .atributos__mostrador {
+    display: none;
+  }
+
+  .secao--atributos[data-modo="mesa"] .grade-atributos {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .secao--atributos[data-modo="mesa"] .atributo {
+    --dado: min(68px, 15.5vw);
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+  }
+
+  .secao--atributos[data-modo="mesa"] .atributo__nome {
+    display: none;
+  }
+}
+
+/* ---- Voltar (Rolagens) e aviso de classe no Resumo ---- */
+.rolagens__voltar {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin: 0 0 6px;
+  padding: 0 14px;
+  font: 600 0.875rem/1 var(--fonte-ui);
+  color: var(--papel);
+  background: none;
+  border: 1px solid var(--linha-2);
+  border-radius: var(--raio-2);
+  cursor: pointer;
+}
+
+.rolagens__voltar[hidden] {
+  display: none;
+}
+
+.aviso-classe {
+  display: none;
+  width: 100%;
+  min-height: 44px;
+  margin: 0 0 12px;
+  padding: 8px 14px;
+  font: 600 0.9375rem/1.3 var(--fonte-ui);
+  text-align: left;
+  color: var(--papel);
+  background: var(--acento-suave);
+  border: 1px solid var(--acento-linha);
+  border-radius: var(--raio-2);
+  cursor: pointer;
+}
+
+@media (max-width: 1279px) {
+  .aviso-classe:not([hidden]) {
+    display: block;
+  }
+}
+
+/* ---- Resultado na faixa: o detalhe quebra em duas linhas em vez de cortar (crítico, vários d20) ---- */
+@media (max-width: 1279px) {
+  .resultado-rapido:not([data-vazio="sim"]) .resultado-rapido__texto span {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+}
+
+/* ---- Folha-índice: nas telas estreitas as nove páginas continuam em duas colunas e cabem sem rolar ---- */
+@media (max-width: 380px) {
+  .paginas-indice {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .paginas-indice__botao {
+    min-height: 56px;
+    padding: 8px 10px;
+  }
+
+  .paginas-indice__texto small {
+    display: none;
+  }
+}
+
+/* ---- Celular deitado (pouca altura): vitais e resultado rolam junto, só o rodapé fica preso e fica mais baixo ---- */
+@media (max-width: 1279px) and (max-height: 520px) {
+  :root {
+    --dock-altura: 3.25rem;
+    --topo-fixo: 0px;
+  }
+
+  html[data-vista="ficha"] {
+    --topo-fixo: 0px;
+  }
+
+  .app-barra,
+  body[data-vista="ficha"] .app-barra,
+  .trilho,
+  .resultado-rapido {
+    position: static;
+  }
+
+  body[data-vista="ficha"] .dock {
+    padding-top: 4px;
+    padding-bottom: calc(4px + var(--seguro-base));
+  }
+
+  .trilho__agente {
+    display: none;
+  }
+}
+
+@media (min-width: 720px) and (max-width: 1279px) {
+  .nav-global__item--ficha {
+    flex: 0 0 auto;
+  }
+
+  .barra-topo__nome {
+    max-width: 18ch;
+  }
+}
+
+/* ---- Rótulos nunca abaixo de 11px (edição de atributos, Rolagens) e fórmula do ataque menos gritante que o nome ---- */
+.secao--atributos[data-modo="edicao"] .atributo__campo label,
+.secao--atributos[data-modo="edicao"] .atributo__nome,
+.ficha-layout .atributo__campo label,
+.rolagens small {
+  font-size: 0.6875rem;
+}
+
+.ataque__teste {
+  font-size: 1rem;
+  text-shadow: none;
 }

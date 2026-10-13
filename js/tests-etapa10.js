@@ -925,6 +925,24 @@ window.OP = window.OP || {};
           OP.uiPaginas.ir(antes, { rolar: false, anunciar: false, foco: false });
         }
       }, esperado: 'BUTTON|agente' },
+      { nome: 'E14 · Rolagens: "Voltar" aparece com a página de origem e leva de volta a ela', obtido: function () {
+        const antes = OP.uiPaginas.atual();
+        const botao = document.getElementById('rolagens-voltar');
+        try {
+          OP.uiPaginas.ir('inventario', { rolar: false, anunciar: false });
+          OP.uiPaginas.ir('rolagens', { rolar: false, anunciar: false });
+          const visivel = !botao.hidden && /Inventário/.test(botao.textContent);
+          botao.click();
+          return visivel + '|' + OP.uiPaginas.atual();
+        } finally {
+          OP.uiPaginas.ir(antes, { rolar: false, anunciar: false, foco: false });
+        }
+      }, esperado: 'true|inventario' },
+      { nome: 'E14 · O aviso "Escolha a classe" só aparece enquanto a ficha não tem classe', obtido: function () {
+        const aviso = document.getElementById('aviso-classe');
+        const semClasse = !OP.data.classes[OP.state.ficha.identificacao.classe];
+        return aviso.hidden === !semClasse;
+      }, esperado: true },
       { nome: 'E10 · Diálogos: todos têm título (aria-labelledby) e são <dialog>', obtido: function () {
         return Array.prototype.filter.call(document.querySelectorAll('dialog'), function (d) {
           const alvo = document.getElementById(d.getAttribute('aria-labelledby') || '');

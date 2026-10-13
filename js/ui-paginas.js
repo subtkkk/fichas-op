@@ -32,7 +32,8 @@ window.OP = window.OP || {};
 
   const LARGURA_COMPUTADOR = 1280; // px
   const refs = {};
-  const estado = { desktop: 'combate', mobile: 'resumo', condicoes: 0 };
+  const estado = { desktop: 'combate', mobile: 'resumo', condicoes: 0, anterior: null };
+  const posicoes = { ficha: null, rolagem: {} }; // rolagem de cada página (celular), por ficha
   let consulta = null;
 
   function emComputador() {
@@ -108,6 +109,13 @@ window.OP = window.OP || {};
     refs.ficha.setAttribute('data-pagina', id);
     refs.ficha.setAttribute('data-modo-paginas', computador ? 'computador' : 'celular');
 
+    // "Voltar" na página Rolagens: de onde a pessoa veio (por "Detalhes", por exemplo)
+    if (refs.voltar) {
+      const origem = estado.anterior && estado.anterior !== 'rolagens' ? paginaPorId(estado.anterior) : null;
+      refs.voltar.hidden = !(id === 'rolagens' && origem);
+      if (origem) refs.voltar.textContent = '‹ Voltar a ' + origem.nome;
+    }
+
     Array.prototype.forEach.call(refs.ficha.querySelectorAll('[data-pagina]'), function (elemento) {
       const fixa = elemento.hasAttribute('data-fixa');
       const visivel = (computador && fixa) || elemento.getAttribute('data-pagina') === id;
@@ -172,6 +180,18 @@ window.OP = window.OP || {};
     }
   }
 
+  /** Guarda onde a página estava rolada (celular): voltar a ela devolve o lugar. Outra ficha começa do alto. */
+  function guardarRolagem(id) {
+    const fichaId = OP.state && OP.state.ficha ? OP.state.ficha.id : null;
+    if (posicoes.ficha !== fichaId) { posicoes.ficha = fichaId; posicoes.rolagem = {}; }
+    posicoes.rolagem[id] = window.scrollY;
+  }
+
+  function rolagemGuardada(id) {
+    const fichaId = OP.state && OP.state.ficha ? OP.state.ficha.id : null;
+    return posicoes.ficha === fichaId && posicoes.rolagem[id] ? posicoes.rolagem[id] : 0;
+  }
+
   /**
    * Abre uma página. No computador só as páginas com aba mudam (Perícias e Resumo
    * já estão sempre à vista); no celular qualquer uma. opcoes: { foco, rolar, anunciar }.
@@ -183,6 +203,11 @@ window.OP = window.OP || {};
     const computador = emComputador();
     // As páginas com aba valem nos dois tamanhos (quem redimensiona a janela leva a página junto);
     // Resumo e Perícias só existem como página no celular
+    const antes = atual();
+    if (antes !== id) {
+      estado.anterior = antes;
+      if (!computador) guardarRolagem(antes);
+    }
     if (pagina.aba) {
       estado.desktop = id;
       estado.mobile = id;
@@ -190,7 +215,7 @@ window.OP = window.OP || {};
       estado.mobile = id;
     }
     aplicar();
-    if (o.rolar !== false && !computador) window.scrollTo({ top: 0, behavior: 'auto' });
+    if (o.rolar !== false && !computador) window.scrollTo({ top: antes !== id ? rolagemGuardada(id) : 0, behavior: 'auto' });
     if (o.foco && !(computador && !pagina.aba)) focarPagina(id);
     if (o.anunciar !== false && OP.uiApp && OP.uiApp.anunciar) OP.uiApp.anunciar('Página ' + pagina.nome + '.');
   }
@@ -366,6 +391,15 @@ window.OP = window.OP || {};
       if (aba) ir(aba.getAttribute('data-ir-pagina'), { anunciar: false });
     });
     refs.abas.addEventListener('keydown', aoTeclarNasAbas);
+    refs.voltar = document.getElementById('rolagens-voltar');
+    if (refs.voltar) refs.voltar.addEventListener('click', function () { if (estado.anterior) ir(estado.anterior, { foco: false }); });
+    const avisoClasse = document.getElementById('aviso-classe');
+    if (avisoClasse) avisoClasse.addEventListener('click', function () {
+      const campo = mostrarPaginaDe('campo-classe');
+      if (!campo) return;
+      campo.scrollIntoView({ behavior: 'auto', block: 'center' });
+      campo.focus();
+    });
     const trilhoAgente = document.getElementById('trilho-agente');
     if (trilhoAgente) trilhoAgente.addEventListener('click', function () { ir('agente', { foco: true }); });
     refs.dockSetas.forEach(function (seta) {

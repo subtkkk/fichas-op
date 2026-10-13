@@ -763,6 +763,74 @@ window.OP = window.OP || {};
         }
       }, esperado: 'edicao/0/true/true' },
 
+      // --- Rodada de revisão de design ---
+      { nome: 'E12 · Atalhos de teclado: a tecla "3" abre Rituais (aba 3 no computador / página 3 no celular)', obtido: function () {
+        const antes = OP.uiPaginas.atual();
+        const vistaAntes = document.body.dataset.vista;
+        try {
+          document.body.dataset.vista = 'ficha';
+          document.dispatchEvent(new KeyboardEvent('keydown', { key: '3', bubbles: true }));
+          const depois = OP.uiPaginas.atual();
+          const esperado = OP.uiPaginas.paginas.filter(function (p) { return window.innerWidth >= 1180 ? p.aba : true; })[2].id;
+          return depois === esperado;
+        } finally {
+          document.body.dataset.vista = vistaAntes;
+          OP.uiPaginas.ir(antes, { rolar: false, anunciar: false });
+        }
+      }, esperado: true },
+      { nome: 'E12 · Digitar "3" num campo de texto não troca de página', obtido: function () {
+        const antes = OP.uiPaginas.atual();
+        const vistaAntes = document.body.dataset.vista;
+        const campo = document.getElementById('campo-jogador');
+        try {
+          document.body.dataset.vista = 'ficha';
+          campo.dispatchEvent(new KeyboardEvent('keydown', { key: '3', bubbles: true }));
+          return OP.uiPaginas.atual() === antes;
+        } finally {
+          document.body.dataset.vista = vistaAntes;
+        }
+      }, esperado: true },
+      { nome: 'E12 · 4 links de pulo na ficha (vitais, perícias, páginas, página aberta)', obtido: function () {
+        return Array.prototype.map.call(document.querySelectorAll('[data-pular]'), function (a) { return a.getAttribute('data-pular'); }).join(',');
+      }, esperado: 'vitais,pericias,abas,pagina' },
+      { nome: 'E12 · Dados rápidos: d4, d6, d8, d10, d12, d20 e d100', obtido: function () {
+        return Array.prototype.map.call(document.querySelectorAll('[data-dado-rapido]'), function (b) { return b.getAttribute('data-dado-rapido'); }).join(',');
+      }, esperado: '1d4,1d6,1d8,1d10,1d12,1d20,1d100' },
+      { nome: 'E12 · Um toque num dado rápido rola e mostra o total na faixa de resultado', obtido: function () {
+        const caixa = document.getElementById('resultado-rapido');
+        caixa.hidden = true;
+        document.querySelector('[data-dado-rapido="1d6"]').click();
+        const total = Number(document.getElementById('rr-total').textContent);
+        const ok = !caixa.hidden && total >= 1 && total <= 6;
+        caixa.hidden = true;
+        return ok;
+      }, esperado: true },
+      { nome: 'E12 · Defesa e derivados: composição, reações e resistências ficam recolhidas (e abrem para o campo pedido)', obtido: function () {
+        const d = document.getElementById('defesa-detalhes');
+        const fechadaAntes = !d.open;
+        const campo = document.getElementById('defesa-protecao-nome');
+        let no = campo;
+        while (no) { if (no.tagName === 'DETAILS') no.open = true; no = no.parentElement; }
+        const abriu = d.open;
+        d.open = false;
+        return fechadaAntes + '/' + abriu;
+      }, esperado: 'true/true' },
+      { nome: 'E12 · Os vitais mostram o nível por extenso no rótulo (baixo, crítico, zerado)', obtido: function () {
+        const f = OP.state.ficha;
+        const classeAntes = f.identificacao.classe;
+        const pvAntes = f.recursos.pv.atual;
+        try {
+          OP.state.atualizar('identificacao.classe', 'combatente');
+          const max = OP.calc.estadoRecurso(OP.state.ficha, 'pv').max;
+          OP.state.atualizar('recursos.pv.atual', Math.max(1, Math.floor(max * 0.2)));
+          const rotulo = document.querySelector('[data-abrir-vital="pv"]').getAttribute('aria-label');
+          return /crítico/.test(rotulo);
+        } finally {
+          OP.state.atualizar('recursos.pv.atual', pvAntes);
+          OP.state.atualizar('identificacao.classe', classeAntes);
+        }
+      }, esperado: true },
+
       // --- Ficha em páginas ---
       { nome: 'E11 · 9 páginas; 7 com aba (Resumo e Perícias só existem no celular)', obtido: function () {
         const p = OP.uiPaginas.paginas;

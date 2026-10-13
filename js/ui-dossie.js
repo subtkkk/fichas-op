@@ -144,6 +144,23 @@ window.OP = window.OP || {};
     return 'ok';
   }
 
+  /** Um "−5"/"+3" sobe do valor por um instante quando PV, PE ou SAN mudam (feedback do ajuste). */
+  const ultimoValor = {};
+  function mostrarVariacao(elemento, id, atual) {
+    const anterior = ultimoValor[id];
+    ultimoValor[id] = atual;
+    if (anterior === undefined || anterior === null || atual === null || anterior === atual) return;
+    const delta = atual - anterior;
+    const valor = elemento.querySelector('.vital__valor');
+    if (!valor) return;
+    const marca = document.createElement('span');
+    marca.className = 'vital__variacao vital__variacao--' + (delta < 0 ? 'menos' : 'mais');
+    marca.setAttribute('aria-hidden', 'true');
+    marca.textContent = (delta < 0 ? '−' : '+') + Math.abs(delta);
+    valor.appendChild(marca);
+    window.setTimeout(function () { if (marca.parentNode) marca.parentNode.removeChild(marca); }, 1300);
+  }
+
   function desenharVitais(derivados) {
     let semClasse = false;
     OP.data.recursos.forEach(function (recurso) {
@@ -154,15 +171,16 @@ window.OP = window.OP || {};
       if (!definido) semClasse = true;
       const nivel = definido ? nivelBarra(OP.calc.numero(estado.percentual)) : 'indefinido';
       if (elemento.dataset.nivel !== nivel) elemento.dataset.nivel = nivel;
+      mostrarVariacao(elemento, recurso.id, definido ? OP.calc.numero(estado.atual) : null);
       elemento.querySelectorAll('[data-passo]').forEach(function (botao) {
         if (botao.disabled === definido) botao.disabled = !definido;
       });
       const abrir = elemento.querySelector('[data-abrir-vital]');
       if (abrir) {
         if (abrir.disabled === definido) abrir.disabled = !definido;
+        const textoNivel = { zero: ' (zerado)', critico: ' (crítico)', baixo: ' (baixo)' }[nivel] || '';
         const rotulo = definido
-          ? 'Ajustar ' + recurso.sigla + ': ' + textoNumero(estado.atual) + ' de ' + textoNumero(estado.max) +
-            (nivel === 'zero' ? ' (zerado)' : '')
+          ? 'Ajustar ' + recurso.sigla + ': ' + textoNumero(estado.atual) + ' de ' + textoNumero(estado.max) + textoNivel
           : recurso.sigla + ': escolha uma classe para calcular';
         if (abrir.getAttribute('aria-label') !== rotulo) abrir.setAttribute('aria-label', rotulo);
       }
@@ -177,6 +195,8 @@ window.OP = window.OP || {};
     definirTexto(refs.codigo, OP.uiFichas.codigoRegistro(ficha.id));
     definirTexto(refs.tituloTela, nome ? 'Ficha de ' + nome : 'Ficha de agente sem nome');
     refs.campoNome.classList.toggle('campo__destaque--vazio', !nome);
+    // Outra ficha: o primeiro valor dela não é uma variação
+    if (ficha.id !== idDesenhado) Object.keys(ultimoValor).forEach(function (id) { delete ultimoValor[id]; });
     desenharVitais(derivados);
 
     refs.derivados = derivados;
@@ -185,6 +205,7 @@ window.OP = window.OP || {};
     // Outra ficha aberta: aplica o tema dela (sem animação)
     if (ficha.id !== idDesenhado) {
       idDesenhado = ficha.id;
+      Object.keys(ultimoValor).forEach(function (id) { delete ultimoValor[id]; });
       folhaVital.ultimo = {};
       if (refs.dialogoVital && refs.dialogoVital.open) refs.dialogoVital.close();
       aplicarTema(OP.prefs.tema(ficha.id), false);

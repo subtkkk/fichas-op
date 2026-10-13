@@ -284,6 +284,62 @@ window.OP = window.OP || {};
     }, { passive: true });
   }
 
+  /* ------------------------------------------------------------------------
+     Teclado: links de pulo (vitais, perícias, páginas) e atalhos 1…9, [ e ]
+     ------------------------------------------------------------------------ */
+
+  function digitando(alvo) {
+    return Boolean(alvo) && (alvo.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(alvo.tagName));
+  }
+
+  function focar(elemento) {
+    if (!elemento) return;
+    if (!elemento.hasAttribute('tabindex') && !/^(A|BUTTON|INPUT|SELECT|TEXTAREA)$/.test(elemento.tagName)) elemento.setAttribute('tabindex', '-1');
+    try {
+      elemento.focus({ preventScroll: false });
+    } catch (erro) {
+      elemento.focus();
+    }
+  }
+
+  function pular(destino) {
+    const computador = emComputador();
+    if (destino === 'vitais') {
+      const botao = refs.ficha.querySelector('[data-abrir-vital="pv"]');
+      focar(botao);
+    } else if (destino === 'pericias') {
+      if (!computador) ir('pericias', { anunciar: false, rolar: false });
+      focar(document.getElementById('busca-pericias'));
+    } else if (destino === 'abas') {
+      if (computador) focar(refs.abas.querySelector('[aria-selected="true"]'));
+      else focar(refs.dockIndice);
+    } else if (destino === 'pagina') {
+      focarPagina(atual());
+    }
+  }
+
+  function aoTeclarNaFicha(evento) {
+    if (document.body.dataset.vista !== 'ficha') return;
+    if (evento.ctrlKey || evento.metaKey || evento.altKey || digitando(evento.target)) return;
+    if (document.querySelector('dialog[open]')) return;
+    let id = null;
+    if (/^[1-9]$/.test(evento.key)) {
+      const lista = emComputador() ? PAGINAS.filter(function (p) { return p.aba; }) : PAGINAS;
+      const pagina = lista[Number(evento.key) - 1];
+      if (pagina) id = pagina.id;
+    } else if (evento.key === '[' || evento.key === ']') {
+      evento.preventDefault();
+      const lista = emComputador() ? PAGINAS.filter(function (p) { return p.aba; }) : PAGINAS;
+      const posicao = lista.findIndex(function (p) { return p.id === atual(); });
+      const destino = lista[posicao + (evento.key === ']' ? 1 : -1)];
+      if (destino) ir(destino.id, { foco: true });
+      return;
+    }
+    if (!id) return;
+    evento.preventDefault();
+    ir(id, { foco: true });
+  }
+
   function montar() {
     refs.ficha = document.getElementById('ficha');
     refs.abas = document.getElementById('abas-paginas');
@@ -330,6 +386,24 @@ window.OP = window.OP || {};
     }
 
     ligarGesto();
+
+    Array.prototype.forEach.call(document.querySelectorAll('[data-pular]'), function (link) {
+      link.addEventListener('click', function (evento) {
+        evento.preventDefault(); // não mexe no #hash (ele guarda a rota)
+        pular(link.getAttribute('data-pular'));
+      });
+    });
+    document.addEventListener('keydown', aoTeclarNaFicha);
+
+    // Imprimir: as seções recolhidas (Defesa) abrem para sair no papel; depois voltam como estavam
+    let abertasAntes = [];
+    window.addEventListener('beforeprint', function () {
+      abertasAntes = Array.prototype.filter.call(document.querySelectorAll('details.defesa-detalhes'), function (d) { return d.open; });
+      Array.prototype.forEach.call(document.querySelectorAll('details.defesa-detalhes'), function (d) { d.open = true; });
+    });
+    window.addEventListener('afterprint', function () {
+      Array.prototype.forEach.call(document.querySelectorAll('details.defesa-detalhes'), function (d) { d.open = abertasAntes.indexOf(d) !== -1; });
+    });
 
     // O número de condições ativas aparece na aba/índice de Combate
     OP.ui.registrarExtensao({

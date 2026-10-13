@@ -294,6 +294,13 @@
 
       <!-- #ficha: raiz dos campos ligados ao estado (js/ui.js). O trilho (vitais e índice) também. -->
       <div class="ficha-layout" id="ficha">
+        <!-- Atalhos de teclado: pulam blocos inteiros (aparecem só com o foco) -->
+        <nav class="pular-ficha" aria-label="Atalhos da ficha">
+          <a class="pular" href="#trilho-vitais" data-pular="vitais">Ir para os vitais</a>
+          <a class="pular" href="#secao-pericias" data-pular="pericias">Ir para as perícias</a>
+          <a class="pular" href="#abas-paginas" data-pular="abas">Ir para as páginas</a>
+          <a class="pular" href="#paginas" data-pular="pagina">Ir para a página aberta</a>
+        </nav>
 
         <!-- ============ TRILHO: vitais sempre à mão + índice das seções ============ -->
         <!-- Etapa 10: a coluna lateral (a partir de 1024 px) reúne o painel do agente e a barra de seções;
@@ -418,7 +425,7 @@
               <p class="secao__nota" id="nota-regras"></p>
             </section>
 
-        <aside class="trilho" aria-label="Painel do agente">
+        <aside class="trilho" id="trilho-vitais" aria-label="Painel do agente">
           <div class="trilho__corpo">
             <section class="hud" aria-labelledby="hud-titulo">
               <h2 class="hud__titulo" id="hud-titulo">Vitais</h2>
@@ -474,7 +481,13 @@
         </aside>
 
           <section class="secao secao--testes" id="secao-testes" aria-labelledby="titulo-testes" data-pagina="resumo" data-fixa>
-            <h2 class="secao__titulo" id="titulo-testes">Testes</h2>
+            <h2 class="secao__titulo" id="titulo-testes">Defesa e testes</h2>
+            <!-- Só no celular (no computador e no tablet os mesmos números estão nos vitais) -->
+            <dl class="resumo-derivados">
+              <div><dt>Defesa</dt><dd><output data-saida="defesa.total">10</output></dd></div>
+              <div><dt>Desloc.</dt><dd><output data-saida="deslocamento" data-formato="deslocamento">9 m (6 q)</output></dd></div>
+              <div><dt>PE/turno</dt><dd><output data-saida="conjuracao.peGastoTurno">0</output> / <output data-saida="conjuracao.limitePE">1</output></dd></div>
+            </dl>
             <!-- Botões gerados a partir de OP.data.periciasDerivadas; clicar leva à linha da perícia -->
             <div class="grade-testes" id="grade-testes"></div>
           </section>
@@ -562,7 +575,10 @@
             </div>
 
             <!-- Legenda gerada pelo ui.js (mesmos ícones da tabela) -->
-            <p class="legenda" id="legenda-pericias"></p>
+            <details class="legenda-ic">
+              <summary>Legenda dos ícones</summary>
+              <p class="legenda" id="legenda-pericias"></p>
+            </details>
 
             <table class="tabela-pericias">
               <thead>
@@ -601,7 +617,7 @@
           </section>
 
           <nav class="indice" id="indice-paginas" aria-label="Páginas da ficha">
-            <div class="abas-paginas" id="abas-paginas" role="tablist" aria-label="Páginas da ficha"></div>
+            <div class="abas-paginas" id="abas-paginas" role="tablist" aria-orientation="horizontal" aria-label="Páginas da ficha"></div>
           </nav>
 
           <div class="paginas" id="paginas">
@@ -733,7 +749,12 @@
           <section class="secao secao--defesa" id="secao-defesa" aria-labelledby="titulo-defesa">
             <h2 class="secao__titulo" id="titulo-defesa">Defesa e derivados</h2>
 
-            <div class="grade-defesa">
+            <details class="defesa-detalhes" id="defesa-detalhes">
+              <summary class="defesa-detalhes__resumo">
+                <span class="defesa-detalhes__titulo">Composição, reações e resistências</span>
+                <span class="defesa-detalhes__valor">Defesa <output data-saida="defesa.total">10</output></span>
+              </summary>
+              <div class="grade-defesa">
               <!-- Defesa -->
               <article class="painel painel--defesa">
                 <div class="painel__topo">
@@ -827,6 +848,7 @@
                 <!-- Campos gerados a partir de OP.data.tiposDano -->
                 <div class="resistencias__grupos" id="grade-resistencias"></div>
               </div>
+            </details>
             </details>
           </section>
           </div>
@@ -1263,6 +1285,17 @@
       </div>
       <p class="rolagens__dica" id="rolagens-dica"></p>
 
+      <!-- Dados rápidos: um toque rola 1dN -->
+      <div class="rolagens__rapidos" role="group" aria-label="Dados rápidos">
+        <button type="button" class="botao botao--pequeno" data-dado-rapido="1d4">d4</button>
+        <button type="button" class="botao botao--pequeno" data-dado-rapido="1d6">d6</button>
+        <button type="button" class="botao botao--pequeno" data-dado-rapido="1d8">d8</button>
+        <button type="button" class="botao botao--pequeno" data-dado-rapido="1d10">d10</button>
+        <button type="button" class="botao botao--pequeno" data-dado-rapido="1d12">d12</button>
+        <button type="button" class="botao botao--pequeno" data-dado-rapido="1d20">d20</button>
+        <button type="button" class="botao botao--pequeno" data-dado-rapido="1d100">d100</button>
+      </div>
+
       <!-- Fórmula livre -->
       <form class="rolagens__formula" id="rolagem-formula-form" autocomplete="off">
         <label class="visualmente-oculto" for="rolagem-formula">Fórmula de dados</label>
@@ -1469,10 +1502,13 @@
         <div><dt><kbd>Enter</kbd> / <kbd>Espaço</kbd></dt><dd>Aciona o botão ou abre a lista em foco.</dd></div>
         <div><dt><kbd>Esc</kbd></dt><dd>Fecha o diálogo, a lista ou o painel de Rolagens e devolve o foco ao botão que abriu.</dd></div>
         <div><dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Escolhe uma opção numa lista aberta.</dd></div>
+        <div><dt><kbd>1</kbd> … <kbd>9</kbd></dt><dd>Na ficha, troca de página (no computador, as sete abas: 1 Combate … 7 Rolagens).</dd></div>
+        <div><dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>Na ficha, página anterior ou próxima.</dd></div>
+        <div><dt><kbd>←</kbd> <kbd>→</kbd> <kbd>Home</kbd> <kbd>End</kbd></dt><dd>Entre as abas das páginas.</dd></div>
         <div><dt><kbd>/</kbd></dt><dd>No Arquivo, vai para a busca.</dd></div>
         <div><dt><kbd>?</kbd></dt><dd>Abre esta ajuda (fora de campos de texto).</dd></div>
       </dl>
-      <p class="dialogo__dica">O primeiro Tab de cada página leva a “Ir para o conteúdo”.</p>
+      <p class="dialogo__dica">O primeiro Tab de cada página leva a “Ir para o conteúdo”; na ficha, os próximos levam aos vitais, às perícias e às páginas.</p>
       <div class="dialogo__botoes">
         <button type="button" class="botao botao--primario" data-fechar-dialogo>Fechar</button>
       </div>

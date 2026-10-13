@@ -2167,6 +2167,14 @@ window.OP = window.OP || {};
       campo.addEventListener('input', desenharDicaRolagem);
       campo.addEventListener('change', desenharDicaRolagem);
     });
+    // Dados rápidos: um toque rola 1dN (com as opções de rolagem do painel)
+    Array.prototype.forEach.call(document.querySelectorAll('[data-dado-rapido]'), function (botao) {
+      botao.addEventListener('click', function () {
+        refs.formula.value = botao.getAttribute('data-dado-rapido');
+        refs.formulaErro.hidden = true;
+        rolarFormulaNaTela();
+      });
+    });
     document.getElementById('rolagem-limpar-opcoes').addEventListener('click', limparOpcoesRolagem);
     document.getElementById('rolagem-limpar-historico').addEventListener('click', limparHistorico);
     document.getElementById('rolagem-formula-form').addEventListener('submit', function (evento) {

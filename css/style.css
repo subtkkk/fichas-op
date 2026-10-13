@@ -6113,6 +6113,11 @@ body.arrastando-arquivo::after {
   display: none;
 }
 
+/* Na mesa o grau é só um indicador: igual ao botão, sem apagar e sem reagir ao mouse */
+.botao-grau:disabled {
+  opacity: 1;
+}
+
 .pericia__rolar {
   width: 52px;
   text-align: center;

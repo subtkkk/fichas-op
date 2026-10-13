@@ -1292,7 +1292,9 @@ window.OP = window.OP || {};
     const botaoModoPericias = evento.target.closest('#botao-modo-pericias');
     if (botaoModoPericias) {
       refs.modoPericias = refs.modoPericias === 'mesa' ? 'edicao' : 'mesa';
-      desenharModoPericias(OP.state.ficha);
+      // redesenha as linhas: o botão de grau só funciona em "Editar perícias"
+      if (refs.derivados) desenharPericias(refs.derivados);
+      else desenharModoPericias(OP.state.ficha);
       return;
     }
     const removerAtq = evento.target.closest('[data-remover-ataque]');
@@ -1671,6 +1673,7 @@ window.OP = window.OP || {};
 
   /** Muda o grau de uma perícia pelo botão de chevrons. */
   function ciclarGrau(idPericia) {
+    if (refs.modoPericias !== 'edicao') return; // na mesa o grau só aparece
     const estado = refs.derivados && refs.derivados.pericias[idPericia];
     if (!estado) return;
     const novo = proximoGrau(estado.grau, Boolean(estado.concedidaPor));
@@ -1698,8 +1701,10 @@ window.OP = window.OP || {};
       const fonte = estado.concedidaPor || '';
       const nomeGrau = graus[estado.grau] ? graus[estado.grau].nome : '';
       const proximo = proximoGrau(estado.grau, fonte);
+      const editando = refs.modoPericias === 'edicao';
       const rotuloGrau = definicao.nome + ': ' + nomeGrau + (fonte ? ' (concedida pela ' + fonte + ')' : '') +
-        '. Ativar para mudar para ' + graus[proximo].nome + '.';
+        (editando ? '. Ativar para mudar para ' + graus[proximo].nome + '.' : '. Para mudar o grau, use Editar perícias.');
+      if (elementos.grau.disabled === editando) elementos.grau.disabled = !editando;
       if (String(estado.grau) !== elementos.grau.dataset.nivel) elementos.grau.dataset.nivel = String(estado.grau);
       if (elementos.grau.getAttribute('aria-label') !== rotuloGrau) {
         elementos.grau.setAttribute('aria-label', 'Grau de ' + rotuloGrau);

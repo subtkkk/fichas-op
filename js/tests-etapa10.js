@@ -625,6 +625,9 @@ window.OP = window.OP || {};
         const antes = ficha.pericias.luta.grau;
         const concedida = OP.calc.estadoPericia(ficha, 'luta').concedidaPor;
         if (!botao || concedida) return 'sem botão ou concedida';
+        const modo = document.getElementById('botao-modo-pericias');
+        const estavaEmEdicao = modo.getAttribute('aria-pressed') === 'true';
+        if (!estavaEmEdicao) modo.click();
         try {
           OP.state.atualizar('pericias.luta.grau', 0);
           const graus = [];
@@ -635,8 +638,27 @@ window.OP = window.OP || {};
           return graus.join(',');
         } finally {
           OP.state.atualizar('pericias.luta.grau', antes);
+          if (!estavaEmEdicao) modo.click();
         }
       }, esperado: '1,2,3,0' },
+      { nome: 'E10 · Na mesa o botão de grau fica desligado e não muda o grau; em "Editar perícias" funciona', obtido: function () {
+        const botao = document.querySelector('[data-pericia="luta"] .botao-grau');
+        const modo = document.getElementById('botao-modo-pericias');
+        const estavaEmEdicao = modo.getAttribute('aria-pressed') === 'true';
+        const antes = OP.state.ficha.pericias.luta.grau;
+        try {
+          if (estavaEmEdicao) modo.click();
+          const naMesa = botao.disabled;
+          botao.click();
+          const naoMudou = OP.state.ficha.pericias.luta.grau === antes;
+          modo.click();
+          return [naMesa, naoMudou, botao.disabled].join('/');
+        } finally {
+          OP.state.atualizar('pericias.luta.grau', antes);
+          if (modo.getAttribute('aria-pressed') === 'true' && !estavaEmEdicao) modo.click();
+          if (modo.getAttribute('aria-pressed') !== 'true' && estavaEmEdicao) modo.click();
+        }
+      }, esperado: 'true/true/false' },
       { nome: 'E10 · Perícia "somente treinada" sem grau pede treinamento só por símbolo (sem texto "requer treinamento")', obtido: function () {
         return document.querySelectorAll('.pericia__requer').length + '/' + document.querySelector('.tabela-pericias').textContent.indexOf('requer treinamento');
       }, esperado: '0/-1' },

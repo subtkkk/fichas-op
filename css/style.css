@@ -5747,6 +5747,7 @@ body.arrastando-arquivo::after {
 .icone--carga.icone--ativo { color: var(--erro); }
 .icone--carga.icone--ativo svg { fill: currentColor; fill-opacity: 0.25; }
 .icone--kit { color: var(--san); }
+.icone--kit.icone--alerta { color: var(--aviso); }
 
 .icone--kit.icone--ativo svg {
   fill: currentColor;
@@ -5754,7 +5755,7 @@ body.arrastando-arquivo::after {
 }
 
 .tabela-pericias .icone--kit:not(.icone--ativo) {
-  opacity: 0.55;
+  opacity: 1;
 }
 
 .tabela-pericias {

@@ -543,6 +543,12 @@ window.OP = window.OP || {};
     });
   }
 
+  /** Penalidade (positiva) por não ter o kit da perícia no inventário; 0 se não exige kit ou se tem o kit. */
+  function penalidadeSemKit(ficha, idPericia) {
+    const definicao = definicaoPericia(idPericia) || {};
+    return definicao.kit && !kitAtivo(ficha, idPericia) ? Math.max(0, numero(OP.data.config.penalidadeSemKit)) : 0;
+  }
+
   /** Tudo o que a interface precisa do inventário. */
   function estadoInventario(ficha) {
     const config = OP.data.config;
@@ -839,7 +845,7 @@ window.OP = window.OP || {};
 
   /**
    * Bônus da perícia = bônus do grau + outros
-   *   + config.bonusKit (se a perícia tem kit e o kit está no inventário)
+   *   − config.penalidadeSemKit (se a perícia exige kit e o kit não está no inventário)
    *   − penalidade de carga (se a perícia tem o sinalizador de carga).
    * O atributo fica de fora.
    * Usado também por Bloqueio, Esquiva e Iniciativa: manter nome e formato
@@ -848,8 +854,7 @@ window.OP = window.OP || {};
   function periciaBonus(ficha, idPericia) {
     const definicao = definicaoPericia(idPericia) || {};
     let bonus = bonusDoGrau(grauEfetivo(ficha, idPericia)) + numero(periciaSalva(ficha, idPericia).outros);
-    // TODO: efeito do kit, depende da regra do livro (valor em OP.data.config.bonusKit).
-    if (definicao.kit && kitAtivo(ficha, idPericia)) bonus += numero(OP.data.config.bonusKit);
+    bonus -= penalidadeSemKit(ficha, idPericia);
     if (definicao.penalidadeCarga) bonus -= penalidadeCarga(ficha);
     return bonus;
   }
@@ -896,7 +901,8 @@ window.OP = window.OP || {};
       requerTreinamento: definicao.somenteTreinada === true && grau === 0,
       bonus: periciaBonus(ficha, idPericia),
       penalidadeCarga: definicao.penalidadeCarga ? penalidadeCarga(ficha) : 0,
-      kitAtivo: definicao.kit ? kitAtivo(ficha, idPericia) : false
+      kitAtivo: definicao.kit ? kitAtivo(ficha, idPericia) : false,
+      penalidadeKit: penalidadeSemKit(ficha, idPericia)
     };
   }
 
@@ -2712,6 +2718,7 @@ window.OP = window.OP || {};
     defesaProtecoes: defesaProtecoes,
     penalidadeCarga: penalidadeCarga,
     kitAtivo: kitAtivo,
+    penalidadeSemKit: penalidadeSemKit,
     estadoInventario: estadoInventario,
     correcoesInventario: correcoesInventario,
     pontosTreinamentoTotal: pontosTreinamentoTotal,

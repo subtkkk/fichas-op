@@ -188,17 +188,18 @@ window.OP = window.OP || {};
       pericias: { medicina: { grau: 1 } },
       itens: [{ nome: 'Kit de medicina', tipo: 'kit', periciaKit: 'medicina' }]
     });
+    const medicinaSemKit = fichaDeTeste({ pericias: { medicina: { grau: 1 } } });
     const kitSemPericia = fichaDeTeste({ itens: [{ tipo: 'geral', periciaKit: 'medicina' }] });
     const creditoManual = fichaDeTeste({ inventario: { creditoNivel: 'alto' } });
 
-    /** Roda uma conta com config.bonusKit trocado e devolve o valor ao final. */
-    function comBonusKit(valor, conta) {
-      const original = cfg.bonusKit;
-      cfg.bonusKit = valor;
+    /** Roda uma conta com config.penalidadeSemKit trocado e devolve o valor ao final. */
+    function comPenalidadeKit(valor, conta) {
+      const original = cfg.penalidadeSemKit;
+      cfg.penalidadeSemKit = valor;
       try {
         return conta();
       } finally {
-        cfg.bonusKit = original;
+        cfg.penalidadeSemKit = original;
       }
     }
 
@@ -589,8 +590,15 @@ window.OP = window.OP || {};
       // --- Inventário: kit ---
       { nome: 'Kit de Medicina no inventário → kitAtivo', obtido: function () { return calc.kitAtivo(kitMedicina, 'medicina'); }, esperado: true },
       { nome: 'Item geral com perícia de kit não conta como kit', obtido: function () { return calc.kitAtivo(kitSemPericia, 'medicina'); }, esperado: false },
-      { nome: 'Kit de Medicina, config.bonusKit = 2 → Medicina treinada', obtido: function () { return comBonusKit(2, function () { return calc.periciaBonus(kitMedicina, 'medicina'); }); }, esperado: 7 },
-      { nome: 'config.bonusKit restaurado após o teste', obtido: function () { return cfg.bonusKit; }, esperado: cfg.bonusKit },
+      { nome: 'Kit de Medicina no inventário: Medicina treinada sem penalidade (+5)', obtido: function () { return calc.periciaBonus(kitMedicina, 'medicina'); }, esperado: 5 },
+      { nome: 'Sem o kit, Medicina treinada sofre −5 (bônus 0)', obtido: function () { return calc.periciaBonus(medicinaSemKit, 'medicina'); }, esperado: 0 },
+      { nome: 'Perícia que não exige kit não sofre a penalidade (Luta destreinada = 0)', obtido: function () { return calc.periciaBonus(fichaDeTeste({}), 'luta'); }, esperado: 0 },
+      { nome: 'Penalidade sem kit: 4 perícias exigem kit e cada uma limpa só com o kit dela', obtido: function () {
+        return OP.data.pericias.filter(function (p) { return p.kit; }).map(function (p) { return p.id + calc.penalidadeSemKit(fichaDeTeste({}), p.id) + '/' + calc.penalidadeSemKit(kitMedicina, p.id); }).join(',');
+      }, esperado: 'crime5/5,enganacao5/5,medicina5/0,tecnologia5/5' },
+      { nome: 'config.penalidadeSemKit = 3 → Medicina destreinada sem kit = −3 (e restaurada depois)', obtido: function () {
+        return comPenalidadeKit(3, function () { return calc.periciaBonus(fichaDeTeste({}), 'medicina'); }) + '/' + cfg.penalidadeSemKit;
+      }, esperado: '-3/5' },
 
       // --- Etapa 6, Parte A: patentes (Tabela 3.1) ---
       { nome: 'Tabela 3.1: 5 patentes', obtido: function () { return OP.data.patentes.length; }, esperado: 5 }

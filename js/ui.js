@@ -406,10 +406,9 @@ window.OP = window.OP || {};
       svg: '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
         '<circle cx="8" cy="6" r="3.2"/><path d="M5.8 8.6 4.5 14l3.5-2 3.5 2-1.3-5.4"/></svg>'
     },
-    // TODO: efeito do kit, depende da regra do livro (por enquanto só o indicador).
     kit: {
-      titulo: 'Esta perícia usa um kit; veja a regra no livro',
-      legenda: 'usa kit (cheio = kit no inventário)',
+      titulo: 'Exige kit: sem o kit no inventário, o bônus da perícia sofre penalidade',
+      legenda: 'exige kit (cheio = kit no inventário; alerta = sem kit, −5)',
       svg: '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
         '<path d="M2 5.5h12v8H2z"/><path d="M6 5.5V3.5h4v2"/><path d="M2 9h12"/><path d="M8 8v2"/></svg>'
     }
@@ -1604,7 +1603,10 @@ window.OP = window.OP || {};
       // Ícone de kit: preenchido quando o kit está no inventário
       if (elementos.kit) {
         elementos.kit.classList.toggle('icone--ativo', estado.kitAtivo);
-        const titulo = estado.kitAtivo ? ICONES.kit.titulo + ' (kit no inventário)' : ICONES.kit.titulo;
+        elementos.kit.classList.toggle('icone--alerta', !estado.kitAtivo);
+        const titulo = estado.kitAtivo
+          ? 'Kit no inventário: sem penalidade'
+          : 'Sem o kit no inventário: −' + estado.penalidadeKit + ' no bônus';
         if (elementos.kit.title !== titulo) {
           elementos.kit.title = titulo;
           elementos.kit.setAttribute('aria-label', titulo);

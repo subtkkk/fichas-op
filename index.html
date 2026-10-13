@@ -430,7 +430,7 @@
         <aside class="trilho" id="trilho-vitais" aria-label="Painel do agente">
           <div class="trilho__corpo">
             <!-- Só no celular e no tablet: quem é o agente desta ficha (no computador a faixa do agente já mostra) -->
-            <button type="button" class="trilho__agente" id="trilho-agente" aria-label="Abrir a página Agente (nome, classe e NEX)"></button>
+            <button type="button" class="trilho__agente" id="trilho-agente" aria-label="Abrir a página Agente (nome, classe e NEX)"><span class="trilho__agente-texto" id="trilho-agente-texto"></span></button>
             <section class="hud" aria-labelledby="hud-titulo">
               <h2 class="hud__titulo" id="hud-titulo">Vitais</h2>
               <div class="hud__vitais">
@@ -891,6 +891,30 @@
               <p class="secao__info">Círculos liberados: <strong id="texto-circulos">até o 1º</strong></p>
             </div>
 
+
+            <p class="secao__resumo">
+              <span>DT de rituais <output data-saida="conjuracao.dt.total">—</output></span>
+              <span>PE no turno <output data-saida="conjuracao.peGastoTurno">0</output> / <output data-saida="conjuracao.limitePE">1</output></span>
+            </p>
+
+            <!-- Filtro por elemento e busca: só da tela -->
+            <div class="filtros-linha">
+              <label class="filtro-select">
+                <span>Elemento</span>
+                <select id="filtro-elemento" class="controle" data-filtro-lista="rituais-elemento"></select>
+              </label>
+              <label class="busca">
+                <span class="visualmente-oculto">Buscar ritual</span>
+                <input type="search" id="busca-rituais" placeholder="Buscar ritual…" autocomplete="off" data-filtro-lista="rituais-busca">
+              </label>
+            </div>
+
+            <!-- Grupos por círculo (1º ao 4º), gerados pelo ui.js -->
+            <div class="rituais__grupos" id="grupos-rituais"></div>
+            <!-- <datalist> de execução, alcance e duração (data/rituais-campos.js), gerados pelo ui.js -->
+            <div id="sugestoes-ritual"></div>
+            <p class="itens__vazio" id="rituais-vazio">Nenhum ritual. Use "Adicionar ritual" para cadastrar os seus.</p>
+            <button type="button" class="botao botao--adicionar" data-acao="adicionar-ritual">+ Adicionar ritual</button>
             <div class="rituais__topo">
               <!-- DT de rituais -->
               <article class="painel painel--dt">
@@ -940,25 +964,6 @@
                 <button type="button" class="botao botao--compacto" data-acao="novo-turno">Novo turno</button>
               </article>
             </div>
-
-            <!-- Filtro por elemento e busca: só da tela -->
-            <div class="filtros-linha">
-              <label class="filtro-select">
-                <span>Elemento</span>
-                <select id="filtro-elemento" class="controle" data-filtro-lista="rituais-elemento"></select>
-              </label>
-              <label class="busca">
-                <span class="visualmente-oculto">Buscar ritual</span>
-                <input type="search" id="busca-rituais" placeholder="Buscar ritual…" autocomplete="off" data-filtro-lista="rituais-busca">
-              </label>
-            </div>
-
-            <!-- Grupos por círculo (1º ao 4º), gerados pelo ui.js -->
-            <div class="rituais__grupos" id="grupos-rituais"></div>
-            <!-- <datalist> de execução, alcance e duração (data/rituais-campos.js), gerados pelo ui.js -->
-            <div id="sugestoes-ritual"></div>
-            <p class="itens__vazio" id="rituais-vazio">Nenhum ritual. Use "Adicionar ritual" para cadastrar os seus.</p>
-            <button type="button" class="botao botao--adicionar" data-acao="adicionar-ritual">+ Adicionar ritual</button>
           </section>
           </div>
 
@@ -967,6 +972,22 @@
           <section class="secao secao--inventario" id="secao-inventario" aria-labelledby="titulo-inventario">
             <h2 class="secao__titulo" id="titulo-inventario">Inventário</h2>
 
+            <p class="secao__resumo">
+              <span>Carga <output data-saida="inventario.espacosUsados" data-formato="numero">0</output> / <output data-saida="inventario.capacidade" data-formato="numero">5</output> espaços</span>
+            </p>
+
+
+            <h3 class="subtitulo">Itens</h3>
+            <div class="itens">
+              <!-- Cabeçalho das colunas (só no computador) -->
+              <div class="itens__cabecalho" aria-hidden="true">
+                <span>Nome</span><span>Tipo</span><span>Cat.</span><span>Espaços</span><span>Qtd.</span><span>Detalhes</span><span></span>
+              </div>
+              <!-- Itens gerados a partir de ficha.inventario.itens -->
+              <div class="itens__lista" id="lista-itens" role="list" aria-label="Itens do inventário"></div>
+              <p class="itens__vazio" id="itens-vazio">Nenhum item. Use "Adicionar item" para começar.</p>
+            </div>
+            <button type="button" class="botao botao--adicionar" data-acao="adicionar-item">+ Adicionar item</button>
             <div class="inventario__topo">
               <!-- Patente, Pontos de Prestígio, crédito e limites por categoria -->
               <article class="painel painel--patente">
@@ -1034,18 +1055,6 @@
                 <p class="aviso-sobrecarga" data-aviso-sobrecarga role="status" aria-live="polite" hidden></p>
               </article>
             </div>
-
-            <h3 class="subtitulo">Itens</h3>
-            <div class="itens">
-              <!-- Cabeçalho das colunas (só no computador) -->
-              <div class="itens__cabecalho" aria-hidden="true">
-                <span>Nome</span><span>Tipo</span><span>Cat.</span><span>Espaços</span><span>Qtd.</span><span>Detalhes</span><span></span>
-              </div>
-              <!-- Itens gerados a partir de ficha.inventario.itens -->
-              <div class="itens__lista" id="lista-itens" role="list" aria-label="Itens do inventário"></div>
-              <p class="itens__vazio" id="itens-vazio">Nenhum item. Use "Adicionar item" para começar.</p>
-            </div>
-            <button type="button" class="botao botao--adicionar" data-acao="adicionar-item">+ Adicionar item</button>
           </section>
           </div>
 

@@ -397,92 +397,11 @@ window.OP = window.OP || {};
   }
 
   /* ------------------------------------------------------------------------
-     Barra de seções (nav "Seções da ficha"): Resumo, Perícias, Combate,
-     Inventário, Rituais, Biografia e Rolagens. A seção atual recebe
-     aria-current="true" por IntersectionObserver (sem suporte, só não destaca).
+     Ir até uma seção: a troca de página é do OP.uiPaginas
      ------------------------------------------------------------------------ */
 
-  // Cada seção da ficha pertence a um item da barra
-  const GRUPO_DA_SECAO = {
-    'secao-identificacao': 'resumo',
-    'secao-identidade': 'resumo',
-    'secao-atributos': 'resumo',
-    'secao-recursos': 'resumo',
-    'secao-condicoes': 'resumo',
-    'secao-pericias': 'pericias',
-    'secao-defesa': 'combate',
-    'secao-ataques': 'combate',
-    'secao-habilidades': 'combate',
-    'secao-inventario': 'inventario',
-    'secao-rituais': 'rituais',
-    'secao-biografia': 'biografia'
-  };
-
   function irParaSecao(id) {
-    const secao = document.getElementById(id);
-    if (!secao) return;
-    secao.scrollIntoView({ behavior: reduzMovimento() ? 'auto' : 'smooth', block: 'start' });
-    // Foco no título da seção (teclado e leitor de tela continuam dali)
-    const titulo = secao.querySelector('.secao__titulo');
-    if (titulo) {
-      if (!titulo.hasAttribute('tabindex')) titulo.setAttribute('tabindex', '-1');
-      try {
-        titulo.focus({ preventScroll: true });
-      } catch (erro) {
-        titulo.focus();
-      }
-    }
-    refs.secaoAtiva = id;
-    marcarGrupo(GRUPO_DA_SECAO[id]);
-  }
-
-  /** Marca na barra o item do grupo (e, no celular, traz o item para a vista). */
-  function marcarGrupo(grupo) {
-    if (!grupo || refs.grupoAtivo === grupo) return;
-    refs.grupoAtivo = grupo;
-    refs.itensIndice.forEach(function (item) {
-      if (item.getAttribute('data-grupo') === grupo) item.setAttribute('aria-current', 'true');
-      else item.removeAttribute('aria-current');
-    });
-    const ativo = refs.indice.querySelector('[aria-current="true"]');
-    const lista = refs.indice.querySelector('.indice__lista');
-    if (ativo && lista && lista.scrollWidth > lista.clientWidth + 4) {
-      const alvo = ativo.offsetLeft - (lista.clientWidth - ativo.offsetWidth) / 2;
-      lista.scrollTo({ left: Math.max(0, alvo), behavior: reduzMovimento() ? 'auto' : 'smooth' });
-    }
-  }
-
-  /**
-   * IntersectionObserver: a seção que cruza a "linha de leitura" (uma faixa fina
-   * a ~30% da altura da janela) é a atual; no fim da página, a última.
-   */
-  function ligarSecaoAtual() {
-    refs.secoes = Object.keys(GRUPO_DA_SECAO).map(function (id) { return document.getElementById(id); }).filter(Boolean);
-    if (!('IntersectionObserver' in window)) return; // sem suporte: só não destaca
-    const cruzando = new Set();
-    const observador = new IntersectionObserver(function (entradas) {
-      entradas.forEach(function (entrada) {
-        if (entrada.isIntersecting) cruzando.add(entrada.target);
-        else cruzando.delete(entrada.target);
-      });
-      if (document.body.dataset.vista !== 'ficha') return;
-      const atual = refs.secoes.filter(function (secao) { return cruzando.has(secao); }).pop();
-      if (atual) {
-        refs.secaoAtiva = atual.id;
-        marcarGrupo(GRUPO_DA_SECAO[atual.id]);
-      }
-    }, { rootMargin: '-28% 0px -64% 0px', threshold: 0 });
-    refs.secoes.forEach(function (secao) { observador.observe(secao); });
-    // No fim da página a última seção (mesmo curta) é a atual
-    let agendado = false;
-    window.addEventListener('scroll', function () {
-      if (agendado || document.body.dataset.vista !== 'ficha') return;
-      agendado = true;
-      window.requestAnimationFrame(function () {
-        agendado = false;
-        if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) marcarGrupo('biografia');
-      });
-    }, { passive: true });
+    if (OP.uiPaginas) OP.uiPaginas.irParaSecao(id);
   }
 
   /**
@@ -518,8 +437,6 @@ window.OP = window.OP || {};
     refs.campoNome = document.getElementById('campo-nome');
     refs.hudSemClasse = document.getElementById('hud-sem-classe');
     refs.hudTurno = document.getElementById('hud-turno');
-    refs.indice = document.querySelector('.indice');
-    refs.itensIndice = Array.prototype.slice.call(document.querySelectorAll('.indice__item'));
     refs.vitais = {};
     document.querySelectorAll('[data-vital]').forEach(function (elemento) {
       refs.vitais[elemento.getAttribute('data-vital')] = elemento;
@@ -528,22 +445,6 @@ window.OP = window.OP || {};
     montarSeletorTema();
     montarFolhaVital();
 
-    refs.indice.addEventListener('click', function (evento) {
-      const rolagens = evento.target.closest('[data-ir-rolagens]');
-      if (rolagens) {
-        evento.preventDefault();
-        // "Rolagens" abre o painel (gaveta no celular) e leva o foco para a alça
-        OP.ui.abrirRolagens(true);
-        const alca = document.getElementById('rolagens-alca');
-        if (alca) alca.focus();
-        return;
-      }
-      const link = evento.target.closest('[data-ir-secao]');
-      if (!link) return;
-      evento.preventDefault(); // não mexe no #hash (ele guarda a rota)
-      irParaSecao(link.getAttribute('data-ir-secao'));
-    });
-    ligarSecaoAtual();
     medirTrilho();
 
     // O tema da ficha aberta mudou nas preferências: acompanha

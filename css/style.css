@@ -3353,25 +3353,16 @@ body.arrastando-arquivo::after {
 }
 
 .ficha-layout {
-  display: grid;
-  grid-template-columns: 232px minmax(0, 1fr);
-  align-items: start;
-  gap: 0 44px;
   max-width: var(--largura-app);
   margin: 0 auto;
-  padding: 28px var(--margem-pagina) 24px;
+  padding: 0 var(--margem-pagina) calc(var(--dock-altura) + 20px + var(--seguro-base));
 }
 
-/* ---- Trilho: vidro preso ao lado, sempre à mão durante a sessão ---- */
+/* Trilho (vitais): no computador fica na zona da esquerda, no celular vira a faixa presa no topo */
 .trilho {
   position: sticky;
-  top: calc(var(--barra-altura) + 20px);
-  z-index: 10;
-  max-height: calc(100vh - var(--barra-altura) - 40px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: var(--linha-2) transparent;
+  top: var(--barra-altura);
+  z-index: 30;
 }
 
 .trilho__corpo {
@@ -3638,65 +3629,6 @@ body.arrastando-arquivo::after {
   font-size: 0.75rem;
   line-height: 1.4;
   color: var(--papel-3);
-}
-
-/* ---- Índice das seções ---- */
-.indice__lista {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding-top: 14px;
-  list-style: none;
-  border-top: 1px solid var(--linha-1);
-}
-
-.indice__item {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 8px;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--papel-3);
-  text-decoration: none;
-  white-space: nowrap;
-  border-radius: 4px;
-  transition: color var(--dur-1) var(--curva), background-color var(--dur-1) var(--curva);
-}
-
-.indice__num {
-  flex: none;
-  width: 18px;
-  font: 500 0.6875rem/1 var(--fonte-mono);
-  letter-spacing: 0.06em;
-  color: var(--papel-4);
-}
-
-.indice__item:hover {
-  color: var(--papel);
-  background: color-mix(in srgb, var(--cor-texto) 4%, transparent);
-}
-
-.indice__item[aria-current="true"] {
-  color: var(--papel);
-  background: var(--acento-suave);
-}
-
-.indice__item[aria-current="true"] .indice__num {
-  color: var(--acento);
-}
-
-.indice__item[aria-current="true"]::before {
-  content: "";
-  position: absolute;
-  top: 6px;
-  bottom: 6px;
-  left: -16px;
-  width: 2px;
-  border-radius: 2px;
-  background: var(--acento);
-  box-shadow: 0 0 10px var(--acento);
 }
 
 /* ---- Seções: sem caixa; um fio de arquivo, número e título editorial ---- */
@@ -7915,7 +7847,6 @@ body.arrastando-arquivo::after {
   text-shadow: 0 0 18px color-mix(in srgb, var(--acento-2) 55%, transparent), 0 0 2px color-mix(in srgb, var(--acento) 80%, transparent);
 }
 
-[data-elemento="energia"] .indice__item[aria-current="true"]::before,
 [data-elemento="energia"] .painel::before,
 [data-elemento="energia"] .ataque::before {
   background: linear-gradient(180deg, var(--acento-2), var(--acento) 50%, var(--acento-3));
@@ -7956,7 +7887,6 @@ body.arrastando-arquivo::after {
 [data-elemento="medo"] .ataque::before,
 [data-elemento="medo"] .ritual::before,
 [data-elemento="medo"] .recurso::before,
-[data-elemento="medo"] .indice__item[aria-current="true"]::before,
 [data-elemento="medo"] .mini-vital__preenchido,
 [data-elemento="medo"] .vital__barra .barra__preenchimento,
 [data-elemento="medo"] .recurso .barra__preenchimento {
@@ -7996,113 +7926,6 @@ html[data-transicao="tema"]::view-transition-new(root) {
 
 @keyframes vt-tema-entrar {
   from { opacity: 0; }
-}
-
-/* ==========================================================================
-   11. PAINEL DE ROLAGENS — vidro fumê no canto; acompanha o tema da ficha
-   ========================================================================== */
-.rolagens {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  z-index: 50;
-  display: none;
-  flex-direction: column-reverse; /* alça embaixo, corpo em cima */
-  width: min(392px, calc(100vw - 32px));
-  max-height: calc(100vh - var(--barra-altura) - 40px);
-  color: var(--papel);
-  background:
-    radial-gradient(120% 50% at 100% 100%, var(--acento-suave), transparent 70%),
-    var(--vidro-reflexo),
-    color-mix(in srgb, var(--tinta-1) 82%, transparent);
-  -webkit-backdrop-filter: blur(22px) saturate(150%);
-  backdrop-filter: blur(22px) saturate(150%);
-  border: 1px solid var(--vidro-borda);
-  border-radius: var(--raio-4);
-  box-shadow: 0 30px 80px -20px color-mix(in srgb, var(--cor-sombra) 85%, transparent), 0 0 0 1px color-mix(in srgb, var(--cor-sombra) 40%, transparent), 0 0 60px -30px var(--brilho);
-}
-
-body[data-vista="ficha"] .rolagens {
-  display: flex;
-}
-
-/* A alça das rolagens flutua sobre o fim da página: espaço para rolar além
-   dela, e o foco do teclado nunca para escondido atrás dela */
-body[data-vista="ficha"] .ficha__conteudo {
-  padding-bottom: 96px;
-}
-
-html[data-vista="ficha"] {
-  scroll-padding-bottom: 96px;
-}
-
-.rolagens[data-aberto="false"] {
-  width: auto;
-  border-radius: var(--raio-pilula);
-}
-
-.rolagens__alca {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: 10px;
-  min-height: 50px;
-  padding: 0 18px 0 14px;
-  font: 600 0.8438rem/1 var(--fonte-ui);
-  color: var(--papel);
-  background: transparent;
-  border: 0;
-  border-radius: inherit;
-  cursor: pointer;
-}
-
-.rolagens__icone {
-  width: 22px;
-  height: 22px;
-  fill: none;
-  stroke: var(--acento);
-  stroke-width: 1.3;
-  stroke-linejoin: round;
-  filter: drop-shadow(0 0 6px var(--brilho));
-  transition: transform var(--dur-4) var(--curva-saida);
-}
-
-.rolagens__alca:hover .rolagens__icone {
-  transform: rotate(60deg);
-}
-
-.rolagens__ultimo {
-  padding-left: 10px;
-  font: 500 0.75rem var(--fonte-mono);
-  color: var(--papel-3);
-  border-left: 1px solid var(--linha-2);
-}
-
-.rolagens__ultimo:empty {
-  display: none;
-}
-
-.rolagens__seta {
-  width: 7px;
-  height: 7px;
-  margin-left: auto;
-  border-right: 1.5px solid var(--papel-3);
-  border-bottom: 1.5px solid var(--papel-3);
-  transform: rotate(-135deg);
-  transition: transform var(--dur-2) var(--curva);
-}
-
-.rolagens[data-aberto="false"] .rolagens__seta {
-  margin-left: 6px;
-}
-
-.rolagens[data-aberto="true"] .rolagens__seta {
-  transform: rotate(45deg);
-}
-
-.rolagens[data-aberto="true"] .rolagens__alca {
-  border-top: 1px solid var(--linha-1);
-  border-radius: 0 0 var(--raio-4) var(--raio-4);
 }
 
 .rolagens__corpo {
@@ -8440,27 +8263,6 @@ html[data-vista="ficha"] {
 .historico__vazio {
   font-size: 0.75rem;
   color: var(--papel-4);
-}
-
-/* A partir de 1360px: o painel aberto vira uma coluna à direita e a ficha
-   se estreita ao lado dele, em vez de ficar coberta (abaixo disso ele flutua) */
-@media (min-width: 1360px) {
-  /* Só a área da ficha abre espaço; a barra global continua inteira */
-  body.com-painel-rolagens[data-vista="ficha"] .vista--ficha {
-    padding-right: 412px;
-  }
-
-  .rolagens[data-aberto="true"] {
-    top: calc(var(--barra-altura) + 16px);
-    right: 16px;
-    bottom: 16px;
-    width: 380px;
-    max-height: none;
-  }
-
-  .rolagens[data-aberto="true"] .rolagens__corpo {
-    flex: 1;
-  }
 }
 
 /* ==========================================================================
@@ -9053,174 +8855,6 @@ html[data-vista="ficha"] {
    13. RESPONSIVO
    ========================================================================== */
 
-/* Tablet e celular: o trilho vira uma faixa presa no topo e a barra de seções vai para o rodapé */
-@media (max-width: 1023px) {
-  :root {
-    --margem-pagina: 1.5rem;
-    --topo-fixo: calc(var(--barra-altura) + var(--altura-trilho, 104px));
-  }
-
-  .ficha-layout {
-    grid-template-columns: minmax(0, 1fr);
-    padding-top: 0;
-  }
-
-  .trilho {
-    top: var(--barra-altura);
-    z-index: 30;
-    max-height: none;
-    margin: 0 calc(-1 * var(--margem-pagina));
-    overflow: visible;
-  }
-
-  .trilho__corpo {
-    gap: 0;
-    padding: 10px var(--margem-pagina) 0;
-    background: var(--vidro-reflexo), color-mix(in srgb, var(--tinta-1) 86%, transparent);
-    border-width: 0 0 1px;
-    border-radius: 0;
-    box-shadow: 0 12px 30px -18px color-mix(in srgb, var(--cor-sombra) 90%, transparent);
-  }
-
-  .hud {
-    display: flex;
-    align-items: center;
-    gap: 22px;
-  }
-
-  .hud__titulo,
-  .hud__aviso {
-    display: none !important;
-  }
-
-  .hud__vitais {
-    display: grid;
-    flex: 1;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 22px;
-    margin-top: 0;
-  }
-
-  .hud__derivados {
-    flex: none;
-    width: 270px;
-    margin-top: 0;
-  }
-
-  .indice {
-    margin-top: 10px;
-  }
-
-  .indice__lista {
-    flex-direction: row;
-    gap: 6px;
-    padding: 0 0 10px;
-    overflow-x: auto;
-    border-top: 0;
-    scrollbar-width: none;
-    -webkit-mask-image: linear-gradient(90deg, var(--cor-sombra) calc(100% - 32px), transparent);
-    mask-image: linear-gradient(90deg, var(--cor-sombra) calc(100% - 32px), transparent);
-  }
-
-  .indice__lista::-webkit-scrollbar {
-    display: none;
-  }
-
-  .indice__item {
-    padding: 5px 11px;
-    font-size: 0.7812rem;
-    border: 1px solid var(--linha-1);
-    border-radius: var(--raio-pilula);
-  }
-
-  .indice__item[aria-current="true"] {
-    border-color: var(--acento-linha);
-  }
-
-  .indice__item[aria-current="true"]::before {
-    display: none;
-  }
-
-  .ficha__conteudo {
-    padding-top: 26px;
-  }
-}
-
-/* Capa do dossiê com menos largura */
-@container ficha (max-width: 879px) {
-  .secao--dossie .grade-campos {
-    grid-template-columns: 104px repeat(3, minmax(0, 1fr));
-    grid-template-areas:
-      "selo nome nome nome"
-      "selo jog  jog  nex"
-      "orig orig clas tril";
-  }
-
-  .dossie__selo {
-    width: 104px;
-    height: 104px;
-  }
-
-  .dossie__monograma {
-    font-size: 2.375rem;
-  }
-}
-
-@container ficha (max-width: 560px) {
-  .ficha__conteudo .secao--dossie {
-    padding: 16px 16px 20px;
-  }
-
-  .secao--dossie .grade-campos {
-    grid-template-columns: 64px minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-areas:
-      "selo nome nome"
-      "jog  jog  jog"
-      "orig orig orig"
-      "clas clas nex"
-      "tril tril tril";
-    gap: 12px;
-  }
-
-  .dossie__selo {
-    width: 64px;
-    height: 64px;
-  }
-
-  .dossie__monograma {
-    font-size: 1.5rem;
-  }
-
-  .dossie__selo-elemento {
-    right: -2px;
-    bottom: -4px;
-    width: 24px;
-    height: 24px;
-    padding: 5px;
-  }
-
-  .secao--dossie .campo--nome .campo__destaque {
-    font-size: 2rem;
-  }
-
-  .dossie__ferramentas,
-  .seletor-tema {
-    width: 100%;
-  }
-
-  .seletor-tema__atual {
-    display: none;
-  }
-
-  .secao__titulo {
-    font-size: 1.625rem;
-  }
-
-  .ficha__conteudo .secao__titulo::before {
-    transform: translateY(-6px);
-  }
-}
-
 /* Central e Arquivo em telas médias */
 @media (max-width: 1023px) {
   .central__heroi {
@@ -9258,10 +8892,6 @@ html[data-vista="ficha"] {
 
   body[data-vista="ficha"] .app-barra {
     position: relative;
-  }
-
-  body[data-vista="ficha"] .trilho {
-    top: 0;
   }
 
   .app-barra__conteudo {
@@ -9453,11 +9083,6 @@ html[data-vista="ficha"] {
   }
 
   /* Ficha: faixa de vitais compacta */
-  .ficha-layout {
-    padding-right: var(--margem-pagina);
-    padding-left: var(--margem-pagina);
-  }
-
   .trilho__corpo {
     padding-top: 8px;
   }
@@ -9502,41 +9127,8 @@ html[data-vista="ficha"] {
     display: none;
   }
 
-  .indice {
-    margin-top: 8px;
-  }
-
-  .ficha__conteudo {
-    padding-top: 18px;
-  }
-
-  .ficha__conteudo .secao {
-    padding-top: 34px;
-  }
-
   .botao--grande {
     height: 46px;
-  }
-
-  /* Rolagens: gaveta presa embaixo */
-  .rolagens,
-  .rolagens[data-aberto="false"] {
-    right: 0;
-    bottom: 0;
-    left: 0;
-    width: auto;
-    max-height: 70vh;
-    border-width: 1px 0 0;
-    border-radius: var(--raio-4) var(--raio-4) 0 0;
-  }
-
-  .rolagens[data-aberto="true"] .rolagens__alca {
-    border-radius: 0;
-  }
-
-  .rolagens__alca {
-    min-height: 52px;
-    padding-bottom: env(safe-area-inset-bottom, 0);
   }
 
   .dialogo__botoes .botao {
@@ -9676,14 +9268,6 @@ html[data-vista="ficha"] {
   .botao-icone {
     width: 40px;
     height: 40px;
-  }
-
-  .indice__item {
-    min-height: 34px;
-  }
-
-  .indice__item {
-    min-height: 40px;
   }
 
   .pericia__concedida .caixa {
@@ -10520,7 +10104,7 @@ kbd {
        2 colunas onde cabem; a partir de 1024 px, a coluna lateral.
    ========================================================================== */
 :root {
-  --barra-secoes: 3.5rem; /* altura da barra de seções no rodapé (abaixo de 1024 px) */
+  --dock-altura: 4.25rem; /* altura da barra de páginas no rodapé (abaixo de 1180 px) */
   --seguro-topo: env(safe-area-inset-top, 0px);
   --seguro-base: env(safe-area-inset-bottom, 0px);
   --seguro-esq: env(safe-area-inset-left, 0px);
@@ -10532,151 +10116,6 @@ kbd {
   padding-top: var(--seguro-topo);
   padding-right: var(--seguro-dir);
   padding-left: var(--seguro-esq);
-}
-
-/* ---- Coluna lateral (a partir de 1024 px): painel do agente + barra de seções ---- */
-.lateral {
-  display: contents;
-}
-
-@media (min-width: 1024px) {
-  .lateral {
-    position: sticky;
-    top: calc(var(--barra-altura) + 20px);
-    z-index: 10;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    max-height: calc(100vh - var(--barra-altura) - 40px);
-    max-height: calc(100dvh - var(--barra-altura) - 40px);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-width: thin;
-    scrollbar-color: var(--linha-2) transparent;
-  }
-
-  .lateral .trilho {
-    position: static;
-    max-height: none;
-    overflow: visible;
-  }
-
-  .lateral .indice {
-    padding: 12px;
-    background:
-      radial-gradient(140% 60% at 0% 0%, var(--acento-suave), transparent 60%),
-      var(--vidro-reflexo),
-      color-mix(in oklab, var(--tinta-superficie) 70%, transparent);
-    -webkit-backdrop-filter: var(--vidro-desfoque);
-    backdrop-filter: var(--vidro-desfoque);
-    border: 1px solid var(--vidro-borda);
-    border-radius: var(--raio-3);
-    box-shadow: var(--sombra-2);
-  }
-
-  .lateral .indice__lista {
-    padding-top: 0;
-    border-top: 0;
-  }
-
-  .lateral .indice__item {
-    min-height: 2.25rem;
-  }
-}
-
-/* ---- Abaixo de 1024 px: a barra de seções é a barra fixa do rodapé ---- */
-@media (max-width: 1023px) {
-  .indice {
-    position: fixed;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 60;
-    margin: 0;
-    padding: 6px calc(10px + var(--seguro-dir)) calc(6px + var(--seguro-base)) calc(10px + var(--seguro-esq));
-    background: color-mix(in srgb, var(--tinta-1) 96%, transparent);
-    -webkit-backdrop-filter: var(--vidro-desfoque);
-    backdrop-filter: var(--vidro-desfoque);
-    border-top: 1px solid var(--linha-2);
-    box-shadow: 0 -10px 30px -20px color-mix(in srgb, var(--cor-sombra) 80%, transparent);
-  }
-
-  .indice__lista {
-    display: flex;
-    flex-direction: row;
-    gap: 8px;
-    padding: 0;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    border-top: 0;
-    scrollbar-width: none;
-    -webkit-mask-image: none;
-    mask-image: none;
-  }
-
-  .indice__item {
-    flex: none;
-    justify-content: center;
-    min-width: 44px;
-    min-height: 44px;
-    padding: 0 14px;
-    font-size: 0.875rem;
-    border: 1px solid var(--linha-1);
-    border-radius: var(--raio-pilula);
-  }
-
-  /* O resto da página abre espaço para a barra (e para o botão de Rolagens) */
-  body[data-vista="ficha"] .ficha__conteudo {
-    padding-bottom: calc(var(--barra-secoes) + 5rem + var(--seguro-base));
-  }
-
-  html[data-vista="ficha"] {
-    scroll-padding-bottom: calc(var(--barra-secoes) + 1.5rem + var(--seguro-base));
-  }
-
-  /* Rolagens entre 900 e 1023 px: painel flutuante acima da barra */
-  .rolagens {
-    right: calc(16px + var(--seguro-dir));
-    bottom: calc(var(--barra-secoes) + 16px + var(--seguro-base));
-  }
-}
-
-/* ---- Rolagens abaixo de 900 px: botão flutuante e gaveta inferior (até 70% da altura) ---- */
-@media (max-width: 899px) {
-  .rolagens[data-aberto="false"] {
-    right: calc(12px + var(--seguro-dir));
-    bottom: calc(var(--barra-secoes) + 12px + var(--seguro-base));
-    left: auto;
-    width: auto;
-    max-height: none;
-    border-width: 1px;
-    border-radius: var(--raio-pilula);
-  }
-
-  .rolagens[data-aberto="true"] {
-    right: 0;
-    bottom: calc(var(--barra-secoes) + var(--seguro-base));
-    left: 0;
-    width: auto;
-    max-height: 70vh;
-    max-height: 70dvh;
-    border-width: 1px 0 0;
-    border-radius: var(--raio-4) var(--raio-4) 0 0;
-  }
-
-  .rolagens__alca {
-    min-height: 48px;
-    padding-bottom: 0;
-  }
-
-  .rolagens[data-aberto="true"] .rolagens__alca {
-    border-radius: 0;
-  }
-
-  /* O resultado de uma rolagem com a gaveta fechada aparece como aviso curto (aria-live) */
-  .avisos-app {
-    bottom: calc(var(--barra-secoes) + 76px + var(--seguro-base));
-  }
 }
 
 /* ---- Alvos de toque de pelo menos 44 × 44 px (espaço de 8 px entre eles) e campos de 16 px ---- */
@@ -11029,5 +10468,795 @@ kbd {
 
   .segmentado__opcao {
     min-width: 44px;
+  }
+}
+
+/* ==========================================================================
+   18. FICHA EM PÁGINAS
+       Computador (≥ 1180 px): três zonas sempre à vista (info do agente,
+       atributos + vitais + testes, perícias) e, à direita, abas com as outras
+       páginas. Celular e tablet: uma página por vez, com o botão-índice no rodapé.
+       A página mostrada vem de js/ui-paginas.js (atributo data-oculta).
+   ========================================================================== */
+.ficha-layout [data-oculta] {
+  display: none !important;
+}
+
+.zona {
+  min-width: 0;
+}
+
+/* Cada página tem o seu nome no índice: o número de seção do papel não aparece na tela */
+.ficha-layout .ficha__conteudo .secao__titulo::before {
+  display: none;
+}
+
+.ficha-layout .legenda {
+  gap: 2px 14px;
+  margin-top: 8px;
+  font-size: 0.6875rem;
+}
+
+/* ---- Abas e índice: cada um só no seu tamanho de tela ---- */
+.indice {
+  display: none;
+}
+
+.dock {
+  display: none;
+}
+
+.abas-paginas {
+  display: flex;
+  gap: 0;
+  padding: 0 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.aba-pagina {
+  position: relative;
+  display: inline-flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 46px;
+  padding: 0 10px;
+  font: 600 0.8125rem/1 var(--fonte-ui);
+  color: var(--papel-3);
+  white-space: nowrap;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color var(--dur-1) var(--curva), background-color var(--dur-1) var(--curva);
+}
+
+.aba-pagina:hover {
+  color: var(--papel);
+  background: color-mix(in srgb, var(--cor-texto) 4%, transparent);
+}
+
+.aba-pagina[aria-selected="true"] {
+  color: var(--papel);
+  background: var(--acento-suave);
+  border-bottom-color: var(--acento);
+}
+
+.aba-pagina__selo,
+.paginas-indice__selo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 6px;
+  font: 700 0.6875rem/1 var(--fonte-mono);
+  color: var(--acento-texto);
+  background: var(--acento);
+  border-radius: var(--raio-pilula);
+}
+
+/* ---- Rolagens como página ---- */
+.rolagens {
+  display: flex;
+  flex-direction: column;
+  color: var(--papel);
+}
+
+.rolagens__titulo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 18px 16px 0;
+  font: 600 1rem/1.2 var(--fonte-ui);
+}
+
+.rolagens__icone {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: var(--acento);
+  stroke-width: 1.3;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 6px var(--brilho));
+}
+
+.rolagens__ultimo {
+  padding-left: 10px;
+  font: 500 0.75rem var(--fonte-mono);
+  color: var(--papel-3);
+  border-left: 1px solid var(--linha-2);
+}
+
+.rolagens__ultimo:empty {
+  display: none;
+}
+
+.rolagens__corpo {
+  overflow: visible;
+  animation: none;
+}
+
+/* Capa do dossiê (identificação) com menos largura */
+@container ficha (max-width: 879px) {
+  .secao--dossie .grade-campos {
+    grid-template-columns: 104px repeat(3, minmax(0, 1fr));
+    grid-template-areas:
+      "selo nome nome nome"
+      "selo jog  jog  nex"
+      "orig orig clas tril";
+  }
+
+  .dossie__selo {
+    width: 104px;
+    height: 104px;
+  }
+
+  .dossie__monograma {
+    font-size: 2.375rem;
+  }
+}
+
+@container ficha (max-width: 560px) {
+  .ficha__conteudo .secao--dossie {
+    padding: 16px 16px 20px;
+  }
+
+  .secao--dossie .grade-campos {
+    grid-template-columns: 64px minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "selo nome nome"
+      "jog  jog  jog"
+      "orig orig orig"
+      "clas clas nex"
+      "tril tril tril";
+    gap: 12px;
+  }
+
+  .dossie__selo {
+    width: 64px;
+    height: 64px;
+  }
+
+  .dossie__monograma {
+    font-size: 1.5rem;
+  }
+
+  .dossie__selo-elemento {
+    right: -2px;
+    bottom: -4px;
+    width: 24px;
+    height: 24px;
+    padding: 5px;
+  }
+
+  .secao--dossie .campo--nome .campo__destaque {
+    font-size: 2rem;
+  }
+
+  .dossie__ferramentas,
+  .seletor-tema {
+    width: 100%;
+  }
+
+  .seletor-tema__atual {
+    display: none;
+  }
+}
+
+/* ---- Celular e tablet: uma página por vez ---- */
+@media (max-width: 1179px) {
+  .ficha-layout {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .zona--esq {
+    display: contents;
+  }
+
+  /* O trilho (vitais) é a faixa presa no topo, em todas as páginas (primeiro na ordem) */
+  .trilho {
+    order: -1;
+    margin: 0 calc(-1 * var(--margem-pagina));
+  }
+
+  .trilho__corpo {
+    gap: 0;
+    padding: 10px var(--margem-pagina);
+    background: var(--vidro-reflexo), color-mix(in srgb, var(--tinta-1) 90%, transparent);
+    border-width: 0 0 1px;
+    border-radius: 0;
+    box-shadow: 0 12px 30px -18px color-mix(in srgb, var(--cor-sombra) 90%, transparent);
+  }
+
+  .hud {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+  }
+
+  .hud__titulo,
+  .hud__aviso {
+    display: none !important;
+  }
+
+  .hud__vitais {
+    display: grid;
+    flex: 1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px;
+    margin-top: 0;
+  }
+
+  .hud__derivados {
+    flex: none;
+    width: 270px;
+    margin-top: 0;
+  }
+
+  .ficha-layout .ficha__conteudo > .secao,
+  .ficha-layout .zona > .secao,
+  .pagina-painel > .secao {
+    scroll-margin-top: var(--topo-fixo);
+  }
+
+  .ficha-layout .zona,
+  .ficha-layout .pagina-painel {
+    padding-top: 6px;
+  }
+
+  /* O selo dos cinco não precisa passar de ~440 px de largura */
+  .secao--atributos[data-modo="mesa"] .atributos__palco {
+    width: min(100%, 440px);
+  }
+
+  .ficha-layout [data-pagina]:not([data-oculta]) {
+    animation: pagina-entra 200ms var(--curva-saida) both;
+  }
+
+  /* Rolagens: página como as outras */
+  .rolagens {
+    padding-bottom: 12px;
+  }
+
+  /* Avisos curtos (resultado das rolagens) ficam acima do rodapé */
+  .avisos-app {
+    bottom: calc(var(--dock-altura) + 12px + var(--seguro-base));
+  }
+
+  /* ---- Rodapé: setas + botão-índice ---- */
+  body[data-vista="ficha"] .dock {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 60;
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr) 52px;
+    gap: 10px;
+    padding: 8px calc(12px + var(--seguro-dir)) calc(8px + var(--seguro-base)) calc(12px + var(--seguro-esq));
+    background: color-mix(in srgb, var(--tinta-1) 96%, transparent);
+    -webkit-backdrop-filter: var(--vidro-desfoque);
+    backdrop-filter: var(--vidro-desfoque);
+    border-top: 1px solid var(--linha-2);
+    box-shadow: 0 -10px 30px -20px color-mix(in srgb, var(--cor-sombra) 80%, transparent);
+  }
+
+  .dock__seta,
+  .dock__indice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    color: var(--papel);
+    background: color-mix(in srgb, var(--cor-texto) 4%, transparent);
+    border: 1px solid var(--linha-2);
+    border-radius: var(--raio-pilula);
+    cursor: pointer;
+  }
+
+  .dock__seta svg,
+  .dock__icone {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .dock__seta:disabled {
+    color: var(--papel-4);
+    cursor: default;
+    opacity: 0.55;
+  }
+
+  .dock__indice {
+    gap: 10px;
+    padding: 0 18px;
+    font: 600 0.9375rem/1 var(--fonte-ui);
+    background: var(--acento-suave);
+    border-color: var(--acento-linha);
+  }
+
+  .dock__icone {
+    color: var(--acento);
+  }
+
+  .dock__contador {
+    font: 500 0.75rem var(--fonte-mono);
+    color: var(--papel-3);
+  }
+
+  /* Folha do índice: sobe de baixo */
+  .dialogo--paginas {
+    width: 100%;
+    max-width: none;
+    margin: auto 0 0;
+    border-width: 1px 0 0;
+    border-radius: var(--raio-4) var(--raio-4) 0 0;
+  }
+
+  .dialogo--paginas .dialogo__corpo {
+    padding-bottom: calc(18px + var(--seguro-base));
+  }
+}
+
+@media (min-width: 720px) and (max-width: 1179px) {
+  :root {
+    --margem-pagina: 1.5rem;
+    --topo-fixo: calc(var(--barra-altura) + var(--altura-trilho, 104px));
+  }
+}
+
+@media (max-width: 719px) {
+  body[data-vista="ficha"] .trilho {
+    top: 0;
+  }
+}
+
+@keyframes pagina-entra {
+  from { opacity: 0; }
+}
+
+/* Índice da folha (lista de páginas) */
+.paginas-indice {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.paginas-indice__botao {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  min-height: 76px;
+  padding: 12px;
+  font: inherit;
+  color: var(--papel);
+  text-align: left;
+  background: transparent;
+  border: 1px solid var(--linha-1);
+  border-radius: var(--raio-3);
+  cursor: pointer;
+}
+
+.paginas-indice__botao:hover {
+  background: color-mix(in srgb, var(--cor-texto) 4%, transparent);
+}
+
+.paginas-indice__botao[aria-current="page"] {
+  background: var(--acento-suave);
+  border-color: var(--acento);
+}
+
+.paginas-indice__num {
+  flex: none;
+  padding-top: 2px;
+  font: 600 0.75rem/1 var(--fonte-mono);
+  letter-spacing: 0.06em;
+  color: var(--acento);
+}
+
+.paginas-indice__texto {
+  min-width: 0;
+}
+
+.paginas-indice__texto strong {
+  display: block;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.paginas-indice__texto small {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--papel-3);
+}
+
+.paginas-indice__selo {
+  margin-left: auto;
+}
+
+@media (max-width: 380px) {
+  .paginas-indice {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- Computador: três zonas fixas na tela + abas ---- */
+@media (min-width: 1180px) {
+  body[data-vista="ficha"] .rodape {
+    display: none;
+  }
+
+  body[data-vista="ficha"] .app-principal {
+    min-height: 0;
+  }
+
+  .ficha-layout {
+    display: grid;
+    grid-template-columns: minmax(300px, 0.9fr) minmax(330px, 1fr) minmax(400px, 1.35fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      "info info pag"
+      "esq  per  pag";
+    gap: 14px;
+    max-width: 1840px;
+    height: calc(100vh - var(--barra-altura));
+    height: calc(100dvh - var(--barra-altura));
+    padding: 14px var(--margem-pagina) 16px;
+    overflow: clip;
+  }
+
+  .zona {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--linha-2) transparent;
+    scroll-padding-top: 12px;
+  }
+
+  .zona--info {
+    grid-area: info;
+    overflow: visible;
+  }
+
+  .zona--esq {
+    grid-area: esq;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-right: 4px;
+  }
+
+  .zona--per {
+    grid-area: per;
+  }
+
+  .zona--pag {
+    grid-area: pag;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Cartões das zonas */
+  .zona--per,
+  .zona--pag,
+  .zona--esq > .secao {
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--cor-texto) 3%, transparent), transparent 40%),
+      color-mix(in oklab, var(--tinta-superficie) 82%, transparent);
+    border: 1px solid var(--linha-2);
+    border-radius: var(--raio-4);
+    box-shadow: var(--sombra-2);
+  }
+
+  .trilho {
+    position: static;
+    flex: none;
+  }
+
+  .indice {
+    display: block;
+    flex: none;
+    border-bottom: 1px solid var(--linha-2);
+  }
+
+  .paginas {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--linha-2) transparent;
+    scroll-padding-top: 12px;
+  }
+
+  .pagina-painel {
+    padding: 4px 18px 28px;
+  }
+
+  .pagina-painel--rolagens {
+    padding: 0 2px 16px;
+  }
+
+  /* Seções mais compactas: o editorial (número, fio, título grande) fica para o papel */
+  .ficha-layout .ficha__conteudo .secao {
+    margin: 0;
+    padding: 16px 16px 14px;
+  }
+
+  .ficha-layout .ficha__conteudo .secao::before {
+    display: none;
+  }
+
+  .ficha-layout .ficha__conteudo .secao__titulo {
+    margin-bottom: 12px;
+    font-size: 1.3125rem;
+    line-height: 1.1;
+  }
+
+  .ficha-layout .ficha__conteudo .secao__titulo::before {
+    display: none;
+  }
+
+  .ficha-layout .secao__cabecalho {
+    margin-bottom: 12px;
+  }
+
+  .ficha-layout .zona--per > .secao {
+    padding: 14px 16px 12px;
+  }
+
+  .pagina-painel .secao {
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  .pagina-painel .secao + .secao {
+    margin-top: 6px;
+    border-top: 1px solid var(--linha-1);
+  }
+
+  .pagina-painel > .secao:first-child {
+    padding-top: 12px;
+  }
+
+  /* Tabela de perícias: o cabeçalho cola no topo da zona */
+  .zona--per .tabela-pericias thead th {
+    top: 0;
+  }
+
+  /* Info do agente: faixa baixa */
+  .zona--info .secao--dossie {
+    padding: 12px 18px 14px;
+  }
+
+  .zona--info .secao--dossie::after {
+    display: none;
+  }
+
+  .zona--info .secao--dossie .grade-campos {
+    grid-template-columns: 72px minmax(0, 1.2fr) minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 0.75fr);
+    grid-template-areas:
+      "selo nome nome nome nome nome"
+      "selo jog  orig clas tril nex";
+    gap: 8px 14px;
+  }
+
+  .zona--info .dossie__selo {
+    width: 72px;
+    height: 72px;
+  }
+
+  .zona--info .dossie__monograma {
+    font-size: 1.75rem;
+  }
+
+  .zona--info .dossie__selo-elemento {
+    display: none;
+  }
+
+  .zona--info .campo label {
+    margin-bottom: 4px;
+  }
+
+  .dock,
+  .dialogo--paginas {
+    display: none;
+  }
+
+  /* Faixa do agente: o NEX nunca fica espremido */
+  .zona--info .secao--dossie .grade-campos {
+    grid-template-columns: 72px minmax(0, 1.1fr) minmax(0, 1.2fr) minmax(0, 0.9fr) minmax(0, 1.2fr) minmax(76px, 0.7fr);
+    grid-template-areas:
+      "selo nome nome nome nome nome"
+      "selo jog  orig clas tril nex";
+  }
+
+  /* Abas: se não couberem, rolam (a aba marcada é trazida para a vista pelo JS) */
+  .indice {
+    container-type: inline-size;
+  }
+
+  .aba-pagina {
+    flex: 1 0 auto;
+  }
+
+  @container (max-width: 560px) {
+    .aba-pagina {
+      padding: 0 9px;
+      font-size: 0.75rem;
+    }
+  }
+
+  /* Nome do agente: legível, mas sem ocupar a faixa inteira */
+  .zona--info .secao--dossie .campo--nome .campo__destaque {
+    padding-bottom: 2px;
+    font-size: clamp(1.5rem, 2.2vw, 2rem);
+    line-height: 1.1;
+  }
+
+  /* Atributos: o selo dos cinco menor, para os vitais caberem logo abaixo */
+  .zona--esq .secao--atributos[data-modo="mesa"] .atributos__palco {
+    width: min(100%, 290px);
+    margin-top: -14px;
+    margin-bottom: -10px;
+  }
+
+  .zona--esq .secao--atributos {
+    padding-bottom: 8px;
+  }
+
+  /* Vitais (trilho) em linhas compactas */
+  .zona--esq .trilho__corpo {
+    gap: 10px;
+    padding: 12px 14px;
+  }
+
+  .zona--esq .hud__titulo {
+    display: none;
+  }
+
+  /* Perícias na zona: uma linha por perícia (nome, atributo, grau, outros, total, rolar) */
+  .zona--per .secao--pericias[data-modo] .pericia {
+    grid-template-columns: minmax(0, 1fr) auto auto auto auto auto;
+    grid-template-areas: "nome dados grau outros bonus rolar";
+    align-items: center;
+    gap: 0 6px;
+    padding: 1px 8px 1px 12px;
+  }
+
+  .zona--per .secao--pericias[data-modo="edicao"] .pericia {
+    grid-template-areas:
+      "nome dados grau outros bonus rolar"
+      "conc conc  conc conc   conc  conc";
+  }
+
+  .zona--per .pericia__nome,
+  .zona--per .pericia__dados {
+    align-self: center;
+  }
+
+  .zona--per .pericia .controle {
+    height: 28px;
+    font-size: 0.8438rem;
+  }
+
+  .zona--per .tabela-pericias .pericia > .pericia__outros .controle {
+    width: 54px;
+  }
+
+  .zona--per .atributo-sigla {
+    min-width: 0;
+    min-height: 28px;
+    margin: 0;
+  }
+
+  .zona--per .pericia__concedida .caixa {
+    margin-block: 0;
+  }
+
+  .zona--per .pericia__concedida {
+    text-align: left;
+    padding-bottom: 2px !important;
+  }
+
+  .zona--per .pericia__bonus output {
+    font-size: 1.0625rem;
+  }
+
+  .zona--per .pericia--treinada .pericia__bonus output {
+    font-size: 1.125rem;
+  }
+
+  /* Perícias: busca e filtro na mesma linha, legenda miúda */
+  .zona--per .pericias__ferramentas {
+    flex-wrap: nowrap;
+    gap: 10px 14px;
+    margin-top: 10px;
+  }
+
+  .zona--per .busca {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .zona--per .legenda {
+    gap: 2px 14px;
+    margin-top: 8px;
+    font-size: 0.6875rem;
+  }
+}
+
+/* Computador com pouca altura (notebooks): o selo dos cinco e os vitais encolhem para caber na coluna */
+@media (min-width: 1180px) and (max-height: 840px) {
+  .zona--esq .secao--atributos[data-modo="mesa"] .atributos__palco {
+    width: min(100%, 256px);
+    margin-top: -18px;
+    margin-bottom: -14px;
+  }
+
+  .zona--esq .trilho__corpo {
+    gap: 6px;
+    padding: 8px 12px;
+  }
+
+  .zona--info .secao--dossie {
+    padding: 8px 16px 10px;
+  }
+
+  .zona--info .dossie__selo {
+    width: 56px;
+    height: 56px;
+  }
+
+  .zona--info .dossie__monograma {
+    font-size: 1.4rem;
+  }
+}
+
+/* Tablet e telas de toque: a sigla do atributo ganha área de 44 px sem aumentar a linha */
+@media (max-width: 1179px), (pointer: coarse) {
+  .atributo-sigla {
+    min-width: 44px;
+    min-height: 44px;
+    margin: -8px 0 -8px -8px;
+    justify-content: center;
   }
 }

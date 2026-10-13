@@ -1389,3 +1389,83 @@ html[data-diario-impressao="sim"] .bio__diario {
 #cond-vazio {
   display: none !important;
 }
+
+/* --------------------------------------------------------------------------
+   Ficha em páginas (js/ui-paginas.js): no papel todas as seções aparecem,
+   na ordem do papel de antes (Identificação, Atributos, Recursos, Condições,
+   Defesa, Testes, Perícias, Ataques, Habilidades, Rituais, Inventário, Biografia).
+   -------------------------------------------------------------------------- */
+.ficha-layout {
+  display: flex !important;
+  flex-direction: column;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+.ficha-layout .zona,
+.ficha-layout .paginas,
+.ficha-layout .pagina-painel {
+  display: contents !important;
+}
+
+.ficha-layout section[data-oculta] {
+  display: block !important;
+}
+
+.ficha-layout .pagina-painel--rolagens,
+.rolagens,
+.indice,
+.dock,
+.dialogo--paginas,
+.agente__ferramentas {
+  display: none !important;
+}
+
+#secao-identificacao { order: 10; }
+#secao-atributos { order: 20; }
+#secao-recursos { order: 30; }
+#secao-condicoes { order: 40; }
+#secao-defesa { order: 50; }
+#secao-testes { order: 55; }
+#secao-pericias { order: 60; }
+#secao-ataques { order: 70; }
+#secao-habilidades { order: 80; }
+#secao-rituais { order: 90; }
+#secao-inventario { order: 100; }
+#secao-biografia { order: 110; }
+
+/* Perícias no papel: sigla do atributo em texto simples; a marca de "menor" vira "▼" pequeno */
+.atributo-sigla {
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 7.5pt !important;
+  color: #000 !important;
+  background: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.pericia--atributo-alterado .atributo-sigla::after {
+  content: "•";
+}
+
+.marca-menor {
+  display: inline-block;
+  width: 6pt !important;
+  height: 6pt !important;
+}
+
+.marca-menor svg {
+  width: 6pt !important;
+  height: 6pt !important;
+}
+
+.marca-menor[hidden] {
+  display: none !important;
+}
+
+.pericia__dados {
+  white-space: nowrap;
+}

@@ -1122,6 +1122,7 @@ window.OP = window.OP || {};
     const elementos = refs.pericias[idPericia];
     if (!elementos) return;
     if (elementos.linha.hidden) limparFiltros();
+    if (OP.uiPaginas) OP.uiPaginas.mostrarPaginaDe(elementos.linha); // no celular, abre a página das perícias
 
     const semAnimacao = OP.uiApp ? OP.uiApp.reduzMovimento() : (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     elementos.linha.scrollIntoView({ behavior: semAnimacao ? 'auto' : 'smooth', block: 'center' });
@@ -2128,7 +2129,6 @@ window.OP = window.OP || {};
 
   function montarRolagens() {
     refs.painel = document.getElementById('rolagens');
-    refs.alca = document.getElementById('rolagens-alca');
     refs.corpoPainel = document.getElementById('rolagens-corpo');
     refs.ultimo = document.getElementById('rolagens-ultimo');
     refs.resultado = document.getElementById('rolagens-resultado');
@@ -2148,13 +2148,6 @@ window.OP = window.OP || {};
     }
     refs.rolagemMod.innerHTML = opcoes.join('');
 
-    refs.alca.addEventListener('click', function () { abrirPainel(refs.painel.dataset.aberto !== 'true'); });
-    refs.painel.addEventListener('keydown', function (evento) {
-      if (evento.key === 'Escape' && refs.painel.dataset.aberto === 'true') {
-        abrirPainel(false);
-        refs.alca.focus();
-      }
-    });
     [refs.rolagemMod, refs.rolagemBonus, refs.rolagemDefesa].forEach(function (campo) {
       campo.addEventListener('input', desenharDicaRolagem);
       campo.addEventListener('change', desenharDicaRolagem);
@@ -2184,12 +2177,9 @@ window.OP = window.OP || {};
     desenharHistorico();
   }
 
+  /** As Rolagens são uma página da ficha: "abrir" leva até ela. */
   function abrirPainel(aberto) {
-    refs.painel.dataset.aberto = String(aberto);
-    refs.alca.setAttribute('aria-expanded', String(aberto));
-    refs.corpoPainel.hidden = !aberto;
-    // Em telas bem largas o painel aberto vira uma coluna e a página abre espaço para ele
-    document.body.classList.toggle('com-painel-rolagens', aberto);
+    if (aberto !== false && OP.uiPaginas) OP.uiPaginas.ir('rolagens', { anunciar: false });
   }
 
   /** Opções do painel para a próxima rolagem. */
@@ -2372,18 +2362,14 @@ window.OP = window.OP || {};
   }
 
   /** Tela estreita: o painel de Rolagens é uma gaveta que cobre a ficha (abaixo de 900 px). */
-  function emGaveta() {
-    return Boolean(window.matchMedia && window.matchMedia('(max-width: 899px)').matches);
-  }
-
   /**
    * Mostra um resultado no painel e guarda no histórico. Com a gaveta fechada
    * numa tela estreita, a rolagem não cobre a ficha: o resultado aparece num aviso
    * curto (aria-live) com o atalho "Detalhes" para abrir a gaveta.
    */
   function mostrarResultado(resultado) {
-    const soAviso = emGaveta() && refs.painel.dataset.aberto !== 'true';
-    if (!soAviso) abrirPainel(true);
+    // Com a página de Rolagens fora de vista, o resultado aparece num aviso curto com o atalho "Detalhes"
+    const soAviso = !(OP.uiPaginas && OP.uiPaginas.visivel('rolagens'));
     if (!resultado.ok) {
       substituirFilhos(refs.resultado, [criarResultadoErro(resultado)]);
       if (soAviso && OP.uiApp) OP.uiApp.aviso('aviso', 'Aviso: ' + (resultado.erro || 'não foi possível rolar.'));

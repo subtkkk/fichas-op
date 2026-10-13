@@ -711,6 +711,50 @@ window.OP = window.OP || {};
         }).length;
       }, esperado: 0 },
 
+      // --- Ficha em páginas ---
+      { nome: 'E11 · 9 páginas; 7 com aba (Resumo e Perícias só existem no celular)', obtido: function () {
+        const p = OP.uiPaginas.paginas;
+        return p.length + '/' + p.filter(function (x) { return x.aba; }).length + '/' + document.querySelectorAll('#abas-paginas [role="tab"]').length;
+      }, esperado: '9/7/7' },
+      { nome: 'E11 · Cada aba aponta para um painel que existe (tabpanel com rótulo)', obtido: function () {
+        return Array.prototype.filter.call(document.querySelectorAll('#abas-paginas [role="tab"]'), function (aba) {
+          const painel = document.getElementById(aba.getAttribute('aria-controls'));
+          return !painel || painel.getAttribute('role') !== 'tabpanel' || !painel.getAttribute('aria-label');
+        }).length;
+      }, esperado: 0 },
+      { nome: 'E11 · Toda seção da ficha mora numa página (ou é o trilho de vitais)', obtido: function () {
+        return Array.prototype.filter.call(document.querySelectorAll('#ficha section.secao'), function (secao) {
+          return !secao.closest('[data-pagina]');
+        }).map(function (secao) { return secao.id; }).join(',');
+      }, esperado: '' },
+      { nome: 'E11 · ir("rituais") mostra só a página de Rituais entre as abas e marca a aba', obtido: function () {
+        const antes = OP.uiPaginas.atual();
+        try {
+          OP.uiPaginas.ir('rituais', { rolar: false, anunciar: false });
+          const ocultas = OP.uiPaginas.paginas.filter(function (p) { return p.aba; }).map(function (p) {
+            return document.getElementById('pagina-' + p.id).hasAttribute('data-oculta');
+          });
+          return [OP.uiPaginas.atual(), ocultas.filter(function (o) { return !o; }).length, document.getElementById('aba-rituais').getAttribute('aria-selected')].join('/');
+        } finally {
+          OP.uiPaginas.ir(antes, { rolar: false, anunciar: false });
+        }
+      }, esperado: 'rituais/1/true' },
+      { nome: 'E11 · mostrarPaginaDe abre a página onde o campo mora (o inventário abre ao pedir um campo dele)', obtido: function () {
+        const antes = OP.uiPaginas.atual();
+        try {
+          OP.uiPaginas.ir('combate', { rolar: false, anunciar: false });
+          OP.uiPaginas.mostrarPaginaDe(document.getElementById('secao-inventario'));
+          return OP.uiPaginas.atual();
+        } finally {
+          OP.uiPaginas.ir(antes, { rolar: false, anunciar: false });
+        }
+      }, esperado: 'inventario' },
+      { nome: 'E11 · Dock: setas e botão-índice com rótulo; a folha do índice lista as 9 páginas', obtido: function () {
+        const setas = document.querySelectorAll('[data-pagina-delta]');
+        const rotulos = Array.prototype.every.call(setas, function (b) { return /pagina/i.test((b.getAttribute('aria-label') || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')); });
+        return setas.length + '/' + rotulos + '/' + document.querySelectorAll('#paginas-indice [data-ir-pagina]').length + '/' + /^Índice da ficha/.test(document.getElementById('dock-indice').getAttribute('aria-label'));
+      }, esperado: '2/true/9/true' },
+
       { nome: 'E10 · Existe um único <h1>', obtido: function () { return document.querySelectorAll('h1').length; }, esperado: 1 },
       { nome: 'E10 · Títulos h2 e h3 sem pular nível', obtido: function () { return OP.ui.auditarTitulos().map(function (t) { return t.de + '→' + t.para; }).join(','); }, esperado: '' },
       { nome: 'E10 · Landmarks: header, nav, main, aside e footer existem', obtido: function () {

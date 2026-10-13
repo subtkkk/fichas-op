@@ -485,7 +485,8 @@ window.OP = window.OP || {};
         '<td class="pericia__dados">' +
           '<button type="button" class="atributo-sigla" data-atributo-pericia="' + id + '"' +
             ' aria-haspopup="dialog" aria-expanded="false" aria-controls="seletor-atributo"></button>' +
-          '<output data-saida="' + caminho + '.dados" data-formato="dados"></output>' +
+          // os dados (ex.: 3d20 maior) não aparecem na linha: ficam para leitor de tela e no rótulo do botão de rolar
+          '<output class="visualmente-oculto" data-saida="' + caminho + '.dados" data-formato="dados"></output>' +
         '</td>' +
         '<td class="pericia__grau">' +
           '<button type="button" class="botao-icone botao-grau" data-grau-pericia="' + id + '" data-nivel="0">' +
@@ -523,6 +524,7 @@ window.OP = window.OP || {};
         linha: linha,
         atributo: linha.querySelector('.atributo-sigla'),
         grau: linha.querySelector('.botao-grau'),
+        rolar: linha.querySelector('.botao-icone--rolar'),
         grauImpressao: linha.querySelector('.pericia__grau-impressao'),
         especialidade: linha.querySelector('.pericia__especialidade'), // só nas perícias abertas
         treinada: linha.querySelector('.icone--treinada'), // só nas perícias "somente treinada"
@@ -1723,6 +1725,13 @@ window.OP = window.OP || {};
       if (elementos.especialidade) {
         const sugestao = definicao.id === 'profissao' && identidade.profissaoSugerida ? identidade.profissaoSugerida : 'especialidade';
         if (elementos.especialidade.placeholder !== sugestao) elementos.especialidade.placeholder = sugestao;
+      }
+
+      // Botão de rolar: os dados do teste vão no rótulo (ex.: "Rolar Luta (3d20, fica o maior)")
+      const rotuloRolar = 'Rolar ' + definicao.nome + ' (' + estado.dados.qtd + 'd20, fica o ' + estado.dados.modo + ')';
+      if (elementos.rolar.getAttribute('aria-label') !== rotuloRolar) {
+        elementos.rolar.setAttribute('aria-label', rotuloRolar);
+        elementos.rolar.title = rotuloRolar;
       }
 
       // Sigla do atributo (botão discreto): destaca quando difere do padrão

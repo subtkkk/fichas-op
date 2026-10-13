@@ -3388,6 +3388,8 @@ window.OP = window.OP || {};
     desenharRituais(ficha, refs.derivados);
   }
 
+  const LIMITE_TEXTO_LINHA_IMPRESSAO = 60; // caracteres: acima disso o campo de texto vira texto corrido no papel
+
   function prepararImpressao() {
     const ficha = OP.state.ficha;
     if (impressao.ativa || !ficha || !refs.derivados) return;
@@ -3447,9 +3449,20 @@ window.OP = window.OP || {};
     });
 
     // Campos de texto dos cartões com a largura do próprio texto (o print.css usa width: auto)
+    impressao.textosLongos = [];
     impressao.tamanhos = selecionarTodos('.ataque input[type="text"], .ritual input[type="text"], .painel input[type="text"]', refs.raiz).map(function (campo) {
       const anterior = { campo: campo, size: campo.getAttribute('size') };
-      campo.setAttribute('size', String(Math.max(3, campo.value.length + 2)));
+      if (campo.value.length > LIMITE_TEXTO_LINHA_IMPRESSAO) {
+        // Texto longo (ex.: notas): uma linha de input cortaria no papel; vira texto que quebra linha
+        const texto = document.createElement('span');
+        texto.className = 'impressao-nota';
+        texto.textContent = campo.value;
+        campo.insertAdjacentElement('afterend', texto);
+        campo.classList.add('impressao-oculto');
+        impressao.textosLongos.push({ campo: campo, texto: texto });
+      } else {
+        campo.setAttribute('size', String(Math.max(3, campo.value.length + 2)));
+      }
       return anterior;
     });
 
@@ -3476,6 +3489,7 @@ window.OP = window.OP || {};
     Object.assign(filtrosRituais, impressao.filtros.rituais);
     impressao.detalhes.forEach(function (d) { d.open = false; });
     impressao.vazios.forEach(function (elemento) { elemento.classList.remove('impressao-vazio'); });
+    (impressao.textosLongos || []).forEach(function (par) { par.texto.remove(); par.campo.classList.remove('impressao-oculto'); });
     impressao.textareas.forEach(function (anterior) { anterior.campo.style.height = anterior.altura; });
     impressao.tamanhos.forEach(function (anterior) {
       if (anterior.size === null) anterior.campo.removeAttribute('size');

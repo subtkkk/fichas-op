@@ -943,6 +943,21 @@ window.OP = window.OP || {};
         const semClasse = !OP.data.classes[OP.state.ficha.identificacao.classe];
         return aviso.hidden === !semClasse;
       }, esperado: true },
+      { nome: 'E15 · Impressão: texto longo de um campo vira texto corrido e volta ao campo depois', obtido: function () {
+        const f = OP.state.ficha;
+        const antes = f.ataques.length;
+        OP.state.atualizar('ataques', f.ataques.concat([OP.state.novoAtaque({ nome: 'Teste longo', notas: 'x'.repeat(120) })]));
+        try {
+          window.dispatchEvent(new Event('beforeprint'));
+          const durante = document.querySelectorAll('.impressao-nota').length;
+          window.dispatchEvent(new Event('afterprint'));
+          const depois = document.querySelectorAll('.impressao-nota').length + document.querySelectorAll('.impressao-oculto').length;
+          return durante + '|' + depois;
+        } finally {
+          window.dispatchEvent(new Event('afterprint'));
+          OP.state.atualizar('ataques', OP.state.ficha.ataques.slice(0, antes));
+        }
+      }, esperado: '1|0' },
       { nome: 'E10 · Diálogos: todos têm título (aria-labelledby) e são <dialog>', obtido: function () {
         return Array.prototype.filter.call(document.querySelectorAll('dialog'), function (d) {
           const alvo = document.getElementById(d.getAttribute('aria-labelledby') || '');

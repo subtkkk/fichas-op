@@ -5784,7 +5784,7 @@ body.arrastando-arquivo::after {
 
 .tabela-pericias td,
 .tabela-pericias tbody th {
-  padding: 5px 6px;
+  padding: 2px 6px;
   font-weight: 400;
   text-align: left;
   vertical-align: middle;
@@ -5819,7 +5819,7 @@ body.arrastando-arquivo::after {
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 8px;
-  min-height: 34px;
+  min-height: 28px;
 }
 
 .pericia__rotulo {
@@ -5833,7 +5833,7 @@ body.arrastando-arquivo::after {
 
 .pericia__especialidade {
   width: 150px;
-  height: 30px;
+  height: 26px;
   font-size: 0.8125rem;
 }
 
@@ -5861,7 +5861,7 @@ body.arrastando-arquivo::after {
 }
 
 .pericia .controle {
-  height: 32px;
+  height: 28px;
   font-size: 0.8438rem;
 }
 
@@ -5910,7 +5910,7 @@ body.arrastando-arquivo::after {
   box-shadow: 0 1px 0 color-mix(in srgb, var(--cor-realce) 35%, transparent) inset, 0 0 0 3px var(--acento-suave);
 }
 
-.pericia__dados { width: 96px; white-space: nowrap; }
+.pericia__dados { width: 84px; white-space: nowrap; }
 /* Sigla do atributo: texto comum que vira botão (sem moldura); abre o painel de troca */
 .atributo-sigla {
   display: inline-flex;
@@ -6049,8 +6049,31 @@ body.arrastando-arquivo::after {
   }
 }
 
-.pericia__grau { width: 52px; text-align: center; }
-.pericia__outros { width: 74px; }
+/* Teste que rola "menor": seta para baixo ao lado da sigla */
+.marca-menor {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+  color: var(--aviso);
+}
+
+.marca-menor[hidden] {
+  display: none;
+}
+
+.marca-menor svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pericia__grau { width: 44px; text-align: center; }
+.pericia__outros { width: 66px; }
 .pericia__bonus { width: 56px; text-align: right; }
 
 /* Grau: três chevrons (como divisas); acendem 1 (Treinado), 2 (Veterano) ou 3 (Expert) */
@@ -6095,9 +6118,10 @@ body.arrastando-arquivo::after {
   text-align: center;
 }
 
-.tabela-pericias .pericia__rolar .botao-icone {
-  width: 32px;
-  height: 32px;
+.tabela-pericias .pericia__rolar .botao-icone,
+.tabela-pericias .botao-grau {
+  width: 28px;
+  height: 28px;
   margin: 0 auto;
 }
 
@@ -6145,20 +6169,19 @@ body.arrastando-arquivo::after {
 
   .tabela-pericias tbody {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 6px;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+    gap: 4px 6px;
   }
 
   .pericia {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto auto auto;
+    grid-template-columns: auto minmax(0, 1fr) auto auto auto auto;
     grid-template-areas:
-      "nome  grau outros bonus rolar"
-      "dados grau outros bonus rolar"
-      "conc  conc conc   conc  conc";
+      "nome  nome grau outros bonus rolar"
+      "dados conc grau outros bonus rolar";
     align-items: center;
     gap: 0 6px;
-    padding: 4px 8px 4px 12px;
+    padding: 2px 8px 2px 12px;
     background: color-mix(in oklab, var(--tinta-superficie) 88%, transparent);
     border: 1px solid var(--linha-1);
     border-radius: var(--raio-2);
@@ -6186,7 +6209,12 @@ body.arrastando-arquivo::after {
   .pericia__outros { grid-area: outros; width: auto; }
   .pericia__bonus { grid-area: bonus; width: auto; min-width: 2.2em; text-align: right; }
   .pericia__rolar { grid-area: rolar; width: auto; text-align: right; }
-  .pericia__concedida { grid-area: conc; width: auto; text-align: right; white-space: nowrap; padding-top: 6px !important; }
+  .pericia__concedida { grid-area: conc; width: auto; text-align: left; white-space: nowrap; }
+
+  /* A caixa "Concedida" tem 44 px de toque sem aumentar a linha */
+  .pericia__concedida .caixa {
+    margin-block: -12px;
+  }
 
   .pericia__nome-conteudo {
     min-height: 0;
@@ -7554,15 +7582,15 @@ body.arrastando-arquivo::after {
 
 .secao--pericias[data-modo="mesa"] .tabela-pericias td,
 .secao--pericias[data-modo="mesa"] .tabela-pericias tbody th {
-  padding-top: 3px;
-  padding-bottom: 3px;
+  padding-top: 1px;
+  padding-bottom: 1px;
 }
 
 @container ficha (max-width: 759px) {
   .secao--pericias[data-modo="mesa"] .pericia {
     grid-template-areas:
-      "nome  grau outros bonus rolar"
-      "dados grau outros bonus rolar";
+      "nome  nome grau outros bonus rolar"
+      "dados .    grau outros bonus rolar";
   }
 }
 

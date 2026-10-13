@@ -679,6 +679,16 @@ window.OP = window.OP || {};
         return desligado + '/' + painel.hidden;
       }, esperado: 'true/true' },
 
+      { nome: 'E10 · A marca de "menor" só aparece nas perícias que rolam o menor (e o rótulo diz quantos dados)', obtido: function () {
+        return OP.data.pericias.filter(function (p) {
+          const dados = OP.calc.periciaDados(OP.state.ficha, p.id);
+          const marca = document.querySelector('[data-pericia="' + p.id + '"] .marca-menor');
+          const rolar = document.querySelector('[data-pericia="' + p.id + '"] .botao-icone--rolar');
+          const rotuloOk = rolar && rolar.getAttribute('aria-label') === 'Rolar ' + p.nome + ' (' + dados.qtd + 'd20, fica o ' + dados.modo + ')';
+          return !marca || marca.hidden !== (dados.modo !== 'menor') || !rotuloOk;
+        }).length;
+      }, esperado: 0 },
+
       { nome: 'E10 · Existe um único <h1>', obtido: function () { return document.querySelectorAll('h1').length; }, esperado: 1 },
       { nome: 'E10 · Títulos h2 e h3 sem pular nível', obtido: function () { return OP.ui.auditarTitulos().map(function (t) { return t.de + '→' + t.para; }).join(','); }, esperado: '' },
       { nome: 'E10 · Landmarks: header, nav, main, aside e footer existem', obtido: function () {

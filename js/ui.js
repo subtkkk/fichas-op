@@ -485,6 +485,9 @@ window.OP = window.OP || {};
         '<td class="pericia__dados">' +
           '<button type="button" class="atributo-sigla" data-atributo-pericia="' + id + '"' +
             ' aria-haspopup="dialog" aria-expanded="false" aria-controls="seletor-atributo"></button>' +
+          // aparece só quando o teste rola "menor" (atributo 0 ou menos)
+          '<span class="marca-menor" role="img" hidden><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
+            '<path d="M3.5 5.5 8 10l4.5-4.5"/></svg></span>' +
           // os dados (ex.: 3d20 maior) não aparecem na linha: ficam para leitor de tela e no rótulo do botão de rolar
           '<output class="visualmente-oculto" data-saida="' + caminho + '.dados" data-formato="dados"></output>' +
         '</td>' +
@@ -525,6 +528,7 @@ window.OP = window.OP || {};
         atributo: linha.querySelector('.atributo-sigla'),
         grau: linha.querySelector('.botao-grau'),
         rolar: linha.querySelector('.botao-icone--rolar'),
+        menor: linha.querySelector('.marca-menor'),
         grauImpressao: linha.querySelector('.pericia__grau-impressao'),
         especialidade: linha.querySelector('.pericia__especialidade'), // só nas perícias abertas
         treinada: linha.querySelector('.icone--treinada'), // só nas perícias "somente treinada"
@@ -1725,6 +1729,15 @@ window.OP = window.OP || {};
       if (elementos.especialidade) {
         const sugestao = definicao.id === 'profissao' && identidade.profissaoSugerida ? identidade.profissaoSugerida : 'especialidade';
         if (elementos.especialidade.placeholder !== sugestao) elementos.especialidade.placeholder = sugestao;
+      }
+
+      // Marca discreta quando o teste rola "menor": o atributo está em 0 (ou menos), ou as condições tiraram dados
+      const rolaMenor = estado.dados.modo === 'menor';
+      if (elementos.menor.hidden === rolaMenor) elementos.menor.hidden = !rolaMenor;
+      const textoMenor = 'Rola ' + estado.dados.qtd + 'd20 e fica o menor';
+      if (elementos.menor.getAttribute('aria-label') !== textoMenor) {
+        elementos.menor.setAttribute('aria-label', textoMenor);
+        elementos.menor.title = textoMenor;
       }
 
       // Botão de rolar: os dados do teste vão no rótulo (ex.: "Rolar Luta (3d20, fica o maior)")

@@ -7515,6 +7515,9 @@ body.arrastando-arquivo::after {
 
 /* Perícias na mesa: sem "concedida" (fica em "Editar perícias"); atributo, grau, outros e total sempre aparecem */
 .secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(7),
+.secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(4),
+.secao--pericias[data-modo="mesa"] .pericia > .pericia__outros,
+.secao--pericias[data-modo="mesa"] .botao-grau,
 .secao--pericias[data-modo="mesa"] .pericia > .pericia__concedida,
 .secao--pericias[data-modo="mesa"] .pericias__pontos,
 .secao--pericias[data-modo="mesa"] #contador-treinamento,
@@ -7533,10 +7536,38 @@ body.arrastando-arquivo::after {
 
 @container ficha (max-width: 759px) {
   .secao--pericias[data-modo="mesa"] .pericia {
+    grid-template-columns: auto minmax(0, 1fr) auto auto auto;
     grid-template-areas:
-      "nome  nome grau outros bonus rolar"
-      "dados .    grau outros bonus rolar";
+      "nome  nome grau bonus rolar"
+      "dados .    grau bonus rolar";
   }
+}
+
+/* Marcador do grau (só na mesa): T, V ou E; em edição o botão de chevrons toma o lugar */
+.pericia__grau-marca {
+  display: none;
+}
+
+.secao--pericias[data-modo="mesa"] .pericia__grau-marca {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.6em;
+  height: 1.6em;
+  font: 700 0.75rem/1 var(--fonte-mono);
+  letter-spacing: 0.04em;
+  color: var(--acento);
+  border-radius: var(--raio-1);
+}
+
+.secao--pericias[data-modo="mesa"] .pericia__grau-marca[data-nivel="2"],
+.secao--pericias[data-modo="mesa"] .pericia__grau-marca[data-nivel="3"] {
+  background: var(--acento-suave);
+  border: 1px solid var(--acento-linha);
+}
+
+.secao--pericias[data-modo="mesa"] .pericia__grau-marca:empty {
+  display: none;
 }
 
 /* Recursos: bônus de máximo e a conta, recolhidos */
@@ -11169,6 +11200,11 @@ kbd {
     padding: 1px 8px 1px 12px;
   }
 
+  .zona--per .secao--pericias[data-modo="mesa"] .pericia {
+    grid-template-columns: minmax(0, 1fr) auto auto auto auto;
+    grid-template-areas: "nome dados grau bonus rolar";
+  }
+
   .zona--per .secao--pericias[data-modo="edicao"] .pericia {
     grid-template-areas:
       "nome dados grau outros bonus rolar"
@@ -11295,5 +11331,103 @@ kbd {
     min-height: 44px;
     margin: -8px 0 -8px -8px;
     justify-content: center;
+  }
+}
+
+/* ---- Último resultado de rolagem ---- */
+.resultado-rapido {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background:
+    linear-gradient(90deg, var(--acento-suave), transparent 70%),
+    color-mix(in oklab, var(--tinta-superficie) 94%, transparent);
+  border-bottom: 1px solid var(--acento-linha);
+}
+
+.resultado-rapido[hidden] {
+  display: none;
+}
+
+.resultado-rapido__total {
+  flex: none;
+  min-width: 2.2ch;
+  margin: 0;
+  font: 700 2.25rem/1 var(--fonte-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: var(--papel);
+}
+
+.resultado-rapido[data-critico="sim"] .resultado-rapido__total {
+  color: var(--acento);
+  text-shadow: 0 0 18px var(--brilho);
+}
+
+.resultado-rapido__texto {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.resultado-rapido__texto strong {
+  overflow: hidden;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resultado-rapido__texto span {
+  overflow: hidden;
+  font: 500 0.75rem/1.3 var(--fonte-mono);
+  color: var(--papel-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resultado-rapido__texto .resultado-rapido__alvo {
+  font-weight: 700;
+  color: var(--papel-2);
+}
+
+.resultado-rapido--novo {
+  animation: resultado-novo 700ms var(--curva-saida);
+}
+
+@keyframes resultado-novo {
+  from { background-color: var(--acento-suave); }
+}
+
+/* Na página Rolagens o resultado já aparece em detalhe */
+.ficha-layout[data-pagina="rolagens"] .resultado-rapido {
+  display: none;
+}
+
+/* Celular e tablet: presa logo abaixo da faixa de vitais, sem cobrir o conteúdo */
+@media (max-width: 1179px) {
+  .zona--pag {
+    display: contents;
+  }
+
+  .resultado-rapido {
+    position: sticky;
+    top: var(--topo-fixo);
+    z-index: 25;
+    order: -1;
+    margin: 0 calc(-1 * var(--margem-pagina));
+    padding-right: var(--margem-pagina);
+    padding-left: var(--margem-pagina);
+    background: color-mix(in srgb, var(--tinta-1) 97%, transparent);
+    border-bottom: 1px solid var(--acento-linha);
+    box-shadow: 0 10px 24px -18px color-mix(in srgb, var(--cor-sombra) 90%, transparent);
+  }
+
+  .resultado-rapido__total {
+    font-size: 1.875rem;
   }
 }

@@ -585,6 +585,21 @@
 
         <!-- ============ ZONA 4 · páginas: abas no computador, índice no celular (js/ui-paginas.js) ============ -->
         <div class="zona zona--pag">
+          <!-- Último resultado de rolagem: fica até a próxima rolagem ou até ser fechado (não cobre nada) -->
+          <section class="resultado-rapido" id="resultado-rapido" aria-label="Último resultado de rolagem" hidden>
+            <p class="resultado-rapido__total" id="rr-total"></p>
+            <div class="resultado-rapido__texto">
+              <strong id="rr-titulo"></strong>
+              <span id="rr-detalhe"></span>
+              <span class="resultado-rapido__alvo" id="rr-alvo" hidden></span>
+            </div>
+            <span class="selo resultado-rapido__critico" id="rr-critico" hidden>Crítico</span>
+            <button type="button" class="botao botao--pequeno botao--fantasma" id="rr-detalhes">Detalhes</button>
+            <button type="button" class="botao-icone" id="rr-fechar" aria-label="Fechar resultado">
+              <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>
+            </button>
+          </section>
+
           <nav class="indice" id="indice-paginas" aria-label="Páginas da ficha">
             <div class="abas-paginas" id="abas-paginas" role="tablist" aria-label="Páginas da ficha"></div>
           </nav>

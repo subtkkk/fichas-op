@@ -726,6 +726,43 @@ window.OP = window.OP || {};
           OP.state.atualizar('identificacao.classe', classeAntes);
         }
       }, esperado: true },
+      // --- Resultado fixo e perícia na mesa ---
+      { nome: 'E11 · Rolar uma perícia mostra o total grande na faixa de resultado; fechar esconde; trocar de ficha também', obtido: function () {
+        const caixa = document.getElementById('resultado-rapido');
+        const botao = document.querySelector('[data-pericia="luta"] [data-rolar-pericia]');
+        if (!caixa || !botao) return 'sem faixa ou botão';
+        caixa.hidden = true;
+        botao.click();
+        const total = document.getElementById('rr-total').textContent;
+        const mostrou = !caixa.hidden && /^-?\d+$/.test(total) && document.getElementById('rr-titulo').textContent.indexOf('Luta') !== -1;
+        document.getElementById('rr-fechar').click();
+        const fechou = caixa.hidden;
+        return mostrou + '/' + fechou;
+      }, esperado: 'true/true' },
+      { nome: 'E11 · Na mesa o grau é um marcador (T, V, E) e "outros" some; em edição voltam o botão e o campo', obtido: function () {
+        const secao = document.getElementById('secao-pericias');
+        const modo = document.getElementById('botao-modo-pericias');
+        const estavaEmEdicao = modo.getAttribute('aria-pressed') === 'true';
+        const marcaOk = function () {
+          return OP.data.pericias.every(function (p) {
+            const marca = document.querySelector('[data-pericia="' + p.id + '"] .pericia__grau-marca');
+            const grau = OP.calc.estadoPericia(OP.state.ficha, p.id).grau;
+            return marca.textContent === ['', 'T', 'V', 'E'][grau];
+          });
+        };
+        try {
+          if (estavaEmEdicao) modo.click();
+          const celulaOutros = document.querySelector('[data-pericia="luta"] .pericia__outros');
+          const outrosNaMesa = getComputedStyle(celulaOutros).display === 'none' ? 0 : 1;
+          const marcas = marcaOk();
+          modo.click();
+          const outrosEmEdicao = getComputedStyle(celulaOutros).display !== 'none';
+          return [secao.dataset.modo, outrosNaMesa, marcas, outrosEmEdicao].join('/');
+        } finally {
+          if ((modo.getAttribute('aria-pressed') === 'true') !== estavaEmEdicao) modo.click();
+        }
+      }, esperado: 'edicao/0/true/true' },
+
       // --- Ficha em páginas ---
       { nome: 'E11 · 9 páginas; 7 com aba (Resumo e Perícias só existem no celular)', obtido: function () {
         const p = OP.uiPaginas.paginas;

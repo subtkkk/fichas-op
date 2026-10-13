@@ -1421,6 +1421,11 @@ html[data-diario-impressao="sim"] .bio__diario {
   display: none !important;
 }
 
+#resultado-rapido,
+.pericia__grau-marca {
+  display: none !important;
+}
+
 #secao-identificacao { order: 10; }
 #secao-atributos { order: 20; }
 #secao-recursos { order: 30; }

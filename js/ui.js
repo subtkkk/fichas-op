@@ -494,6 +494,8 @@ window.OP = window.OP || {};
         '<td class="pericia__grau">' +
           '<button type="button" class="botao-icone botao-grau" data-grau-pericia="' + id + '" data-nivel="0">' +
             SVG_GRAU + '</button>' +
+          // na mesa o grau é só um marcador de texto (T, V ou E); a edição fica em "Editar perícias"
+          '<span class="pericia__grau-marca" role="img"></span>' +
           // só na impressão: o nome do grau no lugar do símbolo
           '<span class="pericia__grau-impressao"></span>' +
         '</td>' +
@@ -530,6 +532,7 @@ window.OP = window.OP || {};
         rolar: linha.querySelector('.botao-icone--rolar'),
         menor: linha.querySelector('.marca-menor'),
         grauImpressao: linha.querySelector('.pericia__grau-impressao'),
+        grauMarca: linha.querySelector('.pericia__grau-marca'),
         especialidade: linha.querySelector('.pericia__especialidade'), // só nas perícias abertas
         treinada: linha.querySelector('.icone--treinada'), // só nas perícias "somente treinada"
         carga: linha.querySelector('.icone--carga'),       // só nas perícias com carga
@@ -1712,6 +1715,10 @@ window.OP = window.OP || {};
         elementos.grau.title = 'Grau de ' + rotuloGrau;
       }
       definirTexto(elementos.grauImpressao, nomeGrau);
+      // Marcador da mesa: T (Treinado), V (Veterano), E (Expert); Destreinado fica sem marca
+      definirTexto(elementos.grauMarca, ['', 'T', 'V', 'E'][estado.grau] || '');
+      elementos.grauMarca.setAttribute('aria-label', 'Grau: ' + nomeGrau + (fonte ? ' (concedida pela ' + fonte + ')' : ''));
+      elementos.grauMarca.dataset.nivel = String(estado.grau);
 
       // Ícones que mudam: "somente treinada" avisa quando falta o treinamento; concedida aparece sozinho
       if (elementos.treinada) {
@@ -2139,6 +2146,14 @@ window.OP = window.OP || {};
     refs.formula = document.getElementById('rolagem-formula');
     refs.formulaErro = document.getElementById('rolagem-formula-erro');
     refs.historico = document.getElementById('rolagens-historico');
+    refs.rrCaixa = document.getElementById('resultado-rapido');
+    refs.rrTotal = document.getElementById('rr-total');
+    refs.rrTitulo = document.getElementById('rr-titulo');
+    refs.rrDetalhe = document.getElementById('rr-detalhe');
+    refs.rrAlvo = document.getElementById('rr-alvo');
+    refs.rrCritico = document.getElementById('rr-critico');
+    document.getElementById('rr-fechar').addEventListener('click', function () { refs.rrCaixa.hidden = true; });
+    document.getElementById('rr-detalhes').addEventListener('click', function () { abrirPainel(true); });
 
     // Modificador de dados: de −3 a +3
     const opcoes = [];
@@ -2367,26 +2382,40 @@ window.OP = window.OP || {};
    * numa tela estreita, a rolagem não cobre a ficha: o resultado aparece num aviso
    * curto (aria-live) com o atalho "Detalhes" para abrir a gaveta.
    */
+  /**
+   * Faixa do último resultado: total grande e a conta pequena. Fica até a próxima
+   * rolagem (ou até fechar) e não cobre nada: no computador é a primeira linha da
+   * coluna da direita; no celular fica presa logo abaixo dos vitais.
+   */
+  function mostrarResultadoRapido(resultado) {
+    if (!refs.rrCaixa) return;
+    const alvo = resultado.tipo === 'teste' ? textoAlvo(resultado) : '';
+    definirTexto(refs.rrTotal, String(resultado.total));
+    definirTexto(refs.rrTitulo, resultado.titulo);
+    definirTexto(refs.rrDetalhe, resumoHistorico(resultado));
+    definirTexto(refs.rrAlvo, alvo);
+    refs.rrAlvo.hidden = !alvo;
+    refs.rrCritico.hidden = resultado.critico !== true;
+    refs.rrCaixa.setAttribute('data-critico', resultado.critico === true ? 'sim' : 'nao');
+    refs.rrCaixa.hidden = false;
+    refs.rrFicha = OP.state.ficha.id;
+    // Reinicia o brilho curto de "rolou agora"
+    refs.rrCaixa.classList.remove('resultado-rapido--novo');
+    void refs.rrCaixa.offsetWidth;
+    refs.rrCaixa.classList.add('resultado-rapido--novo');
+  }
+
   function mostrarResultado(resultado) {
-    // Com a página de Rolagens fora de vista, o resultado aparece num aviso curto com o atalho "Detalhes"
-    const soAviso = !(OP.uiPaginas && OP.uiPaginas.visivel('rolagens'));
+    const naPagina = Boolean(OP.uiPaginas && OP.uiPaginas.visivel('rolagens'));
     if (!resultado.ok) {
       substituirFilhos(refs.resultado, [criarResultadoErro(resultado)]);
-      if (soAviso && OP.uiApp) OP.uiApp.aviso('aviso', 'Aviso: ' + (resultado.erro || 'não foi possível rolar.'));
+      if (!naPagina && OP.uiApp) OP.uiApp.aviso('aviso', 'Aviso: ' + (resultado.erro || 'não foi possível rolar.'));
       return;
     }
     substituirFilhos(refs.resultado, [resultado.tipo === 'teste' ? criarResultadoTeste(resultado) : criarResultadoFormula(resultado)]);
     definirTexto(refs.ultimo, 'último: ' + resultado.total + (resultado.critico ? ' (crítico)' : ''));
-    if (soAviso && OP.uiApp) {
-      const alvo = resultado.tipo === 'teste' ? textoAlvo(resultado) : '';
-      OP.uiApp.aviso('ok', resultado.titulo + ': ' + resumoHistorico(resultado) + ' · total ' + resultado.total +
-        (resultado.critico ? ' (crítico)' : '') + (alvo ? ' · ' + alvo : ''), {
-        duracao: 6000,
-        acao: { rotulo: 'Detalhes', fazer: function () { abrirPainel(true); } }
-      });
-    } else {
-      anunciarResultado(resultado);
-    }
+    mostrarResultadoRapido(resultado);
+    anunciarResultado(resultado);
 
     historico.unshift({
       titulo: resultado.titulo,
@@ -3536,6 +3565,8 @@ window.OP = window.OP || {};
     desenharTreinamento(ficha, derivados.treinamento);
     desenharGraus(ficha, derivados.graus);
     desenharPericias(derivados);
+    // O resultado rápido é da ficha em que se rolou
+    if (refs.rrCaixa && !refs.rrCaixa.hidden && refs.rrFicha !== ficha.id) refs.rrCaixa.hidden = true;
     desenharInventario(ficha, derivados);
     desenharAtaques(ficha, derivados);
     desenharHabilidades(ficha);

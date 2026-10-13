@@ -195,6 +195,12 @@ window.OP = window.OP || {};
     definirTexto(refs.codigo, OP.uiFichas.codigoRegistro(ficha.id));
     definirTexto(refs.tituloTela, nome ? 'Ficha de ' + nome : 'Ficha de agente sem nome');
     refs.campoNome.classList.toggle('campo__destaque--vazio', !nome);
+    // Celular/tablet: "Marina Duarte · Combatente · NEX 35%" no topo (a faixa do agente só existe no computador)
+    const classe = OP.data.classes[ficha.identificacao.classe];
+    const nivel = classe && classe.unidadeProgressao === 'estagio'
+      ? 'Estágio ' + OP.calc.numero(ficha.identificacao.estagio)
+      : 'NEX ' + OP.calc.numero(ficha.identificacao.nex) + '%';
+    definirTexto(refs.trilhoAgente, [nome || 'Agente sem nome', classe ? classe.nome : 'sem classe', nivel].join(' · '));
     // Outra ficha: o primeiro valor dela não é uma variação
     if (ficha.id !== idDesenhado) Object.keys(ultimoValor).forEach(function (id) { delete ultimoValor[id]; });
     desenharVitais(derivados);
@@ -457,6 +463,7 @@ window.OP = window.OP || {};
     refs.seloIcone = document.getElementById('dossie-selo-icone');
     refs.tituloTela = document.getElementById('ficha-titulo');
     refs.campoNome = document.getElementById('campo-nome');
+    refs.trilhoAgente = document.getElementById('trilho-agente');
     refs.hudSemClasse = document.getElementById('hud-sem-classe');
     refs.hudTurno = document.getElementById('hud-turno');
     refs.vitais = {};

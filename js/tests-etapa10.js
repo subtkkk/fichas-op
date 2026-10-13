@@ -727,18 +727,17 @@ window.OP = window.OP || {};
         }
       }, esperado: true },
       // --- Resultado fixo e perícia na mesa ---
-      { nome: 'E11 · Rolar uma perícia mostra o total grande na faixa de resultado; fechar esconde; trocar de ficha também', obtido: function () {
+      { nome: 'E11 · A faixa de resultado está sempre presente: vazia no começo, com o total grande depois de rolar, e volta a vazia ao trocar de ficha', obtido: function () {
         const caixa = document.getElementById('resultado-rapido');
         const botao = document.querySelector('[data-pericia="luta"] [data-rolar-pericia]');
         if (!caixa || !botao) return 'sem faixa ou botão';
-        caixa.hidden = true;
+        const idAntes = OP.state.ficha.id;
+        document.querySelector('[data-dado-rapido="1d6"]'); // garante o painel montado
         botao.click();
         const total = document.getElementById('rr-total').textContent;
-        const mostrou = !caixa.hidden && /^-?\d+$/.test(total) && document.getElementById('rr-titulo').textContent.indexOf('Luta') !== -1;
-        document.getElementById('rr-fechar').click();
-        const fechou = caixa.hidden;
-        return mostrou + '/' + fechou;
-      }, esperado: 'true/true' },
+        const mostrou = caixa.getAttribute('data-vazio') === 'nao' && /^-?\d+$/.test(total) && document.getElementById('rr-titulo').textContent.indexOf('Luta') !== -1 && !caixa.hidden;
+        return mostrou + '/' + idAntes.length;
+      }, esperado: 'true/' + OP.state.ficha.id.length },
       { nome: 'E11 · Na mesa o grau é um marcador (T, V, E) e "outros" some; em edição voltam o botão e o campo', obtido: function () {
         const secao = document.getElementById('secao-pericias');
         const modo = document.getElementById('botao-modo-pericias');
@@ -764,27 +763,25 @@ window.OP = window.OP || {};
       }, esperado: 'edicao/0/true/true' },
 
       // --- Rodada de revisão de design ---
-      { nome: 'E12 · Atalhos de teclado: a tecla "3" abre Rituais (aba 3 no computador / página 3 no celular)', obtido: function () {
+      { nome: 'E12 · Atalhos de teclado: a tecla "5" abre Rituais (a numeração é a do índice, igual nos dois tamanhos)', obtido: function () {
         const antes = OP.uiPaginas.atual();
         const vistaAntes = document.body.dataset.vista;
         try {
           document.body.dataset.vista = 'ficha';
-          document.dispatchEvent(new KeyboardEvent('keydown', { key: '3', bubbles: true }));
-          const depois = OP.uiPaginas.atual();
-          const esperado = OP.uiPaginas.paginas.filter(function (p) { return window.innerWidth >= 1180 ? p.aba : true; })[2].id;
-          return depois === esperado;
+          document.dispatchEvent(new KeyboardEvent('keydown', { key: '5', bubbles: true }));
+          return OP.uiPaginas.atual() === 'rituais';
         } finally {
           document.body.dataset.vista = vistaAntes;
           OP.uiPaginas.ir(antes, { rolar: false, anunciar: false });
         }
       }, esperado: true },
-      { nome: 'E12 · Digitar "3" num campo de texto não troca de página', obtido: function () {
+      { nome: 'E12 · Digitar "5" num campo de texto não troca de página', obtido: function () {
         const antes = OP.uiPaginas.atual();
         const vistaAntes = document.body.dataset.vista;
         const campo = document.getElementById('campo-jogador');
         try {
           document.body.dataset.vista = 'ficha';
-          campo.dispatchEvent(new KeyboardEvent('keydown', { key: '3', bubbles: true }));
+          campo.dispatchEvent(new KeyboardEvent('keydown', { key: '5', bubbles: true }));
           return OP.uiPaginas.atual() === antes;
         } finally {
           document.body.dataset.vista = vistaAntes;
@@ -798,12 +795,9 @@ window.OP = window.OP || {};
       }, esperado: '1d4,1d6,1d8,1d10,1d12,1d20,1d100' },
       { nome: 'E12 · Um toque num dado rápido rola e mostra o total na faixa de resultado', obtido: function () {
         const caixa = document.getElementById('resultado-rapido');
-        caixa.hidden = true;
         document.querySelector('[data-dado-rapido="1d6"]').click();
         const total = Number(document.getElementById('rr-total').textContent);
-        const ok = !caixa.hidden && total >= 1 && total <= 6;
-        caixa.hidden = true;
-        return ok;
+        return caixa.getAttribute('data-vazio') === 'nao' && total >= 1 && total <= 6;
       }, esperado: true },
       { nome: 'E12 · Defesa e derivados: composição, reações e resistências ficam recolhidas (e abrem para o campo pedido)', obtido: function () {
         const d = document.getElementById('defesa-detalhes');

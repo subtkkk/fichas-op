@@ -427,6 +427,8 @@
 
         <aside class="trilho" id="trilho-vitais" aria-label="Painel do agente">
           <div class="trilho__corpo">
+            <!-- Só no celular e no tablet: quem é o agente desta ficha (no computador a faixa do agente já mostra) -->
+            <p class="trilho__agente" id="trilho-agente"></p>
             <section class="hud" aria-labelledby="hud-titulo">
               <h2 class="hud__titulo" id="hud-titulo">Vitais</h2>
               <div class="hud__vitais">
@@ -570,15 +572,17 @@
               </label>
               <label class="caixa">
                 <input type="checkbox" id="filtro-treinadas" data-filtro="treinadas">
-                <span>Mostrar só treinadas</span>
+                <span>Só treinadas</span>
               </label>
+              <!-- Legenda gerada pelo ui.js (mesmos ícones da tabela); abre como um balão -->
+              <details class="legenda-ic">
+                <summary aria-label="Legenda dos ícones">
+                  <svg class="icone-ui" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6.5"/><path d="M8 7.2v3.6M8 5v.1"/></svg>
+                  <span>Legenda</span>
+                </summary>
+                <p class="legenda" id="legenda-pericias"></p>
+              </details>
             </div>
-
-            <!-- Legenda gerada pelo ui.js (mesmos ícones da tabela) -->
-            <details class="legenda-ic">
-              <summary>Legenda dos ícones</summary>
-              <p class="legenda" id="legenda-pericias"></p>
-            </details>
 
             <table class="tabela-pericias">
               <thead>
@@ -602,18 +606,15 @@
         <!-- ============ ZONA 4 · páginas: abas no computador, índice no celular (js/ui-paginas.js) ============ -->
         <div class="zona zona--pag">
           <!-- Último resultado de rolagem: fica até a próxima rolagem ou até ser fechado (não cobre nada) -->
-          <section class="resultado-rapido" id="resultado-rapido" aria-label="Último resultado de rolagem" hidden>
-            <p class="resultado-rapido__total" id="rr-total"></p>
+          <section class="resultado-rapido" id="resultado-rapido" aria-label="Último resultado de rolagem" data-vazio="sim" data-critico="nao">
+            <p class="resultado-rapido__total" id="rr-total">—</p>
             <div class="resultado-rapido__texto">
-              <strong id="rr-titulo"></strong>
-              <span id="rr-detalhe"></span>
+              <strong id="rr-titulo">Último resultado</strong>
+              <span id="rr-detalhe">Role uma perícia, um ataque ou um dado</span>
               <span class="resultado-rapido__alvo" id="rr-alvo" hidden></span>
             </div>
             <span class="selo resultado-rapido__critico" id="rr-critico" hidden>Crítico</span>
             <button type="button" class="botao botao--pequeno botao--fantasma" id="rr-detalhes">Detalhes</button>
-            <button type="button" class="botao-icone" id="rr-fechar" aria-label="Fechar resultado">
-              <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>
-            </button>
           </section>
 
           <nav class="indice" id="indice-paginas" aria-label="Páginas da ficha">

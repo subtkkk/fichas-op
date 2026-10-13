@@ -125,7 +125,7 @@
   --cor-aviso: #e2b354;
   --cor-sucesso: #82b38c;
   --cor-foco: #e3c58a;
-  --cor-carimbo: #c94a40;
+  --cor-carimbo: #d9584d;
   --cor-sombra: #000000;
   --cor-realce: #ffffff;
   --cor-aco: #a6b8cc;
@@ -10143,7 +10143,7 @@ kbd {
        2 colunas onde cabem; a partir de 1024 px, a coluna lateral.
    ========================================================================== */
 :root {
-  --dock-altura: 4.25rem; /* altura da barra de páginas no rodapé (abaixo de 1180 px) */
+  --dock-altura: 4.25rem; /* altura da barra de páginas no rodapé (abaixo de 1280 px) */
   --seguro-topo: env(safe-area-inset-top, 0px);
   --seguro-base: env(safe-area-inset-bottom, 0px);
   --seguro-esq: env(safe-area-inset-left, 0px);
@@ -10512,7 +10512,7 @@ kbd {
 
 /* ==========================================================================
    18. FICHA EM PÁGINAS
-       Computador (≥ 1180 px): três zonas sempre à vista (info do agente,
+       Computador (≥ 1280 px): três zonas sempre à vista (info do agente,
        atributos + vitais + testes, perícias) e, à direita, abas com as outras
        páginas. Celular e tablet: uma página por vez, com o botão-índice no rodapé.
        A página mostrada vem de js/ui-paginas.js (atributo data-oculta).
@@ -10707,7 +10707,7 @@ kbd {
 }
 
 /* ---- Celular e tablet: uma página por vez ---- */
-@media (max-width: 1179px) {
+@media (max-width: 1279px) {
   .ficha-layout {
     display: flex;
     flex-direction: column;
@@ -10866,7 +10866,7 @@ kbd {
   }
 }
 
-@media (min-width: 720px) and (max-width: 1179px) {
+@media (min-width: 720px) and (max-width: 1279px) {
   :root {
     --margem-pagina: 1.5rem;
     --topo-fixo: calc(var(--barra-altura) + var(--altura-trilho, 104px));
@@ -10955,7 +10955,7 @@ kbd {
 }
 
 /* ---- Computador: três zonas fixas na tela + abas ---- */
-@media (min-width: 1180px) {
+@media (min-width: 1280px) {
   body[data-vista="ficha"] .rodape {
     display: none;
   }
@@ -11112,8 +11112,8 @@ kbd {
   .zona--info .secao--dossie .grade-campos {
     grid-template-columns: 72px minmax(0, 1.2fr) minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 0.75fr);
     grid-template-areas:
-      "selo nome nome nome nome nome"
-      "selo jog  orig clas tril nex";
+      "selo nome nome nome nome jog"
+      "selo orig orig clas tril nex";
     gap: 8px 14px;
   }
 
@@ -11143,8 +11143,8 @@ kbd {
   .zona--info .secao--dossie .grade-campos {
     grid-template-columns: 72px minmax(0, 1.1fr) minmax(0, 1.2fr) minmax(0, 0.9fr) minmax(0, 1.2fr) minmax(76px, 0.7fr);
     grid-template-areas:
-      "selo nome nome nome nome nome"
-      "selo jog  orig clas tril nex";
+      "selo nome nome nome nome jog"
+      "selo orig orig clas tril nex";
   }
 
   /* Abas: se não couberem, rolam (a aba marcada é trazida para a vista pelo JS) */
@@ -11270,7 +11270,7 @@ kbd {
 
 /* Computador com pouca altura (notebooks): os atributos viram uma fileira de cinco d20 (em vez do selo)
    e os vitais ficam mais juntos, para tudo caber na coluna sem rolar */
-@media (min-width: 1180px) and (max-height: 1000px) {
+@media (min-width: 1280px) and (max-height: 1000px) {
   .zona--esq .secao--atributos[data-modo="mesa"] .atributos__palco {
     width: 100%;
     aspect-ratio: auto;
@@ -11325,7 +11325,7 @@ kbd {
 }
 
 /* Tablet e telas de toque: a sigla do atributo ganha área de 44 px sem aumentar a linha */
-@media (max-width: 1179px), (pointer: coarse) {
+@media (max-width: 1279px), (pointer: coarse) {
   .atributo-sigla {
     min-width: 44px;
     min-height: 44px;
@@ -11409,7 +11409,7 @@ kbd {
 }
 
 /* Celular e tablet: presa logo abaixo da faixa de vitais, sem cobrir o conteúdo */
-@media (max-width: 1179px) {
+@media (max-width: 1279px) {
   .zona--pag {
     display: contents;
   }
@@ -11615,7 +11615,7 @@ kbd {
   color: var(--papel);
 }
 
-@media (max-width: 1179px), (pointer: coarse) {
+@media (max-width: 1279px), (pointer: coarse) {
   .legenda-ic > summary {
     min-height: 44px;
   }
@@ -11649,7 +11649,7 @@ kbd {
 }
 
 /* Alvos de toque: links das Reações e do "Ir para" */
-@media (max-width: 1179px), (pointer: coarse) {
+@media (max-width: 1279px), (pointer: coarse) {
   .reacao .link,
   .reacao__dica .link {
     display: inline-flex;
@@ -11659,7 +11659,7 @@ kbd {
 }
 
 /* ---- Telas baixas: Defesa e testes enxutos para caber na coluna ---- */
-@media (min-width: 1180px) and (max-height: 860px) {
+@media (min-width: 1280px) and (max-height: 860px) {
   .zona--esq .secao--testes {
     padding: 10px 12px;
   }
@@ -11687,7 +11687,7 @@ body[data-vista="ficha"] .rodape {
 }
 
 /* Notebooks (altura até 900px): faixa do agente, vitais e testes mais compactos, para tudo caber sem rolar */
-@media (min-width: 1180px) and (max-height: 900px) {
+@media (min-width: 1280px) and (max-height: 900px) {
   .zona--info .campo--nome label {
     display: none;
   }
@@ -11732,7 +11732,7 @@ body[data-vista="ficha"] .rodape {
   }
 
   .zona--esq .vital__valor {
-    font-size: 1.375rem;
+    font-size: 1.75rem;
   }
 
   .zona--esq .vital__barra {
@@ -11749,7 +11749,7 @@ body[data-vista="ficha"] .rodape {
 }
 
 /* Telas muito baixas (até 740px): dados menores na fileira de atributos e cartões de teste mais enxutos */
-@media (min-width: 1180px) and (max-height: 740px) {
+@media (min-width: 1280px) and (max-height: 740px) {
   .zona--esq .secao--atributos[data-modo="mesa"] .atributo {
     --dado: 46px;
   }
@@ -11781,5 +11781,294 @@ body[data-vista="ficha"] .rodape {
 
   .zona--esq .trilho__corpo {
     padding: 6px 12px;
+  }
+}
+
+/* ==========================================================================
+   20. REVISÃO DE DESIGN — rodada 2
+   ========================================================================== */
+
+/* Faixa do agente: o nome manda; o jogador fica discreto no canto */
+.secao--dossie .campo--jogador label {
+  color: var(--papel-4);
+}
+
+.secao--dossie .campo--jogador input {
+  font-size: 0.8125rem;
+}
+
+@media (min-width: 1280px) {
+  /* O jogador cabe na linha do nome (o rótulo continua para leitor de tela) */
+  .zona--info .campo--jogador {
+    align-self: end;
+  }
+
+  .zona--info .campo--jogador label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .zona--info .campo--jogador input {
+    height: 32px;
+    margin-bottom: 4px;
+  }
+}
+
+/* Perícias: busca, filtro e legenda numa linha só (a legenda abre como balão) */
+.pericias__ferramentas {
+  flex-wrap: nowrap;
+  gap: 10px 12px;
+  margin-top: 10px;
+}
+
+.pericias__ferramentas .busca {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: none;
+}
+
+.pericias__ferramentas .caixa {
+  flex: none;
+  white-space: nowrap;
+}
+
+.legenda-ic {
+  position: relative;
+  flex: none;
+  margin: 0;
+}
+
+.legenda-ic > summary {
+  gap: 6px;
+  padding: 0 10px;
+  list-style: none;
+  border: 1px solid var(--linha-2);
+  border-radius: var(--raio-2);
+}
+
+.legenda-ic > summary::-webkit-details-marker {
+  display: none;
+}
+
+.legenda-ic > summary .icone-ui {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.legenda-ic[open] > summary {
+  color: var(--papel);
+  background: var(--acento-suave);
+  border-color: var(--acento-linha);
+}
+
+.legenda-ic .legenda {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  width: max-content;
+  max-width: min(320px, 80vw);
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--tinta-superficie);
+  border: 1px solid var(--linha-2);
+  border-radius: var(--raio-3);
+  box-shadow: var(--sombra-2);
+}
+
+/* "Tem mais embaixo": esmaecido no pé das zonas que rolam por dentro */
+@media (min-width: 1280px) {
+  .zona[data-mais="true"],
+  .paginas[data-mais="true"] {
+    -webkit-mask-image: linear-gradient(to bottom, var(--cor-sombra) calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to bottom, var(--cor-sombra) calc(100% - 28px), transparent);
+  }
+
+  /* O último cartão da coluna da esquerda ocupa a sobra, e as colunas fecham juntas */
+  .zona--esq > .secao--testes {
+    flex: 1 1 auto;
+  }
+
+  /* Com o selo pequeno, o nome por extenso do atributo só atrapalha (a sigla já diz) */
+  .zona--esq .secao--atributos[data-modo="mesa"] .atributo__nome {
+    display: none;
+  }
+
+  .agente__ferramentas {
+    padding-top: 14px;
+  }
+
+  /* A barra global acompanha a largura da ficha */
+  body[data-vista="ficha"] .app-barra__conteudo {
+    max-width: 1840px;
+  }
+
+  .trilho__agente {
+    display: none;
+  }
+}
+
+/* ---- Faixa do último resultado: sempre presente (nada pula na primeira rolagem) ---- */
+.resultado-rapido {
+  min-height: 62px;
+}
+
+.resultado-rapido[data-vazio="sim"] .resultado-rapido__total {
+  font-weight: 500;
+  color: var(--papel-4);
+}
+
+.resultado-rapido[data-vazio="sim"] #rr-detalhes {
+  display: none;
+}
+
+/* ---- Celular e tablet ---- */
+@media (max-width: 1279px) {
+  /* Quem é o agente, no topo de qualquer página */
+  .trilho__agente {
+    margin: 0 0 6px;
+    overflow: hidden;
+    font: 600 0.8125rem/1.2 var(--fonte-ui);
+    color: var(--papel-2);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .resultado-rapido {
+    min-height: 48px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+
+  .resultado-rapido__texto strong {
+    font-size: 0.875rem;
+  }
+
+  /* No Resumo, defesa e testes vêm antes do selo dos atributos */
+  #secao-testes {
+    order: 1;
+  }
+
+  #secao-atributos {
+    order: 2;
+  }
+
+  .secao--atributos[data-modo="mesa"] .atributos__palco {
+    width: min(100%, 400px);
+  }
+
+  /* Sem o vazio de 46px sob a faixa presa */
+  .ficha-layout .ficha__conteudo .secao {
+    padding-top: 14px;
+  }
+
+  .ficha-layout .ficha__conteudo .secao__titulo {
+    margin-bottom: 12px;
+    font-size: 1.5rem;
+  }
+
+  .ficha-layout .zona,
+  .ficha-layout .pagina-painel {
+    padding-top: 0;
+  }
+
+  /* A folha de ajuste tem os botões; na faixa o vital é um botão único */
+  .vital__botoes {
+    display: none;
+  }
+
+  .vital__valor {
+    font-size: 1.5rem;
+  }
+
+  .vital-folha__derivados dd {
+    white-space: nowrap;
+  }
+}
+
+/* Tablet: a faixa de vitais usa o mesmo desenho compacto do celular */
+@media (min-width: 720px) and (max-width: 1279px) {
+  .vital {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "topo"
+      "barra";
+    gap: 5px 6px;
+  }
+
+  .vital__topo {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 6px;
+    min-height: 40px;
+    margin: -4px -6px -2px;
+    padding: 4px 6px 2px;
+    background: color-mix(in srgb, var(--cor-texto) 3.5%, transparent);
+    border-color: var(--linha-1);
+  }
+}
+
+/* Telas médias: o indicador de salvamento sai da barra (a falha de gravação continua avisando) */
+@media (max-width: 900px) {
+  .status-salvamento:not([data-estado="falha"]):not([data-estado="pendente"]) {
+    display: none;
+  }
+}
+
+/* Muito baixo (até 740px): o numeral dos vitais volta a 24px e a faixa do agente aperta mais */
+@media (min-width: 1280px) and (max-height: 740px) {
+  .zona--esq .vital__valor {
+    font-size: 1.5rem;
+  }
+
+  .zona--info .secao--dossie {
+    padding-top: 6px;
+    padding-bottom: 8px;
+  }
+
+  .zona--info .dossie__selo {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* Tablet: os botões da barra (Aparência, Sobre) só com o ícone, para a aba Ficha caber inteira */
+@media (max-width: 1100px) {
+  .app-barra__botao-texto {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+}
+
+/* Tablet e celular: o vital da faixa tem 44px de toque; os botões da barra também */
+@media (max-width: 1279px) {
+  .vital__topo {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .app-barra__botao {
+    min-width: 44px;
+    justify-content: center;
+  }
+}
+
+@media (min-width: 1280px) and (max-height: 740px) {
+  .zona--esq .secao--testes {
+    padding: 6px 10px;
+  }
+
+  .zona--esq .secao--atributos {
+    padding-bottom: 4px;
   }
 }

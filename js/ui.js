@@ -2152,7 +2152,6 @@ window.OP = window.OP || {};
     refs.rrDetalhe = document.getElementById('rr-detalhe');
     refs.rrAlvo = document.getElementById('rr-alvo');
     refs.rrCritico = document.getElementById('rr-critico');
-    document.getElementById('rr-fechar').addEventListener('click', function () { refs.rrCaixa.hidden = true; });
     document.getElementById('rr-detalhes').addEventListener('click', function () { abrirPainel(true); });
 
     // Modificador de dados: de −3 a +3
@@ -2405,12 +2404,26 @@ window.OP = window.OP || {};
     refs.rrAlvo.hidden = !alvo;
     refs.rrCritico.hidden = resultado.critico !== true;
     refs.rrCaixa.setAttribute('data-critico', resultado.critico === true ? 'sim' : 'nao');
-    refs.rrCaixa.hidden = false;
+    refs.rrCaixa.setAttribute('data-vazio', 'nao');
     refs.rrFicha = OP.state.ficha.id;
     // Reinicia o brilho curto de "rolou agora"
     refs.rrCaixa.classList.remove('resultado-rapido--novo');
     void refs.rrCaixa.offsetWidth;
     refs.rrCaixa.classList.add('resultado-rapido--novo');
+  }
+
+  /** Volta a faixa ao estado "nenhuma rolagem ainda" (outra ficha, por exemplo). A faixa nunca some: assim nada pula de lugar na primeira rolagem. */
+  function limparResultadoRapido() {
+    if (!refs.rrCaixa) return;
+    definirTexto(refs.rrTotal, '—');
+    definirTexto(refs.rrTitulo, 'Último resultado');
+    definirTexto(refs.rrDetalhe, 'Role uma perícia, um ataque ou um dado');
+    definirTexto(refs.rrAlvo, '');
+    refs.rrAlvo.hidden = true;
+    refs.rrCritico.hidden = true;
+    refs.rrCaixa.setAttribute('data-critico', 'nao');
+    refs.rrCaixa.setAttribute('data-vazio', 'sim');
+    refs.rrFicha = null;
   }
 
   function mostrarResultado(resultado) {
@@ -3574,7 +3587,7 @@ window.OP = window.OP || {};
     desenharGraus(ficha, derivados.graus);
     desenharPericias(derivados);
     // O resultado rápido é da ficha em que se rolou
-    if (refs.rrCaixa && !refs.rrCaixa.hidden && refs.rrFicha !== ficha.id) refs.rrCaixa.hidden = true;
+    if (refs.rrCaixa && refs.rrCaixa.getAttribute('data-vazio') === 'nao' && refs.rrFicha !== ficha.id) limparResultadoRapido();
     desenharInventario(ficha, derivados);
     desenharAtaques(ficha, derivados);
     desenharHabilidades(ficha);

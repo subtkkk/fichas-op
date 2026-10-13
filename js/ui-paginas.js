@@ -2,7 +2,7 @@
    js/ui-paginas.js — a ficha em páginas (OP.uiPaginas)
    --------------------------------------------------------------------------
    A ficha não é mais uma rolagem contínua.
-   - Computador (a partir de 1180 px): três zonas sempre à vista (info do agente,
+   - Computador (a partir de 1280 px): três zonas sempre à vista (info do agente,
      atributos + vitais + testes, perícias) e, à direita, abas com as outras
      páginas (Combate, Habilidades, Rituais, Inventário, Biografia, Agente e
      Rolagens).
@@ -30,7 +30,7 @@ window.OP = window.OP || {};
     { id: 'rolagens', nome: 'Rolagens', nota: 'Dados, fórmulas e histórico', aba: true }
   ];
 
-  const LARGURA_COMPUTADOR = 1180; // px
+  const LARGURA_COMPUTADOR = 1280; // px
   const refs = {};
   const estado = { desktop: 'combate', mobile: 'resumo', condicoes: 0 };
   let consulta = null;
@@ -324,8 +324,14 @@ window.OP = window.OP || {};
     if (document.querySelector('dialog[open]')) return;
     let id = null;
     if (/^[1-9]$/.test(evento.key)) {
-      const lista = emComputador() ? PAGINAS.filter(function (p) { return p.aba; }) : PAGINAS;
-      const pagina = lista[Number(evento.key) - 1];
+      // A numeração é a do índice (1 Resumo … 9 Rolagens), igual no computador e no celular
+      const pagina = PAGINAS[Number(evento.key) - 1];
+      if (pagina && emComputador() && !pagina.aba) {
+        // Resumo e Perícias já estão à vista no computador: o foco vai para lá
+        evento.preventDefault();
+        pular(pagina.id === 'resumo' ? 'vitais' : 'pericias');
+        return;
+      }
       if (pagina) id = pagina.id;
     } else if (evento.key === '[' || evento.key === ']') {
       evento.preventDefault();
@@ -343,6 +349,7 @@ window.OP = window.OP || {};
   function montar() {
     refs.ficha = document.getElementById('ficha');
     refs.abas = document.getElementById('abas-paginas');
+    refs.paginas = document.getElementById('paginas');
     refs.indice = document.getElementById('paginas-indice');
     refs.dialogo = document.getElementById('dialogo-paginas');
     refs.dockIndice = document.getElementById('dock-indice');
@@ -394,6 +401,36 @@ window.OP = window.OP || {};
       });
     });
     document.addEventListener('keydown', aoTeclarNaFicha);
+
+    // A legenda dos ícones é um balão: fecha ao clicar fora ou com Esc
+    document.addEventListener('click', function (evento) {
+      Array.prototype.forEach.call(document.querySelectorAll('.legenda-ic[open]'), function (d) {
+        if (!d.contains(evento.target)) d.open = false;
+      });
+    });
+    document.addEventListener('keydown', function (evento) {
+      if (evento.key !== 'Escape') return;
+      Array.prototype.forEach.call(document.querySelectorAll('.legenda-ic[open]'), function (d) {
+        d.open = false;
+        const resumo = d.querySelector('summary');
+        if (resumo) resumo.focus();
+      });
+    });
+
+    // Indício de "tem mais embaixo": as zonas que rolam por dentro ganham um esmaecido no pé
+    const rolantes = [refs.ficha.querySelector('.zona--esq'), refs.ficha.querySelector('.zona--per'), refs.paginas].filter(Boolean);
+    function marcarRolagem(elemento) {
+      const mais = elemento.scrollTop + elemento.clientHeight < elemento.scrollHeight - 6;
+      if (elemento.getAttribute('data-mais') !== String(mais)) elemento.setAttribute('data-mais', String(mais));
+    }
+    rolantes.forEach(function (elemento) {
+      elemento.addEventListener('scroll', function () { marcarRolagem(elemento); }, { passive: true });
+      if ('ResizeObserver' in window) {
+        const obs = new ResizeObserver(function () { marcarRolagem(elemento); });
+        obs.observe(elemento);
+        Array.prototype.forEach.call(elemento.children, function (filho) { obs.observe(filho); });
+      }
+    });
 
     // Imprimir: as seções recolhidas (Defesa) abrem para sair no papel; depois voltam como estavam
     let abertasAntes = [];

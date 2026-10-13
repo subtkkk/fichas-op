@@ -1525,3 +1525,26 @@ html[data-diario-impressao="sim"] .bio__diario {
     display: none !important;
   }
 }
+
+/* ---- Rodada 5: sigla basta (o nome cortava com reticências), bônus longe do valor e número de página ---- */
+@media print {
+  .atributo__nome {
+    display: none !important;
+  }
+
+  .atributo {
+    column-gap: 10pt;
+  }
+
+  .atributo__total {
+    margin-left: 4pt;
+  }
+
+  @page {
+    @bottom-right {
+      content: "Página " counter(page) " de " counter(pages);
+      font: 7pt sans-serif;
+      color: #444;
+    }
+  }
+}

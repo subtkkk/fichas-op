@@ -326,6 +326,16 @@ window.OP = window.OP || {};
       marcar(celula, estado.dadosCondicoes !== 0 && estado.dadosCondicoes !== geral,
         'Afetado por condições: ' + sinal(estado.dadosCondicoes) + 'd20 em ' + definicao.nome + sufixo);
     });
+    // Defesa e testes (Iniciativa, Fortitude, Reflexos, Vontade): a mesma perícia, o mesmo selo
+    document.querySelectorAll('[data-teste]').forEach(function (cartao) {
+      const id = cartao.getAttribute('data-teste');
+      const estadoTeste = derivados.pericias[id];
+      const saida = cartao.querySelector('.teste__dados');
+      if (!estadoTeste || !saida) return;
+      const definicao = OP.data.pericias.find(function (p) { return p.id === id; });
+      marcar(saida, estadoTeste.dadosCondicoes !== 0,
+        'Afetado por condições: ' + sinal(estadoTeste.dadosCondicoes) + 'd20 em ' + (definicao ? definicao.nome : id) + sufixo);
+    });
     marcar(document.getElementById('titulo-pericias'), geral !== 0,
       'Condições mudam os dados das perícias: ' + sinal(geral) + 'd20 na maioria (' + origens + ').');
     const defesa = derivados.defesa.condicoes;

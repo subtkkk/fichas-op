@@ -366,7 +366,7 @@
   --fonte-display: "Cormorant Garamond", "Cormorant", Georgia, "Times New Roman", serif;
   --fonte-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --fonte-mono: "IBM Plex Mono", ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
-  --t-micro: 0.6875rem;
+  --t-micro: 0.75rem;
   --t-rotulo: 0.6875rem;
   --t-pequeno: 0.7812rem;
   --t-corpo: 0.9062rem;
@@ -12583,4 +12583,117 @@ button.trilho__agente::after {
 .ataque__teste {
   font-size: 1rem;
   text-shadow: none;
+}
+
+/* ==========================================================================
+   23. REVISÃO DE DESIGN (rodada 5) — gesto sem voltar do navegador, paisagem com resultado preso,
+   algarismos alinhados e piso de 12px nos rótulos
+   ========================================================================== */
+
+/* Deslizar para os lados troca de página; não deve acionar o "voltar" do navegador */
+html,
+body {
+  overscroll-behavior-x: none;
+}
+
+/* Algarismos da fonte de títulos na linha de base (sem os "antigos" que descem) */
+body {
+  font-variant-numeric: lining-nums;
+}
+
+/* Nome do ataque longo: reticências em vez de corte no meio da letra */
+.ataque__nome,
+.ataque[data-modo="resumo"] .ataque__nome {
+  text-overflow: ellipsis;
+}
+
+/* Celular deitado: o resultado da rolagem fica preso no topo (o resto rola) */
+@media (max-width: 1279px) and (max-height: 520px) {
+  .resultado-rapido {
+    position: sticky;
+    top: 0;
+    min-height: 40px;
+  }
+}
+
+/* Sigla do atributo na linha da perícia e testes: 12px */
+.atributo-sigla,
+.ficha-layout .atributo-sigla {
+  font-size: 0.75rem;
+}
+
+/* ---- Celular e tablet: a lista vem antes da configuração (Rituais e Inventário) ---- */
+@media (max-width: 1279px) {
+  .secao--inventario,
+  .secao--rituais {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .secao--inventario > * ,
+  .secao--rituais > * {
+    order: 2;
+  }
+
+  .secao--inventario > .secao__titulo,
+  .secao--rituais > .secao__cabecalho {
+    order: 0;
+  }
+
+  /* Inventário: carga (resumo), itens e, por último, patente e crédito */
+  .inventario__topo {
+    display: contents;
+  }
+
+  .inventario__topo > .painel--carga {
+    order: 1;
+    margin-bottom: 12px;
+  }
+
+  .inventario__topo > .painel--patente {
+    order: 9;
+    margin-top: 16px;
+  }
+
+  /* Rituais: filtros e lista primeiro, DT/afinidade/turno depois */
+  .secao--rituais > .rituais__topo {
+    order: 8;
+    margin-top: 16px;
+  }
+
+  .secao--rituais > .filtros-linha {
+    order: 1;
+  }
+}
+
+/* ---- Celular: item do inventário em duas linhas (nome + ações; tipo, categoria, espaços e quantidade) ---- */
+@media (max-width: 599px) {
+  .item {
+    grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr));
+    grid-template-areas:
+      "nome nome acoes acoes"
+      "tipo cat  esp  qtd"
+      "det  det  det  det"
+      "desc desc desc desc";
+    gap: 6px 6px;
+    padding: 10px 12px;
+  }
+
+  .item [data-rotulo]::before {
+    margin-bottom: 3px;
+    font-size: 0.6875rem;
+    letter-spacing: 0;
+  }
+
+  .item__nome,
+  .item__nome .controle {
+    min-width: 0;
+  }
+
+  .item__tipo,
+  .item__categoria,
+  .item__espacos,
+  .item__quantidade {
+    margin-top: 2px;
+  }
 }

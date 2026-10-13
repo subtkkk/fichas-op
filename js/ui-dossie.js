@@ -242,8 +242,9 @@ window.OP = window.OP || {};
     });
     refs.vitalQuantia.value = '';
     definirTexto(refs.vitalMensagem, '');
-    desenharFolhaVital();
+    // Abre primeiro: desenharFolhaVital só desenha com a folha aberta (senão ela abriria com "— / —")
     if (!refs.dialogoVital.open) refs.dialogoVital.showModal();
+    desenharFolhaVital();
     // Foco no −1 (não no campo: no celular, focar o campo abriria o teclado)
     const menosUm = refs.dialogoVital.querySelector('[data-vital-delta="-1"]');
     if (menosUm && !menosUm.disabled) menosUm.focus();

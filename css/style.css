@@ -2006,6 +2006,14 @@ body:not([data-vista="ficha"]) .status-salvamento,
   display: none;
 }
 
+/* Telas médias: só o ponto de status (o texto continua para leitor de tela) */
+@media (max-width: 1000px) {
+  .status-salvamento {
+    gap: 0;
+    font-size: 0;
+  }
+}
+
 .status-salvamento::before {
   content: "";
   flex: none;
@@ -10934,8 +10942,8 @@ kbd {
       "esq  per  pag";
     gap: 14px;
     max-width: 1840px;
-    height: calc(100vh - var(--barra-altura));
-    height: calc(100dvh - var(--barra-altura));
+    height: calc(100vh - var(--barra-altura) - 1px); /* 1px: a borda da barra global */
+    height: calc(100dvh - var(--barra-altura) - 1px);
     padding: 14px var(--margem-pagina) 16px;
     overflow: clip;
   }
@@ -11224,12 +11232,41 @@ kbd {
   }
 }
 
-/* Computador com pouca altura (notebooks): o selo dos cinco e os vitais encolhem para caber na coluna */
-@media (min-width: 1180px) and (max-height: 840px) {
+/* Computador com pouca altura (notebooks): os atributos viram uma fileira de cinco d20 (em vez do selo)
+   e os vitais ficam mais juntos, para tudo caber na coluna sem rolar */
+@media (min-width: 1180px) and (max-height: 860px) {
   .zona--esq .secao--atributos[data-modo="mesa"] .atributos__palco {
-    width: min(100%, 256px);
-    margin-top: -18px;
-    margin-bottom: -14px;
+    width: 100%;
+    aspect-ratio: auto;
+    margin: 0;
+  }
+
+  .zona--esq .secao--atributos[data-modo="mesa"] .atributos__palco::before,
+  .zona--esq .secao--atributos[data-modo="mesa"] .atributos__mostrador {
+    display: none;
+  }
+
+  .zona--esq .secao--atributos[data-modo="mesa"] .grade-atributos {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 2px;
+  }
+
+  .zona--esq .secao--atributos[data-modo="mesa"] .atributo {
+    --dado: 54px;
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+  }
+
+  .zona--esq .secao--atributos[data-modo="mesa"] .atributo__nome {
+    display: none;
+  }
+
+  .zona--esq .secao--atributos .secao__cabecalho {
+    margin-bottom: 6px;
   }
 
   .zona--esq .trilho__corpo {

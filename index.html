@@ -593,6 +593,19 @@
           <div class="pagina-painel ficha__conteudo" role="tabpanel" id="pagina-combate" aria-label="Combate" data-pagina="combate" tabindex="-1" data-oculta>
           <!-- =================== CONDIÇÕES E ESTADOS =================== -->
           <!-- Etapa 10 · js/ui-condicoes.js. Os efeitos numéricos são SUGESTÕES a conferir no livro. -->
+          <section class="secao secao--ataques" id="secao-ataques" aria-labelledby="titulo-ataques">
+            <div class="secao__cabecalho">
+              <h2 class="secao__titulo" id="titulo-ataques">Ataques</h2>
+              <p class="secao__info">Luta (corpo a corpo) ou Pontaria (à distância)</p>
+            </div>
+
+            <!-- Cartões gerados a partir de ficha.ataques -->
+            <div class="ataques__lista" id="lista-ataques" role="list" aria-label="Ataques"></div>
+            <p class="itens__vazio" id="ataques-vazio">Nenhum ataque. Use "Adicionar ataque" para começar.</p>
+            <button type="button" class="botao botao--adicionar" data-acao="adicionar-ataque">+ Adicionar ataque</button>
+          </section>
+
+          <!-- =================== DEFESA E DERIVADOS =================== -->
           <section class="secao secao--condicoes" id="secao-condicoes" aria-labelledby="titulo-condicoes">
             <div class="secao__cabecalho">
               <h2 class="secao__titulo" id="titulo-condicoes">Condições e estados</h2>
@@ -701,7 +714,7 @@
             </form>
           </section>
 
-          <!-- =================== DEFESA E DERIVADOS =================== -->
+          <!-- ======================== ATAQUES ======================== -->
           <section class="secao secao--defesa" id="secao-defesa" aria-labelledby="titulo-defesa">
             <h2 class="secao__titulo" id="titulo-defesa">Defesa e derivados</h2>
 
@@ -800,19 +813,6 @@
                 <div class="resistencias__grupos" id="grade-resistencias"></div>
               </div>
             </details>
-          </section>
-
-          <!-- ======================== ATAQUES ======================== -->
-          <section class="secao secao--ataques" id="secao-ataques" aria-labelledby="titulo-ataques">
-            <div class="secao__cabecalho">
-              <h2 class="secao__titulo" id="titulo-ataques">Ataques</h2>
-              <p class="secao__info">Luta (corpo a corpo) ou Pontaria (à distância)</p>
-            </div>
-
-            <!-- Cartões gerados a partir de ficha.ataques -->
-            <div class="ataques__lista" id="lista-ataques" role="list" aria-label="Ataques"></div>
-            <p class="itens__vazio" id="ataques-vazio">Nenhum ataque. Use "Adicionar ataque" para começar.</p>
-            <button type="button" class="botao botao--adicionar" data-acao="adicionar-ataque">+ Adicionar ataque</button>
           </section>
           </div>
 

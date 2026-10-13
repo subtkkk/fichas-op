@@ -711,6 +711,21 @@ window.OP = window.OP || {};
         }).length;
       }, esperado: 0 },
 
+      { nome: 'E11 · A folha de ajuste de vital abre já com o valor (não "— / —")', obtido: function () {
+        const botao = document.querySelector('[data-abrir-vital="pv"]');
+        const dialogo = document.getElementById('dialogo-vital');
+        if (!botao || !dialogo) return 'sem botão ou diálogo';
+        const classeAntes = OP.state.ficha.identificacao.classe;
+        try {
+          OP.state.atualizar('identificacao.classe', 'combatente');
+          botao.click();
+          const lido = document.getElementById('vital-atual').textContent;
+          return lido !== '—' && lido !== '';
+        } finally {
+          if (dialogo.open) dialogo.close();
+          OP.state.atualizar('identificacao.classe', classeAntes);
+        }
+      }, esperado: true },
       // --- Ficha em páginas ---
       { nome: 'E11 · 9 páginas; 7 com aba (Resumo e Perícias só existem no celular)', obtido: function () {
         const p = OP.uiPaginas.paginas;

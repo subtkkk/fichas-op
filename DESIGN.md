@@ -268,76 +268,19 @@ Os tokens acima descrevem o tema **Escuro**, que continua sendo o padrão de ide
 
 A casca do app tem largura máxima de 1440px, com margem lateral de 32px (24px abaixo de 1200px e 16px no celular). O espaçamento segue a base 4 (`e1` a `e16`).
 
-**Ficha no desktop:** grade de duas colunas, com um trilho lateral fixo de 232px (sinais vitais, derivados e índice das seções) e o conteúdo ao lado, separados por 44px. O trilho fica preso abaixo da barra global. Atributos e Recursos dividem uma linha. Na mesa, os cinco atributos ficam num mostrador quadrado (até 600px) com um d20 em cada ponta do pentagrama; na edição, voltam para a grade de cartões. A partir de 1024px, o painel de rolagens aberto vira uma coluna fixa de 380px à direita e só a área da ficha se estreita (a barra global fica inteira); entre 1024 e 1199px a faixa de vitais se compacta. A ficha reserva 96px no fim (e `scroll-padding-bottom`) para a alça das rolagens não esconder controles.
+**Ficha no computador (≥ 1280px):** a ficha ocupa a tela inteira abaixo da barra global, sem rolagem da página; cada zona rola por dentro quando precisa. Grade de três colunas (`0,9fr · 1fr · 1,35fr`, no mínimo 300 · 330 · 400px) e duas linhas: a faixa do agente (identificação) cobre as duas primeiras colunas; embaixo, a coluna de **atributos + vitais + defesa/deslocamento/PE por turno + testes** e a coluna de **perícias**; a coluna da direita é um cartão com a barra de abas no alto e a página escolhida embaixo (Combate, Habilidades, Rituais, Inventário, Biografia, Agente, Rolagens). Os cartões das zonas usam o mesmo vidro e a borda `linha-2`; o título de seção cai para 21px e some a etiqueta numerada (o papel é que guarda o editorial). Na mesa, o mostrador dos atributos encolhe (290px; 256px em telas com menos de 840px de altura) para os vitais caberem logo abaixo.
 
-**Até 1199px:** a ficha vira uma coluna só, e o trilho vira uma faixa horizontal presa no topo; `--topo-fixo` soma a barra e a faixa, para as âncoras pararem no lugar certo.
+**Até 1279px (tablet e celular):** uma página por vez. O rodapé (`dock`) tem as setas anterior/próxima e o botão-índice (nome da página + contador `n/9`); a folha do índice sobe de baixo com um cartão por página (número, nome, uma linha de descrição e o número de condições ativas em Combate). Deslizar mais de 90px para os lados, com o gesto claramente horizontal, troca de página; campos, diálogos e listas que rolam para o lado não disparam o gesto. A faixa de vitais fica presa no topo em todas as páginas (`--topo-fixo` soma a barra e a faixa). Avisos curtos (resultado de rolagem) ficam acima do rodapé.
 
-**Até 719px (celular):** a barra global tem 56px e, na ficha, rola junto com a página; quem fica preso é a faixa de vitais, e cada vital da faixa é um botão que abre a gaveta de ajuste. Na visão de mesa, cada perícia é uma linha (nome, dados, bônus, rolar); em edição, um cartão em grade de cinco colunas. Os avisos aparecem embaixo, acima da alça das rolagens. Até 380px, os ícones da navegação somem e o título da Central cai para 44px.
-
-**Mesa e edição:** perícias, ataques e rituais têm dois modos de tela. Na mesa, só o que se usa no meio da cena; "Editar" abre o formulário inteiro. É estado só da tela: a impressão mostra todos os campos.
-
-**Componentes:** a ficha e os atributos usam container queries (de 560 a 980px), então um componente responde à largura que tem, não à da janela.
-
-### Named Rules
-**A Regra da Mão na Mesa.** No celular, PV, SAN e PE ficam sempre à vista e a um toque do ajuste (−5…+5, dano e cura de N, desfazer), e cada linha de perícia tem o seu botão de rolar.
-
-## Elevation & Depth
-
-A profundidade vem de camadas discretas. As superfícies sobem por tom de tinta (`tinta-1` → `tinta-3`), cada uma com um reflexo de luz no alto (gradiente branco de 3% a 6,5%) e uma borda de `linha-1` ou `linha-2`. As sombras são suaves e longas, deslocadas para baixo, e cada nível carrega um fio de luz interno de 1px no topo. O vidro fumê (`blur(18px) saturate(140%)`) existe só nas superfícies estruturais: barra global, trilho, ferramentas do Arquivo, destaque da Central, painel de rolagens, janelas e avisos.
-
-### Shadow Vocabulary
-- **Assentada** (`box-shadow: 0 1px 0 rgba(255,255,255,0.035) inset, 0 1px 2px rgba(0,0,0,0.45)`): painéis e recursos dentro da ficha.
-- **Destacada** (`box-shadow: 0 14px 34px -14px rgba(0,0,0,0.75), 0 1px 0 rgba(255,255,255,0.04) inset`): cartões de agente e atributos.
-- **Flutuante** (`box-shadow: 0 30px 70px -24px rgba(0,0,0,0.85), 0 1px 0 rgba(255,255,255,0.05) inset`): janelas, avisos e o cartão de agente sob o cursor.
-
-### Named Rules
-**A Regra do Vidro Estrutural.** Desfoque só no que emoldura o conteúdo, nunca num cartão de conteúdo. Com transparência reduzida, ou sem suporte a `backdrop-filter`, o vidro vira tinta sólida.
-
-**A Regra do Brilho com Motivo.** Controles não brilham em repouso: o brilho do acento (`--brilho`) neles aparece só em hover, foco, seleção ou rolagem ativa. Em repouso, o brilho é reservado ao que é leitura de instrumento ou identidade: os totais dos atributos, as barras de PV, PE e SAN, o anel dos atributos e o monograma da capa.
-
-## Shapes
-
-Cantos pequenos, de papel e metal, não de "cartõezinhos": 3px em campos e selos, 6px em botões e itens de navegação, 10px em cartões e painéis, 16px em janelas. A pílula (999px) é reservada a barras de medida, contadores e interruptores. As bordas têm 1px; só caixas de seleção e o carimbo usam 1,5px. Detalhes de documento repetem a silhueta: a orelha dobrada no canto do cartão de agente, o traço do tema no alto do cartão, o filete colorido à esquerda dos recursos e a etiqueta numerada antes de cada título de seção.
-
-## Components
-
-Instrumentos de campo: robustos, fáceis de acertar no celular e lidos num relance no meio da cena.
-
-### Buttons
-- **Shape:** cantos levemente arredondados (6px), altura de 36px (44px com ponteiro de toque), compactos com 32px (40px no toque), grandes com 48px.
-- **Primary:** gradiente de Ouro de Arquivo Claro para Ouro de Arquivo, texto em Tinta sobre Ouro, fio de luz interno e sombra no tom do acento.
-- **Secondary:** superfície translúcida (gradiente branco de 6% para 2%), borda `linha-2`, texto `papel`.
-- **Ghost:** sem fundo nem borda, texto `papel-2`; no hover, fundo branco de 5%.
-- **Adicionar:** borda tracejada `linha-3`, 44px de altura; no hover, assume o acento.
-- **Danger:** gradiente vermelho (`#e7675c` → `perigo-fundo`), usado só em confirmações destrutivas.
-- **Botões de rolagem:** o botão de ação da ficha, no acento do tema. O de dano usa o vermelho de PV, o de conjurar o laranja de PE, o secundário é translúcido no acento, e o bloqueado fica em `tinta-4` com texto `papel-3`.
-- **Hover / Focus:** transições de 120 a 200ms com `cubic-bezier(0.2, 0.7, 0.2, 1)`; o foco pelo teclado é um contorno de 2px no acento, afastado 2px.
-
-### Chips
-- **Selos:** mono 9.5px em caixa alta, borda de 1px na cor do texto, cantos de 3px, sem fundo. A cor diz o significado: a fonte do livro em `ok`, "requer treino" em `aviso`.
-- **Carimbo:** mono 700 em Vermelho de Carimbo, borda de 1,5px, girado −3°. Só na capa do dossiê.
-
-### Cards / Containers
-- **Corner Style:** 10px.
-- **Background:** cartões de agente em `tinta-2`, com um halo da cor do tema no canto; painéis da ficha em `tinta-3` translúcida (88%).
-- **Shadow Strategy:** Destacada nos cartões de agente e atributos, Assentada nos painéis; o cartão de agente sobe 3px e ganha a Flutuante no hover.
-- **Border:** `linha-1` em repouso, `linha-2` no hover; o atributo em alerta ganha a borda de aviso.
-- **Internal Padding:** de 16 a 18px.
-
-### Inputs / Fields
-- **Style:** fundo `fundo-de-campo`, borda de 1px `linha-2`, cantos de 3px, 34px de altura (40px no toque).
-- **Focus:** a borda assume o acento, com halo de 3px a 14%; pelo teclado, anel duplo (1px sólido e 4px a 30%).
-- **Passos numéricos:** botões − e + embutidos no mesmo campo, com valor em Numeral.
-- **Error / Disabled:** no erro, a borda e o halo passam para a cor de erro; desabilitado fica a 45% de opacidade, com cursor bloqueado.
-- **Listas de escolha (seletor):** nenhuma lista usa o menu nativo. O botão tem o mesmo corpo do campo, a largura da opção mais longa e uma seta que gira e acende no acento quando aberto. O painel é de vidro fumê, cantos `raio-3`, 260px no mínimo e 360px de altura no máximo, preso abaixo (ou acima) do botão. Os livros viram títulos em rótulo mono no acento com um fio até a borda, presos no alto ao rolar. A opção escolhida ganha fundo `acento-suave`, filete de 2px no acento e a marca à direita; a descrição da opção (o `title`) aparece em `papel-3` abaixo do nome. Listas com mais de 10 opções ganham busca. No celular, é uma gaveta presa embaixo, com alça, o nome do campo em serifa de 23px, linhas de 48px e busca em 16px. O `<select>` continua na página, invisível, como fonte de verdade (dados, rótulos e impressão).
+**Até 719px (celular):** a barra global tem 56px e, na ficha, rola junto com a página; quem fica preso é a faixa de vitais, e cada vital da faixa é um botão que abre a gaveta de ajuste. Cada perícia é uma linha de 50px (nome com a sigla do atributo embaixo, grau, outros, total, rolar); em edição a caixa Concedida entra na linha da sigla. Até 380px, os ícones da navegação somem e o título da Central cai para 44px.
 
 ### Navigation
 - **Barra global:** vidro fumê preso no topo (60px; 56px no celular), com o selo e o nome "Dossiê". Itens em sans 600 de 13.5px, `papel-3` em repouso. O item ativo ganha `papel`, fundo branco de 5,5% e borda `linha-1`. O contador do Arquivo é uma pílula.
-- **Índice da ficha:** lista numerada no trilho, que acompanha a seção em leitura.
+- **Páginas da ficha:** no computador, abas no alto do cartão da direita (a marcada ganha fundo de acento e sublinhado; se não couberem, rolam e a marcada é trazida para a vista; setas, Home e End trocam de aba). No celular, o rodapé com setas e botão-índice, e a folha do índice.
 - **Abas:** segmentos de 30px; a ativa ganha fundo de acento e texto em tinta.
 
 ### Trilho de vitais (signature)
-O painel de instrumentos da ficha: vidro fumê com um halo do acento no canto. Mostra PV, SAN e PE com barra de medida, valor e botões de ±1, os derivados e o índice. Cada vital indica o nível (ok, baixo, crítico, zero ou indefinido); zerado, a palavra "zerado" substitui a barra. No celular, vira a faixa presa no topo.
+O painel de instrumentos da ficha: vidro fumê com um halo do acento no canto. Mostra PV, SAN e PE com barra de medida, valor e botões de ±1 e os derivados. Cada vital indica o nível (ok, baixo, crítico, zero ou indefinido); zerado, a palavra "zerado" substitui a barra. No celular, vira a faixa presa no topo.
 
 ### Mostrador de atributos (signature)
 Na mesa, os atributos são só números: um d20 facetado (SVG, facetas em cinco tons do acento) com o valor em Numeral e, embaixo, a sigla numa plaqueta de acento e o nome num rótulo escuro. Ficam nas pontas de um pentagrama sobre um mostrador de instrumento (anel, marcas de grau, trilho e o centro com "TESTE · ATR d20"). Base, bônus, pontos e avisos ficam atrás de "Editar atributos"; uma ficha nova, com pontos a distribuir, já abre na edição.

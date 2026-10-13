@@ -625,6 +625,9 @@ window.OP = window.OP || {};
         const antes = ficha.pericias.luta.grau;
         const concedida = OP.calc.estadoPericia(ficha, 'luta').concedidaPor;
         if (!botao || concedida) return 'sem botão ou concedida';
+        const modo = document.getElementById('botao-modo-pericias');
+        const estavaEmEdicao = modo.getAttribute('aria-pressed') === 'true';
+        if (!estavaEmEdicao) modo.click();
         try {
           OP.state.atualizar('pericias.luta.grau', 0);
           const graus = [];
@@ -635,11 +638,236 @@ window.OP = window.OP || {};
           return graus.join(',');
         } finally {
           OP.state.atualizar('pericias.luta.grau', antes);
+          if (!estavaEmEdicao) modo.click();
         }
       }, esperado: '1,2,3,0' },
+      { nome: 'E10 · Na mesa o botão de grau fica desligado e não muda o grau; em "Editar perícias" funciona', obtido: function () {
+        const botao = document.querySelector('[data-pericia="luta"] .botao-grau');
+        const modo = document.getElementById('botao-modo-pericias');
+        const estavaEmEdicao = modo.getAttribute('aria-pressed') === 'true';
+        const antes = OP.state.ficha.pericias.luta.grau;
+        try {
+          if (estavaEmEdicao) modo.click();
+          const naMesa = botao.disabled;
+          botao.click();
+          const naoMudou = OP.state.ficha.pericias.luta.grau === antes;
+          modo.click();
+          return [naMesa, naoMudou, botao.disabled].join('/');
+        } finally {
+          OP.state.atualizar('pericias.luta.grau', antes);
+          if (modo.getAttribute('aria-pressed') === 'true' && !estavaEmEdicao) modo.click();
+          if (modo.getAttribute('aria-pressed') !== 'true' && estavaEmEdicao) modo.click();
+        }
+      }, esperado: 'true/true/false' },
       { nome: 'E10 · Perícia "somente treinada" sem grau pede treinamento só por símbolo (sem texto "requer treinamento")', obtido: function () {
         return document.querySelectorAll('.pericia__requer').length + '/' + document.querySelector('.tabela-pericias').textContent.indexOf('requer treinamento');
       }, esperado: '0/-1' },
+
+      // --- Atributo da perícia pela sigla ---
+      { nome: 'E10 · Toda perícia tem a sigla do atributo como botão com rótulo', obtido: function () {
+        return OP.data.pericias.filter(function (p) {
+          const b = document.querySelector('[data-pericia="' + p.id + '"] .atributo-sigla');
+          return !b || !b.textContent || !/^Atributo de /.test(b.getAttribute('aria-label') || '');
+        }).length;
+      }, esperado: 0 },
+      { nome: 'E10 · Sigla → painel → outro atributo → "Voltar ao padrão" (e o painel fecha)', obtido: function () {
+        const ficha = OP.state.ficha;
+        const antes = ficha.pericias.luta.atributo;
+        const sigla = document.querySelector('[data-pericia="luta"] .atributo-sigla');
+        const painel = document.getElementById('seletor-atributo');
+        if (!sigla || !painel) return 'sem botão ou painel';
+        try {
+          OP.state.atualizar('pericias.luta.atributo', null);
+          sigla.click();
+          const abriu = !painel.hidden;
+          painel.querySelector('[data-atributo="agi"]').click();
+          const trocou = OP.state.ficha.pericias.luta.atributo + '/' + painel.hidden;
+          sigla.click();
+          const voltarAtivo = !painel.querySelector('[data-padrao]').disabled;
+          painel.querySelector('[data-padrao]').click();
+          return [abriu, trocou, voltarAtivo, String(OP.state.ficha.pericias.luta.atributo), painel.hidden].join('|');
+        } finally {
+          if (!painel.hidden) painel.querySelector('[data-padrao]').click();
+          OP.state.atualizar('pericias.luta.atributo', antes);
+        }
+      }, esperado: 'true|agi/true|true|null|true' },
+      { nome: 'E10 · Painel do atributo: "Voltar ao padrão" fica desligado quando já é o padrão', obtido: function () {
+        const sigla = document.querySelector('[data-pericia="luta"] .atributo-sigla');
+        const painel = document.getElementById('seletor-atributo');
+        if (OP.state.ficha.pericias.luta.atributo !== null) return 'luta com atributo trocado';
+        sigla.click();
+        const desligado = painel.querySelector('[data-padrao]').disabled;
+        sigla.click();
+        return desligado + '/' + painel.hidden;
+      }, esperado: 'true/true' },
+
+      { nome: 'E10 · A marca de "menor" só aparece nas perícias que rolam o menor (e o rótulo diz quantos dados)', obtido: function () {
+        return OP.data.pericias.filter(function (p) {
+          const dados = OP.calc.periciaDados(OP.state.ficha, p.id);
+          const marca = document.querySelector('[data-pericia="' + p.id + '"] .marca-menor');
+          const rolar = document.querySelector('[data-pericia="' + p.id + '"] .botao-icone--rolar');
+          const rotuloOk = rolar && rolar.getAttribute('aria-label') === 'Rolar ' + p.nome + ' (' + dados.qtd + 'd20, fica o ' + dados.modo + ')';
+          return !marca || marca.hidden !== (dados.modo !== 'menor') || !rotuloOk;
+        }).length;
+      }, esperado: 0 },
+
+      { nome: 'E11 · A folha de ajuste de vital abre já com o valor (não "— / —")', obtido: function () {
+        const botao = document.querySelector('[data-abrir-vital="pv"]');
+        const dialogo = document.getElementById('dialogo-vital');
+        if (!botao || !dialogo) return 'sem botão ou diálogo';
+        const classeAntes = OP.state.ficha.identificacao.classe;
+        try {
+          OP.state.atualizar('identificacao.classe', 'combatente');
+          botao.click();
+          const lido = document.getElementById('vital-atual').textContent;
+          return lido !== '—' && lido !== '';
+        } finally {
+          if (dialogo.open) dialogo.close();
+          OP.state.atualizar('identificacao.classe', classeAntes);
+        }
+      }, esperado: true },
+      // --- Resultado fixo e perícia na mesa ---
+      { nome: 'E11 · A faixa de resultado está sempre presente: vazia no começo, com o total grande depois de rolar, e volta a vazia ao trocar de ficha', obtido: function () {
+        const caixa = document.getElementById('resultado-rapido');
+        const botao = document.querySelector('[data-pericia="luta"] [data-rolar-pericia]');
+        if (!caixa || !botao) return 'sem faixa ou botão';
+        const idAntes = OP.state.ficha.id;
+        document.querySelector('[data-dado-rapido="1d6"]'); // garante o painel montado
+        botao.click();
+        const total = document.getElementById('rr-total').textContent;
+        const mostrou = caixa.getAttribute('data-vazio') === 'nao' && /^-?\d+$/.test(total) && document.getElementById('rr-titulo').textContent.indexOf('Luta') !== -1 && !caixa.hidden;
+        return mostrou + '/' + idAntes.length;
+      }, esperado: 'true/' + OP.state.ficha.id.length },
+      { nome: 'E11 · Na mesa o grau é um marcador (T, V, E) e "outros" some; em edição voltam o botão e o campo', obtido: function () {
+        const secao = document.getElementById('secao-pericias');
+        const modo = document.getElementById('botao-modo-pericias');
+        const estavaEmEdicao = modo.getAttribute('aria-pressed') === 'true';
+        const marcaOk = function () {
+          return OP.data.pericias.every(function (p) {
+            const marca = document.querySelector('[data-pericia="' + p.id + '"] .pericia__grau-marca');
+            const grau = OP.calc.estadoPericia(OP.state.ficha, p.id).grau;
+            return marca.textContent === ['', 'T', 'V', 'E'][grau];
+          });
+        };
+        try {
+          if (estavaEmEdicao) modo.click();
+          const celulaOutros = document.querySelector('[data-pericia="luta"] .pericia__outros');
+          const outrosNaMesa = getComputedStyle(celulaOutros).display === 'none' ? 0 : 1;
+          const marcas = marcaOk();
+          modo.click();
+          const outrosEmEdicao = getComputedStyle(celulaOutros).display !== 'none';
+          return [secao.dataset.modo, outrosNaMesa, marcas, outrosEmEdicao].join('/');
+        } finally {
+          if ((modo.getAttribute('aria-pressed') === 'true') !== estavaEmEdicao) modo.click();
+        }
+      }, esperado: 'edicao/0/true/true' },
+
+      // --- Rodada de revisão de design ---
+      { nome: 'E12 · Atalhos de teclado: a tecla "5" abre Rituais (a numeração é a do índice, igual nos dois tamanhos)', obtido: function () {
+        const antes = OP.uiPaginas.atual();
+        const vistaAntes = document.body.dataset.vista;
+        try {
+          document.body.dataset.vista = 'ficha';
+          document.dispatchEvent(new KeyboardEvent('keydown', { key: '5', bubbles: true }));
+          return OP.uiPaginas.atual() === 'rituais';
+        } finally {
+          document.body.dataset.vista = vistaAntes;
+          OP.uiPaginas.ir(antes, { rolar: false, anunciar: false });
+        }
+      }, esperado: true },
+      { nome: 'E12 · Digitar "5" num campo de texto não troca de página', obtido: function () {
+        const antes = OP.uiPaginas.atual();
+        const vistaAntes = document.body.dataset.vista;
+        const campo = document.getElementById('campo-jogador');
+        try {
+          document.body.dataset.vista = 'ficha';
+          campo.dispatchEvent(new KeyboardEvent('keydown', { key: '5', bubbles: true }));
+          return OP.uiPaginas.atual() === antes;
+        } finally {
+          document.body.dataset.vista = vistaAntes;
+        }
+      }, esperado: true },
+      { nome: 'E12 · 4 links de pulo na ficha (vitais, perícias, páginas, página aberta)', obtido: function () {
+        return Array.prototype.map.call(document.querySelectorAll('[data-pular]'), function (a) { return a.getAttribute('data-pular'); }).join(',');
+      }, esperado: 'vitais,pericias,abas,pagina' },
+      { nome: 'E12 · Dados rápidos: d4, d6, d8, d10, d12, d20 e d100', obtido: function () {
+        return Array.prototype.map.call(document.querySelectorAll('[data-dado-rapido]'), function (b) { return b.getAttribute('data-dado-rapido'); }).join(',');
+      }, esperado: '1d4,1d6,1d8,1d10,1d12,1d20,1d100' },
+      { nome: 'E12 · Um toque num dado rápido rola e mostra o total na faixa de resultado', obtido: function () {
+        const caixa = document.getElementById('resultado-rapido');
+        document.querySelector('[data-dado-rapido="1d6"]').click();
+        const total = Number(document.getElementById('rr-total').textContent);
+        return caixa.getAttribute('data-vazio') === 'nao' && total >= 1 && total <= 6;
+      }, esperado: true },
+      { nome: 'E12 · Defesa e derivados: composição, reações e resistências ficam recolhidas (e abrem para o campo pedido)', obtido: function () {
+        const d = document.getElementById('defesa-detalhes');
+        const fechadaAntes = !d.open;
+        const campo = document.getElementById('defesa-protecao-nome');
+        let no = campo;
+        while (no) { if (no.tagName === 'DETAILS') no.open = true; no = no.parentElement; }
+        const abriu = d.open;
+        d.open = false;
+        return fechadaAntes + '/' + abriu;
+      }, esperado: 'true/true' },
+      { nome: 'E12 · Os vitais mostram o nível por extenso no rótulo (baixo, crítico, zerado)', obtido: function () {
+        const f = OP.state.ficha;
+        const classeAntes = f.identificacao.classe;
+        const pvAntes = f.recursos.pv.atual;
+        try {
+          OP.state.atualizar('identificacao.classe', 'combatente');
+          const max = OP.calc.estadoRecurso(OP.state.ficha, 'pv').max;
+          OP.state.atualizar('recursos.pv.atual', Math.max(1, Math.floor(max * 0.2)));
+          const rotulo = document.querySelector('[data-abrir-vital="pv"]').getAttribute('aria-label');
+          return /crítico/.test(rotulo);
+        } finally {
+          OP.state.atualizar('recursos.pv.atual', pvAntes);
+          OP.state.atualizar('identificacao.classe', classeAntes);
+        }
+      }, esperado: true },
+
+      // --- Ficha em páginas ---
+      { nome: 'E11 · 9 páginas; 7 com aba (Resumo e Perícias só existem no celular)', obtido: function () {
+        const p = OP.uiPaginas.paginas;
+        return p.length + '/' + p.filter(function (x) { return x.aba; }).length + '/' + document.querySelectorAll('#abas-paginas [role="tab"]').length;
+      }, esperado: '9/7/7' },
+      { nome: 'E11 · Cada aba aponta para um painel que existe (tabpanel com rótulo)', obtido: function () {
+        return Array.prototype.filter.call(document.querySelectorAll('#abas-paginas [role="tab"]'), function (aba) {
+          const painel = document.getElementById(aba.getAttribute('aria-controls'));
+          return !painel || painel.getAttribute('role') !== 'tabpanel' || !painel.getAttribute('aria-label');
+        }).length;
+      }, esperado: 0 },
+      { nome: 'E11 · Toda seção da ficha mora numa página (ou é o trilho de vitais)', obtido: function () {
+        return Array.prototype.filter.call(document.querySelectorAll('#ficha section.secao'), function (secao) {
+          return !secao.closest('[data-pagina]');
+        }).map(function (secao) { return secao.id; }).join(',');
+      }, esperado: '' },
+      { nome: 'E11 · ir("rituais") mostra só a página de Rituais entre as abas e marca a aba', obtido: function () {
+        const antes = OP.uiPaginas.atual();
+        try {
+          OP.uiPaginas.ir('rituais', { rolar: false, anunciar: false });
+          const ocultas = OP.uiPaginas.paginas.filter(function (p) { return p.aba; }).map(function (p) {
+            return document.getElementById('pagina-' + p.id).hasAttribute('data-oculta');
+          });
+          return [OP.uiPaginas.atual(), ocultas.filter(function (o) { return !o; }).length, document.getElementById('aba-rituais').getAttribute('aria-selected')].join('/');
+        } finally {
+          OP.uiPaginas.ir(antes, { rolar: false, anunciar: false });
+        }
+      }, esperado: 'rituais/1/true' },
+      { nome: 'E11 · mostrarPaginaDe abre a página onde o campo mora (o inventário abre ao pedir um campo dele)', obtido: function () {
+        const antes = OP.uiPaginas.atual();
+        try {
+          OP.uiPaginas.ir('combate', { rolar: false, anunciar: false });
+          OP.uiPaginas.mostrarPaginaDe(document.getElementById('secao-inventario'));
+          return OP.uiPaginas.atual();
+        } finally {
+          OP.uiPaginas.ir(antes, { rolar: false, anunciar: false });
+        }
+      }, esperado: 'inventario' },
+      { nome: 'E11 · Dock: setas e botão-índice com rótulo; a folha do índice lista as 9 páginas', obtido: function () {
+        const setas = document.querySelectorAll('[data-pagina-delta]');
+        const rotulos = Array.prototype.every.call(setas, function (b) { return /pagina/i.test((b.getAttribute('aria-label') || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')); });
+        return setas.length + '/' + rotulos + '/' + document.querySelectorAll('#paginas-indice [data-ir-pagina]').length + '/' + /^Índice da ficha/.test(document.getElementById('dock-indice').getAttribute('aria-label'));
+      }, esperado: '2/true/9/true' },
 
       { nome: 'E10 · Existe um único <h1>', obtido: function () { return document.querySelectorAll('h1').length; }, esperado: 1 },
       { nome: 'E10 · Títulos h2 e h3 sem pular nível', obtido: function () { return OP.ui.auditarTitulos().map(function (t) { return t.de + '→' + t.para; }).join(','); }, esperado: '' },
@@ -661,6 +889,75 @@ window.OP = window.OP || {};
         const r = document.getElementById('anunciador');
         return Boolean(r) && r.getAttribute('aria-live') === 'polite' && r.classList.contains('visualmente-oculto');
       }, esperado: true },
+      { nome: 'E13 · Teste de atributo: FOR 3 rola 3d20 e fica com o maior, sem bônus', obtido: function () {
+        const f = OP.state.completarPadroes(fichaValida());
+        f.atributos['for'].base = 3; f.atributos['for'].bonus = 0;
+        const t = OP.calc.testeAtributo(f, 'for', 0);
+        return [t.dados.qtd, t.dados.modo, t.bonus].join('|');
+      }, esperado: '3|maior|0' },
+      { nome: 'E13 · Teste de atributo: atributo 0 rola 2d20 e fica com o menor', obtido: function () {
+        const f = OP.state.completarPadroes(fichaValida());
+        f.atributos.int.base = 0; f.atributos.int.bonus = 0;
+        const t = OP.calc.testeAtributo(f, 'int', 0);
+        return [t.dados.qtd, t.dados.modo].join('|');
+      }, esperado: '2|menor' },
+      { nome: 'E13 · rolarAtributo: título "Teste de Força", subtipo atributo e total = d20 escolhido', obtido: function () {
+        const f = OP.state.completarPadroes(fichaValida());
+        const r = OP.rolagens.rolarAtributo(f, 'for', {});
+        return [r.ok, r.titulo, r.subtipo, r.total === r.escolhido].join('|');
+      }, esperado: 'true|Teste de Força|atributo|true' },
+      { nome: 'E13 · rolarAtributo com atributo desconhecido não lança e devolve ok false', obtido: function () { return OP.rolagens.rolarAtributo(OP.state.completarPadroes(fichaValida()), 'xyz', {}).ok; }, esperado: false },
+      { nome: 'E13 · Cada um dos 5 atributos tem botão de rolar com nome acessível', obtido: function () {
+        const botoes = document.querySelectorAll('.atributo__rolar[data-rolar-atributo]');
+        return botoes.length + '|' + Array.prototype.every.call(botoes, function (b) { return /^Rolar teste de /.test(b.getAttribute('aria-label')); });
+      }, esperado: '5|true' },
+      { nome: 'E13 · Clicar no d20 de um atributo mostra "Teste de ..." na faixa de resultado', obtido: function () {
+        document.querySelector('[data-rolar-atributo="agi"]').click();
+        return document.getElementById('rr-titulo').textContent;
+      }, esperado: 'Teste de Agilidade' },
+      { nome: 'E13 · O trilho do agente é um botão que leva à página Agente', obtido: function () {
+        const antes = OP.uiPaginas.atual();
+        const botao = document.getElementById('trilho-agente');
+        try {
+          botao.click();
+          return botao.tagName + '|' + OP.uiPaginas.atual();
+        } finally {
+          OP.uiPaginas.ir(antes, { rolar: false, anunciar: false, foco: false });
+        }
+      }, esperado: 'BUTTON|agente' },
+      { nome: 'E14 · Rolagens: "Voltar" aparece com a página de origem e leva de volta a ela', obtido: function () {
+        const antes = OP.uiPaginas.atual();
+        const botao = document.getElementById('rolagens-voltar');
+        try {
+          OP.uiPaginas.ir('inventario', { rolar: false, anunciar: false });
+          OP.uiPaginas.ir('rolagens', { rolar: false, anunciar: false });
+          const visivel = !botao.hidden && /Inventário/.test(botao.textContent);
+          botao.click();
+          return visivel + '|' + OP.uiPaginas.atual();
+        } finally {
+          OP.uiPaginas.ir(antes, { rolar: false, anunciar: false, foco: false });
+        }
+      }, esperado: 'true|inventario' },
+      { nome: 'E14 · O aviso "Escolha a classe" só aparece enquanto a ficha não tem classe', obtido: function () {
+        const aviso = document.getElementById('aviso-classe');
+        const semClasse = !OP.data.classes[OP.state.ficha.identificacao.classe];
+        return aviso.hidden === !semClasse;
+      }, esperado: true },
+      { nome: 'E15 · Impressão: texto longo de um campo vira texto corrido e volta ao campo depois', obtido: function () {
+        const f = OP.state.ficha;
+        const antes = f.ataques.length;
+        OP.state.atualizar('ataques', f.ataques.concat([OP.state.novoAtaque({ nome: 'Teste longo', notas: 'x'.repeat(120) })]));
+        try {
+          window.dispatchEvent(new Event('beforeprint'));
+          const durante = document.querySelectorAll('.impressao-nota').length;
+          window.dispatchEvent(new Event('afterprint'));
+          const depois = document.querySelectorAll('.impressao-nota').length + document.querySelectorAll('.impressao-oculto').length;
+          return durante + '|' + depois;
+        } finally {
+          window.dispatchEvent(new Event('afterprint'));
+          OP.state.atualizar('ataques', OP.state.ficha.ataques.slice(0, antes));
+        }
+      }, esperado: '1|0' },
       { nome: 'E10 · Diálogos: todos têm título (aria-labelledby) e são <dialog>', obtido: function () {
         return Array.prototype.filter.call(document.querySelectorAll('dialog'), function (d) {
           const alvo = document.getElementById(d.getAttribute('aria-labelledby') || '');

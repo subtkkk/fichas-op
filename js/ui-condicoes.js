@@ -22,6 +22,7 @@ window.OP = window.OP || {};
 
   const refs = {};
   const cartoes = Object.create(null); // uid -> elementos do cartão
+  const LIMITE_EFEITO_GERAL = 12;  // a partir de quantas perícias o efeito é "geral"
   const selos = new WeakMap();         // elemento hospedeiro -> selo "cond."
 
   const SAUDE = {
@@ -309,12 +310,34 @@ window.OP = window.OP || {};
     const mod = derivados.condicoes.mod;
     const origens = textoOrigens(mod);
     const sufixo = ' (' + origens + ').';
+    // Efeito que vale para quase todas as perícias (ex.: Abalado): um selo só, no título; nas linhas só as que fogem dele
+    const contagem = Object.create(null);
+    OP.data.pericias.forEach(function (definicao) {
+      const valor = derivados.pericias[definicao.id].dadosCondicoes;
+      if (valor !== 0) contagem[valor] = (contagem[valor] || 0) + 1;
+    });
+    let geral = 0;
+    Object.keys(contagem).forEach(function (valor) {
+      if (contagem[valor] >= LIMITE_EFEITO_GERAL && contagem[valor] > (contagem[geral] || 0)) geral = Number(valor);
+    });
     OP.data.pericias.forEach(function (definicao) {
       const estado = derivados.pericias[definicao.id];
       const celula = document.querySelector('[data-pericia="' + definicao.id + '"] .pericia__dados output');
-      marcar(celula, estado.dadosCondicoes !== 0,
+      marcar(celula, estado.dadosCondicoes !== 0 && estado.dadosCondicoes !== geral,
         'Afetado por condições: ' + sinal(estado.dadosCondicoes) + 'd20 em ' + definicao.nome + sufixo);
     });
+    // Defesa e testes (Iniciativa, Fortitude, Reflexos, Vontade): a mesma perícia, o mesmo selo
+    document.querySelectorAll('[data-teste]').forEach(function (cartao) {
+      const id = cartao.getAttribute('data-teste');
+      const estadoTeste = derivados.pericias[id];
+      const saida = cartao.querySelector('.teste__dados');
+      if (!estadoTeste || !saida) return;
+      const definicao = OP.data.pericias.find(function (p) { return p.id === id; });
+      marcar(saida, estadoTeste.dadosCondicoes !== 0,
+        'Afetado por condições: ' + sinal(estadoTeste.dadosCondicoes) + 'd20 em ' + (definicao ? definicao.nome : id) + sufixo);
+    });
+    marcar(document.getElementById('titulo-pericias'), geral !== 0,
+      'Condições mudam os dados das perícias: ' + sinal(geral) + 'd20 na maioria (' + origens + ').');
     const defesa = derivados.defesa.condicoes;
     const defesaPorTipo = derivados.defesa.totalCorpoACorpo !== derivados.defesa.total || derivados.defesa.totalDistancia !== derivados.defesa.total;
     document.querySelectorAll('[data-saida="defesa.total"]').forEach(function (saida) {

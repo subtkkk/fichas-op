@@ -125,7 +125,7 @@
   --cor-aviso: #e2b354;
   --cor-sucesso: #82b38c;
   --cor-foco: #e3c58a;
-  --cor-carimbo: #c94a40;
+  --cor-carimbo: #d9584d;
   --cor-sombra: #000000;
   --cor-realce: #ffffff;
   --cor-aco: #a6b8cc;
@@ -366,7 +366,7 @@
   --fonte-display: "Cormorant Garamond", "Cormorant", Georgia, "Times New Roman", serif;
   --fonte-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --fonte-mono: "IBM Plex Mono", ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
-  --t-micro: 0.6875rem;
+  --t-micro: 0.75rem;
   --t-rotulo: 0.6875rem;
   --t-pequeno: 0.7812rem;
   --t-corpo: 0.9062rem;
@@ -912,7 +912,7 @@ body[data-vista="ficha"] .atmosfera[data-elemento="medo"] .atmosfera__base {
 .botao--primario,
 .botao-barra--principal {
   color: var(--acento-texto);
-  background: linear-gradient(180deg, var(--acento-claro) -60%, var(--acento) 70%);
+  background: linear-gradient(180deg, color-mix(in oklab, var(--acento-claro) 35%, var(--acento)), var(--acento) 80%);
   border-color: color-mix(in oklab, var(--acento-claro) 70%, transparent);
   box-shadow:
     0 1px 0 color-mix(in srgb, var(--cor-realce) 35%, transparent) inset,
@@ -991,7 +991,7 @@ body[data-vista="ficha"] .atmosfera[data-elemento="medo"] .atmosfera__base {
 }
 
 .botao--adicionar:hover:not(:disabled) {
-  color: var(--acento);
+  color: color-mix(in srgb, var(--acento) 72%, var(--papel));
   background: var(--acento-suave);
   border-color: var(--acento-linha);
 }
@@ -1054,7 +1054,7 @@ body[data-vista="ficha"] .atmosfera[data-elemento="medo"] .atmosfera__base {
 }
 
 .botao-icone--rolar {
-  color: var(--acento);
+  color: color-mix(in srgb, var(--acento) 72%, var(--papel));
   border-color: var(--acento-linha);
   background: var(--acento-suave);
 }
@@ -1126,7 +1126,7 @@ body[data-vista="ficha"] .atmosfera[data-elemento="medo"] .atmosfera__base {
 }
 
 .botao-rolagem--secundario {
-  color: var(--acento);
+  color: color-mix(in srgb, var(--acento) 72%, var(--papel));
   background: var(--acento-suave);
   border-color: var(--acento-linha);
   box-shadow: none;
@@ -1410,7 +1410,7 @@ textarea.controle {
 }
 
 .passo__botao:active {
-  color: var(--acento);
+  color: color-mix(in srgb, var(--acento) 72%, var(--papel));
   background: var(--acento-suave);
 }
 
@@ -2004,6 +2004,14 @@ textarea.controle {
 body:not([data-vista="ficha"]) .status-salvamento,
 .status-salvamento:empty {
   display: none;
+}
+
+/* Telas médias: só o ponto de status (o texto continua para leitor de tela) */
+@media (max-width: 1000px) {
+  .status-salvamento {
+    gap: 0;
+    font-size: 0;
+  }
 }
 
 .status-salvamento::before {
@@ -3353,25 +3361,16 @@ body.arrastando-arquivo::after {
 }
 
 .ficha-layout {
-  display: grid;
-  grid-template-columns: 232px minmax(0, 1fr);
-  align-items: start;
-  gap: 0 44px;
   max-width: var(--largura-app);
   margin: 0 auto;
-  padding: 28px var(--margem-pagina) 24px;
+  padding: 0 var(--margem-pagina) calc(var(--dock-altura) + 20px + var(--seguro-base));
 }
 
-/* ---- Trilho: vidro preso ao lado, sempre à mão durante a sessão ---- */
+/* Trilho (vitais): no computador fica na zona da esquerda, no celular vira a faixa presa no topo */
 .trilho {
   position: sticky;
-  top: calc(var(--barra-altura) + 20px);
-  z-index: 10;
-  max-height: calc(100vh - var(--barra-altura) - 40px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: var(--linha-2) transparent;
+  top: var(--barra-altura);
+  z-index: 30;
 }
 
 .trilho__corpo {
@@ -3501,25 +3500,8 @@ body.arrastando-arquivo::after {
 }
 
 /* Marcas de 10% (mostrador) */
-.vital[data-nivel="zero"] .vital__barra {
-  height: auto;
-  overflow: visible;
-  background: none;
-}
-
 .vital[data-nivel="zero"] .vital__barra .barra__preenchimento {
   display: none;
-}
-
-.vital[data-nivel="zero"] .vital__barra::after {
-  content: "zerado";
-  position: static;
-  display: block;
-  font: 600 0.6875rem/1.2 var(--fonte-mono);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--erro);
-  background: none;
 }
 
 .vital__barra::after {
@@ -3640,65 +3622,6 @@ body.arrastando-arquivo::after {
   color: var(--papel-3);
 }
 
-/* ---- Índice das seções ---- */
-.indice__lista {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding-top: 14px;
-  list-style: none;
-  border-top: 1px solid var(--linha-1);
-}
-
-.indice__item {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 8px;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--papel-3);
-  text-decoration: none;
-  white-space: nowrap;
-  border-radius: 4px;
-  transition: color var(--dur-1) var(--curva), background-color var(--dur-1) var(--curva);
-}
-
-.indice__num {
-  flex: none;
-  width: 18px;
-  font: 500 0.6875rem/1 var(--fonte-mono);
-  letter-spacing: 0.06em;
-  color: var(--papel-4);
-}
-
-.indice__item:hover {
-  color: var(--papel);
-  background: color-mix(in srgb, var(--cor-texto) 4%, transparent);
-}
-
-.indice__item[aria-current="true"] {
-  color: var(--papel);
-  background: var(--acento-suave);
-}
-
-.indice__item[aria-current="true"] .indice__num {
-  color: var(--acento);
-}
-
-.indice__item[aria-current="true"]::before {
-  content: "";
-  position: absolute;
-  top: 6px;
-  bottom: 6px;
-  left: -16px;
-  width: 2px;
-  border-radius: 2px;
-  background: var(--acento);
-  box-shadow: 0 0 10px var(--acento);
-}
-
 /* ---- Seções: sem caixa; um fio de arquivo, número e título editorial ---- */
 .ficha__conteudo {
   min-width: 0;
@@ -3768,7 +3691,7 @@ body.arrastando-arquivo::after {
   padding: 5px 7px 4px;
   font: 600 0.75rem/1 var(--fonte-mono);
   letter-spacing: 0.14em;
-  color: var(--acento);
+  color: color-mix(in srgb, var(--acento) 72%, var(--papel));
   background: var(--acento-suave);
   border: 1px solid var(--acento-linha);
   border-radius: 2px;
@@ -3913,11 +3836,11 @@ body.arrastando-arquivo::after {
   color: var(--papel);
   background:
     radial-gradient(circle at 50% 30%, color-mix(in oklab, var(--cor-painel) 18%, transparent), transparent 70%),
-    color-mix(in srgb, var(--cor-sombra) 30%, transparent);
+    color-mix(in srgb, var(--cor-texto) 6%, transparent);
   border: 1px solid color-mix(in oklab, var(--cor-painel) 45%, transparent);
   border-radius: var(--raio-2);
   text-shadow: 0 0 22px color-mix(in oklab, var(--cor-painel) 60%, transparent);
-  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--cor-sombra) 35%, transparent);
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--cor-texto) 6%, transparent);
 }
 
 .painel__campos {
@@ -5784,7 +5707,7 @@ body.arrastando-arquivo::after {
 
 .tabela-pericias td,
 .tabela-pericias tbody th {
-  padding: 5px 6px;
+  padding: 2px 6px;
   font-weight: 400;
   text-align: left;
   vertical-align: middle;
@@ -5819,7 +5742,7 @@ body.arrastando-arquivo::after {
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 8px;
-  min-height: 34px;
+  min-height: 28px;
 }
 
 .pericia__rotulo {
@@ -5833,7 +5756,7 @@ body.arrastando-arquivo::after {
 
 .pericia__especialidade {
   width: 150px;
-  height: 30px;
+  height: 26px;
   font-size: 0.8125rem;
 }
 
@@ -5861,13 +5784,8 @@ body.arrastando-arquivo::after {
 }
 
 .pericia .controle {
-  height: 32px;
+  height: 28px;
   font-size: 0.8438rem;
-}
-
-.pericia--atributo-alterado .pericia__atributo .controle {
-  color: var(--acento);
-  border-color: var(--acento-linha);
 }
 
 .pericia__dados output {
@@ -5895,7 +5813,7 @@ body.arrastando-arquivo::after {
 }
 
 .tabela-pericias .botao-icone--rolar:hover:not(:disabled) {
-  color: var(--acento);
+  color: color-mix(in srgb, var(--acento) 72%, var(--papel));
   background: var(--acento-suave);
   border-color: var(--acento-linha);
   box-shadow: none;
@@ -5915,10 +5833,170 @@ body.arrastando-arquivo::after {
   box-shadow: 0 1px 0 color-mix(in srgb, var(--cor-realce) 35%, transparent) inset, 0 0 0 3px var(--acento-suave);
 }
 
-.pericia__atributo { width: 92px; }
-.pericia__dados { width: 96px; }
-.pericia__grau { width: 52px; text-align: center; }
-.pericia__outros { width: 74px; }
+.pericia__dados { width: 84px; white-space: nowrap; }
+/* Sigla do atributo: texto comum que vira botão (sem moldura); abre o painel de troca */
+.atributo-sigla {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  margin-right: 4px;
+  padding: 0 4px;
+  font: 600 0.7188rem/1 var(--fonte-mono);
+  letter-spacing: 0.08em;
+  color: var(--papel-2);
+  background: transparent;
+  border: 0;
+  border-radius: var(--raio-1);
+  cursor: pointer;
+}
+
+.atributo-sigla:hover {
+  color: var(--acento);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.atributo-sigla[aria-expanded="true"] {
+  color: color-mix(in srgb, var(--acento) 72%, var(--papel));
+  background: var(--acento-suave);
+}
+
+/* Atributo diferente do padrão: acento fixo + ponto, nunca só a cor */
+.pericia--atributo-alterado .atributo-sigla {
+  color: var(--acento);
+}
+
+.pericia--atributo-alterado .atributo-sigla::after {
+  content: "•";
+  margin-left: 2px;
+}
+
+.seletor-atributo {
+  position: fixed;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 200px;
+  padding: 10px;
+  background: var(--tinta-superficie);
+  border: 1px solid var(--linha-2);
+  border-radius: var(--raio-3);
+  box-shadow: var(--sombra-2);
+}
+
+.seletor-atributo[hidden] {
+  display: none;
+}
+
+.seletor-atributo__titulo {
+  margin: 0;
+  font: 500 var(--t-micro) / 1.2 var(--fonte-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+}
+
+.seletor-atributo__lista {
+  display: grid;
+  gap: 4px;
+}
+
+.seletor-atributo__opcao,
+.seletor-atributo__padrao {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--papel);
+  text-align: left;
+  background: transparent;
+  border: 1px solid var(--linha-1);
+  border-radius: var(--raio-2);
+  cursor: pointer;
+}
+
+.seletor-atributo__opcao strong {
+  min-width: 2.6em;
+  font-family: var(--fonte-mono);
+  letter-spacing: 0.08em;
+}
+
+.seletor-atributo__opcao:hover,
+.seletor-atributo__padrao:hover:not(:disabled) {
+  background: var(--acento-suave);
+  border-color: var(--acento-linha);
+}
+
+.seletor-atributo__opcao[aria-pressed="true"] {
+  color: color-mix(in srgb, var(--acento) 72%, var(--papel));
+  background: var(--acento-suave);
+  border-color: var(--acento);
+  font-weight: 600;
+}
+
+.seletor-atributo__opcao[aria-pressed="true"]::after {
+  content: "✓";
+  margin-left: auto;
+}
+
+.seletor-atributo__padrao {
+  justify-content: center;
+  font-size: 0.8125rem;
+  color: var(--papel-2);
+  border-style: dashed;
+}
+
+.seletor-atributo__padrao:disabled {
+  color: var(--papel-3);
+  cursor: default;
+}
+
+@media (max-width: 1023px), (pointer: coarse) {
+  .seletor-atributo__opcao,
+  .seletor-atributo__padrao {
+    min-height: 44px;
+  }
+}
+
+/* No celular a sigla ocupa 44 px de altura sem aumentar a linha (a área de toque sobra para cima e para baixo) */
+@container ficha (max-width: 759px) {
+  .atributo-sigla {
+    min-width: 44px;
+    min-height: 44px;
+    margin: -14px 0 -14px -8px;
+    justify-content: center;
+  }
+}
+
+/* Teste que rola "menor": seta para baixo ao lado da sigla */
+.marca-menor {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+  color: var(--aviso);
+}
+
+.marca-menor[hidden] {
+  display: none;
+}
+
+.marca-menor svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pericia__grau { width: 44px; text-align: center; }
+.pericia__outros { width: 66px; }
 .pericia__bonus { width: 56px; text-align: right; }
 
 /* Grau: três chevrons (como divisas); acendem 1 (Treinado), 2 (Veterano) ou 3 (Expert) */
@@ -5949,7 +6027,7 @@ body.arrastando-arquivo::after {
 }
 
 .botao-grau:hover:not(:disabled) {
-  color: var(--acento);
+  color: color-mix(in srgb, var(--acento) 72%, var(--papel));
   background: var(--acento-suave);
   border-color: var(--acento-linha);
 }
@@ -5958,14 +6036,20 @@ body.arrastando-arquivo::after {
   display: none;
 }
 
+/* Na mesa o grau é só um indicador: igual ao botão, sem apagar e sem reagir ao mouse */
+.botao-grau:disabled {
+  opacity: 1;
+}
+
 .pericia__rolar {
   width: 52px;
   text-align: center;
 }
 
-.tabela-pericias .pericia__rolar .botao-icone {
-  width: 32px;
-  height: 32px;
+.tabela-pericias .pericia__rolar .botao-icone,
+.tabela-pericias .botao-grau {
+  width: 28px;
+  height: 28px;
   margin: 0 auto;
 }
 
@@ -6013,20 +6097,19 @@ body.arrastando-arquivo::after {
 
   .tabela-pericias tbody {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 6px;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+    gap: 4px 6px;
   }
 
   .pericia {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto auto auto;
+    grid-template-columns: auto minmax(0, 1fr) auto auto auto auto;
     grid-template-areas:
-      "nome  grau outros bonus rolar"
-      "dados grau outros bonus rolar"
-      "atr   atr  conc   conc  conc";
+      "nome  nome grau outros bonus rolar"
+      "dados conc grau outros bonus rolar";
     align-items: center;
     gap: 0 6px;
-    padding: 4px 8px 4px 12px;
+    padding: 2px 8px 2px 12px;
     background: color-mix(in oklab, var(--tinta-superficie) 88%, transparent);
     border: 1px solid var(--linha-1);
     border-radius: var(--raio-2);
@@ -6054,8 +6137,12 @@ body.arrastando-arquivo::after {
   .pericia__outros { grid-area: outros; width: auto; }
   .pericia__bonus { grid-area: bonus; width: auto; min-width: 2.2em; text-align: right; }
   .pericia__rolar { grid-area: rolar; width: auto; text-align: right; }
-  .pericia__atributo { grid-area: atr; width: auto; padding-top: 6px !important; }
-  .pericia__concedida { grid-area: conc; width: auto; text-align: right; white-space: nowrap; padding-top: 6px !important; }
+  .pericia__concedida { grid-area: conc; width: auto; text-align: left; white-space: nowrap; }
+
+  /* A caixa "Concedida" tem 44 px de toque sem aumentar a linha */
+  .pericia__concedida .caixa {
+    margin-block: -12px;
+  }
 
   .pericia__nome-conteudo {
     min-height: 0;
@@ -7409,10 +7496,11 @@ body.arrastando-arquivo::after {
   gap: 8px;
 }
 
-/* Perícias na mesa: sem atributo e sem "concedida" (ficam em "Editar perícias"); grau, outros e total sempre aparecem */
-.secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(2),
-.secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(8),
-.secao--pericias[data-modo="mesa"] .pericia > .pericia__atributo,
+/* Perícias na mesa: sem "concedida" (fica em "Editar perícias"); atributo, grau, outros e total sempre aparecem */
+.secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(7),
+.secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(4),
+.secao--pericias[data-modo="mesa"] .pericia > .pericia__outros,
+.secao--pericias[data-modo="mesa"] .botao-grau,
 .secao--pericias[data-modo="mesa"] .pericia > .pericia__concedida,
 .secao--pericias[data-modo="mesa"] .pericias__pontos,
 .secao--pericias[data-modo="mesa"] #contador-treinamento,
@@ -7425,16 +7513,44 @@ body.arrastando-arquivo::after {
 
 .secao--pericias[data-modo="mesa"] .tabela-pericias td,
 .secao--pericias[data-modo="mesa"] .tabela-pericias tbody th {
-  padding-top: 3px;
-  padding-bottom: 3px;
+  padding-top: 1px;
+  padding-bottom: 1px;
 }
 
 @container ficha (max-width: 759px) {
   .secao--pericias[data-modo="mesa"] .pericia {
+    grid-template-columns: auto minmax(0, 1fr) auto auto auto;
     grid-template-areas:
-      "nome  grau outros bonus rolar"
-      "dados grau outros bonus rolar";
+      "nome  nome grau bonus rolar"
+      "dados .    grau bonus rolar";
   }
+}
+
+/* Marcador do grau (só na mesa): T, V ou E; em edição o botão de chevrons toma o lugar */
+.pericia__grau-marca {
+  display: none;
+}
+
+.secao--pericias[data-modo="mesa"] .pericia__grau-marca {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.6em;
+  height: 1.6em;
+  font: 700 0.75rem/1 var(--fonte-mono);
+  letter-spacing: 0.04em;
+  color: var(--acento);
+  border-radius: var(--raio-1);
+}
+
+.secao--pericias[data-modo="mesa"] .pericia__grau-marca[data-nivel="2"],
+.secao--pericias[data-modo="mesa"] .pericia__grau-marca[data-nivel="3"] {
+  background: var(--acento-suave);
+  border: 1px solid var(--acento-linha);
+}
+
+.secao--pericias[data-modo="mesa"] .pericia__grau-marca:empty {
+  display: none;
 }
 
 /* Recursos: bônus de máximo e a conta, recolhidos */
@@ -7753,7 +7869,6 @@ body.arrastando-arquivo::after {
   text-shadow: 0 0 18px color-mix(in srgb, var(--acento-2) 55%, transparent), 0 0 2px color-mix(in srgb, var(--acento) 80%, transparent);
 }
 
-[data-elemento="energia"] .indice__item[aria-current="true"]::before,
 [data-elemento="energia"] .painel::before,
 [data-elemento="energia"] .ataque::before {
   background: linear-gradient(180deg, var(--acento-2), var(--acento) 50%, var(--acento-3));
@@ -7794,7 +7909,6 @@ body.arrastando-arquivo::after {
 [data-elemento="medo"] .ataque::before,
 [data-elemento="medo"] .ritual::before,
 [data-elemento="medo"] .recurso::before,
-[data-elemento="medo"] .indice__item[aria-current="true"]::before,
 [data-elemento="medo"] .mini-vital__preenchido,
 [data-elemento="medo"] .vital__barra .barra__preenchimento,
 [data-elemento="medo"] .recurso .barra__preenchimento {
@@ -7836,113 +7950,6 @@ html[data-transicao="tema"]::view-transition-new(root) {
   from { opacity: 0; }
 }
 
-/* ==========================================================================
-   11. PAINEL DE ROLAGENS — vidro fumê no canto; acompanha o tema da ficha
-   ========================================================================== */
-.rolagens {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  z-index: 50;
-  display: none;
-  flex-direction: column-reverse; /* alça embaixo, corpo em cima */
-  width: min(392px, calc(100vw - 32px));
-  max-height: calc(100vh - var(--barra-altura) - 40px);
-  color: var(--papel);
-  background:
-    radial-gradient(120% 50% at 100% 100%, var(--acento-suave), transparent 70%),
-    var(--vidro-reflexo),
-    color-mix(in srgb, var(--tinta-1) 82%, transparent);
-  -webkit-backdrop-filter: blur(22px) saturate(150%);
-  backdrop-filter: blur(22px) saturate(150%);
-  border: 1px solid var(--vidro-borda);
-  border-radius: var(--raio-4);
-  box-shadow: 0 30px 80px -20px color-mix(in srgb, var(--cor-sombra) 85%, transparent), 0 0 0 1px color-mix(in srgb, var(--cor-sombra) 40%, transparent), 0 0 60px -30px var(--brilho);
-}
-
-body[data-vista="ficha"] .rolagens {
-  display: flex;
-}
-
-/* A alça das rolagens flutua sobre o fim da página: espaço para rolar além
-   dela, e o foco do teclado nunca para escondido atrás dela */
-body[data-vista="ficha"] .ficha__conteudo {
-  padding-bottom: 96px;
-}
-
-html[data-vista="ficha"] {
-  scroll-padding-bottom: 96px;
-}
-
-.rolagens[data-aberto="false"] {
-  width: auto;
-  border-radius: var(--raio-pilula);
-}
-
-.rolagens__alca {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: 10px;
-  min-height: 50px;
-  padding: 0 18px 0 14px;
-  font: 600 0.8438rem/1 var(--fonte-ui);
-  color: var(--papel);
-  background: transparent;
-  border: 0;
-  border-radius: inherit;
-  cursor: pointer;
-}
-
-.rolagens__icone {
-  width: 22px;
-  height: 22px;
-  fill: none;
-  stroke: var(--acento);
-  stroke-width: 1.3;
-  stroke-linejoin: round;
-  filter: drop-shadow(0 0 6px var(--brilho));
-  transition: transform var(--dur-4) var(--curva-saida);
-}
-
-.rolagens__alca:hover .rolagens__icone {
-  transform: rotate(60deg);
-}
-
-.rolagens__ultimo {
-  padding-left: 10px;
-  font: 500 0.75rem var(--fonte-mono);
-  color: var(--papel-3);
-  border-left: 1px solid var(--linha-2);
-}
-
-.rolagens__ultimo:empty {
-  display: none;
-}
-
-.rolagens__seta {
-  width: 7px;
-  height: 7px;
-  margin-left: auto;
-  border-right: 1.5px solid var(--papel-3);
-  border-bottom: 1.5px solid var(--papel-3);
-  transform: rotate(-135deg);
-  transition: transform var(--dur-2) var(--curva);
-}
-
-.rolagens[data-aberto="false"] .rolagens__seta {
-  margin-left: 6px;
-}
-
-.rolagens[data-aberto="true"] .rolagens__seta {
-  transform: rotate(45deg);
-}
-
-.rolagens[data-aberto="true"] .rolagens__alca {
-  border-top: 1px solid var(--linha-1);
-  border-radius: 0 0 var(--raio-4) var(--raio-4);
-}
-
 .rolagens__corpo {
   display: flex;
   flex-direction: column;
@@ -7974,7 +7981,7 @@ html[data-vista="ficha"] {
   padding: 14px 16px;
   background:
     radial-gradient(100% 80% at 100% 0%, var(--acento-suave), transparent 60%),
-    color-mix(in srgb, var(--cor-sombra) 32%, transparent);
+    color-mix(in srgb, var(--cor-texto) 6%, transparent);
   border: 1px solid var(--linha-2);
   border-radius: var(--raio-3);
   animation: resultado-entrada 340ms var(--curva-saida);
@@ -8278,27 +8285,6 @@ html[data-vista="ficha"] {
 .historico__vazio {
   font-size: 0.75rem;
   color: var(--papel-4);
-}
-
-/* A partir de 1360px: o painel aberto vira uma coluna à direita e a ficha
-   se estreita ao lado dele, em vez de ficar coberta (abaixo disso ele flutua) */
-@media (min-width: 1360px) {
-  /* Só a área da ficha abre espaço; a barra global continua inteira */
-  body.com-painel-rolagens[data-vista="ficha"] .vista--ficha {
-    padding-right: 412px;
-  }
-
-  .rolagens[data-aberto="true"] {
-    top: calc(var(--barra-altura) + 16px);
-    right: 16px;
-    bottom: 16px;
-    width: 380px;
-    max-height: none;
-  }
-
-  .rolagens[data-aberto="true"] .rolagens__corpo {
-    flex: 1;
-  }
 }
 
 /* ==========================================================================
@@ -8891,174 +8877,6 @@ html[data-vista="ficha"] {
    13. RESPONSIVO
    ========================================================================== */
 
-/* Tablet e celular: o trilho vira uma faixa presa no topo e a barra de seções vai para o rodapé */
-@media (max-width: 1023px) {
-  :root {
-    --margem-pagina: 1.5rem;
-    --topo-fixo: calc(var(--barra-altura) + var(--altura-trilho, 104px));
-  }
-
-  .ficha-layout {
-    grid-template-columns: minmax(0, 1fr);
-    padding-top: 0;
-  }
-
-  .trilho {
-    top: var(--barra-altura);
-    z-index: 30;
-    max-height: none;
-    margin: 0 calc(-1 * var(--margem-pagina));
-    overflow: visible;
-  }
-
-  .trilho__corpo {
-    gap: 0;
-    padding: 10px var(--margem-pagina) 0;
-    background: var(--vidro-reflexo), color-mix(in srgb, var(--tinta-1) 86%, transparent);
-    border-width: 0 0 1px;
-    border-radius: 0;
-    box-shadow: 0 12px 30px -18px color-mix(in srgb, var(--cor-sombra) 90%, transparent);
-  }
-
-  .hud {
-    display: flex;
-    align-items: center;
-    gap: 22px;
-  }
-
-  .hud__titulo,
-  .hud__aviso {
-    display: none !important;
-  }
-
-  .hud__vitais {
-    display: grid;
-    flex: 1;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 22px;
-    margin-top: 0;
-  }
-
-  .hud__derivados {
-    flex: none;
-    width: 270px;
-    margin-top: 0;
-  }
-
-  .indice {
-    margin-top: 10px;
-  }
-
-  .indice__lista {
-    flex-direction: row;
-    gap: 6px;
-    padding: 0 0 10px;
-    overflow-x: auto;
-    border-top: 0;
-    scrollbar-width: none;
-    -webkit-mask-image: linear-gradient(90deg, var(--cor-sombra) calc(100% - 32px), transparent);
-    mask-image: linear-gradient(90deg, var(--cor-sombra) calc(100% - 32px), transparent);
-  }
-
-  .indice__lista::-webkit-scrollbar {
-    display: none;
-  }
-
-  .indice__item {
-    padding: 5px 11px;
-    font-size: 0.7812rem;
-    border: 1px solid var(--linha-1);
-    border-radius: var(--raio-pilula);
-  }
-
-  .indice__item[aria-current="true"] {
-    border-color: var(--acento-linha);
-  }
-
-  .indice__item[aria-current="true"]::before {
-    display: none;
-  }
-
-  .ficha__conteudo {
-    padding-top: 26px;
-  }
-}
-
-/* Capa do dossiê com menos largura */
-@container ficha (max-width: 879px) {
-  .secao--dossie .grade-campos {
-    grid-template-columns: 104px repeat(3, minmax(0, 1fr));
-    grid-template-areas:
-      "selo nome nome nome"
-      "selo jog  jog  nex"
-      "orig orig clas tril";
-  }
-
-  .dossie__selo {
-    width: 104px;
-    height: 104px;
-  }
-
-  .dossie__monograma {
-    font-size: 2.375rem;
-  }
-}
-
-@container ficha (max-width: 560px) {
-  .ficha__conteudo .secao--dossie {
-    padding: 16px 16px 20px;
-  }
-
-  .secao--dossie .grade-campos {
-    grid-template-columns: 64px minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-areas:
-      "selo nome nome"
-      "jog  jog  jog"
-      "orig orig orig"
-      "clas clas nex"
-      "tril tril tril";
-    gap: 12px;
-  }
-
-  .dossie__selo {
-    width: 64px;
-    height: 64px;
-  }
-
-  .dossie__monograma {
-    font-size: 1.5rem;
-  }
-
-  .dossie__selo-elemento {
-    right: -2px;
-    bottom: -4px;
-    width: 24px;
-    height: 24px;
-    padding: 5px;
-  }
-
-  .secao--dossie .campo--nome .campo__destaque {
-    font-size: 2rem;
-  }
-
-  .dossie__ferramentas,
-  .seletor-tema {
-    width: 100%;
-  }
-
-  .seletor-tema__atual {
-    display: none;
-  }
-
-  .secao__titulo {
-    font-size: 1.625rem;
-  }
-
-  .ficha__conteudo .secao__titulo::before {
-    transform: translateY(-6px);
-  }
-}
-
 /* Central e Arquivo em telas médias */
 @media (max-width: 1023px) {
   .central__heroi {
@@ -9096,10 +8914,6 @@ html[data-vista="ficha"] {
 
   body[data-vista="ficha"] .app-barra {
     position: relative;
-  }
-
-  body[data-vista="ficha"] .trilho {
-    top: 0;
   }
 
   .app-barra__conteudo {
@@ -9291,11 +9105,6 @@ html[data-vista="ficha"] {
   }
 
   /* Ficha: faixa de vitais compacta */
-  .ficha-layout {
-    padding-right: var(--margem-pagina);
-    padding-left: var(--margem-pagina);
-  }
-
   .trilho__corpo {
     padding-top: 8px;
   }
@@ -9340,41 +9149,8 @@ html[data-vista="ficha"] {
     display: none;
   }
 
-  .indice {
-    margin-top: 8px;
-  }
-
-  .ficha__conteudo {
-    padding-top: 18px;
-  }
-
-  .ficha__conteudo .secao {
-    padding-top: 34px;
-  }
-
   .botao--grande {
     height: 46px;
-  }
-
-  /* Rolagens: gaveta presa embaixo */
-  .rolagens,
-  .rolagens[data-aberto="false"] {
-    right: 0;
-    bottom: 0;
-    left: 0;
-    width: auto;
-    max-height: 70vh;
-    border-width: 1px 0 0;
-    border-radius: var(--raio-4) var(--raio-4) 0 0;
-  }
-
-  .rolagens[data-aberto="true"] .rolagens__alca {
-    border-radius: 0;
-  }
-
-  .rolagens__alca {
-    min-height: 52px;
-    padding-bottom: env(safe-area-inset-bottom, 0);
   }
 
   .dialogo__botoes .botao {
@@ -9514,14 +9290,6 @@ html[data-vista="ficha"] {
   .botao-icone {
     width: 40px;
     height: 40px;
-  }
-
-  .indice__item {
-    min-height: 34px;
-  }
-
-  .indice__item {
-    min-height: 40px;
   }
 
   .pericia__concedida .caixa {
@@ -10358,7 +10126,7 @@ kbd {
        2 colunas onde cabem; a partir de 1024 px, a coluna lateral.
    ========================================================================== */
 :root {
-  --barra-secoes: 3.5rem; /* altura da barra de seções no rodapé (abaixo de 1024 px) */
+  --dock-altura: 4.25rem; /* altura da barra de páginas no rodapé (abaixo de 1280 px) */
   --seguro-topo: env(safe-area-inset-top, 0px);
   --seguro-base: env(safe-area-inset-bottom, 0px);
   --seguro-esq: env(safe-area-inset-left, 0px);
@@ -10370,151 +10138,6 @@ kbd {
   padding-top: var(--seguro-topo);
   padding-right: var(--seguro-dir);
   padding-left: var(--seguro-esq);
-}
-
-/* ---- Coluna lateral (a partir de 1024 px): painel do agente + barra de seções ---- */
-.lateral {
-  display: contents;
-}
-
-@media (min-width: 1024px) {
-  .lateral {
-    position: sticky;
-    top: calc(var(--barra-altura) + 20px);
-    z-index: 10;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    max-height: calc(100vh - var(--barra-altura) - 40px);
-    max-height: calc(100dvh - var(--barra-altura) - 40px);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-width: thin;
-    scrollbar-color: var(--linha-2) transparent;
-  }
-
-  .lateral .trilho {
-    position: static;
-    max-height: none;
-    overflow: visible;
-  }
-
-  .lateral .indice {
-    padding: 12px;
-    background:
-      radial-gradient(140% 60% at 0% 0%, var(--acento-suave), transparent 60%),
-      var(--vidro-reflexo),
-      color-mix(in oklab, var(--tinta-superficie) 70%, transparent);
-    -webkit-backdrop-filter: var(--vidro-desfoque);
-    backdrop-filter: var(--vidro-desfoque);
-    border: 1px solid var(--vidro-borda);
-    border-radius: var(--raio-3);
-    box-shadow: var(--sombra-2);
-  }
-
-  .lateral .indice__lista {
-    padding-top: 0;
-    border-top: 0;
-  }
-
-  .lateral .indice__item {
-    min-height: 2.25rem;
-  }
-}
-
-/* ---- Abaixo de 1024 px: a barra de seções é a barra fixa do rodapé ---- */
-@media (max-width: 1023px) {
-  .indice {
-    position: fixed;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 60;
-    margin: 0;
-    padding: 6px calc(10px + var(--seguro-dir)) calc(6px + var(--seguro-base)) calc(10px + var(--seguro-esq));
-    background: color-mix(in srgb, var(--tinta-1) 96%, transparent);
-    -webkit-backdrop-filter: var(--vidro-desfoque);
-    backdrop-filter: var(--vidro-desfoque);
-    border-top: 1px solid var(--linha-2);
-    box-shadow: 0 -10px 30px -20px color-mix(in srgb, var(--cor-sombra) 80%, transparent);
-  }
-
-  .indice__lista {
-    display: flex;
-    flex-direction: row;
-    gap: 8px;
-    padding: 0;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    border-top: 0;
-    scrollbar-width: none;
-    -webkit-mask-image: none;
-    mask-image: none;
-  }
-
-  .indice__item {
-    flex: none;
-    justify-content: center;
-    min-width: 44px;
-    min-height: 44px;
-    padding: 0 14px;
-    font-size: 0.875rem;
-    border: 1px solid var(--linha-1);
-    border-radius: var(--raio-pilula);
-  }
-
-  /* O resto da página abre espaço para a barra (e para o botão de Rolagens) */
-  body[data-vista="ficha"] .ficha__conteudo {
-    padding-bottom: calc(var(--barra-secoes) + 5rem + var(--seguro-base));
-  }
-
-  html[data-vista="ficha"] {
-    scroll-padding-bottom: calc(var(--barra-secoes) + 1.5rem + var(--seguro-base));
-  }
-
-  /* Rolagens entre 900 e 1023 px: painel flutuante acima da barra */
-  .rolagens {
-    right: calc(16px + var(--seguro-dir));
-    bottom: calc(var(--barra-secoes) + 16px + var(--seguro-base));
-  }
-}
-
-/* ---- Rolagens abaixo de 900 px: botão flutuante e gaveta inferior (até 70% da altura) ---- */
-@media (max-width: 899px) {
-  .rolagens[data-aberto="false"] {
-    right: calc(12px + var(--seguro-dir));
-    bottom: calc(var(--barra-secoes) + 12px + var(--seguro-base));
-    left: auto;
-    width: auto;
-    max-height: none;
-    border-width: 1px;
-    border-radius: var(--raio-pilula);
-  }
-
-  .rolagens[data-aberto="true"] {
-    right: 0;
-    bottom: calc(var(--barra-secoes) + var(--seguro-base));
-    left: 0;
-    width: auto;
-    max-height: 70vh;
-    max-height: 70dvh;
-    border-width: 1px 0 0;
-    border-radius: var(--raio-4) var(--raio-4) 0 0;
-  }
-
-  .rolagens__alca {
-    min-height: 48px;
-    padding-bottom: 0;
-  }
-
-  .rolagens[data-aberto="true"] .rolagens__alca {
-    border-radius: 0;
-  }
-
-  /* O resultado de uma rolagem com a gaveta fechada aparece como aviso curto (aria-live) */
-  .avisos-app {
-    bottom: calc(var(--barra-secoes) + 76px + var(--seguro-base));
-  }
 }
 
 /* ---- Alvos de toque de pelo menos 44 × 44 px (espaço de 8 px entre eles) e campos de 16 px ---- */
@@ -10868,4 +10491,2530 @@ kbd {
   .segmentado__opcao {
     min-width: 44px;
   }
+}
+
+/* ==========================================================================
+   18. FICHA EM PÁGINAS
+       Computador (≥ 1280 px): três zonas sempre à vista (info do agente,
+       atributos + vitais + testes, perícias) e, à direita, abas com as outras
+       páginas. Celular e tablet: uma página por vez, com o botão-índice no rodapé.
+       A página mostrada vem de js/ui-paginas.js (atributo data-oculta).
+   ========================================================================== */
+.ficha-layout [data-oculta] {
+  display: none !important;
+}
+
+.zona {
+  min-width: 0;
+}
+
+/* Cada página tem o seu nome no índice: o número de seção do papel não aparece na tela */
+.ficha-layout .ficha__conteudo .secao__titulo::before {
+  display: none;
+}
+
+.ficha-layout .legenda {
+  gap: 2px 14px;
+  margin-top: 8px;
+  font-size: 0.6875rem;
+}
+
+/* ---- Abas e índice: cada um só no seu tamanho de tela ---- */
+.indice {
+  display: none;
+}
+
+.dock {
+  display: none;
+}
+
+.abas-paginas {
+  display: flex;
+  gap: 0;
+  padding: 0 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.aba-pagina {
+  position: relative;
+  display: inline-flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 46px;
+  padding: 0 10px;
+  font: 600 0.8125rem/1 var(--fonte-ui);
+  color: var(--papel-3);
+  white-space: nowrap;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color var(--dur-1) var(--curva), background-color var(--dur-1) var(--curva);
+}
+
+.aba-pagina:hover {
+  color: var(--papel);
+  background: color-mix(in srgb, var(--cor-texto) 4%, transparent);
+}
+
+.aba-pagina[aria-selected="true"] {
+  color: var(--papel);
+  background: var(--acento-suave);
+  border-bottom-color: var(--acento);
+}
+
+.aba-pagina__selo,
+.paginas-indice__selo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 6px;
+  font: 700 0.6875rem/1 var(--fonte-mono);
+  color: var(--acento-texto);
+  background: var(--acento);
+  border-radius: var(--raio-pilula);
+}
+
+/* ---- Rolagens como página ---- */
+.rolagens {
+  display: flex;
+  flex-direction: column;
+  color: var(--papel);
+}
+
+.rolagens__titulo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 18px 16px 0;
+  font: 600 1rem/1.2 var(--fonte-ui);
+}
+
+.rolagens__icone {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: var(--acento);
+  stroke-width: 1.3;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 6px var(--brilho));
+}
+
+.rolagens__ultimo {
+  padding-left: 10px;
+  font: 500 0.75rem var(--fonte-mono);
+  color: var(--papel-3);
+  border-left: 1px solid var(--linha-2);
+}
+
+.rolagens__ultimo:empty {
+  display: none;
+}
+
+.rolagens__corpo {
+  overflow: visible;
+  animation: none;
+}
+
+/* Capa do dossiê (identificação) com menos largura */
+@container ficha (max-width: 879px) {
+  .secao--dossie .grade-campos {
+    grid-template-columns: 104px repeat(3, minmax(0, 1fr));
+    grid-template-areas:
+      "selo nome nome nome"
+      "selo jog  jog  nex"
+      "orig orig clas tril";
+  }
+
+  .dossie__selo {
+    width: 104px;
+    height: 104px;
+  }
+
+  .dossie__monograma {
+    font-size: 2.375rem;
+  }
+}
+
+@container ficha (max-width: 560px) {
+  .ficha__conteudo .secao--dossie {
+    padding: 16px 16px 20px;
+  }
+
+  .secao--dossie .grade-campos {
+    grid-template-columns: 64px minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "selo nome nome"
+      "jog  jog  jog"
+      "orig orig orig"
+      "clas clas nex"
+      "tril tril tril";
+    gap: 12px;
+  }
+
+  .dossie__selo {
+    width: 64px;
+    height: 64px;
+  }
+
+  .dossie__monograma {
+    font-size: 1.5rem;
+  }
+
+  .dossie__selo-elemento {
+    right: -2px;
+    bottom: -4px;
+    width: 24px;
+    height: 24px;
+    padding: 5px;
+  }
+
+  .secao--dossie .campo--nome .campo__destaque {
+    font-size: 2rem;
+  }
+
+  .dossie__ferramentas,
+  .seletor-tema {
+    width: 100%;
+  }
+
+  .seletor-tema__atual {
+    display: none;
+  }
+}
+
+/* ---- Celular e tablet: uma página por vez ---- */
+@media (max-width: 1279px) {
+  .ficha-layout {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .zona--esq {
+    display: contents;
+  }
+
+  /* O trilho (vitais) é a faixa presa no topo, em todas as páginas (primeiro na ordem) */
+  .trilho {
+    order: -1;
+    margin: 0 calc(-1 * var(--margem-pagina));
+  }
+
+  .trilho__corpo {
+    gap: 0;
+    padding: 10px var(--margem-pagina);
+    background: var(--vidro-reflexo), var(--tinta-1);
+    border-width: 0 0 1px;
+    border-radius: 0;
+    box-shadow: 0 12px 30px -18px color-mix(in srgb, var(--cor-sombra) 90%, transparent);
+  }
+
+  .hud {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+  }
+
+  .hud__titulo,
+  .hud__aviso {
+    display: none !important;
+  }
+
+  .hud__vitais {
+    display: grid;
+    flex: 1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px;
+    margin-top: 0;
+  }
+
+  .hud__derivados {
+    flex: none;
+    width: 270px;
+    margin-top: 0;
+  }
+
+  .ficha-layout .ficha__conteudo > .secao,
+  .ficha-layout .zona > .secao,
+  .pagina-painel > .secao {
+    scroll-margin-top: var(--topo-fixo);
+  }
+
+  .ficha-layout .zona,
+  .ficha-layout .pagina-painel {
+    padding-top: 6px;
+  }
+
+  /* O selo dos cinco não precisa passar de ~440 px de largura */
+  .secao--atributos[data-modo="mesa"] .atributos__palco {
+    width: min(100%, 440px);
+  }
+
+  .ficha-layout [data-pagina]:not([data-oculta]) {
+    animation: pagina-entra 200ms var(--curva-saida) both;
+  }
+
+  /* Rolagens: página como as outras */
+  .rolagens {
+    padding-bottom: 12px;
+  }
+
+  /* Avisos curtos (resultado das rolagens) ficam acima do rodapé */
+  .avisos-app {
+    bottom: calc(var(--dock-altura) + 12px + var(--seguro-base));
+  }
+
+  /* ---- Rodapé: setas + botão-índice ---- */
+  body[data-vista="ficha"] .dock {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 60;
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr) 52px;
+    gap: 10px;
+    padding: 8px calc(12px + var(--seguro-dir)) calc(8px + var(--seguro-base)) calc(12px + var(--seguro-esq));
+    background: color-mix(in srgb, var(--tinta-1) 96%, transparent);
+    -webkit-backdrop-filter: var(--vidro-desfoque);
+    backdrop-filter: var(--vidro-desfoque);
+    border-top: 1px solid var(--linha-2);
+    box-shadow: 0 -10px 30px -20px color-mix(in srgb, var(--cor-sombra) 80%, transparent);
+  }
+
+  .dock__seta,
+  .dock__indice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    color: var(--papel);
+    background: color-mix(in srgb, var(--cor-texto) 4%, transparent);
+    border: 1px solid var(--linha-2);
+    border-radius: var(--raio-pilula);
+    cursor: pointer;
+  }
+
+  .dock__seta svg,
+  .dock__icone {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .dock__seta:disabled {
+    color: var(--papel-4);
+    cursor: default;
+    opacity: 0.55;
+  }
+
+  .dock__indice {
+    gap: 10px;
+    padding: 0 18px;
+    font: 600 0.9375rem/1 var(--fonte-ui);
+    background: var(--acento-suave);
+    border-color: var(--acento-linha);
+  }
+
+  .dock__icone {
+    color: var(--acento);
+  }
+
+  .dock__contador {
+    font: 500 0.75rem var(--fonte-mono);
+    color: var(--papel-3);
+  }
+
+  /* Folha do índice: sobe de baixo */
+  .dialogo--paginas {
+    width: 100%;
+    max-width: none;
+    margin: auto 0 0;
+    border-width: 1px 0 0;
+    border-radius: var(--raio-4) var(--raio-4) 0 0;
+  }
+
+  .dialogo--paginas .dialogo__corpo {
+    padding-bottom: calc(18px + var(--seguro-base));
+  }
+}
+
+@media (min-width: 720px) and (max-width: 1279px) {
+  :root {
+    --margem-pagina: 1.5rem;
+    --topo-fixo: calc(var(--barra-altura) + var(--altura-trilho, 104px));
+  }
+}
+
+@media (max-width: 719px) {
+  body[data-vista="ficha"] .trilho {
+    top: 0;
+  }
+}
+
+@keyframes pagina-entra {
+  from { opacity: 0; }
+}
+
+/* Índice da folha (lista de páginas) */
+.paginas-indice {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.paginas-indice__botao {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  min-height: 76px;
+  padding: 12px;
+  font: inherit;
+  color: var(--papel);
+  text-align: left;
+  background: transparent;
+  border: 1px solid var(--linha-1);
+  border-radius: var(--raio-3);
+  cursor: pointer;
+}
+
+.paginas-indice__botao:hover {
+  background: color-mix(in srgb, var(--cor-texto) 4%, transparent);
+}
+
+.paginas-indice__botao[aria-current="page"] {
+  background: var(--acento-suave);
+  border-color: var(--acento);
+}
+
+.paginas-indice__num {
+  flex: none;
+  padding-top: 2px;
+  font: 600 0.75rem/1 var(--fonte-mono);
+  letter-spacing: 0.06em;
+  color: var(--acento);
+}
+
+.paginas-indice__texto {
+  min-width: 0;
+}
+
+.paginas-indice__texto strong {
+  display: block;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.paginas-indice__texto small {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--papel-3);
+}
+
+.paginas-indice__selo {
+  margin-left: auto;
+}
+
+@media (max-width: 380px) {
+  .paginas-indice {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- Computador: três zonas fixas na tela + abas ---- */
+@media (min-width: 1280px) {
+  body[data-vista="ficha"] .rodape {
+    display: none;
+  }
+
+  body[data-vista="ficha"] .app-principal {
+    min-height: 0;
+  }
+
+  .ficha-layout {
+    display: grid;
+    grid-template-columns: minmax(300px, 0.9fr) minmax(330px, 1fr) minmax(400px, 1.35fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      "info info pag"
+      "esq  per  pag";
+    gap: 14px;
+    max-width: 1840px;
+    height: calc(100vh - var(--barra-altura) - 1px); /* 1px: a borda da barra global */
+    height: calc(100dvh - var(--barra-altura) - 1px);
+    padding: 14px var(--margem-pagina) 16px;
+    overflow: clip;
+  }
+
+  .zona {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--linha-2) transparent;
+    scroll-padding-top: 12px;
+  }
+
+  .zona--info {
+    grid-area: info;
+    overflow: visible;
+  }
+
+  .zona--esq {
+    grid-area: esq;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-right: 4px;
+  }
+
+  .zona--per {
+    grid-area: per;
+  }
+
+  .zona--pag {
+    grid-area: pag;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Cartões das zonas */
+  .zona--per,
+  .zona--pag,
+  .zona--esq > .secao {
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--cor-texto) 3%, transparent), transparent 40%),
+      color-mix(in oklab, var(--tinta-superficie) 82%, transparent);
+    border: 1px solid var(--linha-2);
+    border-radius: var(--raio-4);
+    box-shadow: var(--sombra-2);
+  }
+
+  .trilho {
+    position: static;
+    flex: none;
+  }
+
+  .indice {
+    display: block;
+    flex: none;
+    border-bottom: 1px solid var(--linha-2);
+  }
+
+  .paginas {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--linha-2) transparent;
+    scroll-padding-top: 12px;
+  }
+
+  .pagina-painel {
+    padding: 4px 18px 28px;
+  }
+
+  .pagina-painel--rolagens {
+    padding: 0 2px 16px;
+  }
+
+  /* Seções mais compactas: o editorial (número, fio, título grande) fica para o papel */
+  .ficha-layout .ficha__conteudo .secao {
+    margin: 0;
+    padding: 16px 16px 14px;
+  }
+
+  .ficha-layout .ficha__conteudo .secao::before {
+    display: none;
+  }
+
+  .ficha-layout .ficha__conteudo .secao__titulo {
+    margin-bottom: 12px;
+    font-size: 1.3125rem;
+    line-height: 1.1;
+  }
+
+  .ficha-layout .ficha__conteudo .secao__titulo::before {
+    display: none;
+  }
+
+  .ficha-layout .secao__cabecalho {
+    margin-bottom: 12px;
+  }
+
+  .ficha-layout .zona--per > .secao {
+    padding: 14px 16px 12px;
+  }
+
+  .pagina-painel .secao {
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  .pagina-painel .secao + .secao {
+    margin-top: 6px;
+    border-top: 1px solid var(--linha-1);
+  }
+
+  .pagina-painel > .secao:first-child {
+    padding-top: 12px;
+  }
+
+  /* Tabela de perícias: o cabeçalho cola no topo da zona */
+  .zona--per .tabela-pericias thead th {
+    top: 0;
+  }
+
+  /* Info do agente: faixa baixa */
+  .zona--info .secao--dossie {
+    padding: 12px 18px 14px;
+  }
+
+  .zona--info .secao--dossie::after {
+    display: none;
+  }
+
+  .zona--info .secao--dossie .grade-campos {
+    grid-template-columns: 72px minmax(0, 1.2fr) minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 0.75fr);
+    grid-template-areas:
+      "selo nome nome nome nome jog"
+      "selo orig orig clas tril nex";
+    gap: 8px 14px;
+  }
+
+  .zona--info .dossie__selo {
+    width: 72px;
+    height: 72px;
+  }
+
+  .zona--info .dossie__monograma {
+    font-size: 1.75rem;
+  }
+
+  .zona--info .dossie__selo-elemento {
+    display: none;
+  }
+
+  .zona--info .campo label {
+    margin-bottom: 4px;
+  }
+
+  .dock,
+  .dialogo--paginas {
+    display: none;
+  }
+
+  /* Faixa do agente: o NEX nunca fica espremido */
+  .zona--info .secao--dossie .grade-campos {
+    grid-template-columns: 72px minmax(0, 1.1fr) minmax(0, 1.2fr) minmax(0, 0.9fr) minmax(0, 1.2fr) minmax(76px, 0.7fr);
+    grid-template-areas:
+      "selo nome nome nome nome jog"
+      "selo orig orig clas tril nex";
+  }
+
+  /* Abas: se não couberem, rolam (a aba marcada é trazida para a vista pelo JS) */
+  .indice {
+    container-type: inline-size;
+  }
+
+  .aba-pagina {
+    flex: 1 0 auto;
+  }
+
+  @container (max-width: 560px) {
+    .aba-pagina {
+      padding: 0 9px;
+      font-size: 0.75rem;
+    }
+  }
+
+  /* Nome do agente: legível, mas sem ocupar a faixa inteira */
+  .zona--info .secao--dossie .campo--nome .campo__destaque {
+    padding-bottom: 2px;
+    font-size: clamp(1.5rem, 2.2vw, 2rem);
+    line-height: 1.1;
+  }
+
+  /* Atributos: o selo dos cinco menor, para os vitais caberem logo abaixo */
+  .zona--esq .secao--atributos[data-modo="mesa"] .atributos__palco {
+    width: min(100%, 268px);
+    margin-top: -14px;
+    margin-bottom: -10px;
+  }
+
+  .zona--esq .secao--atributos {
+    padding-bottom: 8px;
+  }
+
+  /* Vitais (trilho) em linhas compactas */
+  .zona--esq .trilho__corpo {
+    gap: 10px;
+    padding: 12px 14px;
+  }
+
+  .zona--esq .hud__titulo {
+    display: none;
+  }
+
+  /* Perícias na zona: uma linha por perícia (nome, atributo, grau, outros, total, rolar) */
+  .zona--per .secao--pericias[data-modo] .pericia {
+    grid-template-columns: minmax(0, 1fr) auto auto auto auto auto;
+    grid-template-areas: "nome dados grau outros bonus rolar";
+    align-items: center;
+    gap: 0 6px;
+    padding: 1px 8px 1px 12px;
+  }
+
+  .zona--per .secao--pericias[data-modo="mesa"] .pericia {
+    grid-template-columns: minmax(0, 1fr) auto auto auto auto;
+    grid-template-areas: "nome dados grau bonus rolar";
+  }
+
+  .zona--per .secao--pericias[data-modo="edicao"] .pericia {
+    grid-template-areas:
+      "nome dados grau outros bonus rolar"
+      "conc conc  conc conc   conc  conc";
+  }
+
+  .zona--per .pericia__nome,
+  .zona--per .pericia__dados {
+    align-self: center;
+  }
+
+  .zona--per .pericia .controle {
+    height: 28px;
+    font-size: 0.8438rem;
+  }
+
+  .zona--per .tabela-pericias .pericia > .pericia__outros .controle {
+    width: 54px;
+  }
+
+  .zona--per .atributo-sigla {
+    min-width: 0;
+    min-height: 28px;
+    margin: 0;
+  }
+
+  .zona--per .pericia__concedida .caixa {
+    margin-block: 0;
+  }
+
+  .zona--per .pericia__concedida {
+    text-align: left;
+    padding-bottom: 2px !important;
+  }
+
+  .zona--per .pericia__bonus output {
+    font-size: 1.0625rem;
+  }
+
+  .zona--per .pericia--treinada .pericia__bonus output {
+    font-size: 1.125rem;
+  }
+
+  /* Perícias: busca e filtro na mesma linha, legenda miúda */
+  .zona--per .pericias__ferramentas {
+    flex-wrap: nowrap;
+    gap: 10px 14px;
+    margin-top: 10px;
+  }
+
+  .zona--per .busca {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .zona--per .legenda {
+    gap: 2px 14px;
+    margin-top: 8px;
+    font-size: 0.6875rem;
+  }
+}
+
+/* Computador com pouca altura (notebooks): os atributos viram uma fileira de cinco d20 (em vez do selo)
+   e os vitais ficam mais juntos, para tudo caber na coluna sem rolar */
+@media (min-width: 1280px) and (max-height: 1000px) {
+  .zona--esq .secao--atributos[data-modo="mesa"] .atributos__palco {
+    width: 100%;
+    aspect-ratio: auto;
+    margin: 0;
+  }
+
+  .zona--esq .secao--atributos[data-modo="mesa"] .atributos__palco::before,
+  .zona--esq .secao--atributos[data-modo="mesa"] .atributos__mostrador {
+    display: none;
+  }
+
+  .zona--esq .secao--atributos[data-modo="mesa"] .grade-atributos {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 2px;
+  }
+
+  .zona--esq .secao--atributos[data-modo="mesa"] .atributo {
+    --dado: 54px;
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+  }
+
+  .zona--esq .secao--atributos[data-modo="mesa"] .atributo__nome {
+    display: none;
+  }
+
+  .zona--esq .secao--atributos .secao__cabecalho {
+    margin-bottom: 6px;
+  }
+
+  .zona--esq .trilho__corpo {
+    gap: 6px;
+    padding: 8px 12px;
+  }
+
+  .zona--info .secao--dossie {
+    padding: 8px 16px 10px;
+  }
+
+  .zona--info .dossie__selo {
+    width: 56px;
+    height: 56px;
+  }
+
+  .zona--info .dossie__monograma {
+    font-size: 1.4rem;
+  }
+}
+
+/* Tablet e telas de toque: a sigla do atributo ganha área de 44 px sem aumentar a linha */
+@media (max-width: 1279px), (pointer: coarse) {
+  .atributo-sigla {
+    min-width: 44px;
+    min-height: 44px;
+    margin: -8px 0 -8px -8px;
+    justify-content: center;
+  }
+}
+
+/* ---- Último resultado de rolagem ---- */
+.resultado-rapido {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background:
+    linear-gradient(90deg, var(--acento-suave), transparent 70%),
+    color-mix(in oklab, var(--tinta-superficie) 94%, transparent);
+  border-bottom: 1px solid var(--acento-linha);
+}
+
+.resultado-rapido[hidden] {
+  display: none;
+}
+
+.resultado-rapido__total {
+  flex: none;
+  min-width: 2.2ch;
+  margin: 0;
+  font: 700 2.25rem/1 var(--fonte-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: var(--papel);
+}
+
+.resultado-rapido[data-critico="sim"] .resultado-rapido__total {
+  color: var(--acento);
+  text-shadow: 0 0 18px var(--brilho);
+}
+
+.resultado-rapido__texto {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.resultado-rapido__texto strong {
+  overflow: hidden;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resultado-rapido__texto span {
+  overflow: hidden;
+  font: 500 0.75rem/1.3 var(--fonte-mono);
+  color: var(--papel-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resultado-rapido__texto .resultado-rapido__alvo {
+  font-weight: 700;
+  color: var(--papel-2);
+}
+
+.resultado-rapido--novo {
+  animation: resultado-novo 700ms var(--curva-saida);
+}
+
+@keyframes resultado-novo {
+  from { background-color: var(--acento-suave); }
+}
+
+/* Na página Rolagens o resultado já aparece em detalhe */
+.ficha-layout[data-pagina="rolagens"] .resultado-rapido {
+  display: none;
+}
+
+/* Celular e tablet: presa logo abaixo da faixa de vitais, sem cobrir o conteúdo */
+@media (max-width: 1279px) {
+  .zona--pag {
+    display: contents;
+  }
+
+  .resultado-rapido {
+    position: sticky;
+    top: var(--topo-fixo);
+    z-index: 25;
+    order: -1;
+    margin: 0 calc(-1 * var(--margem-pagina));
+    padding-right: var(--margem-pagina);
+    padding-left: var(--margem-pagina);
+    background: var(--tinta-1);
+    border-bottom: 1px solid var(--acento-linha);
+    box-shadow: 0 10px 24px -18px color-mix(in srgb, var(--cor-sombra) 90%, transparent);
+  }
+
+  .resultado-rapido__total {
+    font-size: 1.875rem;
+  }
+}
+
+/* ==========================================================================
+   19. REVISÃO DE DESIGN — vitais, Resumo, Defesa recolhida, legenda, Rolagens
+   ========================================================================== */
+
+/* Ícone do tema "Medo": acompanha a paleta (claro no escuro, escuro no claro) em vez de sumir */
+.seletor-tema__opcao[data-tema-opcao="medo"] {
+  --cor-amostra: var(--tema-medo) !important;
+}
+
+/* ---- Vitais: valor maior, barra mais grossa, nível por extenso e variação do valor ---- */
+.vital__valor {
+  position: relative;
+  font-size: 1.625rem;
+}
+
+.vital__barra {
+  height: 8px;
+}
+
+.vital__sigla {
+  font-size: 0.75rem;
+}
+
+.vital[data-nivel="baixo"] .vital__barra .barra__preenchimento {
+  background: linear-gradient(90deg, color-mix(in oklab, var(--aviso) 55%, var(--cor-sombra)), var(--aviso));
+  box-shadow: 0 0 12px var(--aviso);
+}
+
+.vital[data-nivel="critico"] .vital__barra .barra__preenchimento {
+  background: linear-gradient(90deg, color-mix(in oklab, var(--erro) 55%, var(--cor-sombra)), var(--erro));
+  box-shadow: 0 0 14px var(--erro);
+}
+
+.vital[data-nivel="baixo"] .vital__valor > output {
+  color: var(--aviso);
+}
+
+.vital[data-nivel="critico"] .vital__valor > output {
+  color: var(--erro);
+}
+
+/* O nível sempre com palavra (nunca só cor) */
+.vital[data-nivel="baixo"] .vital__sigla::after,
+.vital[data-nivel="critico"] .vital__sigla::after,
+.vital[data-nivel="zero"] .vital__sigla::after {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.5938rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.vital[data-nivel="baixo"] .vital__sigla::after { content: "baixo"; color: var(--aviso); }
+.vital[data-nivel="critico"] .vital__sigla::after { content: "crítico"; color: var(--erro); }
+.vital[data-nivel="zero"] .vital__sigla::after { content: "zero"; color: var(--erro); }
+
+.vital__botao {
+  color: var(--cor-vital);
+  border-color: color-mix(in oklab, var(--cor-vital) 45%, var(--linha-2));
+}
+
+.vital__variacao {
+  position: absolute;
+  top: -6px;
+  right: 0;
+  font: 700 0.875rem/1 var(--fonte-mono);
+  pointer-events: none;
+  animation: vital-variacao 1.2s var(--curva-saida) forwards;
+}
+
+.vital__variacao--menos { color: var(--erro); }
+.vital__variacao--mais { color: var(--ok); }
+
+@keyframes vital-variacao {
+  from { opacity: 0; transform: translateY(8px); }
+  15% { opacity: 1; }
+  to { opacity: 0; transform: translateY(-16px); }
+}
+
+/* ---- Defesa e testes no Resumo do celular ---- */
+.resumo-derivados {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 14px;
+}
+
+.resumo-derivados > div {
+  padding: 8px 6px;
+  text-align: center;
+  background: color-mix(in srgb, var(--cor-texto) 2.5%, transparent);
+  border: 1px solid var(--linha-1);
+  border-radius: var(--raio-2);
+}
+
+.resumo-derivados dt {
+  font: 500 var(--t-micro) / 1.2 var(--fonte-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+}
+
+.resumo-derivados dd {
+  margin: 4px 0 0;
+  font: 600 1.125rem/1.1 var(--fonte-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 720px) {
+  .resumo-derivados {
+    display: none;
+  }
+}
+
+/* ---- Defesa e derivados: composição, reações e resistências ficam recolhidas ---- */
+.defesa-detalhes > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 14px;
+  font-size: 0.875rem;
+  color: var(--papel-2);
+  list-style: none;
+  background: color-mix(in srgb, var(--cor-texto) 2.5%, transparent);
+  border: 1px solid var(--linha-1);
+  border-radius: var(--raio-2);
+  cursor: pointer;
+}
+
+.defesa-detalhes > summary::-webkit-details-marker {
+  display: none;
+}
+
+.defesa-detalhes > summary::after {
+  content: "";
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid var(--papel-3);
+  border-bottom: 1.5px solid var(--papel-3);
+  transform: rotate(45deg);
+  transition: transform var(--dur-2) var(--curva);
+}
+
+.defesa-detalhes[open] > summary::after {
+  transform: rotate(-135deg);
+}
+
+.defesa-detalhes__valor {
+  margin-left: auto;
+  font: 500 0.75rem var(--fonte-mono);
+  color: var(--papel-3);
+}
+
+.defesa-detalhes__valor output {
+  font-weight: 700;
+  color: var(--papel);
+}
+
+.defesa-detalhes[open] > summary {
+  margin-bottom: 14px;
+}
+
+/* ---- Legenda dos ícones das perícias: sob demanda ---- */
+.legenda-ic {
+  margin-top: 8px;
+}
+
+.legenda-ic > summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  font-size: 0.75rem;
+  color: var(--papel-3);
+  cursor: pointer;
+}
+
+.legenda-ic > summary:hover {
+  color: var(--papel);
+}
+
+@media (max-width: 1279px), (pointer: coarse) {
+  .legenda-ic > summary {
+    min-height: 44px;
+  }
+}
+
+.legenda-ic .legenda {
+  margin-top: 4px;
+}
+
+/* ---- Rolagens: título na mesma voz das outras páginas e dados rápidos ---- */
+.rolagens__titulo {
+  font: 600 1.3125rem/1.1 var(--fonte-display);
+  letter-spacing: 0;
+}
+
+.rolagens__rapidos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rolagens__rapidos .botao {
+  min-width: 52px;
+  font-family: var(--fonte-mono);
+  font-weight: 700;
+}
+
+/* Links de pulo da ficha: um por vez, no canto */
+.pular-ficha {
+  position: static;
+}
+
+/* Alvos de toque: links das Reações e do "Ir para" */
+@media (max-width: 1279px), (pointer: coarse) {
+  .reacao .link,
+  .reacao__dica .link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}
+
+/* ---- Telas baixas: Defesa e testes enxutos para caber na coluna ---- */
+@media (min-width: 1280px) and (max-height: 860px) {
+  .zona--esq .secao--testes {
+    padding: 10px 12px;
+  }
+
+  .zona--esq .secao--testes .secao__titulo {
+    display: none;
+  }
+
+  .zona--esq .teste__dados {
+    display: none;
+  }
+
+  .zona--esq .teste__ir {
+    padding: 3px 6px;
+  }
+
+  .zona--esq .grade-testes {
+    gap: 6px;
+  }
+}
+
+/* O rodapé do site não ocupa a ficha em nenhum tamanho (no celular o rodapé é o botão-índice) */
+body[data-vista="ficha"] .rodape {
+  display: none;
+}
+
+/* Notebooks (altura até 900px): faixa do agente, vitais e testes mais compactos, para tudo caber sem rolar */
+@media (min-width: 1280px) and (max-height: 900px) {
+  .zona--info .campo--nome label {
+    display: none;
+  }
+
+  .zona--info .secao--dossie {
+    padding: 8px 16px 10px;
+  }
+
+  .zona--info .secao--dossie .campo--nome .campo__destaque {
+    font-size: 1.5rem;
+  }
+
+  .zona--info .dossie__selo {
+    width: 52px;
+    height: 52px;
+  }
+
+  .zona--info .secao--dossie .grade-campos {
+    gap: 4px 14px;
+  }
+
+  .zona--esq {
+    gap: 8px;
+  }
+
+  .zona--esq .secao--atributos {
+    padding: 10px 12px 6px;
+  }
+
+  .zona--esq .secao--atributos .secao__titulo {
+    margin-bottom: 6px;
+    font-size: 1.125rem;
+  }
+
+  .zona--esq .trilho__corpo {
+    gap: 6px;
+    padding: 8px 12px;
+  }
+
+  .zona--esq .hud__vitais {
+    gap: 6px;
+  }
+
+  .zona--esq .vital__valor {
+    font-size: 1.75rem;
+  }
+
+  .zona--esq .vital__barra {
+    height: 6px;
+  }
+
+  .zona--esq .hud__derivados {
+    margin-top: 4px;
+  }
+
+  .zona--esq .secao--testes {
+    padding: 8px 10px;
+  }
+}
+
+/* Telas muito baixas (até 740px): dados menores na fileira de atributos e cartões de teste mais enxutos */
+@media (min-width: 1280px) and (max-height: 740px) {
+  .zona--esq .secao--atributos[data-modo="mesa"] .atributo {
+    --dado: 46px;
+  }
+
+  .zona--esq .secao--atributos .secao__cabecalho {
+    margin-bottom: 2px;
+  }
+
+  .zona--esq .teste__nome {
+    font-size: 0.75rem;
+  }
+
+  .zona--esq .teste__bonus {
+    font-size: 1.125rem;
+  }
+
+  .zona--esq .teste .botao-icone {
+    width: 28px;
+    height: 28px;
+  }
+
+  .zona--esq .hud__derivado dt {
+    font-size: 0.5938rem;
+  }
+
+  .zona--esq {
+    gap: 6px;
+  }
+
+  .zona--esq .trilho__corpo {
+    padding: 6px 12px;
+  }
+}
+
+/* ==========================================================================
+   20. REVISÃO DE DESIGN — rodada 2
+   ========================================================================== */
+
+/* Faixa do agente: o nome manda; o jogador fica discreto no canto */
+.secao--dossie .campo--jogador label {
+  color: var(--papel-4);
+}
+
+.secao--dossie .campo--jogador input {
+  font-size: 0.8125rem;
+}
+
+@media (min-width: 1280px) {
+  /* O jogador cabe na linha do nome (o rótulo continua para leitor de tela) */
+  .zona--info .campo--jogador {
+    align-self: end;
+  }
+
+  .zona--info .campo--jogador label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .zona--info .campo--jogador input {
+    height: 32px;
+    margin-bottom: 4px;
+  }
+}
+
+/* Perícias: busca, filtro e legenda numa linha só (a legenda abre como balão) */
+.pericias__ferramentas {
+  flex-wrap: nowrap;
+  gap: 10px 12px;
+  margin-top: 10px;
+}
+
+.pericias__ferramentas .busca {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: none;
+}
+
+.pericias__ferramentas .caixa {
+  flex: none;
+  white-space: nowrap;
+}
+
+.legenda-ic {
+  position: relative;
+  flex: none;
+  margin: 0;
+}
+
+.legenda-ic > summary {
+  gap: 6px;
+  padding: 0 10px;
+  list-style: none;
+  border: 1px solid var(--linha-2);
+  border-radius: var(--raio-2);
+}
+
+.legenda-ic > summary::-webkit-details-marker {
+  display: none;
+}
+
+.legenda-ic > summary .icone-ui {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.legenda-ic[open] > summary {
+  color: var(--papel);
+  background: var(--acento-suave);
+  border-color: var(--acento-linha);
+}
+
+.legenda-ic .legenda {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  width: max-content;
+  max-width: min(320px, 80vw);
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--tinta-superficie);
+  border: 1px solid var(--linha-2);
+  border-radius: var(--raio-3);
+  box-shadow: var(--sombra-2);
+}
+
+/* "Tem mais embaixo": esmaecido no pé das zonas que rolam por dentro */
+@media (min-width: 1280px) {
+  .zona[data-mais="true"],
+  .paginas[data-mais="true"] {
+    -webkit-mask-image: linear-gradient(to bottom, var(--cor-sombra) calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to bottom, var(--cor-sombra) calc(100% - 28px), transparent);
+  }
+
+  /* O último cartão da coluna da esquerda ocupa a sobra, e as colunas fecham juntas */
+  .zona--esq > .secao--testes {
+    flex: 1 1 auto;
+  }
+
+  /* Com o selo pequeno, o nome por extenso do atributo só atrapalha (a sigla já diz) */
+  .zona--esq .secao--atributos[data-modo="mesa"] .atributo__nome {
+    display: none;
+  }
+
+  .agente__ferramentas {
+    padding-top: 14px;
+  }
+
+  /* A barra global acompanha a largura da ficha */
+  body[data-vista="ficha"] .app-barra__conteudo {
+    max-width: 1840px;
+  }
+
+  .trilho__agente {
+    display: none;
+  }
+}
+
+/* ---- Faixa do último resultado: sempre presente (nada pula na primeira rolagem) ---- */
+.resultado-rapido {
+  min-height: 62px;
+}
+
+.resultado-rapido[data-vazio="sim"] .resultado-rapido__total {
+  font-weight: 500;
+  color: var(--papel-4);
+}
+
+.resultado-rapido[data-vazio="sim"] #rr-detalhes {
+  display: none;
+}
+
+/* ---- Celular e tablet ---- */
+@media (max-width: 1279px) {
+  /* Quem é o agente, no topo de qualquer página */
+  .trilho__agente {
+    margin: 0 0 6px;
+    overflow: hidden;
+    font: 600 0.8125rem/1.2 var(--fonte-ui);
+    color: var(--papel-2);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .resultado-rapido {
+    min-height: 48px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+
+  .resultado-rapido__texto strong {
+    font-size: 0.875rem;
+  }
+
+  /* No Resumo, defesa e testes vêm antes do selo dos atributos */
+  #secao-testes {
+    order: 1;
+  }
+
+  #secao-atributos {
+    order: 2;
+  }
+
+  .secao--atributos[data-modo="mesa"] .atributos__palco {
+    width: min(100%, 400px);
+  }
+
+  /* Sem o vazio de 46px sob a faixa presa */
+  .ficha-layout .ficha__conteudo .secao {
+    padding-top: 14px;
+  }
+
+  .ficha-layout .ficha__conteudo .secao__titulo {
+    margin-bottom: 12px;
+    font-size: 1.5rem;
+  }
+
+  .ficha-layout .zona,
+  .ficha-layout .pagina-painel {
+    padding-top: 0;
+  }
+
+  /* A folha de ajuste tem os botões; na faixa o vital é um botão único */
+  .vital__botoes {
+    display: none;
+  }
+
+  .vital__valor {
+    font-size: 1.5rem;
+  }
+
+  .vital-folha__derivados dd {
+    white-space: nowrap;
+  }
+}
+
+/* Tablet: a faixa de vitais usa o mesmo desenho compacto do celular */
+@media (min-width: 720px) and (max-width: 1279px) {
+  .vital {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "topo"
+      "barra";
+    gap: 5px 6px;
+  }
+
+  .vital__topo {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 6px;
+    min-height: 40px;
+    margin: -4px -6px -2px;
+    padding: 4px 6px 2px;
+    background: color-mix(in srgb, var(--cor-texto) 3.5%, transparent);
+    border-color: var(--linha-1);
+  }
+}
+
+/* Telas médias: o indicador de salvamento sai da barra (a falha de gravação continua avisando) */
+@media (max-width: 900px) {
+  .status-salvamento:not([data-estado="falha"]):not([data-estado="pendente"]) {
+    display: none;
+  }
+}
+
+/* Muito baixo (até 740px): o numeral dos vitais volta a 24px e a faixa do agente aperta mais */
+@media (min-width: 1280px) and (max-height: 740px) {
+  .zona--esq .vital__valor {
+    font-size: 1.5rem;
+  }
+
+  .zona--info .secao--dossie {
+    padding-top: 6px;
+    padding-bottom: 8px;
+  }
+
+  .zona--info .dossie__selo {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* Tablet: os botões da barra (Aparência, Sobre) só com o ícone, para a aba Ficha caber inteira */
+@media (max-width: 1100px) {
+  .app-barra__botao-texto {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+}
+
+/* Tablet e celular: o vital da faixa tem 44px de toque; os botões da barra também */
+@media (max-width: 1279px) {
+  .vital__topo {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .app-barra__botao {
+    min-width: 44px;
+    justify-content: center;
+  }
+}
+
+@media (min-width: 1280px) and (max-height: 740px) {
+  .zona--esq .secao--testes {
+    padding: 6px 10px;
+  }
+
+  .zona--esq .secao--atributos {
+    padding-bottom: 4px;
+  }
+}
+
+/* ==========================================================================
+   21. REVISÃO DE DESIGN (rodada 3) — fundos opacos, atributo rolável, edição compacta,
+   toque no tablet, rótulos legíveis e faixa de resultado enxuta
+   ========================================================================== */
+
+/* ---- Cromo fixo opaco: o conteúdo não aparece por trás ---- */
+@media (max-width: 1279px) {
+  .app-barra {
+    background: var(--tinta-1);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  body[data-vista="ficha"] .dock {
+    background: var(--tinta-1);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* ---- Teste puro de atributo: o d20 é o botão ---- */
+.atributo__rolar {
+  position: absolute;
+  inset: -4px;
+  z-index: 2;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.atributo__rolar:hover {
+  background: color-mix(in srgb, var(--acento) 14%, transparent);
+}
+
+.atributo__rolar:active {
+  background: color-mix(in srgb, var(--acento) 26%, transparent);
+}
+
+.secao--atributos:not([data-modo="mesa"]) .atributo__rolar {
+  display: none;
+}
+
+/* ---- Quem é o agente (celular): vira atalho para a página Agente ---- */
+@media (max-width: 1279px) {
+button.trilho__agente {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+button.trilho__agente::after {
+  content: "›";
+  flex: none;
+  margin-left: auto;
+  font-size: 1.25rem;
+  color: var(--papel-3);
+}
+}
+
+/* ---- Edição de atributos: cinco linhas compactas, nunca o pentágono ---- */
+.secao--atributos[data-modo="edicao"] .grade-atributos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.secao--atributos[data-modo="edicao"] .atributo {
+  grid-template-columns: 46px minmax(0, 1fr) auto auto;
+  grid-template-areas: "total cab base bonus";
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+}
+
+.secao--atributos[data-modo="edicao"] .atributo__total {
+  width: 46px;
+}
+
+.secao--atributos[data-modo="edicao"] .atributo__total output {
+  font-size: 1rem;
+}
+
+.secao--atributos[data-modo="edicao"] .atributo__campo {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.secao--atributos[data-modo="edicao"] .atributo__campo label {
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+}
+
+.secao--atributos[data-modo="edicao"] .atributo__sigla {
+  font-size: 1.125rem;
+}
+
+.secao--atributos[data-modo="edicao"] .atributo__nome {
+  font-size: 0.625rem;
+}
+
+@container atributos (max-width: 420px) {
+  .secao--atributos[data-modo="edicao"] .atributo {
+    grid-template-columns: 46px minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "total cab   cab"
+      "base  base  bonus";
+  }
+}
+
+/* No computador, editando atributos, os vitais sobem para o topo da coluna (nunca saem da tela) */
+@media (min-width: 1280px) {
+  .zona--esq:has(.secao--atributos[data-modo="edicao"]) .trilho {
+    order: -1;
+  }
+}
+
+/* ---- Telas de toque com layout de computador (tablet grande): alvos de 44px ---- */
+@media (pointer: coarse) and (min-width: 1280px) {
+  .vital__botao,
+  .ficha-layout .botao-icone,
+  .ficha-layout .atributo-sigla {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .ficha-layout .pericia {
+    min-height: 48px;
+  }
+}
+
+/* ---- Rótulos de dados que se consultam: nunca abaixo de 12px ---- */
+.ficha-layout .hud__derivado dt,
+.ficha-layout .zona--esq .hud__derivado dt,
+.ficha-layout .atributo__nome,
+.ficha-layout .recurso__nome,
+.ficha-layout .recurso__info,
+.ficha-layout .recurso__detalhe,
+.ficha-layout .reacao__nome,
+.ficha-layout .limite__rotulo,
+.ficha-layout .teste__dados,
+.ficha-layout .legenda,
+.ficha-layout .zona--per .legenda {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+}
+
+.ficha-layout .selo-cond {
+  font-size: 0.6875rem;
+}
+
+/* ---- Faixa de resultado vazia: uma linha fina ---- */
+@media (max-width: 1279px) {
+  .resultado-rapido[data-vazio="sim"] {
+    min-height: 34px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+
+  .resultado-rapido[data-vazio="sim"] .resultado-rapido__total {
+    font-size: 1.125rem;
+  }
+
+  .resultado-rapido[data-vazio="sim"] #rr-detalhe {
+    display: none;
+  }
+
+  .resultado-rapido[data-vazio="sim"] .resultado-rapido__texto strong {
+    font-weight: 500;
+    color: var(--papel-3);
+  }
+}
+
+/* ---- Resultado: total maior e nome do teste legível ---- */
+@media (min-width: 1280px) {
+  .resultado-rapido__total {
+    font-size: 3rem;
+  }
+}
+
+@media (max-width: 1279px) {
+  .resultado-rapido__total {
+    font-size: 2.25rem;
+  }
+
+  .resultado-rapido__texto span {
+    font-size: 0.8125rem;
+  }
+}
+
+/* Falha e acerto com palavra e cor na faixa */
+.resultado-rapido__texto .resultado-rapido__alvo[data-resultado="falha"] { color: var(--erro); }
+.resultado-rapido__texto .resultado-rapido__alvo[data-resultado="acerto"] { color: var(--ok); }
+
+/* ---- Responsividade: campos sem corte e linhas que não se esticam ---- */
+@media (min-width: 1280px) {
+  /* Classe com mais espaço (o nome não corta) */
+  .zona--info .secao--dossie .grade-campos {
+    grid-template-columns: 72px minmax(0, 0.6fr) minmax(0, 0.5fr) minmax(0, 1.25fr) minmax(0, 1.15fr) minmax(80px, 0.7fr);
+  }
+}
+
+@media (max-width: 400px) {
+  /* Testes em uma coluna: o nome do teste aparece inteiro */
+  .ficha-layout .grade-testes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ficha-layout .resumo-derivados output {
+    white-space: nowrap;
+  }
+}
+
+.resumo-derivados output,
+.hud__derivado output {
+  white-space: nowrap;
+}
+
+/* ---- Feedback da rolagem: a linha rolada e o número pulsam um instante ---- */
+@media (prefers-reduced-motion: no-preference) {
+  .rolou-agora,
+  .pericia.rolou-agora > td,
+  .pericia.rolou-agora > th {
+    animation: rolou-agora 900ms var(--curva-saida);
+  }
+
+  @keyframes rolou-agora {
+    from { background-color: var(--acento-suave); box-shadow: 0 0 0 2px var(--acento-linha); }
+  }
+
+  .resultado-rapido--novo .resultado-rapido__total {
+    animation: total-pulo 420ms var(--curva-saida);
+  }
+
+  @keyframes total-pulo {
+    from { transform: scale(1.4); }
+  }
+}
+
+/* ---- Central sem agentes: o botão de criar fica acima da dobra ---- */
+.vista--central[data-vazia="sim"] .central {
+  padding-top: 28px;
+}
+
+.vista--central[data-vazia="sim"] .central__heroi {
+  min-height: 0;
+}
+
+.vista--central[data-vazia="sim"] .central__selo {
+  width: min(100%, 300px);
+}
+
+.vista--central[data-vazia="sim"] .central__grade {
+  margin-top: 24px;
+}
+
+.vista--central[data-vazia="sim"] #central-continuar > .estado-vazio__conteudo {
+  padding-top: 28px;
+  padding-bottom: 28px;
+}
+
+@media (max-width: 700px) {
+  .vista--central[data-vazia="sim"] .central__selo {
+    display: none;
+  }
+
+  .vista--central[data-vazia="sim"] .central__lead {
+    margin-top: 12px;
+  }
+
+  .vista--central[data-vazia="sim"] #central-continuar > .estado-vazio__conteudo {
+    padding: 20px 16px;
+  }
+
+  .vista--central[data-vazia="sim"] .estado-vazio__selo {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 2px;
+  }
+
+  .vista--central[data-vazia="sim"] .estado-vazio__icone {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* Com 12px nos rótulos, a coluna da esquerda aperta as linhas para continuar cabendo sem rolar */
+@media (min-width: 1280px) {
+  .ficha-layout .zona--esq .teste__dados,
+  .ficha-layout .zona--esq .hud__derivado dt {
+    line-height: 1.05;
+  }
+}
+
+@media (min-width: 1280px) and (max-height: 740px) {
+  .zona--esq {
+    gap: 5px;
+  }
+}
+
+@media (min-width: 1280px) and (max-height: 740px) {
+  .zona--esq .secao--testes {
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+}
+
+@media (min-width: 1280px) and (max-height: 740px) {
+  .ficha-layout .zona--info .secao--dossie.secao {
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+}
+
+/* ==========================================================================
+   22. REVISÃO DE DESIGN (rodada 4) — edição em telas baixas, abas no 1280, navegação, paisagem
+   ========================================================================== */
+
+/* Edição de perícias em telas baixas: o bloco de pontos vira uma linha só */
+@media (min-width: 1280px) and (max-height: 800px) {
+  .ficha-layout .zona--per .pericias__pontos {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+    margin: 4px 0;
+    padding: 4px 10px;
+  }
+
+  .ficha-layout .zona--per .pericias__composicao {
+    margin: 0;
+    font-size: 0.75rem;
+  }
+
+  .ficha-layout .zona--per .contador,
+  .ficha-layout .zona--per .alternar {
+    padding-inline: 8px;
+  }
+
+  .ficha-layout .zona--per .contador {
+    gap: 5px;
+  }
+
+  .zona--per .secao__cabecalho {
+    margin-bottom: 4px;
+  }
+
+  .zona--per .secao__controles {
+    gap: 6px;
+  }
+}
+
+/* Abas: com a contagem de condições, "Combate" nunca é cortada no 1280 */
+@container (max-width: 520px) {
+  .aba-pagina {
+    padding: 0 6px;
+    gap: 3px;
+    letter-spacing: 0;
+  }
+}
+
+/* ---- Celular e tablet, na mesa: os atributos são uma fileira de cinco d20 (um toque rola o teste) e vêm primeiro ---- */
+@media (max-width: 1279px) {
+  #secao-atributos {
+    order: 1;
+  }
+
+  #secao-testes {
+    order: 2;
+  }
+
+  .secao--atributos[data-modo="mesa"] .atributos__palco {
+    width: 100%;
+    aspect-ratio: auto;
+    margin: 0;
+  }
+
+  .secao--atributos[data-modo="mesa"] .atributos__palco::before,
+  .secao--atributos[data-modo="mesa"] .atributos__mostrador {
+    display: none;
+  }
+
+  .secao--atributos[data-modo="mesa"] .grade-atributos {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-rows: auto;
+    grid-template-areas: none;
+    gap: 4px;
+  }
+
+  .secao--atributos[data-modo="mesa"] .atributo[data-atributo] {
+    grid-area: auto;
+  }
+
+  .secao--atributos[data-modo="mesa"] .atributo {
+    --dado: min(68px, 15.5vw);
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+  }
+
+  .secao--atributos[data-modo="mesa"] .atributo__nome {
+    display: none;
+  }
+}
+
+/* ---- Voltar (Rolagens) e aviso de classe no Resumo ---- */
+.rolagens__voltar {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin: 0 0 6px;
+  padding: 0 14px;
+  font: 600 0.875rem/1 var(--fonte-ui);
+  color: var(--papel);
+  background: none;
+  border: 1px solid var(--linha-2);
+  border-radius: var(--raio-2);
+  cursor: pointer;
+}
+
+.rolagens__voltar[hidden] {
+  display: none;
+}
+
+.aviso-classe {
+  display: none;
+  width: 100%;
+  min-height: 44px;
+  margin: 0 0 12px;
+  padding: 8px 14px;
+  font: 600 0.9375rem/1.3 var(--fonte-ui);
+  text-align: left;
+  color: var(--papel);
+  background: var(--acento-suave);
+  border: 1px solid var(--acento-linha);
+  border-radius: var(--raio-2);
+  cursor: pointer;
+}
+
+@media (max-width: 1279px) {
+  .aviso-classe:not([hidden]) {
+    display: block;
+  }
+}
+
+/* ---- Resultado na faixa: o detalhe quebra em duas linhas em vez de cortar (crítico, vários d20) ---- */
+@media (max-width: 1279px) {
+  .resultado-rapido:not([data-vazio="sim"]) .resultado-rapido__texto span {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+}
+
+/* ---- Folha-índice: nas telas estreitas as nove páginas continuam em duas colunas e cabem sem rolar ---- */
+@media (max-width: 380px) {
+  .paginas-indice {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .paginas-indice__botao {
+    min-height: 56px;
+    padding: 8px 10px;
+  }
+
+  .paginas-indice__texto small {
+    display: none;
+  }
+}
+
+/* ---- Celular deitado (pouca altura): vitais e resultado rolam junto, só o rodapé fica preso e fica mais baixo ---- */
+@media (max-width: 1279px) and (max-height: 520px) {
+  :root {
+    --dock-altura: 3.25rem;
+    --topo-fixo: 0px;
+  }
+
+  html[data-vista="ficha"] {
+    --topo-fixo: 0px;
+  }
+
+  .app-barra,
+  body[data-vista="ficha"] .app-barra,
+  .trilho,
+  .resultado-rapido {
+    position: static;
+  }
+
+  body[data-vista="ficha"] .dock {
+    padding-top: 4px;
+    padding-bottom: calc(4px + var(--seguro-base));
+  }
+
+  .trilho__agente {
+    display: none;
+  }
+}
+
+@media (min-width: 720px) and (max-width: 1279px) {
+  .nav-global__item--ficha {
+    flex: 0 0 auto;
+  }
+
+  .barra-topo__nome {
+    max-width: 18ch;
+  }
+}
+
+/* ---- Rótulos nunca abaixo de 11px (edição de atributos, Rolagens) e fórmula do ataque menos gritante que o nome ---- */
+.secao--atributos[data-modo="edicao"] .atributo__campo label,
+.secao--atributos[data-modo="edicao"] .atributo__nome,
+.ficha-layout .atributo__campo label,
+.rolagens small {
+  font-size: 0.6875rem;
+}
+
+.ataque__teste {
+  font-size: 1rem;
+  text-shadow: none;
+}
+
+/* ==========================================================================
+   23. REVISÃO DE DESIGN (rodada 5) — gesto sem voltar do navegador, paisagem com resultado preso,
+   algarismos alinhados e piso de 12px nos rótulos
+   ========================================================================== */
+
+/* Deslizar para os lados troca de página; não deve acionar o "voltar" do navegador */
+html,
+body {
+  overscroll-behavior-x: none;
+}
+
+/* Algarismos da fonte de títulos na linha de base (sem os "antigos" que descem) */
+body {
+  font-variant-numeric: lining-nums;
+}
+
+/* Nome do ataque longo: reticências em vez de corte no meio da letra */
+.ataque__nome,
+.ataque[data-modo="resumo"] .ataque__nome {
+  text-overflow: ellipsis;
+}
+
+/* Celular deitado: o resultado da rolagem fica preso no topo (o resto rola) */
+@media (max-width: 1279px) and (max-height: 520px) {
+  .resultado-rapido {
+    position: sticky;
+    top: 0;
+    min-height: 40px;
+  }
+}
+
+/* Sigla do atributo na linha da perícia e testes: 12px */
+.atributo-sigla,
+.ficha-layout .atributo-sigla {
+  font-size: 0.75rem;
+}
+
+/* ---- Rituais e Inventário: a lista vem antes da configuração (a ordem está no HTML, o foco do teclado a segue) ---- */
+.secao--inventario > .inventario__topo,
+.secao--rituais > .rituais__topo {
+  margin-top: 16px;
+}
+
+/* Resumo ao lado do título: carga e DT à vista sem rolar */
+.secao__resumo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+  margin: 0 0 12px;
+  font: 500 0.8125rem/1.3 var(--fonte-mono);
+  color: var(--papel-2);
+}
+
+.secao__resumo output {
+  font-weight: 700;
+  color: var(--papel);
+}
+
+/* ---- Celular: item do inventário em duas linhas (nome + ações; tipo, categoria, espaços e quantidade) ---- */
+@media (max-width: 599px) {
+  .item {
+    grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr));
+    grid-template-areas:
+      "nome nome acoes acoes"
+      "tipo cat  esp  qtd"
+      "det  det  det  det"
+      "desc desc desc desc";
+    gap: 6px 6px;
+    padding: 10px 12px;
+  }
+
+  .item [data-rotulo]::before {
+    margin-bottom: 3px;
+    font-size: 0.6875rem;
+    letter-spacing: 0;
+  }
+
+  .item__nome,
+  .item__nome .controle {
+    min-width: 0;
+  }
+
+  .item__tipo,
+  .item__categoria,
+  .item__espacos,
+  .item__quantidade {
+    margin-top: 2px;
+  }
+}
+
+/* ==========================================================================
+   24. REVISÃO DE DESIGN (rodada 6)
+   ========================================================================== */
+
+/* Ataque em resumo, com espaço (coluna da direita no computador, tablet): duas linhas só */
+@container ficha (min-width: 440px) {
+  .ataque[data-modo="resumo"] .ataque__linha {
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+
+  .ataque[data-modo="resumo"] .ataque__linha--teste {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+
+  .ataque[data-modo="resumo"] .ataque__campo--nome {
+    flex: 1 1 100%;
+  }
+
+  .ataque[data-modo="resumo"] .ataque__linha--teste .ataque__acoes {
+    margin-left: auto;
+  }
+
+  .ataque[data-modo="resumo"] .ataque__campo--teste {
+    flex: 0 0 auto;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .ataque[data-modo="resumo"] .ataque__acoes {
+    flex: none;
+  }
+
+  .ataque[data-modo="resumo"] .ataque__linha--dano .cartao-resumo {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+/* Selo de condição nunca corta; testes rápidos em uma linha na coluna da esquerda */
+.selo-cond {
+  flex: none;
+}
+
+/* Rótulo "zerado" legível */
+.vital[data-nivel="baixo"] .vital__sigla::after,
+.vital[data-nivel="critico"] .vital__sigla::after,
+.vital[data-nivel="zero"] .vital__sigla::after {
+  font-size: 0.6875rem;
+}
+
+/* Busca de perícias no celular estreito: ocupa a linha inteira (o texto não corta) */
+@media (max-width: 400px) {
+  .pericias__ferramentas {
+    flex-wrap: wrap;
+  }
+
+  .pericias__ferramentas .busca {
+    flex: 1 1 100%;
+    max-width: none;
+  }
+}
+
+/* Celular: a faixa de resultado tem altura fixa (nada desce sob o dedo na primeira rolagem) */
+@media (max-width: 1279px) {
+  .resultado-rapido,
+  .resultado-rapido[data-vazio="sim"] {
+    height: 56px;
+    min-height: 56px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+
+  .resultado-rapido[data-vazio="sim"] #rr-detalhe {
+    display: block;
+  }
+
+  .resultado-rapido[data-vazio="sim"] .resultado-rapido__total {
+    font-size: 2.25rem;
+  }
+
+  .resultado-rapido:not([data-vazio="sim"]) .resultado-rapido__texto span {
+    display: block;
+    white-space: nowrap;
+    -webkit-line-clamp: unset;
+    font-size: 0.75rem;
+  }
+}
+
+/* Celular deitado: vitais compactos e presos, resultado logo abaixo */
+@media (max-width: 1279px) and (max-height: 520px) {
+  .trilho {
+    position: sticky;
+    top: 0;
+  }
+
+  .trilho__corpo {
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+
+  .trilho .hud__derivados,
+  .trilho .vital__barra {
+    display: none;
+  }
+
+  .resultado-rapido,
+  .resultado-rapido[data-vazio="sim"] {
+    height: 44px;
+    min-height: 44px;
+    top: var(--altura-trilho, 52px);
+  }
+
+  .resultado-rapido__total,
+  .resultado-rapido[data-vazio="sim"] .resultado-rapido__total {
+    font-size: 1.75rem;
+  }
+}
+
+/* Dica: o d20 do atributo é tocável (celular, na mesa) */
+.atributos__dica {
+  display: none;
+}
+
+@media (max-width: 1279px) {
+  .secao--atributos[data-modo="mesa"] .atributos__dica {
+    display: block;
+    margin: 6px 0 14px;
+    font: 500 0.75rem/1.3 var(--fonte-mono);
+    text-align: center;
+    color: var(--papel-3);
+  }
+}
+
+/* Testes rápidos na coluna da esquerda: gaps menores para o nome ("Vontade") e "2d20 maior" caberem inteiros */
+@media (min-width: 1280px) {
+  .zona--esq .teste__ir {
+    gap: 2px 4px;
+    padding-inline: 4px;
+  }
+
+  .zona--esq .teste__dados {
+    white-space: nowrap;
+  }
+
+  .zona--esq .teste__bonus {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 1279px) and (max-height: 520px) {
+  button.trilho__agente {
+    display: none;
+  }
+}
+
+
+/* ==========================================================================
+   25. REVISÃO DE DESIGN (rodada 7)
+   ========================================================================== */
+
+/* "zerado" numa linha, com folga do numeral; rótulos dos vitais com contraste de sobra */
+.vital__sigla {
+  white-space: nowrap;
+  color: color-mix(in oklab, var(--cor-vital) 75%, var(--papel));
+}
+
+/* Selo "cond." ocupa só o próprio tamanho (não vira barra nos testes) */
+.selo-cond {
+  align-self: start;
+  justify-self: start;
+  width: fit-content;
+  height: fit-content;
+}
+
+/* Dano e crítico do ataque: a linha mais importante, legível */
+.ataque[data-modo="resumo"] .cartao-resumo {
+  font-size: 0.875rem;
+  color: var(--papel);
+}
+
+/* Avisos de pontos/graus no modo edição de perícias: curtos (a dica fica no título) */
+.secao--pericias .avisos {
+  padding: 8px 12px;
+  font-size: 0.8125rem;
+}
+
+.secao--pericias .avisos__dica {
+  display: none;
+}
+
+/* Tablet: defesa e testes em quatro colunas */
+@media (min-width: 700px) and (max-width: 1279px) {
+  .ficha-layout .grade-testes {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Celular deitado: sem a faixa de resultado enquanto não houver rolagem */
+@media (max-width: 1279px) and (max-height: 520px) {
+  .resultado-rapido[data-vazio="sim"] {
+    display: none;
+  }
+}
+
+/* 20 e 1 naturais ganham destaque na faixa de resultado */
+.resultado-rapido[data-falha="sim"] .resultado-rapido__total {
+  color: var(--erro);
+}
+
+.resultado-rapido__critico[data-natural="falha"] {
+  color: var(--erro);
+  border-color: var(--erro);
+}
+
+.resultado-rapido__critico[data-natural="acerto"] {
+  color: var(--acento);
+  border-color: var(--acento);
+}
+
+/* ==========================================================================
+   26. REVISÃO DE DESIGN (rodada 8)
+   ========================================================================== */
+
+/* Linha do agente no cromo do celular: reticências (e a seta › sempre visível) */
+.trilho__agente-texto {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Celular deitado: a Defesa continua à vista nos vitais */
+@media (max-width: 1279px) and (max-height: 520px) {
+  .trilho .hud__derivados {
+    display: grid;
+  }
+}
+
+/* Celular: nomes de ataque, ritual e agente maiores (Cormorant tem x-height baixo) */
+@media (max-width: 1279px) {
+  .ficha-layout .ataque[data-modo="resumo"] .ataque__nome,
+  .ficha-layout .ritual[data-modo="resumo"] .ritual__nome,
+  #campo-nome {
+    font-size: 1.375rem;
+  }
+
+  /* Retrato vazio: uma faixa baixa (não 60% da página) */
+  .bio__moldura:not([data-tem-retrato="true"]) {
+    aspect-ratio: auto;
+    min-height: 88px;
+    height: 88px;
+  }
+
+  .bio__retrato {
+    max-width: none;
+  }
+}
+
+/* Cartão de teste: respiro entre "2d20 maior" e o bônus */
+.teste__ir {
+  column-gap: 12px;
+}
+
+/* A página Agente não encosta na barra de abas nem na faixa fixa */
+.pagina-painel--agente,
+#pagina-agente {
+  padding-top: 12px;
+}
+
+
+/* ==========================================================================
+   27. REVISÃO DE DESIGN (rodada 9 — últimos ajustes)
+   ========================================================================== */
+
+/* Selo do elemento Sangue (ex.: "Ocultismo" no ritual): contraste de sobra */
+[data-elemento="sangue"] .selo,
+.ritual[data-elemento="sangue"] .selo,
+.selo--sangue {
+  color: color-mix(in srgb, var(--el-sangue, #e5476f) 70%, var(--papel));
+}
+
+/* Máximos dos vitais e deslocamento: 12px */
+.vital__max,
+.hud__derivado dd,
+.resumo-derivados dd {
+  font-size: 0.75rem;
+}
+
+.resumo-derivados output,
+.hud__derivado output {
+  font-size: inherit;
+}
+
+/* Tablet: testes em duas colunas até 900px (o nome do teste aparece inteiro) */
+@media (min-width: 700px) and (max-width: 899px) {
+  .ficha-layout .grade-testes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Desktop: o cartão de defesa e testes não estica (sem espaço morto dentro dele) */
+@media (min-width: 1280px) {
+  .zona--esq > .secao--testes {
+    flex: none;
+    align-self: stretch;
+  }
+}
+
+/* Celular: cromo fixo um pouco mais baixo (mais área útil) */
+@media (max-width: 1279px) {
+  .trilho__corpo {
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+
+  .resultado-rapido,
+  .resultado-rapido[data-vazio="sim"] {
+    height: 52px;
+    min-height: 52px;
+  }
+}
+
+/* Celular deitado: a fileira de cinco d20 usa a altura inteira disponível sem estourar */
+@media (max-width: 1279px) and (max-height: 520px) {
+  .secao--atributos[data-modo="mesa"] .atributo {
+    --dado: min(56px, 11vw);
+  }
+}
+
+/* Rolagens: o botão "Voltar" lê como botão */
+.rolagens__voltar {
+  background: color-mix(in srgb, var(--cor-texto) 6%, transparent);
 }

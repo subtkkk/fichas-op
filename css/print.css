@@ -98,7 +98,7 @@ body::after,
 .pericias__vazio,
 .reacao__dica,
 .pericia__rolar,
-.tabela-pericias thead th:nth-child(7),
+.tabela-pericias thead th:nth-child(6),
 .so-celular,
 .ataque__acoes,
 .ataque__erro,
@@ -340,17 +340,17 @@ input[type="checkbox"] {
 
 .secao__info,
 .secao__info output {
-  font-size: 7.5pt;
+  font-size: 8pt;
 }
 
 .subtitulo {
   margin: 4pt 0 2pt;
-  font-size: 7pt;
+  font-size: 8pt;
 }
 
-/* Página 2 começa nos ataques */
+/* Sem quebra forçada: ataques e habilidades preenchem o resto da página das perícias */
 .secao[aria-labelledby="titulo-ataques"] {
-  break-before: page;
+  break-before: auto;
 }
 
 /* Cartões e tabelas não se partem entre páginas */
@@ -390,7 +390,7 @@ input[type="checkbox"] {
 
 .topo__subtitulo {
   margin-top: 0;
-  font-size: 7pt;
+  font-size: 8pt;
 }
 
 /* Rótulos pequenos */
@@ -404,7 +404,7 @@ input[type="checkbox"] {
 .descricao__campo label,
 .item__mini span {
   margin: 0;
-  font-size: 6.5pt;
+  font-size: 8pt;
   letter-spacing: 0.06em;
 }
 
@@ -460,7 +460,7 @@ input[type="checkbox"] {
 }
 
 .atributo__nome {
-  font-size: 7pt;
+  font-size: 8pt;
 }
 
 .atributo__total {
@@ -529,7 +529,7 @@ input[type="checkbox"] {
 .recurso__nome,
 .recurso__info,
 .recurso__info output {
-  font-size: 7pt;
+  font-size: 8pt;
 }
 
 .recurso__info {
@@ -566,7 +566,7 @@ input[type="checkbox"] {
 
 .recurso__composicao {
   flex-basis: 100%;
-  font-size: 7pt;
+  font-size: 8pt;
 }
 
 .recurso__detalhe {
@@ -602,7 +602,7 @@ input[type="checkbox"] {
 .painel__info,
 .painel__info output {
   margin-top: 0;
-  font-size: 7pt;
+  font-size: 8pt;
 }
 
 .painel__valor {
@@ -649,7 +649,7 @@ input[type="checkbox"] {
 
 .aviso-sobrecarga {
   padding: 1pt 4pt;
-  font-size: 7.5pt;
+  font-size: 8pt;
 }
 
 .grade-reacoes {
@@ -663,7 +663,7 @@ input[type="checkbox"] {
 }
 
 .reacao__nome {
-  font-size: 7pt;
+  font-size: 8pt;
 }
 
 .reacao__valor {
@@ -671,7 +671,7 @@ input[type="checkbox"] {
 }
 
 .reacao__detalhe {
-  font-size: 7pt;
+  font-size: 8pt;
 }
 
 .grade-testes {
@@ -696,7 +696,7 @@ input[type="checkbox"] {
 }
 
 .teste__dados {
-  font-size: 7pt;
+  font-size: 8pt;
 }
 
 .resistencias {
@@ -706,7 +706,7 @@ input[type="checkbox"] {
 
 .resistencias summary {
   padding: 0;
-  font-size: 7pt;
+  font-size: 8pt;
 }
 
 .resistencias__corpo {
@@ -723,12 +723,12 @@ input[type="checkbox"] {
 }
 
 .resistencias__grupo legend {
-  font-size: 6.5pt;
+  font-size: 8pt;
 }
 
 .resistencia {
   padding: 0;
-  font-size: 7.5pt;
+  font-size: 8pt;
 }
 
 /* Perícias: volta a ser tabela (a regra de celular a transforma em cartões) */
@@ -767,7 +767,7 @@ input[type="checkbox"] {
 
 .tabela-pericias thead th {
   padding: 1pt 3pt;
-  font-size: 6.5pt;
+  font-size: 8pt;
 }
 
 .tabela-pericias .pericia > td,
@@ -818,7 +818,7 @@ input[type="checkbox"] {
 }
 
 .pericia__dados output {
-  font-size: 7.5pt;
+  font-size: 8pt;
   line-height: 1.1;
 }
 
@@ -949,11 +949,11 @@ input[type="checkbox"] {
 
 .selo-fonte {
   padding: 0 4pt;
-  font-size: 6.5pt;
+  font-size: 8pt;
 }
 
 .habilidade__meta {
-  font-size: 7.5pt;
+  font-size: 8pt;
 }
 
 .habilidade__detalhes {
@@ -989,7 +989,7 @@ input[type="checkbox"] {
 }
 
 .grupo-ritual__titulo {
-  font-size: 7.5pt;
+  font-size: 8pt;
 }
 
 .grupo-ritual__lista {
@@ -1069,7 +1069,7 @@ input[type="checkbox"] {
 }
 
 .forma__nome {
-  font-size: 7pt;
+  font-size: 8pt;
 }
 
 /* Inventário: itens em linhas, com cabeçalho */
@@ -1088,7 +1088,7 @@ input[type="checkbox"] {
 }
 
 .limite__rotulo {
-  font-size: 6.5pt;
+  font-size: 8pt;
 }
 
 .limite__valor {
@@ -1112,7 +1112,7 @@ input[type="checkbox"] {
 .itens__cabecalho {
   display: grid;
   padding: 0 0 1pt;
-  font-size: 6.5pt;
+  font-size: 8pt;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1212,6 +1212,7 @@ input[type="checkbox"] {
 .alerta-estado__campo,
 .alerta-estado__nota,
 .selo-cond,
+.seletor-atributo,
 .cond-cartao__livro,
 .cond-cartao__implica,
 .selo--conferir,
@@ -1280,7 +1281,7 @@ textarea::placeholder {
 /* Lembretes das condições: uma linha curta, sem o estilo da tela */
 .cond-cartao__lembretes {
   margin: 0;
-  font-size: 7.5pt;
+  font-size: 8pt;
 }
 
 .cond-cartao__campos {
@@ -1387,4 +1388,221 @@ html[data-diario-impressao="sim"] .bio__diario {
 .secao--condicoes:has(#cond-vazio:not([hidden])) #cond-ativas-titulo,
 #cond-vazio {
   display: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   Ficha em páginas (js/ui-paginas.js): no papel todas as seções aparecem,
+   na ordem do papel de antes (Identificação, Atributos, Recursos, Condições,
+   Defesa, Testes, Perícias, Ataques, Habilidades, Rituais, Inventário, Biografia).
+   -------------------------------------------------------------------------- */
+.ficha-layout {
+  display: flex !important;
+  flex-direction: column;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+.ficha-layout .zona,
+.ficha-layout .paginas,
+.ficha-layout .pagina-painel {
+  display: contents !important;
+}
+
+.ficha-layout section[data-oculta] {
+  display: block !important;
+}
+
+.ficha-layout .pagina-painel--rolagens,
+.rolagens,
+.indice,
+.dock,
+.dialogo--paginas,
+.agente__ferramentas {
+  display: none !important;
+}
+
+#resultado-rapido,
+.pericia__grau-marca {
+  display: none !important;
+}
+
+#secao-identificacao { order: 10; }
+#secao-atributos { order: 20; }
+#secao-recursos { order: 30; }
+#secao-condicoes { order: 40; }
+#secao-defesa { order: 50; }
+#secao-testes { order: 55; }
+#secao-pericias { order: 60; }
+#secao-ataques { order: 70; }
+#secao-habilidades { order: 80; }
+#secao-rituais { order: 90; }
+#secao-inventario { order: 100; }
+#secao-biografia { order: 110; }
+
+/* Perícias no papel: sigla do atributo em texto simples; a marca de "menor" vira "▼" pequeno */
+.atributo-sigla {
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 8pt !important;
+  color: #000 !important;
+  background: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.pericia--atributo-alterado .atributo-sigla::after {
+  content: "•";
+}
+
+.marca-menor {
+  display: inline-block;
+  width: 6pt !important;
+  height: 6pt !important;
+}
+
+.marca-menor svg {
+  width: 6pt !important;
+  height: 6pt !important;
+}
+
+.marca-menor[hidden] {
+  display: none !important;
+}
+
+.pericia__dados {
+  white-space: nowrap;
+}
+
+/* ---- Rodada 3: sem duplicar a Defesa, sem triângulo do <details>, botão do agente só texto ---- */
+@media print {
+  .resumo-derivados,
+  .trilho__agente,
+  .atributos__dica,
+  .aviso-classe,
+  .rolagens__voltar,
+  .atributo__rolar {
+    display: none !important;
+  }
+
+  details > summary {
+    list-style: none;
+  }
+
+  details > summary::-webkit-details-marker,
+  details > summary::marker {
+    display: none;
+    content: "";
+  }
+}
+
+/* ---- Rodada 4: resumo recolhido não imprime, rótulos do atributo sem colidir, perícias de treino em preto ---- */
+@media print {
+  .defesa-detalhes > summary {
+    display: none !important;
+  }
+
+  .atributo {
+    gap: 2pt 8pt;
+  }
+
+  .atributo__campo {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+
+  .atributo__campo label {
+    font-size: 7pt;
+    letter-spacing: 0.02em;
+  }
+
+  .pericia--requer-treino > .pericia__nome,
+  .pericia--requer-treino .pericia__rotulo,
+  .pericia--requer-treino .pericia__nome {
+    color: #000 !important;
+    opacity: 1 !important;
+  }
+
+  .itens:has(#lista-itens:empty) .itens__cabecalho {
+    display: none !important;
+  }
+}
+
+/* ---- Rodada 5: sigla basta (o nome cortava com reticências), bônus longe do valor e número de página ---- */
+@media print {
+  .atributo__nome {
+    display: none !important;
+  }
+
+  .atributo {
+    column-gap: 10pt;
+  }
+
+  .atributo__total {
+    margin-left: 4pt;
+  }
+
+  @page {
+    @bottom-right {
+      content: "Página " counter(page) " de " counter(pages);
+      font: 7pt sans-serif;
+      color: #444;
+    }
+  }
+}
+
+/* ---- Rodada 6: perícias preenchem a primeira página; cabeçalhos nunca ficam órfãos ---- */
+.tabela-pericias {
+  break-inside: auto;
+}
+
+.tabela-pericias .pericia {
+  break-inside: avoid;
+}
+
+.tabela-pericias thead {
+  display: table-header-group;
+}
+
+.subtitulo,
+.itens__cabecalho,
+.secao__titulo,
+.secao__cabecalho {
+  break-after: avoid;
+}
+
+.itens__cabecalho {
+  break-inside: avoid;
+}
+
+/* ---- Rodada 9: notas completas na impressão e cabeçalho de círculo junto da lista ---- */
+@media print {
+  .impressao-nota {
+    display: block;
+    font-size: 8pt;
+    line-height: 1.3;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    color: #000;
+  }
+
+  .impressao-nota + * {
+    margin-top: 0;
+  }
+
+  .grupo-ritual > summary,
+  .grupo-ritual__titulo {
+    break-after: avoid;
+  }
+
+  .grupo-ritual {
+    break-inside: auto;
+  }
+}
+
+@media print {
+  .impressao-oculto {
+    display: none !important;
+  }
 }

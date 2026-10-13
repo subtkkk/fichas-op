@@ -132,6 +132,11 @@ window.OP = window.OP || {};
   }
 
   /** Sigla de um atributo pelo id ("vig" → "VIG"). */
+  function nomeAtributo(id) {
+    const atributo = OP.data.atributos.find(function (a) { return a.id === id; });
+    return atributo ? atributo.nome : String(id);
+  }
+
   function siglaAtributo(id) {
     const atributo = OP.data.atributos.find(function (a) { return a.id === id; });
     return atributo ? atributo.sigla : String(id).toUpperCase();
@@ -243,6 +248,8 @@ window.OP = window.OP || {};
           DADO_D20 +
           '<output data-saida="atributos.' + escaparHtml(id) + '" aria-label="Total de ' + escaparHtml(atributo.nome) + '">0</output>' +
           '<span class="atributo__total-rotulo" aria-hidden="true">total</span>' +
+          '<button type="button" class="atributo__rolar" data-rolar-atributo="' + escaparHtml(id) + '"' +
+            ' aria-label="Rolar teste de ' + escaparHtml(atributo.nome) + '" title="Rolar teste de ' + escaparHtml(atributo.nome) + '"></button>' +
         '</div>' +
         htmlCampoPasso({
           id: 'atr-' + id + '-base', caminho: 'atributos.' + id + '.base', area: 'base',
@@ -476,17 +483,21 @@ window.OP = window.OP || {};
             '<span class="pericia__rotulo">' + nome + '</span>' + especialidade +
           '</div>' +
         '</th>' +
-        '<td class="pericia__atributo" data-rotulo="Atributo">' +
-          '<select class="controle" aria-label="Atributo de ' + nome + '"' +
-            ' data-campo="' + caminho + '.atributo" data-tipo="texto"' +
-            ' data-padrao="' + escaparHtml(pericia.atributoPadrao) + '" data-reserva="' + caminho + '.atributo">' +
-            htmlOpcoesAtributo() +
-          '</select>' +
+        // Atributo e dados: a sigla é um botão discreto que abre o painel para trocar o atributo
+        '<td class="pericia__dados">' +
+          '<button type="button" class="atributo-sigla" data-atributo-pericia="' + id + '"' +
+            ' aria-haspopup="dialog" aria-expanded="false" aria-controls="seletor-atributo"></button>' +
+          // aparece só quando o teste rola "menor" (atributo 0 ou menos)
+          '<span class="marca-menor" role="img" hidden><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
+            '<path d="M3.5 5.5 8 10l4.5-4.5"/></svg></span>' +
+          // os dados (ex.: 3d20 maior) não aparecem na linha: ficam para leitor de tela e no rótulo do botão de rolar
+          '<output class="visualmente-oculto" data-saida="' + caminho + '.dados" data-formato="dados"></output>' +
         '</td>' +
-        '<td class="pericia__dados"><output data-saida="' + caminho + '.dados" data-formato="dados"></output></td>' +
         '<td class="pericia__grau">' +
           '<button type="button" class="botao-icone botao-grau" data-grau-pericia="' + id + '" data-nivel="0">' +
             SVG_GRAU + '</button>' +
+          // na mesa o grau é só um marcador de texto (T, V ou E); a edição fica em "Editar perícias"
+          '<span class="pericia__grau-marca" role="img"></span>' +
           // só na impressão: o nome do grau no lugar do símbolo
           '<span class="pericia__grau-impressao"></span>' +
         '</td>' +
@@ -518,9 +529,12 @@ window.OP = window.OP || {};
     selecionarTodos('[data-pericia]', corpo).forEach(function (linha) {
       refs.pericias[linha.dataset.pericia] = {
         linha: linha,
-        atributo: linha.querySelector('.pericia__atributo select'),
+        atributo: linha.querySelector('.atributo-sigla'),
         grau: linha.querySelector('.botao-grau'),
+        rolar: linha.querySelector('.botao-icone--rolar'),
+        menor: linha.querySelector('.marca-menor'),
         grauImpressao: linha.querySelector('.pericia__grau-impressao'),
+        grauMarca: linha.querySelector('.pericia__grau-marca'),
         especialidade: linha.querySelector('.pericia__especialidade'), // só nas perícias abertas
         treinada: linha.querySelector('.icone--treinada'), // só nas perícias "somente treinada"
         carga: linha.querySelector('.icone--carga'),       // só nas perícias com carga
@@ -1113,6 +1127,7 @@ window.OP = window.OP || {};
     const elementos = refs.pericias[idPericia];
     if (!elementos) return;
     if (elementos.linha.hidden) limparFiltros();
+    if (OP.uiPaginas) OP.uiPaginas.mostrarPaginaDe(elementos.linha); // no celular, abre a página das perícias
 
     const semAnimacao = OP.uiApp ? OP.uiApp.reduzMovimento() : (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     elementos.linha.scrollIntoView({ behavior: semAnimacao ? 'auto' : 'smooth', block: 'center' });
@@ -1244,6 +1259,11 @@ window.OP = window.OP || {};
     }
 
     // Rolagens e ataques
+    const botaoAtributo = evento.target.closest('[data-atributo-pericia]');
+    if (botaoAtributo) {
+      alternarSeletorAtributo(botaoAtributo);
+      return;
+    }
     const botaoGrau = evento.target.closest('[data-grau-pericia]');
     if (botaoGrau) {
       ciclarGrau(botaoGrau.dataset.grauPericia);
@@ -1252,6 +1272,12 @@ window.OP = window.OP || {};
     const rolarPericia = evento.target.closest('[data-rolar-pericia]');
     if (rolarPericia) {
       rolarPericiaNaTela(rolarPericia.dataset.rolarPericia);
+      return;
+    }
+    const rolarAtributo = evento.target.closest('[data-rolar-atributo]');
+    if (rolarAtributo) {
+      mostrarResultado(OP.rolagens.rolarAtributo(OP.state.ficha, rolarAtributo.dataset.rolarAtributo, opcoesRolagem()));
+      destacarLinhaRolada('[data-atributo="' + rolarAtributo.dataset.rolarAtributo + '"]');
       return;
     }
     const rolarAtaque = evento.target.closest('[data-rolar-ataque]');
@@ -1278,7 +1304,9 @@ window.OP = window.OP || {};
     const botaoModoPericias = evento.target.closest('#botao-modo-pericias');
     if (botaoModoPericias) {
       refs.modoPericias = refs.modoPericias === 'mesa' ? 'edicao' : 'mesa';
-      desenharModoPericias(OP.state.ficha);
+      // redesenha as linhas: o botão de grau só funciona em "Editar perícias"
+      if (refs.derivados) desenharPericias(refs.derivados);
+      else desenharModoPericias(OP.state.ficha);
       return;
     }
     const removerAtq = evento.target.closest('[data-remover-ataque]');
@@ -1517,6 +1545,137 @@ window.OP = window.OP || {};
     if (refs.botaoModoPericias.getAttribute('aria-pressed') !== editando) refs.botaoModoPericias.setAttribute('aria-pressed', editando);
   }
 
+  /* ---------- Atributo da perícia: painel que abre ao clicar na sigla ---------- */
+
+  const seletorAtributo = { painel: null, titulo: null, opcoes: {}, padrao: null, idPericia: null, origem: null, abertoEm: 0 };
+
+  /** Cria o painel (uma vez só): 5 atributos + "Voltar ao padrão". Textos fixos, sem dados da ficha. */
+  function montarSeletorAtributo() {
+    const painel = criarElemento('div', 'seletor-atributo');
+    painel.id = 'seletor-atributo';
+    painel.setAttribute('role', 'dialog');
+    painel.setAttribute('aria-labelledby', 'seletor-atributo-titulo');
+    painel.hidden = true;
+    const titulo = criarElemento('p', 'seletor-atributo__titulo');
+    titulo.id = 'seletor-atributo-titulo';
+    painel.appendChild(titulo);
+    const lista = criarElemento('div', 'seletor-atributo__lista');
+    OP.data.atributos.forEach(function (atributo) {
+      const botao = criarElemento('button', 'seletor-atributo__opcao');
+      botao.type = 'button';
+      botao.dataset.atributo = atributo.id;
+      botao.appendChild(criarElemento('strong', '', atributo.sigla));
+      botao.appendChild(criarElemento('span', '', atributo.nome));
+      lista.appendChild(botao);
+      seletorAtributo.opcoes[atributo.id] = botao;
+    });
+    painel.appendChild(lista);
+    const padrao = criarElemento('button', 'seletor-atributo__padrao');
+    padrao.type = 'button';
+    padrao.dataset.padrao = 'sim';
+    padrao.textContent = 'Voltar ao padrão';
+    painel.appendChild(padrao);
+    document.body.appendChild(painel);
+    seletorAtributo.painel = painel;
+    seletorAtributo.titulo = titulo;
+    seletorAtributo.padrao = padrao;
+
+    painel.addEventListener('click', function (evento) {
+      const opcao = evento.target.closest('[data-atributo]');
+      const voltar = evento.target.closest('[data-padrao]');
+      if (opcao) escolherAtributo(opcao.dataset.atributo);
+      else if (voltar && !voltar.disabled) escolherAtributo(null);
+    });
+    painel.addEventListener('keydown', function (evento) {
+      if (evento.key === 'Escape') {
+        evento.preventDefault();
+        fecharSeletorAtributo(true);
+        return;
+      }
+      if (evento.key !== 'ArrowDown' && evento.key !== 'ArrowUp') return;
+      const botoes = Array.prototype.slice.call(painel.querySelectorAll('button:not([disabled])'));
+      const indice = botoes.indexOf(document.activeElement);
+      if (indice === -1) return;
+      evento.preventDefault();
+      botoes[(indice + (evento.key === 'ArrowDown' ? 1 : botoes.length - 1)) % botoes.length].focus();
+    });
+    // Clicar fora, rolar ou redimensionar fecha o painel (ele é posicionado junto da sigla)
+    document.addEventListener('click', function (evento) {
+      if (seletorAtributo.painel.hidden) return;
+      if (evento.target.closest('#seletor-atributo') || evento.target.closest('[data-atributo-pericia]')) return;
+      fecharSeletorAtributo(false);
+    });
+    window.addEventListener('scroll', function () {
+      // rolagens logo depois de abrir (foco, rolagem suave em curso) não fecham o painel
+      if (!painel.hidden && Date.now() - seletorAtributo.abertoEm > 250) fecharSeletorAtributo(false);
+    }, true);
+    window.addEventListener('resize', function () { if (!painel.hidden) fecharSeletorAtributo(false); });
+  }
+
+  function fecharSeletorAtributo(devolverFoco) {
+    const s = seletorAtributo;
+    if (!s.painel || s.painel.hidden) return;
+    s.painel.hidden = true;
+    const origem = s.origem;
+    s.origem = null;
+    s.idPericia = null;
+    if (origem) {
+      origem.setAttribute('aria-expanded', 'false');
+      if (devolverFoco && origem.isConnected) origem.focus({ preventScroll: true });
+    }
+  }
+
+  function alternarSeletorAtributo(botao) {
+    const s = seletorAtributo;
+    const aberto = !s.painel.hidden && s.origem === botao;
+    fecharSeletorAtributo(false);
+    if (aberto) return;
+    const idPericia = botao.dataset.atributoPericia;
+    const estado = refs.derivados && refs.derivados.pericias[idPericia];
+    const definicao = OP.data.pericias.find(function (p) { return p.id === idPericia; });
+    if (!estado || !definicao) return;
+
+    s.idPericia = idPericia;
+    s.origem = botao;
+    s.abertoEm = Date.now();
+    definirTexto(s.titulo, 'Atributo de ' + definicao.nome);
+    Object.keys(s.opcoes).forEach(function (id) {
+      s.opcoes[id].setAttribute('aria-pressed', String(id === estado.atributo));
+      s.opcoes[id].classList.toggle('seletor-atributo__opcao--padrao', id === estado.atributoPadrao);
+    });
+    definirTexto(s.padrao, 'Voltar ao padrão (' + siglaAtributo(estado.atributoPadrao) + ')');
+    s.padrao.disabled = !estado.atributoAlterado;
+
+    botao.setAttribute('aria-expanded', 'true');
+    s.painel.hidden = false;
+    // Posição: logo abaixo da sigla (ou acima, se não couber), sempre dentro da tela
+    const caixa = botao.getBoundingClientRect();
+    const largura = s.painel.offsetWidth;
+    const altura = s.painel.offsetHeight;
+    const esquerda = Math.max(8, Math.min(caixa.left, window.innerWidth - largura - 8));
+    let topo = caixa.bottom + 4;
+    if (topo + altura > window.innerHeight - 8) topo = Math.max(8, caixa.top - altura - 4);
+    s.painel.style.left = esquerda + 'px';
+    s.painel.style.top = topo + 'px';
+    s.opcoes[estado.atributo].focus({ preventScroll: true });
+  }
+
+  /** Troca o atributo da perícia (null = voltar ao padrão) e fecha o painel. */
+  function escolherAtributo(idAtributo) {
+    const s = seletorAtributo;
+    const idPericia = s.idPericia;
+    const estado = refs.derivados && refs.derivados.pericias[idPericia];
+    if (!idPericia || !estado) return;
+    const novo = idAtributo === null || idAtributo === estado.atributoPadrao ? null : idAtributo;
+    OP.state.atualizar('pericias.' + idPericia + '.atributo', novo);
+    const definicao = OP.data.pericias.find(function (p) { return p.id === idPericia; });
+    const atual = novo === null ? estado.atributoPadrao : novo;
+    fecharSeletorAtributo(true);
+    if (OP.uiApp && OP.uiApp.anunciar) {
+      OP.uiApp.anunciar((definicao ? definicao.nome : idPericia) + ': atributo ' + nomeAtributo(atual) + (novo === null ? ' (padrão)' : '') + '.');
+    }
+  }
+
   /** Próximo grau ao ativar o botão: 0 → 1 → 2 → 3 → volta (a concedida nunca cai abaixo de Treinado). */
   function proximoGrau(grau, concedida) {
     const ultimo = OP.data.grausTreinamento.length - 1;
@@ -1526,6 +1685,7 @@ window.OP = window.OP || {};
 
   /** Muda o grau de uma perícia pelo botão de chevrons. */
   function ciclarGrau(idPericia) {
+    if (refs.modoPericias !== 'edicao') return; // na mesa o grau só aparece
     const estado = refs.derivados && refs.derivados.pericias[idPericia];
     if (!estado) return;
     const novo = proximoGrau(estado.grau, Boolean(estado.concedidaPor));
@@ -1553,14 +1713,20 @@ window.OP = window.OP || {};
       const fonte = estado.concedidaPor || '';
       const nomeGrau = graus[estado.grau] ? graus[estado.grau].nome : '';
       const proximo = proximoGrau(estado.grau, fonte);
+      const editando = refs.modoPericias === 'edicao';
       const rotuloGrau = definicao.nome + ': ' + nomeGrau + (fonte ? ' (concedida pela ' + fonte + ')' : '') +
-        '. Ativar para mudar para ' + graus[proximo].nome + '.';
+        (editando ? '. Ativar para mudar para ' + graus[proximo].nome + '.' : '. Para mudar o grau, use Editar perícias.');
+      if (elementos.grau.disabled === editando) elementos.grau.disabled = !editando;
       if (String(estado.grau) !== elementos.grau.dataset.nivel) elementos.grau.dataset.nivel = String(estado.grau);
       if (elementos.grau.getAttribute('aria-label') !== rotuloGrau) {
         elementos.grau.setAttribute('aria-label', 'Grau de ' + rotuloGrau);
         elementos.grau.title = 'Grau de ' + rotuloGrau;
       }
       definirTexto(elementos.grauImpressao, nomeGrau);
+      // Marcador da mesa: T (Treinado), V (Veterano), E (Expert); Destreinado fica sem marca
+      definirTexto(elementos.grauMarca, ['', 'T', 'V', 'E'][estado.grau] || '');
+      elementos.grauMarca.setAttribute('aria-label', 'Grau: ' + nomeGrau + (fonte ? ' (concedida pela ' + fonte + ')' : ''));
+      elementos.grauMarca.dataset.nivel = String(estado.grau);
 
       // Ícones que mudam: "somente treinada" avisa quando falta o treinamento; concedida aparece sozinho
       if (elementos.treinada) {
@@ -1586,8 +1752,31 @@ window.OP = window.OP || {};
         if (elementos.especialidade.placeholder !== sugestao) elementos.especialidade.placeholder = sugestao;
       }
 
-      const dica = estado.atributoAlterado ? 'Atributo alterado (padrão: ' + siglaAtributo(estado.atributoPadrao) + ')' : '';
-      if (elementos.atributo.title !== dica) elementos.atributo.title = dica;
+      // Marca discreta quando o teste rola "menor": o atributo está em 0 (ou menos), ou as condições tiraram dados
+      const rolaMenor = estado.dados.modo === 'menor';
+      if (elementos.menor.hidden === rolaMenor) elementos.menor.hidden = !rolaMenor;
+      const textoMenor = 'Rola ' + estado.dados.qtd + 'd20 e fica o menor';
+      if (elementos.menor.getAttribute('aria-label') !== textoMenor) {
+        elementos.menor.setAttribute('aria-label', textoMenor);
+        elementos.menor.title = textoMenor;
+      }
+
+      // Botão de rolar: os dados do teste vão no rótulo (ex.: "Rolar Luta (3d20, fica o maior)")
+      const rotuloRolar = 'Rolar ' + definicao.nome + ' (' + estado.dados.qtd + 'd20, fica o ' + estado.dados.modo + ')';
+      if (elementos.rolar.getAttribute('aria-label') !== rotuloRolar) {
+        elementos.rolar.setAttribute('aria-label', rotuloRolar);
+        elementos.rolar.title = rotuloRolar;
+      }
+
+      // Sigla do atributo (botão discreto): destaca quando difere do padrão
+      const sigla = siglaAtributo(estado.atributo);
+      definirTexto(elementos.atributo, sigla);
+      const dica = 'Atributo de ' + definicao.nome + ': ' + nomeAtributo(estado.atributo) +
+        (estado.atributoAlterado ? ' (padrão: ' + siglaAtributo(estado.atributoPadrao) + ')' : '') + '. Trocar atributo';
+      if (elementos.atributo.getAttribute('aria-label') !== dica) {
+        elementos.atributo.setAttribute('aria-label', dica);
+        elementos.atributo.title = dica;
+      }
 
       // Ícone de carga: aceso e com o valor no rótulo quando há penalidade (proteções equipadas e/ou sobrecarga)
       if (elementos.carga) {
@@ -1955,7 +2144,6 @@ window.OP = window.OP || {};
 
   function montarRolagens() {
     refs.painel = document.getElementById('rolagens');
-    refs.alca = document.getElementById('rolagens-alca');
     refs.corpoPainel = document.getElementById('rolagens-corpo');
     refs.ultimo = document.getElementById('rolagens-ultimo');
     refs.resultado = document.getElementById('rolagens-resultado');
@@ -1966,6 +2154,13 @@ window.OP = window.OP || {};
     refs.formula = document.getElementById('rolagem-formula');
     refs.formulaErro = document.getElementById('rolagem-formula-erro');
     refs.historico = document.getElementById('rolagens-historico');
+    refs.rrCaixa = document.getElementById('resultado-rapido');
+    refs.rrTotal = document.getElementById('rr-total');
+    refs.rrTitulo = document.getElementById('rr-titulo');
+    refs.rrDetalhe = document.getElementById('rr-detalhe');
+    refs.rrAlvo = document.getElementById('rr-alvo');
+    refs.rrCritico = document.getElementById('rr-critico');
+    document.getElementById('rr-detalhes').addEventListener('click', function () { abrirPainel(true); });
 
     // Modificador de dados: de −3 a +3
     const opcoes = [];
@@ -1975,16 +2170,17 @@ window.OP = window.OP || {};
     }
     refs.rolagemMod.innerHTML = opcoes.join('');
 
-    refs.alca.addEventListener('click', function () { abrirPainel(refs.painel.dataset.aberto !== 'true'); });
-    refs.painel.addEventListener('keydown', function (evento) {
-      if (evento.key === 'Escape' && refs.painel.dataset.aberto === 'true') {
-        abrirPainel(false);
-        refs.alca.focus();
-      }
-    });
     [refs.rolagemMod, refs.rolagemBonus, refs.rolagemDefesa].forEach(function (campo) {
       campo.addEventListener('input', desenharDicaRolagem);
       campo.addEventListener('change', desenharDicaRolagem);
+    });
+    // Dados rápidos: um toque rola 1dN (com as opções de rolagem do painel)
+    Array.prototype.forEach.call(document.querySelectorAll('[data-dado-rapido]'), function (botao) {
+      botao.addEventListener('click', function () {
+        refs.formula.value = botao.getAttribute('data-dado-rapido');
+        refs.formulaErro.hidden = true;
+        rolarFormulaNaTela();
+      });
     });
     document.getElementById('rolagem-limpar-opcoes').addEventListener('click', limparOpcoesRolagem);
     document.getElementById('rolagem-limpar-historico').addEventListener('click', limparHistorico);
@@ -2011,12 +2207,9 @@ window.OP = window.OP || {};
     desenharHistorico();
   }
 
+  /** As Rolagens são uma página da ficha: "abrir" leva até ela. */
   function abrirPainel(aberto) {
-    refs.painel.dataset.aberto = String(aberto);
-    refs.alca.setAttribute('aria-expanded', String(aberto));
-    refs.corpoPainel.hidden = !aberto;
-    // Em telas bem largas o painel aberto vira uma coluna e a página abre espaço para ele
-    document.body.classList.toggle('com-painel-rolagens', aberto);
+    if (aberto !== false && OP.uiPaginas) OP.uiPaginas.ir('rolagens', { anunciar: false });
   }
 
   /** Opções do painel para a próxima rolagem. */
@@ -2199,35 +2392,67 @@ window.OP = window.OP || {};
   }
 
   /** Tela estreita: o painel de Rolagens é uma gaveta que cobre a ficha (abaixo de 900 px). */
-  function emGaveta() {
-    return Boolean(window.matchMedia && window.matchMedia('(max-width: 899px)').matches);
-  }
-
   /**
    * Mostra um resultado no painel e guarda no histórico. Com a gaveta fechada
    * numa tela estreita, a rolagem não cobre a ficha: o resultado aparece num aviso
    * curto (aria-live) com o atalho "Detalhes" para abrir a gaveta.
    */
+  /**
+   * Faixa do último resultado: total grande e a conta pequena. Fica até a próxima
+   * rolagem (ou até fechar) e não cobre nada: no computador é a primeira linha da
+   * coluna da direita; no celular fica presa logo abaixo dos vitais.
+   */
+  function mostrarResultadoRapido(resultado) {
+    if (!refs.rrCaixa) return;
+    const alvo = resultado.tipo === 'teste' ? textoAlvo(resultado) : '';
+    definirTexto(refs.rrTotal, String(resultado.total));
+    definirTexto(refs.rrTitulo, resultado.titulo);
+    definirTexto(refs.rrDetalhe, resumoHistorico(resultado));
+    definirTexto(refs.rrAlvo, alvo);
+    refs.rrAlvo.hidden = !alvo;
+    refs.rrAlvo.setAttribute('data-resultado', resultado.acertou === true ? 'acerto' : (resultado.acertou === false ? 'falha' : ''));
+    // 20 ou 1 natural num teste (sem ser crítico de ataque) também ganha destaque
+    const natural = resultado.tipo === 'teste' && resultado.critico !== true
+      ? (resultado.escolhido === 20 ? '20 natural' : (resultado.escolhido === 1 ? '1 natural' : '')) : '';
+    definirTexto(refs.rrCritico, resultado.critico === true ? 'Crítico' : natural);
+    refs.rrCritico.hidden = resultado.critico !== true && !natural;
+    refs.rrCritico.setAttribute('data-natural', natural === '1 natural' ? 'falha' : (natural ? 'acerto' : ''));
+    refs.rrCaixa.setAttribute('data-critico', resultado.critico === true || natural === '20 natural' ? 'sim' : 'nao');
+    refs.rrCaixa.setAttribute('data-falha', natural === '1 natural' ? 'sim' : 'nao');
+    refs.rrCaixa.setAttribute('data-vazio', 'nao');
+    refs.rrFicha = OP.state.ficha.id;
+    // Reinicia o brilho curto de "rolou agora"
+    refs.rrCaixa.classList.remove('resultado-rapido--novo');
+    void refs.rrCaixa.offsetWidth;
+    refs.rrCaixa.classList.add('resultado-rapido--novo');
+  }
+
+  /** Volta a faixa ao estado "nenhuma rolagem ainda" (outra ficha, por exemplo). A faixa nunca some: assim nada pula de lugar na primeira rolagem. */
+  function limparResultadoRapido() {
+    if (!refs.rrCaixa) return;
+    definirTexto(refs.rrTotal, '—');
+    definirTexto(refs.rrTitulo, 'Último resultado');
+    definirTexto(refs.rrDetalhe, 'Role uma perícia, um ataque ou um dado');
+    definirTexto(refs.rrAlvo, '');
+    refs.rrAlvo.hidden = true;
+    refs.rrCritico.hidden = true;
+    refs.rrCaixa.setAttribute('data-falha', 'nao');
+    refs.rrCaixa.setAttribute('data-critico', 'nao');
+    refs.rrCaixa.setAttribute('data-vazio', 'sim');
+    refs.rrFicha = null;
+  }
+
   function mostrarResultado(resultado) {
-    const soAviso = emGaveta() && refs.painel.dataset.aberto !== 'true';
-    if (!soAviso) abrirPainel(true);
+    const naPagina = Boolean(OP.uiPaginas && OP.uiPaginas.visivel('rolagens'));
     if (!resultado.ok) {
       substituirFilhos(refs.resultado, [criarResultadoErro(resultado)]);
-      if (soAviso && OP.uiApp) OP.uiApp.aviso('aviso', 'Aviso: ' + (resultado.erro || 'não foi possível rolar.'));
+      if (!naPagina && OP.uiApp) OP.uiApp.aviso('aviso', 'Aviso: ' + (resultado.erro || 'não foi possível rolar.'));
       return;
     }
     substituirFilhos(refs.resultado, [resultado.tipo === 'teste' ? criarResultadoTeste(resultado) : criarResultadoFormula(resultado)]);
     definirTexto(refs.ultimo, 'último: ' + resultado.total + (resultado.critico ? ' (crítico)' : ''));
-    if (soAviso && OP.uiApp) {
-      const alvo = resultado.tipo === 'teste' ? textoAlvo(resultado) : '';
-      OP.uiApp.aviso('ok', resultado.titulo + ': ' + resumoHistorico(resultado) + ' · total ' + resultado.total +
-        (resultado.critico ? ' (crítico)' : '') + (alvo ? ' · ' + alvo : ''), {
-        duracao: 6000,
-        acao: { rotulo: 'Detalhes', fazer: function () { abrirPainel(true); } }
-      });
-    } else {
-      anunciarResultado(resultado);
-    }
+    mostrarResultadoRapido(resultado);
+    anunciarResultado(resultado);
 
     historico.unshift({
       titulo: resultado.titulo,
@@ -2248,6 +2473,17 @@ window.OP = window.OP || {};
       resultado.aviso = 'Perícia somente para treinados, e este agente não é treinado nela.';
     }
     mostrarResultado(resultado);
+    destacarLinhaRolada('[data-pericia="' + idPericia + '"]');
+  }
+
+  /** Brilho curto na linha (ou no d20) que acabou de rolar: o olho acha de onde veio o número. */
+  function destacarLinhaRolada(seletor) {
+    const linha = document.querySelector(seletor);
+    if (!linha) return;
+    linha.classList.remove('rolou-agora');
+    void linha.offsetWidth;
+    linha.classList.add('rolou-agora');
+    linha.addEventListener('animationend', function () { linha.classList.remove('rolou-agora'); }, { once: true });
   }
 
   function acharAtaque(idAtaque) {
@@ -3152,6 +3388,8 @@ window.OP = window.OP || {};
     desenharRituais(ficha, refs.derivados);
   }
 
+  const LIMITE_TEXTO_LINHA_IMPRESSAO = 60; // caracteres: acima disso o campo de texto vira texto corrido no papel
+
   function prepararImpressao() {
     const ficha = OP.state.ficha;
     if (impressao.ativa || !ficha || !refs.derivados) return;
@@ -3211,9 +3449,20 @@ window.OP = window.OP || {};
     });
 
     // Campos de texto dos cartões com a largura do próprio texto (o print.css usa width: auto)
+    impressao.textosLongos = [];
     impressao.tamanhos = selecionarTodos('.ataque input[type="text"], .ritual input[type="text"], .painel input[type="text"]', refs.raiz).map(function (campo) {
       const anterior = { campo: campo, size: campo.getAttribute('size') };
-      campo.setAttribute('size', String(Math.max(3, campo.value.length + 2)));
+      if (campo.value.length > LIMITE_TEXTO_LINHA_IMPRESSAO) {
+        // Texto longo (ex.: notas): uma linha de input cortaria no papel; vira texto que quebra linha
+        const texto = document.createElement('span');
+        texto.className = 'impressao-nota';
+        texto.textContent = campo.value;
+        campo.insertAdjacentElement('afterend', texto);
+        campo.classList.add('impressao-oculto');
+        impressao.textosLongos.push({ campo: campo, texto: texto });
+      } else {
+        campo.setAttribute('size', String(Math.max(3, campo.value.length + 2)));
+      }
       return anterior;
     });
 
@@ -3240,6 +3489,7 @@ window.OP = window.OP || {};
     Object.assign(filtrosRituais, impressao.filtros.rituais);
     impressao.detalhes.forEach(function (d) { d.open = false; });
     impressao.vazios.forEach(function (elemento) { elemento.classList.remove('impressao-vazio'); });
+    (impressao.textosLongos || []).forEach(function (par) { par.texto.remove(); par.campo.classList.remove('impressao-oculto'); });
     impressao.textareas.forEach(function (anterior) { anterior.campo.style.height = anterior.altura; });
     impressao.tamanhos.forEach(function (anterior) {
       if (anterior.size === null) anterior.campo.removeAttribute('size');
@@ -3296,6 +3546,7 @@ window.OP = window.OP || {};
     montarRecursos();
     montarDefesa();
     montarPericias();
+    montarSeletorAtributo();
     montarAtaques();
     montarHabilidades();
     montarRituais();
@@ -3376,6 +3627,8 @@ window.OP = window.OP || {};
     desenharTreinamento(ficha, derivados.treinamento);
     desenharGraus(ficha, derivados.graus);
     desenharPericias(derivados);
+    // O resultado rápido é da ficha em que se rolou
+    if (refs.rrCaixa && refs.rrCaixa.getAttribute('data-vazio') === 'nao' && refs.rrFicha !== ficha.id) limparResultadoRapido();
     desenharInventario(ficha, derivados);
     desenharAtaques(ficha, derivados);
     desenharHabilidades(ficha);

@@ -69,6 +69,7 @@ window.OP = window.OP || {};
       const linha = document.querySelector('[data-pericia="' + String(item.ref).replace(/[^A-Za-z0-9_-]/g, '') + '"]');
       alvo = linha ? linha.querySelector('select, input, button') : null;
     }
+    if (alvo && OP.uiPaginas) OP.uiPaginas.mostrarPaginaDe(alvo); // abre a página onde o campo mora
     if (alvo) abrirDetalhesAncestrais(alvo);
     // Atributos na mesa: o campo só aparece em "Editar atributos"
     if (alvo && !visivel(alvo) && /^atr-/.test(item.campo || '')) {

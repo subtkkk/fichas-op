@@ -32,10 +32,10 @@ Precisa de um navegador atual (Chrome, Edge, Safari ou Firefox recentes).
 
 **A ficha**
 - Identificação, origem, classe e trilha com progressão por NEX (ou estágio, no Sobrevivente). As fontes de origens e trilhas podem ser escolhidas por livro.
-- Atributos num mostrador com um d20 para cada um. Base, bônus e a distribuição de pontos (com "modo livre") ficam atrás de "Editar atributos".
+- Atributos num mostrador com um d20 para cada um. Base, bônus e a distribuição de pontos (com "modo livre") ficam atrás de "Editar atributos". Na mesa, tocar no d20 rola o teste puro daquele atributo (com as condições que o afetam).
 - Recursos (PV, PE, SAN) com o cálculo do máximo à vista e perda permanente de Sanidade.
 - Defesa, reações, deslocamento e resistências a dano.
-- Perícias numa linha só: ícones (somente treinada, carga, kit, concedida), nome, dados, **grau** (botão com chevrons: um = Treinado, dois = Veterano, três = Expert; clique para trocar), **outros** bônus, **total** e rolar. Em "Editar perícias" aparecem também o atributo e a caixa Concedida. Perícias que exigem kit (Crime, Enganação, Medicina, Tecnologia) sofrem −5 no bônus sem o kit delas no inventário; o kit limpa a penalidade (valor em `data/config.js`, `penalidadeSemKit`).
+- Perícias numa linha só: ícones (somente treinada, carga, kit, concedida), nome, sigla do atributo (com uma seta para baixo quando o teste rola o menor dado), **grau** (botão com chevrons: um = Treinado, dois = Veterano, três = Expert; clique para trocar, só em "Editar perícias"; fora dela é só um indicador), **outros** bônus, **total** e rolar. A sigla do atributo é um botão discreto: clique nela para trocar o atributo da perícia (ou "Voltar ao padrão"); trocado, ela fica em destaque com um ponto. Na mesa, o grau aparece só como marcador (T, V ou E) e o campo "outros" some; grau, "outros" e Concedida mudam em "Editar perícias". Perícias que exigem kit (Crime, Enganação, Medicina, Tecnologia) sofrem −5 no bônus sem o kit delas no inventário; o kit limpa a penalidade (valor em `data/config.js`, `penalidadeSemKit`).
 - Ataques, habilidades e poderes, rituais (com formas Discente e Verdadeira, DT, afinidade e custo de Medo), inventário com patente, crédito e carga, e biografia (retrato, aliados, rivais e diário).
 - **Condições e estados:** faixa de Saúde (ileso, ferido, machucado, morrendo) e de Sanidade (sã, perturbada, enlouquecendo), sempre com texto e ícone; bloco de **Morrendo** com a contagem de turnos; cartões de condições com rodadas, "até o fim da cena" e nota; condição personalizada; **Passar rodada** e **Fim da cena**. As 35 condições do livro trazem o **texto do livro** e os efeitos que a ficha aplica sozinha (dados em perícias, atributos, ataques, Iniciativa, Percepção e Reflexos; Defesa, inclusive contra corpo a corpo e à distância; deslocamento; +1 PE do Alquebrado; resistência a dano do Petrificado). Segue a regra das *Clarificações de regras*: efeitos iguais não se acumulam (vale o mais severo), efeitos diferentes se somam. O que a ficha não calcula (ações, dano por rodada, testes de Vigor) aparece como lembrete no cartão. Os efeitos podem ser desligados em "Aplicar efeitos das condições" (os campos afetados ganham o selo **cond.**).
 - **Descansar:** diálogo com a condição de descanso, Dormir ou Meditação e as quantias de PV, PE e SAN já sugeridas (editáveis). Nada limita o uso por interlúdio.
@@ -48,11 +48,12 @@ Precisa de um navegador atual (Chrome, Edge, Safari ou Firefox recentes).
 - As listas de escolha abrem um painel próprio, com as opções agrupadas por livro, busca nas listas longas e, no celular, uma gaveta.
 
 **Rolagens**
-- Painel com o resultado de cada teste (todos os d20 e qual valeu), dano, crítico, modificador de dados, bônus extra, DT do alvo, fórmula livre (ex.: `2d6+3`) e histórico.
+- Página com o resultado de cada teste (todos os d20 e qual valeu), dano, crítico, modificador de dados, bônus extra, DT do alvo, fórmula livre (ex.: `2d6+3`) e histórico. O **último resultado** fica numa faixa com o total grande (no alto da coluna da direita no computador; presa abaixo dos vitais no celular) até a próxima rolagem ou até fechar, com o atalho **Detalhes**.
 
 **Aparência, celular e acessibilidade**
 - **Aparência** (botão no cabeçalho): tema do site (Automático, Escuro, Claro e Alto contraste), tamanho do texto (14, 16, 18 e 20 px) e animações (Automático, Sim, Não). Fica nas preferências do navegador, nunca na ficha, e vale sem piscar ao recarregar.
-- No celular, a barra de seções fica no rodapé (Resumo, Perícias, Combate, Inventário, Rituais, Biografia e Rolagens), o painel de Rolagens vira uma gaveta e os diálogos de formulário ocupam a tela. Alvos de toque têm 44 px.
+- **A ficha em páginas, sem rolagem contínua.** No computador (a partir de 1280 px), três zonas ficam sempre à vista: a faixa do agente (identificação), a coluna de atributos + vitais + defesa + testes e a coluna de perícias. À direita, abas trocam as outras páginas: Combate (condições, defesa e ataques), Habilidades, Rituais, Inventário, Biografia, Agente (origem, classe, recursos, tema e exportar) e Rolagens. No celular e no tablet, cada página ocupa a tela (Resumo, Perícias, Combate, Habilidades, Rituais, Inventário, Biografia, Agente e Rolagens); o rodapé tem as setas e o **botão-índice**, que abre a folha com todas as páginas, e deslizar para os lados também troca de página. A faixa de vitais fica presa no topo. No papel, tudo sai junto, na ordem de sempre.
+- Os diálogos de formulário ocupam a tela no celular. Alvos de toque têm 44 px.
 - Tudo funciona só com o teclado (a tecla **?** abre a ajuda), com foco sempre visível. Leitores de tela anunciam rolagens, descanso, rodadas e alertas.
 
 **Temas por ficha e impressão**
@@ -106,7 +107,8 @@ js/
   prefs.js          Preferências do navegador (livros, tema elemental por ficha e aparência do site)
   ui.js             Interface da ficha
   ui-classe.js      Origem, classe, trilha e progressão
-  ui-dossie.js      Capa do dossiê, vitais, ajuste de vital, índice e tema
+  ui-dossie.js      Capa do dossiê, vitais, ajuste de vital e tema
+  ui-paginas.js     A ficha em páginas: abas (computador), índice e setas (celular), gesto de deslizar
   ui-fichas.js      Central, Arquivo e operações com fichas
   ui-app.js         Navegação entre telas e avisos
   ui-seletor.js     Painel próprio das listas de escolha (no lugar do menu nativo)
@@ -126,7 +128,7 @@ fonts/              Fontes locais (Cormorant Garamond e IBM Plex, licença OFL)
 
 - HTML, CSS e JavaScript puro, sem dependências e sem etapa de build: edite e recarregue.
 - Os scripts compartilham o objeto global `OP`. O fluxo é `OP.state.atualizar` → `OP.calc` → `OP.ui.desenhar`. As telas ligam os campos por atributos (`data-campo`, `data-saida`, `data-passo`…).
-- **Testes das fórmulas:** abra o site e rode `OP.runTests()` no console do navegador. O esperado é `{ total: 478, aprovados: 478, falhas: 0 }`. Em janela estreita (até 480 px) o teste de layout também confere a rolagem horizontal. As auditorias ficam em `OP.ui.auditarLayout()`, `auditarContraste(tema)`, `auditarAcessibilidade()`, `auditarTitulos()` e `auditarAlvosToque()`.
+- **Testes das fórmulas:** abra o site e rode `OP.runTests()` no console do navegador. O esperado é `{ total: 509, aprovados: 509, falhas: 0 }`. Em janela estreita (até 480 px) o teste de layout também confere a rolagem horizontal. As auditorias ficam em `OP.ui.auditarLayout()`, `auditarContraste(tema)`, `auditarAcessibilidade()`, `auditarTitulos()` e `auditarAlvosToque()`.
 - **Cores:** o CSS da tela não tem cor fixa fora de variáveis. As paletas (`--cor-*`, em `#rrggbb`) ficam no começo do `css/style.css`: escuro em `:root`, claro em `[data-tema="claro"]` (e no `@media (prefers-color-scheme: light)` do modo Automático) e alto contraste em `[data-tema="contraste"]`. O `css/print.css` mantém fundo branco e texto preto, qualquer que seja o tema.
 - **Compatibilidade:** fichas salvas e arquivos exportados de versões anteriores precisam continuar abrindo. Mudanças no modelo passam pela migração em `js/state.js`.
 

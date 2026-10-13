@@ -144,8 +144,16 @@ window.OP = window.OP || {};
 
     const resumo = criar('p', 'cond-cartao__resumo');
     const implica = criar('p', 'cond-cartao__implica');
+    const lembretes = criar('p', 'cond-cartao__lembretes');
+    const livro = criar('details', 'cond-cartao__livro');
+    const livroTitulo = criar('summary', '', 'Texto do livro');
+    const livroTexto = criar('p', 'cond-cartao__livro-texto');
+    livro.appendChild(livroTitulo);
+    livro.appendChild(livroTexto);
     raiz.appendChild(resumo);
     raiz.appendChild(implica);
+    raiz.appendChild(lembretes);
+    raiz.appendChild(livro);
 
     const campos = criar('div', 'cond-cartao__campos');
     const idRodadas = 'cond-rodadas-' + uid;
@@ -191,7 +199,7 @@ window.OP = window.OP || {};
     raiz.appendChild(campos);
 
     cartoes[uid] = { raiz: raiz, nome: nome, categoria: categoria, conferir: conferir, remover: remover,
-      resumo: resumo, implica: implica, rodadas: rodadas, fim: fim, nota: nota };
+      resumo: resumo, implica: implica, lembretes: lembretes, livro: livro, livroTexto: livroTexto, rodadas: rodadas, fim: fim, nota: nota };
     return cartoes[uid];
   }
 
@@ -224,10 +232,15 @@ window.OP = window.OP || {};
       elementos.remover.setAttribute('aria-label', rotuloRemover);
       elementos.remover.setAttribute('title', rotuloRemover);
     }
-    definirTexto(elementos.resumo, resumoItem.resumo || 'Sem efeito numérico automático: anote na mesa o que ela faz.');
+    definirTexto(elementos.resumo, resumoItem.resumo || 'Sem efeito numérico automático: veja o texto do livro e anote na mesa o que vale.');
     const implica = resumoItem.implica && resumoItem.implica.length ? 'Inclui: ' + lista(resumoItem.implica) + '.' : '';
     definirTexto(elementos.implica, implica);
     elementos.implica.hidden = !implica;
+    const lembretes = (resumoItem.lembretes || []).join(' ');
+    definirTexto(elementos.lembretes, lembretes ? 'A ficha não calcula: ' + lembretes : '');
+    elementos.lembretes.hidden = !lembretes;
+    definirTexto(elementos.livroTexto, resumoItem.descricao || '');
+    elementos.livro.hidden = !resumoItem.descricao;
     escreverSePreciso(elementos.rodadas, item.rodadas === null || item.rodadas === undefined ? '' : String(item.rodadas));
     if (elementos.fim.checked !== (item.ateFimCena === true)) elementos.fim.checked = item.ateFimCena === true;
     escreverSePreciso(elementos.nota, String(item.nota || ''));
@@ -295,7 +308,7 @@ window.OP = window.OP || {};
   function desenharSelos(derivados) {
     const mod = derivados.condicoes.mod;
     const origens = textoOrigens(mod);
-    const sufixo = ' (' + origens + '). Efeito sugerido: confira no livro.';
+    const sufixo = ' (' + origens + ').';
     OP.data.pericias.forEach(function (definicao) {
       const estado = derivados.pericias[definicao.id];
       const celula = document.querySelector('[data-pericia="' + definicao.id + '"] .pericia__dados output');
@@ -303,13 +316,18 @@ window.OP = window.OP || {};
         'Afetado por condições: ' + sinal(estado.dadosCondicoes) + 'd20 em ' + definicao.nome + sufixo);
     });
     const defesa = derivados.defesa.condicoes;
+    const defesaPorTipo = derivados.defesa.totalCorpoACorpo !== derivados.defesa.total || derivados.defesa.totalDistancia !== derivados.defesa.total;
     document.querySelectorAll('[data-saida="defesa.total"]').forEach(function (saida) {
-      marcar(saida, defesa !== 0, 'Afetada por condições: Defesa ' + sinal(defesa) + sufixo);
+      marcar(saida, defesa !== 0 || defesaPorTipo,
+        'Afetada por condições: ' + (defesa !== 0 ? 'Defesa ' + sinal(defesa) : 'Defesa muda conforme o tipo de ataque') + sufixo);
     });
     const desloc = derivados.deslocamento;
     document.querySelectorAll('[data-saida="deslocamento"], [data-saida="deslocamento.metros"]').forEach(function (saida) {
-      marcar(saida, desloc.multiplicador !== 1,
-        'Afetado por condições: deslocamento × ' + OP.ui.formatarNumero(desloc.multiplicador) + sufixo);
+      const reduzido = desloc.multiplicador !== 1 || desloc.maximo !== null;
+      marcar(saida, reduzido,
+        'Afetado por condições: ' + (desloc.maximo !== null && desloc.multiplicador === 1
+          ? 'deslocamento máximo ' + OP.ui.formatarNumero(desloc.maximo) + ' m'
+          : 'deslocamento × ' + OP.ui.formatarNumero(desloc.multiplicador)) + sufixo);
     });
   }
 

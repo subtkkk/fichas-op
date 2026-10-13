@@ -400,10 +400,15 @@ window.OP = window.OP || {};
       svg: '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
         '<path d="M5.5 5.5a2.5 2.5 0 0 1 5 0"/><path d="M3.8 5.5h8.4l1.6 8H2.2z"/></svg>'
     },
-    // TODO: efeito do kit, depende da regra do livro (por enquanto só o indicador).
+    concedida: {
+      titulo: 'Concedida pela origem ou classe: vale pelo menos Treinado e não gasta pontos de treinamento',
+      legenda: 'concedida (não gasta pontos)',
+      svg: '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
+        '<circle cx="8" cy="6" r="3.2"/><path d="M5.8 8.6 4.5 14l3.5-2 3.5 2-1.3-5.4"/></svg>'
+    },
     kit: {
-      titulo: 'Esta perícia usa um kit; veja a regra no livro',
-      legenda: 'usa kit (cheio = kit no inventário)',
+      titulo: 'Exige kit: sem o kit no inventário, o bônus da perícia sofre penalidade',
+      legenda: 'exige kit (cheio = kit no inventário; alerta = sem kit, −5)',
       svg: '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
         '<path d="M2 5.5h12v8H2z"/><path d="M6 5.5V3.5h4v2"/><path d="M2 9h12"/><path d="M8 8v2"/></svg>'
     }
@@ -436,14 +441,28 @@ window.OP = window.OP || {};
     }).join('');
   }
 
-  /** HTML de uma linha da tabela de perícias. */
+  /**
+   * Símbolo do grau: três chevrons (como divisas); os do grau atual ficam acesos
+   * (1 = Treinado, 2 = Veterano, 3 = Expert) e os demais só aparecem de leve.
+   */
+  const SVG_GRAU = '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
+    '<path class="grau__v grau__v--1" d="M3.5 13 8 9.2l4.5 3.8"/>' +
+    '<path class="grau__v grau__v--2" d="M3.5 9.4 8 5.6l4.5 3.8"/>' +
+    '<path class="grau__v grau__v--3" d="M3.5 5.8 8 2l4.5 3.8"/></svg>';
+
+  /**
+   * HTML de uma linha da tabela de perícias: [ícones] nome · atributo (edição) ·
+   * dados · grau (botão com o símbolo) · outros bônus · total · rolar · concedida (edição).
+   * Ícones: somente treinada, penalidade de carga, kit e concedida (os dinâmicos nascem escondidos).
+   */
   function htmlLinhaPericia(pericia) {
     const id = escaparHtml(pericia.id);
     const nome = escaparHtml(pericia.nome);
     const caminho = 'pericias.' + id;
-    const indicadores = (pericia.somenteTreinada ? htmlIcone('treinada') : '') +
+    const icones = (pericia.somenteTreinada ? htmlIcone('treinada') : '') +
       (pericia.penalidadeCarga ? htmlIcone('carga') : '') +
-      (pericia.kit ? htmlIcone('kit') : '');
+      (pericia.kit ? htmlIcone('kit') : '') +
+      htmlIcone('concedida').replace('<span ', '<span hidden ');
     const especialidade = pericia.aberta
       ? '<input type="text" class="controle pericia__especialidade" placeholder="especialidade" autocomplete="off"' +
         ' aria-label="Especialidade de ' + nome + '" data-campo="' + caminho + '.nomeAberto" data-tipo="texto">'
@@ -451,14 +470,10 @@ window.OP = window.OP || {};
 
     return '' +
       '<tr class="pericia" data-pericia="' + id + '">' +
-        '<td class="pericia__indicadores">' + indicadores + '</td>' +
         '<th scope="row" class="pericia__nome">' +
           '<div class="pericia__nome-conteudo">' +
+            '<span class="pericia__indicadores">' + icones + '</span>' +
             '<span class="pericia__rotulo">' + nome + '</span>' + especialidade +
-            // "origem" / "classe": perícia concedida automaticamente (não gasta pontos)
-            '<span class="pericia__fonte" hidden></span>' +
-            '<span class="pericia__requer" hidden>requer treinamento</span>' +
-            (pericia.penalidadeCarga ? '<span class="pericia__carga" hidden></span>' : '') +
           '</div>' +
         '</th>' +
         '<td class="pericia__atributo" data-rotulo="Atributo">' +
@@ -469,16 +484,18 @@ window.OP = window.OP || {};
           '</select>' +
         '</td>' +
         '<td class="pericia__dados"><output data-saida="' + caminho + '.dados" data-formato="dados"></output></td>' +
-        '<td class="pericia__grau" data-rotulo="Grau">' +
-          '<select class="controle" aria-label="Grau de treinamento em ' + nome + '"' +
-            ' data-campo="' + caminho + '.grau" data-tipo="inteiro">' + htmlOpcoesGrau() + '</select>' +
+        '<td class="pericia__grau">' +
+          '<button type="button" class="botao-icone botao-grau" data-grau-pericia="' + id + '" data-nivel="0">' +
+            SVG_GRAU + '</button>' +
+          // só na impressão: o nome do grau no lugar do símbolo
+          '<span class="pericia__grau-impressao"></span>' +
         '</td>' +
-        '<td class="pericia__outros" data-rotulo="Outros">' +
+        '<td class="pericia__outros">' +
           '<input type="number" step="1" class="controle controle--numero" aria-label="Outros bônus de ' + nome + '"' +
-            ' data-campo="' + caminho + '.outros" data-tipo="inteiro">' +
+            ' title="Outros bônus (itens, poderes, rituais)" data-campo="' + caminho + '.outros" data-tipo="inteiro">' +
         '</td>' +
         '<td class="pericia__bonus">' +
-          '<output data-saida="' + caminho + '.bonus" data-formato="sinal" aria-label="Bônus de ' + nome + '"></output>' +
+          '<output data-saida="' + caminho + '.bonus" data-formato="sinal" aria-label="Bônus total de ' + nome + '"></output>' +
         '</td>' +
         '<td class="pericia__rolar">' + htmlBotaoRolarPericia(pericia.id, pericia.nome) + '</td>' +
         '<td class="pericia__concedida">' +
@@ -501,13 +518,14 @@ window.OP = window.OP || {};
     selecionarTodos('[data-pericia]', corpo).forEach(function (linha) {
       refs.pericias[linha.dataset.pericia] = {
         linha: linha,
-        requer: linha.querySelector('.pericia__requer'),
-        fonte: linha.querySelector('.pericia__fonte'),
         atributo: linha.querySelector('.pericia__atributo select'),
-        opcaoDestreinado: linha.querySelector('.pericia__grau option[value="0"]'),
+        grau: linha.querySelector('.botao-grau'),
+        grauImpressao: linha.querySelector('.pericia__grau-impressao'),
         especialidade: linha.querySelector('.pericia__especialidade'), // só nas perícias abertas
-        carga: linha.querySelector('.pericia__carga'),   // só nas perícias com carga
-        kit: linha.querySelector('.icone--kit')           // só nas perícias com kit
+        treinada: linha.querySelector('.icone--treinada'), // só nas perícias "somente treinada"
+        carga: linha.querySelector('.icone--carga'),       // só nas perícias com carga
+        kit: linha.querySelector('.icone--kit'),           // só nas perícias com kit
+        concedida: linha.querySelector('.icone--concedida')
       };
     });
   }
@@ -1100,8 +1118,7 @@ window.OP = window.OP || {};
     elementos.linha.scrollIntoView({ behavior: semAnimacao ? 'auto' : 'smooth', block: 'center' });
     destacarLinha(elementos.linha);
 
-    const grau = elementos.linha.querySelector('[data-campo$=".grau"]');
-    if (grau) grau.focus({ preventScroll: true });
+    if (elementos.grau) elementos.grau.focus({ preventScroll: true });
   }
 
   /** Acrescenta um ataque novo e põe o foco no nome dele. */
@@ -1227,6 +1244,11 @@ window.OP = window.OP || {};
     }
 
     // Rolagens e ataques
+    const botaoGrau = evento.target.closest('[data-grau-pericia]');
+    if (botaoGrau) {
+      ciclarGrau(botaoGrau.dataset.grauPericia);
+      return;
+    }
     const rolarPericia = evento.target.closest('[data-rolar-pericia]');
     if (rolarPericia) {
       rolarPericiaNaTela(rolarPericia.dataset.rolarPericia);
@@ -1495,6 +1517,24 @@ window.OP = window.OP || {};
     if (refs.botaoModoPericias.getAttribute('aria-pressed') !== editando) refs.botaoModoPericias.setAttribute('aria-pressed', editando);
   }
 
+  /** Próximo grau ao ativar o botão: 0 → 1 → 2 → 3 → volta (a concedida nunca cai abaixo de Treinado). */
+  function proximoGrau(grau, concedida) {
+    const ultimo = OP.data.grausTreinamento.length - 1;
+    if (grau >= ultimo) return concedida ? 1 : 0;
+    return grau + 1;
+  }
+
+  /** Muda o grau de uma perícia pelo botão de chevrons. */
+  function ciclarGrau(idPericia) {
+    const estado = refs.derivados && refs.derivados.pericias[idPericia];
+    if (!estado) return;
+    const novo = proximoGrau(estado.grau, Boolean(estado.concedidaPor));
+    OP.state.atualizar('pericias.' + idPericia + '.grau', novo);
+    const nome = OP.data.grausTreinamento[novo].nome;
+    const definicao = OP.data.pericias.find(function (p) { return p.id === idPericia; });
+    if (OP.uiApp && OP.uiApp.anunciar) OP.uiApp.anunciar((definicao ? definicao.nome : idPericia) + ': ' + nome + '.');
+  }
+
   function desenharPericias(derivados) {
     desenharModoPericias(OP.state.ficha);
     const identidade = derivados.identidade;
@@ -1507,14 +1547,38 @@ window.OP = window.OP || {};
       linha.classList.toggle('pericia--requer-treino', estado.requerTreinamento);
       linha.classList.toggle('pericia--atributo-alterado', estado.atributoAlterado);
       linha.classList.toggle('pericia--concedida', Boolean(estado.concedidaPor));
-      if (elementos.requer.hidden === estado.requerTreinamento) elementos.requer.hidden = !estado.requerTreinamento;
 
-      // Concedida pela classe/origem: etiqueta, e o grau 0 vale como Treinado (não gasta pontos)
+      // Grau: o botão mostra os chevrons; o nome e o próximo grau vão no rótulo
+      const graus = OP.data.grausTreinamento;
       const fonte = estado.concedidaPor || '';
-      if (elementos.fonte.hidden === Boolean(fonte)) elementos.fonte.hidden = !fonte;
-      definirTexto(elementos.fonte, fonte);
-      elementos.fonte.title = fonte ? 'Concedida pela ' + fonte + ': vale pelo menos Treinado e não gasta pontos de treinamento' : '';
-      definirTexto(elementos.opcaoDestreinado, fonte ? 'Treinado (concedida)' : OP.data.grausTreinamento[0].nome);
+      const nomeGrau = graus[estado.grau] ? graus[estado.grau].nome : '';
+      const proximo = proximoGrau(estado.grau, fonte);
+      const rotuloGrau = definicao.nome + ': ' + nomeGrau + (fonte ? ' (concedida pela ' + fonte + ')' : '') +
+        '. Ativar para mudar para ' + graus[proximo].nome + '.';
+      if (String(estado.grau) !== elementos.grau.dataset.nivel) elementos.grau.dataset.nivel = String(estado.grau);
+      if (elementos.grau.getAttribute('aria-label') !== rotuloGrau) {
+        elementos.grau.setAttribute('aria-label', 'Grau de ' + rotuloGrau);
+        elementos.grau.title = 'Grau de ' + rotuloGrau;
+      }
+      definirTexto(elementos.grauImpressao, nomeGrau);
+
+      // Ícones que mudam: "somente treinada" avisa quando falta o treinamento; concedida aparece sozinho
+      if (elementos.treinada) {
+        elementos.treinada.classList.toggle('icone--alerta', estado.requerTreinamento);
+        const titulo = estado.requerTreinamento ? ICONES.treinada.titulo + ' (ainda sem treinamento)' : ICONES.treinada.titulo;
+        if (elementos.treinada.title !== titulo) {
+          elementos.treinada.title = titulo;
+          elementos.treinada.setAttribute('aria-label', titulo);
+        }
+      }
+      if (elementos.concedida) {
+        if (elementos.concedida.hidden === Boolean(fonte)) elementos.concedida.hidden = !fonte;
+        const titulo = fonte ? 'Concedida pela ' + fonte + ': vale pelo menos Treinado e não gasta pontos de treinamento' : ICONES.concedida.titulo;
+        if (elementos.concedida.title !== titulo) {
+          elementos.concedida.title = titulo;
+          elementos.concedida.setAttribute('aria-label', titulo);
+        }
+      }
 
       // Profissão: a origem sugere a especialidade (só como dica, não é salva)
       if (elementos.especialidade) {
@@ -1525,17 +1589,24 @@ window.OP = window.OP || {};
       const dica = estado.atributoAlterado ? 'Atributo alterado (padrão: ' + siglaAtributo(estado.atributoPadrao) + ')' : '';
       if (elementos.atributo.title !== dica) elementos.atributo.title = dica;
 
-      // Etiqueta "−X carga" (proteções equipadas e/ou sobrecarga)
+      // Ícone de carga: aceso e com o valor no rótulo quando há penalidade (proteções equipadas e/ou sobrecarga)
       if (elementos.carga) {
         const temPenalidade = estado.penalidadeCarga > 0;
-        if (elementos.carga.hidden === temPenalidade) elementos.carga.hidden = !temPenalidade;
-        definirTexto(elementos.carga, '−' + estado.penalidadeCarga + ' carga');
+        elementos.carga.classList.toggle('icone--ativo', temPenalidade);
+        const titulo = temPenalidade ? 'Penalidade de carga: −' + estado.penalidadeCarga + ' no bônus' : ICONES.carga.titulo;
+        if (elementos.carga.title !== titulo) {
+          elementos.carga.title = titulo;
+          elementos.carga.setAttribute('aria-label', titulo);
+        }
       }
 
       // Ícone de kit: preenchido quando o kit está no inventário
       if (elementos.kit) {
         elementos.kit.classList.toggle('icone--ativo', estado.kitAtivo);
-        const titulo = estado.kitAtivo ? ICONES.kit.titulo + ' (kit no inventário)' : ICONES.kit.titulo;
+        elementos.kit.classList.toggle('icone--alerta', !estado.kitAtivo);
+        const titulo = estado.kitAtivo
+          ? 'Kit no inventário: sem penalidade'
+          : 'Sem o kit no inventário: −' + estado.penalidadeKit + ' no bônus';
         if (elementos.kit.title !== titulo) {
           elementos.kit.title = titulo;
           elementos.kit.setAttribute('aria-label', titulo);
@@ -1656,10 +1727,21 @@ window.OP = window.OP || {};
     definirTexto(refs.composicaoDeslocamento, formatarNumero(desloc.base) + ' m base' +
       (desloc.bonus < 0 ? ' − ' : ' + ') + formatarNumero(Math.abs(desloc.bonus)) + ' m de bônus' +
       (desloc.sobrecarga ? ' − ' + formatarNumero(desloc.sobrecarga) + ' m de sobrecarga' : '') +
-      (desloc.multiplicador !== 1 ? ' × ' + formatarNumero(desloc.multiplicador) + ' (condições)' : ''));
+      (desloc.multiplicador !== 1 ? ' × ' + formatarNumero(desloc.multiplicador) + ' (condições)' : '') +
+      (desloc.maximo !== null ? ' · máximo ' + formatarNumero(desloc.maximo) + ' m (condições)' : ''));
     definirTexto(refs.textoQuadrados, '(' + desloc.quadrados + ' ' + plural(desloc.quadrados, 'quadrado', 'quadrados') + ')');
 
     desenharReacoes(defesa);
+
+    // Defesa contra um tipo de ataque, só quando as condições a diferenciam (ex.: Caído)
+    const contraTipos = [];
+    if (defesa.totalCorpoACorpo !== defesa.total) contraTipos.push('corpo a corpo ' + defesa.totalCorpoACorpo);
+    if (defesa.totalDistancia !== defesa.total) contraTipos.push('à distância ' + defesa.totalDistancia);
+    definirTexto(refs.defesaPorTipo, contraTipos.length ? 'Contra ataques ' + contraTipos.join(' · ') + ' (condições)' : '');
+    if (refs.defesaPorTipo.hidden !== !contraTipos.length) refs.defesaPorTipo.hidden = !contraTipos.length;
+    const resistenciaCond = derivados.condicoes.mod.resistenciaDano;
+    definirTexto(refs.resistenciaCondicoes, resistenciaCond ? 'Condições: resistência a dano ' + resistenciaCond + ' contra todos os tipos (não entra nos campos abaixo).' : '');
+    if (refs.resistenciaCondicoes.hidden !== !resistenciaCond) refs.resistenciaCondicoes.hidden = !resistenciaCond;
 
     refs.testes.forEach(function (botao) {
       botao.classList.toggle('teste--treinado', derivados.pericias[botao.dataset.teste].treinada);
@@ -2451,7 +2533,7 @@ window.OP = window.OP || {};
       definirTexto(el.fonte, nomeNaLista(OP.data.fontesHabilidade, habilidade.fonte) || 'Outro');
       if (el.artigo.dataset.fonte !== habilidade.fonte) el.artigo.dataset.fonte = habilidade.fonte;
 
-      const custo = OP.calc.numero(habilidade.custoPE);
+      const custo = OP.calc.custoComCondicoes(ficha, habilidade.custoPE);
       const meta = [custo > 0 ? custo + ' PE' : 'sem custo'];
       const ativacao = nomeNaLista(OP.data.ativacoes, habilidade.ativacao);
       if (ativacao) meta.push(ativacao);
@@ -2872,7 +2954,7 @@ window.OP = window.OP || {};
         definirTexto(forma.erro, info.danoErro);
         if (forma.botaoDano.hidden === info.danoValido) forma.botaoDano.hidden = !info.danoValido;
         // Medo: a Sanidade aparece no botão; a perda permanente fica no lembrete do cartão.
-        definirTexto(forma.textoConjurar, 'Conjurar · ' + (info.custo > 0 ? info.custo + ' PE' : 'sem custo') +
+        definirTexto(forma.textoConjurar, 'Conjurar · ' + (info.custoComCondicoes > 0 ? info.custoComCondicoes + ' PE' : 'sem custo') +
           (info.san ? ' · ' + info.san + ' SAN' : ''));
       });
 
@@ -3196,6 +3278,8 @@ window.OP = window.OP || {};
     refs.buscaPericias = document.getElementById('busca-pericias');
     refs.filtroTreinadas = document.getElementById('filtro-treinadas');
     refs.composicaoDefesa = document.getElementById('composicao-defesa');
+    refs.defesaPorTipo = document.getElementById('defesa-por-tipo');
+    refs.resistenciaCondicoes = document.getElementById('resistencia-condicoes');
     refs.composicaoDeslocamento = document.getElementById('composicao-deslocamento');
     refs.textoQuadrados = document.getElementById('texto-quadrados');
     refs.contagemResistencias = document.getElementById('contagem-resistencias');

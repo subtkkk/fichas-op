@@ -110,7 +110,7 @@ window.OP = window.OP || {};
 
     const resultado = montarTeste(titulo, teste.dados, partes, o);
     resultado.subtipo = 'ataque';
-    resultado.condicoesDados = OP.calc.dadosCondicoesPericia(ficha, ataque.pericia);
+    resultado.condicoesDados = OP.calc.dadosCondicoesAtaque(ficha, ataque);
     resultado.idAtaque = ataque.id;
     resultado.critMargem = inteiro(ataque.critMargem);
     resultado.critico = OP.calc.ehCritico(resultado.escolhido, ataque.critMargem);
@@ -221,7 +221,7 @@ window.OP = window.OP || {};
    */
   function usarHabilidade(ficha, habilidade) {
     const titulo = 'Habilidade: ' + nomeOuPadrao(habilidade.nome, 'sem nome');
-    const gasto = OP.state.gastarPE(inteiro(habilidade.custoPE), ficha);
+    const gasto = OP.state.gastarPE(OP.calc.custoComCondicoes(ficha, inteiro(habilidade.custoPE)), ficha);
     const resultado = Object.assign({ titulo: titulo }, gasto);
     if (gasto.ok) resultado.evento = eventoDaFicha(ficha, titulo, detalheGasto(gasto));
     return resultado;

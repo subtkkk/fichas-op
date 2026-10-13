@@ -28,9 +28,9 @@ window.OP.versao = '0.10.0';
       deslocamento: 3           // metros
     },
 
-    // Bônus numa perícia com kit quando o kit dela está no inventário.
-    // TODO: confirmar a regra no livro
-    bonusKit: 0,
+    // Perícia que exige kit (Crime, Enganação, Medicina, Tecnologia): sem o kit dela
+    // no inventário o bônus da perícia sofre esta penalidade; o kit limpa a penalidade.
+    penalidadeSemKit: 5,
 
     // DT para resistir a uma habilidade = base + (limite de PE por turno, se
     // somaLimitePE) + atributo (total). Vale para qualquer habilidade; nos

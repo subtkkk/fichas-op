@@ -132,6 +132,11 @@ window.OP = window.OP || {};
   }
 
   /** Sigla de um atributo pelo id ("vig" → "VIG"). */
+  function nomeAtributo(id) {
+    const atributo = OP.data.atributos.find(function (a) { return a.id === id; });
+    return atributo ? atributo.nome : String(id);
+  }
+
   function siglaAtributo(id) {
     const atributo = OP.data.atributos.find(function (a) { return a.id === id; });
     return atributo ? atributo.sigla : String(id).toUpperCase();
@@ -476,14 +481,12 @@ window.OP = window.OP || {};
             '<span class="pericia__rotulo">' + nome + '</span>' + especialidade +
           '</div>' +
         '</th>' +
-        '<td class="pericia__atributo" data-rotulo="Atributo">' +
-          '<select class="controle" aria-label="Atributo de ' + nome + '"' +
-            ' data-campo="' + caminho + '.atributo" data-tipo="texto"' +
-            ' data-padrao="' + escaparHtml(pericia.atributoPadrao) + '" data-reserva="' + caminho + '.atributo">' +
-            htmlOpcoesAtributo() +
-          '</select>' +
+        // Atributo e dados: a sigla é um botão discreto que abre o painel para trocar o atributo
+        '<td class="pericia__dados">' +
+          '<button type="button" class="atributo-sigla" data-atributo-pericia="' + id + '"' +
+            ' aria-haspopup="dialog" aria-expanded="false" aria-controls="seletor-atributo"></button>' +
+          '<output data-saida="' + caminho + '.dados" data-formato="dados"></output>' +
         '</td>' +
-        '<td class="pericia__dados"><output data-saida="' + caminho + '.dados" data-formato="dados"></output></td>' +
         '<td class="pericia__grau">' +
           '<button type="button" class="botao-icone botao-grau" data-grau-pericia="' + id + '" data-nivel="0">' +
             SVG_GRAU + '</button>' +
@@ -518,7 +521,7 @@ window.OP = window.OP || {};
     selecionarTodos('[data-pericia]', corpo).forEach(function (linha) {
       refs.pericias[linha.dataset.pericia] = {
         linha: linha,
-        atributo: linha.querySelector('.pericia__atributo select'),
+        atributo: linha.querySelector('.atributo-sigla'),
         grau: linha.querySelector('.botao-grau'),
         grauImpressao: linha.querySelector('.pericia__grau-impressao'),
         especialidade: linha.querySelector('.pericia__especialidade'), // só nas perícias abertas
@@ -1244,6 +1247,11 @@ window.OP = window.OP || {};
     }
 
     // Rolagens e ataques
+    const botaoAtributo = evento.target.closest('[data-atributo-pericia]');
+    if (botaoAtributo) {
+      alternarSeletorAtributo(botaoAtributo);
+      return;
+    }
     const botaoGrau = evento.target.closest('[data-grau-pericia]');
     if (botaoGrau) {
       ciclarGrau(botaoGrau.dataset.grauPericia);
@@ -1517,6 +1525,137 @@ window.OP = window.OP || {};
     if (refs.botaoModoPericias.getAttribute('aria-pressed') !== editando) refs.botaoModoPericias.setAttribute('aria-pressed', editando);
   }
 
+  /* ---------- Atributo da perícia: painel que abre ao clicar na sigla ---------- */
+
+  const seletorAtributo = { painel: null, titulo: null, opcoes: {}, padrao: null, idPericia: null, origem: null, abertoEm: 0 };
+
+  /** Cria o painel (uma vez só): 5 atributos + "Voltar ao padrão". Textos fixos, sem dados da ficha. */
+  function montarSeletorAtributo() {
+    const painel = criarElemento('div', 'seletor-atributo');
+    painel.id = 'seletor-atributo';
+    painel.setAttribute('role', 'dialog');
+    painel.setAttribute('aria-labelledby', 'seletor-atributo-titulo');
+    painel.hidden = true;
+    const titulo = criarElemento('p', 'seletor-atributo__titulo');
+    titulo.id = 'seletor-atributo-titulo';
+    painel.appendChild(titulo);
+    const lista = criarElemento('div', 'seletor-atributo__lista');
+    OP.data.atributos.forEach(function (atributo) {
+      const botao = criarElemento('button', 'seletor-atributo__opcao');
+      botao.type = 'button';
+      botao.dataset.atributo = atributo.id;
+      botao.appendChild(criarElemento('strong', '', atributo.sigla));
+      botao.appendChild(criarElemento('span', '', atributo.nome));
+      lista.appendChild(botao);
+      seletorAtributo.opcoes[atributo.id] = botao;
+    });
+    painel.appendChild(lista);
+    const padrao = criarElemento('button', 'seletor-atributo__padrao');
+    padrao.type = 'button';
+    padrao.dataset.padrao = 'sim';
+    padrao.textContent = 'Voltar ao padrão';
+    painel.appendChild(padrao);
+    document.body.appendChild(painel);
+    seletorAtributo.painel = painel;
+    seletorAtributo.titulo = titulo;
+    seletorAtributo.padrao = padrao;
+
+    painel.addEventListener('click', function (evento) {
+      const opcao = evento.target.closest('[data-atributo]');
+      const voltar = evento.target.closest('[data-padrao]');
+      if (opcao) escolherAtributo(opcao.dataset.atributo);
+      else if (voltar && !voltar.disabled) escolherAtributo(null);
+    });
+    painel.addEventListener('keydown', function (evento) {
+      if (evento.key === 'Escape') {
+        evento.preventDefault();
+        fecharSeletorAtributo(true);
+        return;
+      }
+      if (evento.key !== 'ArrowDown' && evento.key !== 'ArrowUp') return;
+      const botoes = Array.prototype.slice.call(painel.querySelectorAll('button:not([disabled])'));
+      const indice = botoes.indexOf(document.activeElement);
+      if (indice === -1) return;
+      evento.preventDefault();
+      botoes[(indice + (evento.key === 'ArrowDown' ? 1 : botoes.length - 1)) % botoes.length].focus();
+    });
+    // Clicar fora, rolar ou redimensionar fecha o painel (ele é posicionado junto da sigla)
+    document.addEventListener('click', function (evento) {
+      if (seletorAtributo.painel.hidden) return;
+      if (evento.target.closest('#seletor-atributo') || evento.target.closest('[data-atributo-pericia]')) return;
+      fecharSeletorAtributo(false);
+    });
+    window.addEventListener('scroll', function () {
+      // rolagens logo depois de abrir (foco, rolagem suave em curso) não fecham o painel
+      if (!painel.hidden && Date.now() - seletorAtributo.abertoEm > 250) fecharSeletorAtributo(false);
+    }, true);
+    window.addEventListener('resize', function () { if (!painel.hidden) fecharSeletorAtributo(false); });
+  }
+
+  function fecharSeletorAtributo(devolverFoco) {
+    const s = seletorAtributo;
+    if (!s.painel || s.painel.hidden) return;
+    s.painel.hidden = true;
+    const origem = s.origem;
+    s.origem = null;
+    s.idPericia = null;
+    if (origem) {
+      origem.setAttribute('aria-expanded', 'false');
+      if (devolverFoco && origem.isConnected) origem.focus({ preventScroll: true });
+    }
+  }
+
+  function alternarSeletorAtributo(botao) {
+    const s = seletorAtributo;
+    const aberto = !s.painel.hidden && s.origem === botao;
+    fecharSeletorAtributo(false);
+    if (aberto) return;
+    const idPericia = botao.dataset.atributoPericia;
+    const estado = refs.derivados && refs.derivados.pericias[idPericia];
+    const definicao = OP.data.pericias.find(function (p) { return p.id === idPericia; });
+    if (!estado || !definicao) return;
+
+    s.idPericia = idPericia;
+    s.origem = botao;
+    s.abertoEm = Date.now();
+    definirTexto(s.titulo, 'Atributo de ' + definicao.nome);
+    Object.keys(s.opcoes).forEach(function (id) {
+      s.opcoes[id].setAttribute('aria-pressed', String(id === estado.atributo));
+      s.opcoes[id].classList.toggle('seletor-atributo__opcao--padrao', id === estado.atributoPadrao);
+    });
+    definirTexto(s.padrao, 'Voltar ao padrão (' + siglaAtributo(estado.atributoPadrao) + ')');
+    s.padrao.disabled = !estado.atributoAlterado;
+
+    botao.setAttribute('aria-expanded', 'true');
+    s.painel.hidden = false;
+    // Posição: logo abaixo da sigla (ou acima, se não couber), sempre dentro da tela
+    const caixa = botao.getBoundingClientRect();
+    const largura = s.painel.offsetWidth;
+    const altura = s.painel.offsetHeight;
+    const esquerda = Math.max(8, Math.min(caixa.left, window.innerWidth - largura - 8));
+    let topo = caixa.bottom + 4;
+    if (topo + altura > window.innerHeight - 8) topo = Math.max(8, caixa.top - altura - 4);
+    s.painel.style.left = esquerda + 'px';
+    s.painel.style.top = topo + 'px';
+    s.opcoes[estado.atributo].focus({ preventScroll: true });
+  }
+
+  /** Troca o atributo da perícia (null = voltar ao padrão) e fecha o painel. */
+  function escolherAtributo(idAtributo) {
+    const s = seletorAtributo;
+    const idPericia = s.idPericia;
+    const estado = refs.derivados && refs.derivados.pericias[idPericia];
+    if (!idPericia || !estado) return;
+    const novo = idAtributo === null || idAtributo === estado.atributoPadrao ? null : idAtributo;
+    OP.state.atualizar('pericias.' + idPericia + '.atributo', novo);
+    const definicao = OP.data.pericias.find(function (p) { return p.id === idPericia; });
+    const atual = novo === null ? estado.atributoPadrao : novo;
+    fecharSeletorAtributo(true);
+    if (OP.uiApp && OP.uiApp.anunciar) {
+      OP.uiApp.anunciar((definicao ? definicao.nome : idPericia) + ': atributo ' + nomeAtributo(atual) + (novo === null ? ' (padrão)' : '') + '.');
+    }
+  }
+
   /** Próximo grau ao ativar o botão: 0 → 1 → 2 → 3 → volta (a concedida nunca cai abaixo de Treinado). */
   function proximoGrau(grau, concedida) {
     const ultimo = OP.data.grausTreinamento.length - 1;
@@ -1586,8 +1725,15 @@ window.OP = window.OP || {};
         if (elementos.especialidade.placeholder !== sugestao) elementos.especialidade.placeholder = sugestao;
       }
 
-      const dica = estado.atributoAlterado ? 'Atributo alterado (padrão: ' + siglaAtributo(estado.atributoPadrao) + ')' : '';
-      if (elementos.atributo.title !== dica) elementos.atributo.title = dica;
+      // Sigla do atributo (botão discreto): destaca quando difere do padrão
+      const sigla = siglaAtributo(estado.atributo);
+      definirTexto(elementos.atributo, sigla);
+      const dica = 'Atributo de ' + definicao.nome + ': ' + nomeAtributo(estado.atributo) +
+        (estado.atributoAlterado ? ' (padrão: ' + siglaAtributo(estado.atributoPadrao) + ')' : '') + '. Trocar atributo';
+      if (elementos.atributo.getAttribute('aria-label') !== dica) {
+        elementos.atributo.setAttribute('aria-label', dica);
+        elementos.atributo.title = dica;
+      }
 
       // Ícone de carga: aceso e com o valor no rótulo quando há penalidade (proteções equipadas e/ou sobrecarga)
       if (elementos.carga) {
@@ -3296,6 +3442,7 @@ window.OP = window.OP || {};
     montarRecursos();
     montarDefesa();
     montarPericias();
+    montarSeletorAtributo();
     montarAtaques();
     montarHabilidades();
     montarRituais();

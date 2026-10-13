@@ -5865,11 +5865,6 @@ body.arrastando-arquivo::after {
   font-size: 0.8438rem;
 }
 
-.pericia--atributo-alterado .pericia__atributo .controle {
-  color: var(--acento);
-  border-color: var(--acento-linha);
-}
-
 .pericia__dados output {
   font: 0.7812rem var(--fonte-mono);
   white-space: nowrap;
@@ -5915,8 +5910,145 @@ body.arrastando-arquivo::after {
   box-shadow: 0 1px 0 color-mix(in srgb, var(--cor-realce) 35%, transparent) inset, 0 0 0 3px var(--acento-suave);
 }
 
-.pericia__atributo { width: 92px; }
-.pericia__dados { width: 96px; }
+.pericia__dados { width: 150px; white-space: nowrap; }
+/* Sigla do atributo: texto comum que vira botão (sem moldura); abre o painel de troca */
+.atributo-sigla {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  margin-right: 4px;
+  padding: 0 4px;
+  font: 600 0.7188rem/1 var(--fonte-mono);
+  letter-spacing: 0.08em;
+  color: var(--papel-2);
+  background: transparent;
+  border: 0;
+  border-radius: var(--raio-1);
+  cursor: pointer;
+}
+
+.atributo-sigla:hover {
+  color: var(--acento);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.atributo-sigla[aria-expanded="true"] {
+  color: var(--acento);
+  background: var(--acento-suave);
+}
+
+/* Atributo diferente do padrão: acento fixo + ponto, nunca só a cor */
+.pericia--atributo-alterado .atributo-sigla {
+  color: var(--acento);
+}
+
+.pericia--atributo-alterado .atributo-sigla::after {
+  content: "•";
+  margin-left: 2px;
+}
+
+.seletor-atributo {
+  position: fixed;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 200px;
+  padding: 10px;
+  background: var(--tinta-superficie);
+  border: 1px solid var(--linha-2);
+  border-radius: var(--raio-3);
+  box-shadow: var(--sombra-2);
+}
+
+.seletor-atributo[hidden] {
+  display: none;
+}
+
+.seletor-atributo__titulo {
+  margin: 0;
+  font: 500 var(--t-micro) / 1.2 var(--fonte-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+}
+
+.seletor-atributo__lista {
+  display: grid;
+  gap: 4px;
+}
+
+.seletor-atributo__opcao,
+.seletor-atributo__padrao {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--papel);
+  text-align: left;
+  background: transparent;
+  border: 1px solid var(--linha-1);
+  border-radius: var(--raio-2);
+  cursor: pointer;
+}
+
+.seletor-atributo__opcao strong {
+  min-width: 2.6em;
+  font-family: var(--fonte-mono);
+  letter-spacing: 0.08em;
+}
+
+.seletor-atributo__opcao:hover,
+.seletor-atributo__padrao:hover:not(:disabled) {
+  background: var(--acento-suave);
+  border-color: var(--acento-linha);
+}
+
+.seletor-atributo__opcao[aria-pressed="true"] {
+  color: var(--acento);
+  background: var(--acento-suave);
+  border-color: var(--acento);
+  font-weight: 600;
+}
+
+.seletor-atributo__opcao[aria-pressed="true"]::after {
+  content: "✓";
+  margin-left: auto;
+}
+
+.seletor-atributo__padrao {
+  justify-content: center;
+  font-size: 0.8125rem;
+  color: var(--papel-2);
+  border-style: dashed;
+}
+
+.seletor-atributo__padrao:disabled {
+  color: var(--papel-3);
+  cursor: default;
+}
+
+@media (max-width: 1023px), (pointer: coarse) {
+  .seletor-atributo__opcao,
+  .seletor-atributo__padrao {
+    min-height: 44px;
+  }
+}
+
+/* No celular a sigla ocupa 44 px de altura sem aumentar a linha (a área de toque sobra para cima e para baixo) */
+@container ficha (max-width: 759px) {
+  .atributo-sigla {
+    min-width: 44px;
+    min-height: 44px;
+    margin: -14px 0 -14px -8px;
+    justify-content: center;
+  }
+}
+
 .pericia__grau { width: 52px; text-align: center; }
 .pericia__outros { width: 74px; }
 .pericia__bonus { width: 56px; text-align: right; }
@@ -6023,7 +6155,7 @@ body.arrastando-arquivo::after {
     grid-template-areas:
       "nome  grau outros bonus rolar"
       "dados grau outros bonus rolar"
-      "atr   atr  conc   conc  conc";
+      "conc  conc conc   conc  conc";
     align-items: center;
     gap: 0 6px;
     padding: 4px 8px 4px 12px;
@@ -6054,7 +6186,6 @@ body.arrastando-arquivo::after {
   .pericia__outros { grid-area: outros; width: auto; }
   .pericia__bonus { grid-area: bonus; width: auto; min-width: 2.2em; text-align: right; }
   .pericia__rolar { grid-area: rolar; width: auto; text-align: right; }
-  .pericia__atributo { grid-area: atr; width: auto; padding-top: 6px !important; }
   .pericia__concedida { grid-area: conc; width: auto; text-align: right; white-space: nowrap; padding-top: 6px !important; }
 
   .pericia__nome-conteudo {
@@ -7409,10 +7540,8 @@ body.arrastando-arquivo::after {
   gap: 8px;
 }
 
-/* Perícias na mesa: sem atributo e sem "concedida" (ficam em "Editar perícias"); grau, outros e total sempre aparecem */
-.secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(2),
-.secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(8),
-.secao--pericias[data-modo="mesa"] .pericia > .pericia__atributo,
+/* Perícias na mesa: sem "concedida" (fica em "Editar perícias"); atributo, grau, outros e total sempre aparecem */
+.secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(7),
 .secao--pericias[data-modo="mesa"] .pericia > .pericia__concedida,
 .secao--pericias[data-modo="mesa"] .pericias__pontos,
 .secao--pericias[data-modo="mesa"] #contador-treinamento,

@@ -641,6 +641,44 @@ window.OP = window.OP || {};
         return document.querySelectorAll('.pericia__requer').length + '/' + document.querySelector('.tabela-pericias').textContent.indexOf('requer treinamento');
       }, esperado: '0/-1' },
 
+      // --- Atributo da perícia pela sigla ---
+      { nome: 'E10 · Toda perícia tem a sigla do atributo como botão com rótulo', obtido: function () {
+        return OP.data.pericias.filter(function (p) {
+          const b = document.querySelector('[data-pericia="' + p.id + '"] .atributo-sigla');
+          return !b || !b.textContent || !/^Atributo de /.test(b.getAttribute('aria-label') || '');
+        }).length;
+      }, esperado: 0 },
+      { nome: 'E10 · Sigla → painel → outro atributo → "Voltar ao padrão" (e o painel fecha)', obtido: function () {
+        const ficha = OP.state.ficha;
+        const antes = ficha.pericias.luta.atributo;
+        const sigla = document.querySelector('[data-pericia="luta"] .atributo-sigla');
+        const painel = document.getElementById('seletor-atributo');
+        if (!sigla || !painel) return 'sem botão ou painel';
+        try {
+          OP.state.atualizar('pericias.luta.atributo', null);
+          sigla.click();
+          const abriu = !painel.hidden;
+          painel.querySelector('[data-atributo="agi"]').click();
+          const trocou = OP.state.ficha.pericias.luta.atributo + '/' + painel.hidden;
+          sigla.click();
+          const voltarAtivo = !painel.querySelector('[data-padrao]').disabled;
+          painel.querySelector('[data-padrao]').click();
+          return [abriu, trocou, voltarAtivo, String(OP.state.ficha.pericias.luta.atributo), painel.hidden].join('|');
+        } finally {
+          if (!painel.hidden) painel.querySelector('[data-padrao]').click();
+          OP.state.atualizar('pericias.luta.atributo', antes);
+        }
+      }, esperado: 'true|agi/true|true|null|true' },
+      { nome: 'E10 · Painel do atributo: "Voltar ao padrão" fica desligado quando já é o padrão', obtido: function () {
+        const sigla = document.querySelector('[data-pericia="luta"] .atributo-sigla');
+        const painel = document.getElementById('seletor-atributo');
+        if (OP.state.ficha.pericias.luta.atributo !== null) return 'luta com atributo trocado';
+        sigla.click();
+        const desligado = painel.querySelector('[data-padrao]').disabled;
+        sigla.click();
+        return desligado + '/' + painel.hidden;
+      }, esperado: 'true/true' },
+
       { nome: 'E10 · Existe um único <h1>', obtido: function () { return document.querySelectorAll('h1').length; }, esperado: 1 },
       { nome: 'E10 · Títulos h2 e h3 sem pular nível', obtido: function () { return OP.ui.auditarTitulos().map(function (t) { return t.de + '→' + t.para; }).join(','); }, esperado: '' },
       { nome: 'E10 · Landmarks: header, nav, main, aside e footer existem', obtido: function () {

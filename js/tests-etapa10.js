@@ -889,6 +889,42 @@ window.OP = window.OP || {};
         const r = document.getElementById('anunciador');
         return Boolean(r) && r.getAttribute('aria-live') === 'polite' && r.classList.contains('visualmente-oculto');
       }, esperado: true },
+      { nome: 'E13 · Teste de atributo: FOR 3 rola 3d20 e fica com o maior, sem bônus', obtido: function () {
+        const f = OP.state.completarPadroes(fichaValida());
+        f.atributos['for'].base = 3; f.atributos['for'].bonus = 0;
+        const t = OP.calc.testeAtributo(f, 'for', 0);
+        return [t.dados.qtd, t.dados.modo, t.bonus].join('|');
+      }, esperado: '3|maior|0' },
+      { nome: 'E13 · Teste de atributo: atributo 0 rola 2d20 e fica com o menor', obtido: function () {
+        const f = OP.state.completarPadroes(fichaValida());
+        f.atributos.int.base = 0; f.atributos.int.bonus = 0;
+        const t = OP.calc.testeAtributo(f, 'int', 0);
+        return [t.dados.qtd, t.dados.modo].join('|');
+      }, esperado: '2|menor' },
+      { nome: 'E13 · rolarAtributo: título "Teste de Força", subtipo atributo e total = d20 escolhido', obtido: function () {
+        const f = OP.state.completarPadroes(fichaValida());
+        const r = OP.rolagens.rolarAtributo(f, 'for', {});
+        return [r.ok, r.titulo, r.subtipo, r.total === r.escolhido].join('|');
+      }, esperado: 'true|Teste de Força|atributo|true' },
+      { nome: 'E13 · rolarAtributo com atributo desconhecido não lança e devolve ok false', obtido: function () { return OP.rolagens.rolarAtributo(OP.state.completarPadroes(fichaValida()), 'xyz', {}).ok; }, esperado: false },
+      { nome: 'E13 · Cada um dos 5 atributos tem botão de rolar com nome acessível', obtido: function () {
+        const botoes = document.querySelectorAll('.atributo__rolar[data-rolar-atributo]');
+        return botoes.length + '|' + Array.prototype.every.call(botoes, function (b) { return /^Rolar teste de /.test(b.getAttribute('aria-label')); });
+      }, esperado: '5|true' },
+      { nome: 'E13 · Clicar no d20 de um atributo mostra "Teste de ..." na faixa de resultado', obtido: function () {
+        document.querySelector('[data-rolar-atributo="agi"]').click();
+        return document.getElementById('rr-titulo').textContent;
+      }, esperado: 'Teste de Agilidade' },
+      { nome: 'E13 · O trilho do agente é um botão que leva à página Agente', obtido: function () {
+        const antes = OP.uiPaginas.atual();
+        const botao = document.getElementById('trilho-agente');
+        try {
+          botao.click();
+          return botao.tagName + '|' + OP.uiPaginas.atual();
+        } finally {
+          OP.uiPaginas.ir(antes, { rolar: false, anunciar: false, foco: false });
+        }
+      }, esperado: 'BUTTON|agente' },
       { nome: 'E10 · Diálogos: todos têm título (aria-labelledby) e são <dialog>', obtido: function () {
         return Array.prototype.filter.call(document.querySelectorAll('dialog'), function (d) {
           const alvo = document.getElementById(d.getAttribute('aria-labelledby') || '');

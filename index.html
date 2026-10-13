@@ -428,7 +428,7 @@
         <aside class="trilho" id="trilho-vitais" aria-label="Painel do agente">
           <div class="trilho__corpo">
             <!-- Só no celular e no tablet: quem é o agente desta ficha (no computador a faixa do agente já mostra) -->
-            <p class="trilho__agente" id="trilho-agente"></p>
+            <button type="button" class="trilho__agente" id="trilho-agente" aria-label="Abrir a página Agente (nome, classe e NEX)"></button>
             <section class="hud" aria-labelledby="hud-titulo">
               <h2 class="hud__titulo" id="hud-titulo">Vitais</h2>
               <div class="hud__vitais">
@@ -568,7 +568,7 @@
             <div class="pericias__ferramentas">
               <label class="busca">
                 <span class="visualmente-oculto">Buscar perícia</span>
-                <input type="search" id="busca-pericias" placeholder="Buscar perícia…" autocomplete="off" data-filtro="busca">
+                <input type="search" id="busca-pericias" placeholder="Buscar…" autocomplete="off" data-filtro="busca">
               </label>
               <label class="caixa">
                 <input type="checkbox" id="filtro-treinadas" data-filtro="treinadas">

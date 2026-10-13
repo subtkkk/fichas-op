@@ -248,6 +248,8 @@ window.OP = window.OP || {};
           DADO_D20 +
           '<output data-saida="atributos.' + escaparHtml(id) + '" aria-label="Total de ' + escaparHtml(atributo.nome) + '">0</output>' +
           '<span class="atributo__total-rotulo" aria-hidden="true">total</span>' +
+          '<button type="button" class="atributo__rolar" data-rolar-atributo="' + escaparHtml(id) + '"' +
+            ' aria-label="Rolar teste de ' + escaparHtml(atributo.nome) + '" title="Rolar teste de ' + escaparHtml(atributo.nome) + '"></button>' +
         '</div>' +
         htmlCampoPasso({
           id: 'atr-' + id + '-base', caminho: 'atributos.' + id + '.base', area: 'base',
@@ -1270,6 +1272,12 @@ window.OP = window.OP || {};
     const rolarPericia = evento.target.closest('[data-rolar-pericia]');
     if (rolarPericia) {
       rolarPericiaNaTela(rolarPericia.dataset.rolarPericia);
+      return;
+    }
+    const rolarAtributo = evento.target.closest('[data-rolar-atributo]');
+    if (rolarAtributo) {
+      mostrarResultado(OP.rolagens.rolarAtributo(OP.state.ficha, rolarAtributo.dataset.rolarAtributo, opcoesRolagem()));
+      destacarLinhaRolada('[data-atributo="' + rolarAtributo.dataset.rolarAtributo + '"]');
       return;
     }
     const rolarAtaque = evento.target.closest('[data-rolar-ataque]');
@@ -2402,6 +2410,7 @@ window.OP = window.OP || {};
     definirTexto(refs.rrDetalhe, resumoHistorico(resultado));
     definirTexto(refs.rrAlvo, alvo);
     refs.rrAlvo.hidden = !alvo;
+    refs.rrAlvo.setAttribute('data-resultado', resultado.acertou === true ? 'acerto' : (resultado.acertou === false ? 'falha' : ''));
     refs.rrCritico.hidden = resultado.critico !== true;
     refs.rrCaixa.setAttribute('data-critico', resultado.critico === true ? 'sim' : 'nao');
     refs.rrCaixa.setAttribute('data-vazio', 'nao');
@@ -2457,6 +2466,17 @@ window.OP = window.OP || {};
       resultado.aviso = 'Perícia somente para treinados, e este agente não é treinado nela.';
     }
     mostrarResultado(resultado);
+    destacarLinhaRolada('[data-pericia="' + idPericia + '"]');
+  }
+
+  /** Brilho curto na linha (ou no d20) que acabou de rolar: o olho acha de onde veio o número. */
+  function destacarLinhaRolada(seletor) {
+    const linha = document.querySelector(seletor);
+    if (!linha) return;
+    linha.classList.remove('rolou-agora');
+    void linha.offsetWidth;
+    linha.classList.add('rolou-agora');
+    linha.addEventListener('animationend', function () { linha.classList.remove('rolou-agora'); }, { once: true });
   }
 
   function acharAtaque(idAtaque) {

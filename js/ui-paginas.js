@@ -366,6 +366,8 @@ window.OP = window.OP || {};
       if (aba) ir(aba.getAttribute('data-ir-pagina'), { anunciar: false });
     });
     refs.abas.addEventListener('keydown', aoTeclarNasAbas);
+    const trilhoAgente = document.getElementById('trilho-agente');
+    if (trilhoAgente) trilhoAgente.addEventListener('click', function () { ir('agente', { foco: true }); });
     refs.dockSetas.forEach(function (seta) {
       seta.addEventListener('click', function () { mudarPor(Number(seta.getAttribute('data-pagina-delta'))); });
     });

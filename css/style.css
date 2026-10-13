@@ -3500,25 +3500,8 @@ body.arrastando-arquivo::after {
 }
 
 /* Marcas de 10% (mostrador) */
-.vital[data-nivel="zero"] .vital__barra {
-  height: auto;
-  overflow: visible;
-  background: none;
-}
-
 .vital[data-nivel="zero"] .vital__barra .barra__preenchimento {
   display: none;
-}
-
-.vital[data-nivel="zero"] .vital__barra::after {
-  content: "zerado";
-  position: static;
-  display: block;
-  font: 600 0.6875rem/1.2 var(--fonte-mono);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--erro);
-  background: none;
 }
 
 .vital__barra::after {
@@ -10726,7 +10709,7 @@ kbd {
   .trilho__corpo {
     gap: 0;
     padding: 10px var(--margem-pagina);
-    background: var(--vidro-reflexo), color-mix(in srgb, var(--tinta-1) 90%, transparent);
+    background: var(--vidro-reflexo), var(--tinta-1);
     border-width: 0 0 1px;
     border-radius: 0;
     box-shadow: 0 12px 30px -18px color-mix(in srgb, var(--cor-sombra) 90%, transparent);
@@ -11422,7 +11405,7 @@ kbd {
     margin: 0 calc(-1 * var(--margem-pagina));
     padding-right: var(--margem-pagina);
     padding-left: var(--margem-pagina);
-    background: color-mix(in srgb, var(--tinta-1) 97%, transparent);
+    background: var(--tinta-1);
     border-bottom: 1px solid var(--acento-linha);
     box-shadow: 0 10px 24px -18px color-mix(in srgb, var(--cor-sombra) 90%, transparent);
   }
@@ -12070,5 +12053,335 @@ body[data-vista="ficha"] .rodape {
 
   .zona--esq .secao--atributos {
     padding-bottom: 4px;
+  }
+}
+
+/* ==========================================================================
+   21. REVISÃO DE DESIGN (rodada 3) — fundos opacos, atributo rolável, edição compacta,
+   toque no tablet, rótulos legíveis e faixa de resultado enxuta
+   ========================================================================== */
+
+/* ---- Cromo fixo opaco: o conteúdo não aparece por trás ---- */
+@media (max-width: 1279px) {
+  .app-barra {
+    background: var(--tinta-1);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  body[data-vista="ficha"] .dock {
+    background: var(--tinta-1);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* ---- Teste puro de atributo: o d20 é o botão ---- */
+.atributo__rolar {
+  position: absolute;
+  inset: -4px;
+  z-index: 2;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.atributo__rolar:hover {
+  background: color-mix(in srgb, var(--acento) 14%, transparent);
+}
+
+.atributo__rolar:active {
+  background: color-mix(in srgb, var(--acento) 26%, transparent);
+}
+
+.secao--atributos:not([data-modo="mesa"]) .atributo__rolar {
+  display: none;
+}
+
+/* ---- Quem é o agente (celular): vira atalho para a página Agente ---- */
+@media (max-width: 1279px) {
+button.trilho__agente {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+button.trilho__agente::after {
+  content: "›";
+  flex: none;
+  margin-left: auto;
+  font-size: 1.25rem;
+  color: var(--papel-3);
+}
+}
+
+/* ---- Edição de atributos: cinco linhas compactas, nunca o pentágono ---- */
+.secao--atributos[data-modo="edicao"] .grade-atributos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.secao--atributos[data-modo="edicao"] .atributo {
+  grid-template-columns: 46px minmax(0, 1fr) auto auto;
+  grid-template-areas: "total cab base bonus";
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+}
+
+.secao--atributos[data-modo="edicao"] .atributo__total {
+  width: 46px;
+}
+
+.secao--atributos[data-modo="edicao"] .atributo__total output {
+  font-size: 1rem;
+}
+
+.secao--atributos[data-modo="edicao"] .atributo__campo {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.secao--atributos[data-modo="edicao"] .atributo__campo label {
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+}
+
+.secao--atributos[data-modo="edicao"] .atributo__sigla {
+  font-size: 1.125rem;
+}
+
+.secao--atributos[data-modo="edicao"] .atributo__nome {
+  font-size: 0.625rem;
+}
+
+@container atributos (max-width: 420px) {
+  .secao--atributos[data-modo="edicao"] .atributo {
+    grid-template-columns: 46px minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "total cab   cab"
+      "base  base  bonus";
+  }
+}
+
+/* No computador, editando atributos, os vitais sobem para o topo da coluna (nunca saem da tela) */
+@media (min-width: 1280px) {
+  .zona--esq:has(.secao--atributos[data-modo="edicao"]) .trilho {
+    order: -1;
+  }
+}
+
+/* ---- Telas de toque com layout de computador (tablet grande): alvos de 44px ---- */
+@media (pointer: coarse) and (min-width: 1280px) {
+  .vital__botao,
+  .ficha-layout .botao-icone,
+  .ficha-layout .atributo-sigla {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .ficha-layout .pericia {
+    min-height: 48px;
+  }
+}
+
+/* ---- Rótulos de dados que se consultam: nunca abaixo de 12px ---- */
+.ficha-layout .hud__derivado dt,
+.ficha-layout .zona--esq .hud__derivado dt,
+.ficha-layout .atributo__nome,
+.ficha-layout .recurso__nome,
+.ficha-layout .recurso__info,
+.ficha-layout .recurso__detalhe,
+.ficha-layout .reacao__nome,
+.ficha-layout .limite__rotulo,
+.ficha-layout .teste__dados,
+.ficha-layout .legenda,
+.ficha-layout .zona--per .legenda {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+}
+
+.ficha-layout .selo-cond {
+  font-size: 0.6875rem;
+}
+
+/* ---- Faixa de resultado vazia: uma linha fina ---- */
+@media (max-width: 1279px) {
+  .resultado-rapido[data-vazio="sim"] {
+    min-height: 34px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+
+  .resultado-rapido[data-vazio="sim"] .resultado-rapido__total {
+    font-size: 1.125rem;
+  }
+
+  .resultado-rapido[data-vazio="sim"] #rr-detalhe {
+    display: none;
+  }
+
+  .resultado-rapido[data-vazio="sim"] .resultado-rapido__texto strong {
+    font-weight: 500;
+    color: var(--papel-3);
+  }
+}
+
+/* ---- Resultado: total maior e nome do teste legível ---- */
+@media (min-width: 1280px) {
+  .resultado-rapido__total {
+    font-size: 3rem;
+  }
+}
+
+@media (max-width: 1279px) {
+  .resultado-rapido__total {
+    font-size: 2.25rem;
+  }
+
+  .resultado-rapido__texto span {
+    font-size: 0.8125rem;
+  }
+}
+
+/* Falha e acerto com palavra e cor na faixa */
+.resultado-rapido__texto .resultado-rapido__alvo[data-resultado="falha"] { color: var(--erro); }
+.resultado-rapido__texto .resultado-rapido__alvo[data-resultado="acerto"] { color: var(--ok); }
+
+/* ---- Responsividade: campos sem corte e linhas que não se esticam ---- */
+@media (min-width: 1280px) {
+  /* Classe com mais espaço (o nome não corta) */
+  .zona--info .secao--dossie .grade-campos {
+    grid-template-columns: 72px minmax(0, 0.6fr) minmax(0, 0.5fr) minmax(0, 1.25fr) minmax(0, 1.15fr) minmax(80px, 0.7fr);
+  }
+}
+
+@media (min-width: 700px) and (max-width: 1279px) {
+  .tabela-pericias {
+    max-width: 680px;
+    margin-inline: auto;
+  }
+}
+
+@media (max-width: 400px) {
+  /* Testes em uma coluna: o nome do teste aparece inteiro */
+  .ficha-layout .grade-testes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ficha-layout .resumo-derivados output {
+    white-space: nowrap;
+  }
+}
+
+.resumo-derivados output,
+.hud__derivado output {
+  white-space: nowrap;
+}
+
+/* ---- Feedback da rolagem: a linha rolada e o número pulsam um instante ---- */
+@media (prefers-reduced-motion: no-preference) {
+  .rolou-agora,
+  .pericia.rolou-agora > td,
+  .pericia.rolou-agora > th {
+    animation: rolou-agora 900ms var(--curva-saida);
+  }
+
+  @keyframes rolou-agora {
+    from { background-color: var(--acento-suave); box-shadow: 0 0 0 2px var(--acento-linha); }
+  }
+
+  .resultado-rapido--novo .resultado-rapido__total {
+    animation: total-pulo 420ms var(--curva-saida);
+  }
+
+  @keyframes total-pulo {
+    from { transform: scale(1.4); }
+  }
+}
+
+/* ---- Central sem agentes: o botão de criar fica acima da dobra ---- */
+.vista--central[data-vazia="sim"] .central {
+  padding-top: 28px;
+}
+
+.vista--central[data-vazia="sim"] .central__heroi {
+  min-height: 0;
+}
+
+.vista--central[data-vazia="sim"] .central__selo {
+  width: min(100%, 300px);
+}
+
+.vista--central[data-vazia="sim"] .central__grade {
+  margin-top: 8px;
+}
+
+.vista--central[data-vazia="sim"] #central-continuar > .estado-vazio__conteudo {
+  padding-top: 28px;
+  padding-bottom: 28px;
+}
+
+@media (max-width: 700px) {
+  .vista--central[data-vazia="sim"] .central__selo {
+    display: none;
+  }
+
+  .vista--central[data-vazia="sim"] .central__lead {
+    margin-top: 12px;
+  }
+
+  .vista--central[data-vazia="sim"] #central-continuar > .estado-vazio__conteudo {
+    padding: 20px 16px;
+  }
+
+  .vista--central[data-vazia="sim"] .estado-vazio__selo {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 2px;
+  }
+
+  .vista--central[data-vazia="sim"] .estado-vazio__icone {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* Com 12px nos rótulos, a coluna da esquerda aperta as linhas para continuar cabendo sem rolar */
+@media (min-width: 1280px) {
+  .ficha-layout .zona--esq .teste__dados,
+  .ficha-layout .zona--esq .hud__derivado dt {
+    line-height: 1.05;
+  }
+}
+
+@media (min-width: 1280px) and (max-height: 740px) {
+  .zona--esq {
+    gap: 5px;
+  }
+}
+
+@media (min-width: 1280px) and (max-height: 740px) {
+  .zona--esq .secao--testes {
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+}
+
+@media (min-width: 1280px) and (max-height: 740px) {
+  .ficha-layout .zona--info .secao--dossie.secao {
+    padding-top: 8px;
+    padding-bottom: 8px;
   }
 }

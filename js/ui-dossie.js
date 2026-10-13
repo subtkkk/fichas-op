@@ -200,7 +200,7 @@ window.OP = window.OP || {};
     const nivel = classe && classe.unidadeProgressao === 'estagio'
       ? 'Estágio ' + OP.calc.numero(ficha.identificacao.estagio)
       : 'NEX ' + OP.calc.numero(ficha.identificacao.nex) + '%';
-    definirTexto(refs.trilhoAgente, [nome || 'Agente sem nome', classe ? classe.nome : 'sem classe', nivel].join(' · '));
+    definirTexto(refs.trilhoAgente, [nome || 'Sem nome', classe ? classe.nome : 'escolha a classe', nivel].join(' · '));
     // Outra ficha: o primeiro valor dela não é uma variação
     if (ficha.id !== idDesenhado) Object.keys(ultimoValor).forEach(function (id) { delete ultimoValor[id]; });
     desenharVitais(derivados);

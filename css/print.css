@@ -340,12 +340,12 @@ input[type="checkbox"] {
 
 .secao__info,
 .secao__info output {
-  font-size: 7.5pt;
+  font-size: 8pt;
 }
 
 .subtitulo {
   margin: 4pt 0 2pt;
-  font-size: 7pt;
+  font-size: 8pt;
 }
 
 /* Página 2 começa nos ataques */
@@ -390,7 +390,7 @@ input[type="checkbox"] {
 
 .topo__subtitulo {
   margin-top: 0;
-  font-size: 7pt;
+  font-size: 8pt;
 }
 
 /* Rótulos pequenos */
@@ -404,7 +404,7 @@ input[type="checkbox"] {
 .descricao__campo label,
 .item__mini span {
   margin: 0;
-  font-size: 6.5pt;
+  font-size: 8pt;
   letter-spacing: 0.06em;
 }
 
@@ -460,7 +460,7 @@ input[type="checkbox"] {
 }
 
 .atributo__nome {
-  font-size: 7pt;
+  font-size: 8pt;
 }
 
 .atributo__total {
@@ -529,7 +529,7 @@ input[type="checkbox"] {
 .recurso__nome,
 .recurso__info,
 .recurso__info output {
-  font-size: 7pt;
+  font-size: 8pt;
 }
 
 .recurso__info {
@@ -566,7 +566,7 @@ input[type="checkbox"] {
 
 .recurso__composicao {
   flex-basis: 100%;
-  font-size: 7pt;
+  font-size: 8pt;
 }
 
 .recurso__detalhe {
@@ -602,7 +602,7 @@ input[type="checkbox"] {
 .painel__info,
 .painel__info output {
   margin-top: 0;
-  font-size: 7pt;
+  font-size: 8pt;
 }
 
 .painel__valor {
@@ -649,7 +649,7 @@ input[type="checkbox"] {
 
 .aviso-sobrecarga {
   padding: 1pt 4pt;
-  font-size: 7.5pt;
+  font-size: 8pt;
 }
 
 .grade-reacoes {
@@ -663,7 +663,7 @@ input[type="checkbox"] {
 }
 
 .reacao__nome {
-  font-size: 7pt;
+  font-size: 8pt;
 }
 
 .reacao__valor {
@@ -671,7 +671,7 @@ input[type="checkbox"] {
 }
 
 .reacao__detalhe {
-  font-size: 7pt;
+  font-size: 8pt;
 }
 
 .grade-testes {
@@ -696,7 +696,7 @@ input[type="checkbox"] {
 }
 
 .teste__dados {
-  font-size: 7pt;
+  font-size: 8pt;
 }
 
 .resistencias {
@@ -706,7 +706,7 @@ input[type="checkbox"] {
 
 .resistencias summary {
   padding: 0;
-  font-size: 7pt;
+  font-size: 8pt;
 }
 
 .resistencias__corpo {
@@ -723,12 +723,12 @@ input[type="checkbox"] {
 }
 
 .resistencias__grupo legend {
-  font-size: 6.5pt;
+  font-size: 8pt;
 }
 
 .resistencia {
   padding: 0;
-  font-size: 7.5pt;
+  font-size: 8pt;
 }
 
 /* Perícias: volta a ser tabela (a regra de celular a transforma em cartões) */
@@ -767,7 +767,7 @@ input[type="checkbox"] {
 
 .tabela-pericias thead th {
   padding: 1pt 3pt;
-  font-size: 6.5pt;
+  font-size: 8pt;
 }
 
 .tabela-pericias .pericia > td,
@@ -818,7 +818,7 @@ input[type="checkbox"] {
 }
 
 .pericia__dados output {
-  font-size: 7.5pt;
+  font-size: 8pt;
   line-height: 1.1;
 }
 
@@ -949,11 +949,11 @@ input[type="checkbox"] {
 
 .selo-fonte {
   padding: 0 4pt;
-  font-size: 6.5pt;
+  font-size: 8pt;
 }
 
 .habilidade__meta {
-  font-size: 7.5pt;
+  font-size: 8pt;
 }
 
 .habilidade__detalhes {
@@ -989,7 +989,7 @@ input[type="checkbox"] {
 }
 
 .grupo-ritual__titulo {
-  font-size: 7.5pt;
+  font-size: 8pt;
 }
 
 .grupo-ritual__lista {
@@ -1069,7 +1069,7 @@ input[type="checkbox"] {
 }
 
 .forma__nome {
-  font-size: 7pt;
+  font-size: 8pt;
 }
 
 /* Inventário: itens em linhas, com cabeçalho */
@@ -1088,7 +1088,7 @@ input[type="checkbox"] {
 }
 
 .limite__rotulo {
-  font-size: 6.5pt;
+  font-size: 8pt;
 }
 
 .limite__valor {
@@ -1112,7 +1112,7 @@ input[type="checkbox"] {
 .itens__cabecalho {
   display: grid;
   padding: 0 0 1pt;
-  font-size: 6.5pt;
+  font-size: 8pt;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1281,7 +1281,7 @@ textarea::placeholder {
 /* Lembretes das condições: uma linha curta, sem o estilo da tela */
 .cond-cartao__lembretes {
   margin: 0;
-  font-size: 7.5pt;
+  font-size: 8pt;
 }
 
 .cond-cartao__campos {
@@ -1445,7 +1445,7 @@ html[data-diario-impressao="sim"] .bio__diario {
   min-height: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
-  font-size: 7.5pt !important;
+  font-size: 8pt !important;
   color: #000 !important;
   background: none !important;
   border: 0 !important;
@@ -1473,4 +1473,23 @@ html[data-diario-impressao="sim"] .bio__diario {
 
 .pericia__dados {
   white-space: nowrap;
+}
+
+/* ---- Rodada 3: sem duplicar a Defesa, sem triângulo do <details>, botão do agente só texto ---- */
+@media print {
+  .resumo-derivados,
+  .trilho__agente,
+  .atributo__rolar {
+    display: none !important;
+  }
+
+  details > summary {
+    list-style: none;
+  }
+
+  details > summary::-webkit-details-marker,
+  details > summary::marker {
+    display: none;
+    content: "";
+  }
 }

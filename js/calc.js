@@ -1093,6 +1093,12 @@ window.OP = window.OP || {};
     };
   }
 
+  /** Teste puro de um atributo (sem perícia): { dados: { qtd, modo }, bonus: 0 }. As condições que mexem no atributo entram. */
+  function testeAtributo(ficha, idAtributo, modDados) {
+    const dadosCond = modificadorDadosTeste(modificadoresCondicoes(ficha), { atributo: idAtributo });
+    return { dados: resolverReserva(totalAtributo(ficha, idAtributo), numero(modDados) + dadosCond), bonus: 0 };
+  }
+
   /**
    * Teste de ataque: o atributo vem da perícia do ataque (padrão ou o escolhido
    * na ficha) e bonus = periciaBonus(perícia) + testeBonus do ataque.
@@ -2684,6 +2690,7 @@ window.OP = window.OP || {};
     resolverReserva: resolverReserva,
     dadosPorAtributo: dadosPorAtributo,
     testePericia: testePericia,
+    testeAtributo: testeAtributo,
     ataqueTeste: ataqueTeste,
     ehCritico: ehCritico,
     estadoAtaques: estadoAtaques,

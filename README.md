@@ -32,7 +32,7 @@ Precisa de um navegador atual (Chrome, Edge, Safari ou Firefox recentes).
 
 **A ficha**
 - Identificação, origem, classe e trilha com progressão por NEX (ou estágio, no Sobrevivente). As fontes de origens e trilhas podem ser escolhidas por livro.
-- Atributos num mostrador com um d20 para cada um. Base, bônus e a distribuição de pontos (com "modo livre") ficam atrás de "Editar atributos".
+- Atributos num mostrador com um d20 para cada um. Base, bônus e a distribuição de pontos (com "modo livre") ficam atrás de "Editar atributos". Na mesa, tocar no d20 rola o teste puro daquele atributo (com as condições que o afetam).
 - Recursos (PV, PE, SAN) com o cálculo do máximo à vista e perda permanente de Sanidade.
 - Defesa, reações, deslocamento e resistências a dano.
 - Perícias numa linha só: ícones (somente treinada, carga, kit, concedida), nome, sigla do atributo (com uma seta para baixo quando o teste rola o menor dado), **grau** (botão com chevrons: um = Treinado, dois = Veterano, três = Expert; clique para trocar, só em "Editar perícias"; fora dela é só um indicador), **outros** bônus, **total** e rolar. A sigla do atributo é um botão discreto: clique nela para trocar o atributo da perícia (ou "Voltar ao padrão"); trocado, ela fica em destaque com um ponto. Na mesa, o grau aparece só como marcador (T, V ou E) e o campo "outros" some; grau, "outros" e Concedida mudam em "Editar perícias". Perícias que exigem kit (Crime, Enganação, Medicina, Tecnologia) sofrem −5 no bônus sem o kit delas no inventário; o kit limpa a penalidade (valor em `data/config.js`, `penalidadeSemKit`).
@@ -128,7 +128,7 @@ fonts/              Fontes locais (Cormorant Garamond e IBM Plex, licença OFL)
 
 - HTML, CSS e JavaScript puro, sem dependências e sem etapa de build: edite e recarregue.
 - Os scripts compartilham o objeto global `OP`. O fluxo é `OP.state.atualizar` → `OP.calc` → `OP.ui.desenhar`. As telas ligam os campos por atributos (`data-campo`, `data-saida`, `data-passo`…).
-- **Testes das fórmulas:** abra o site e rode `OP.runTests()` no console do navegador. O esperado é `{ total: 499, aprovados: 499, falhas: 0 }`. Em janela estreita (até 480 px) o teste de layout também confere a rolagem horizontal. As auditorias ficam em `OP.ui.auditarLayout()`, `auditarContraste(tema)`, `auditarAcessibilidade()`, `auditarTitulos()` e `auditarAlvosToque()`.
+- **Testes das fórmulas:** abra o site e rode `OP.runTests()` no console do navegador. O esperado é `{ total: 506, aprovados: 506, falhas: 0 }`. Em janela estreita (até 480 px) o teste de layout também confere a rolagem horizontal. As auditorias ficam em `OP.ui.auditarLayout()`, `auditarContraste(tema)`, `auditarAcessibilidade()`, `auditarTitulos()` e `auditarAlvosToque()`.
 - **Cores:** o CSS da tela não tem cor fixa fora de variáveis. As paletas (`--cor-*`, em `#rrggbb`) ficam no começo do `css/style.css`: escuro em `:root`, claro em `[data-tema="claro"]` (e no `@media (prefers-color-scheme: light)` do modo Automático) e alto contraste em `[data-tema="contraste"]`. O `css/print.css` mantém fundo branco e texto preto, qualquer que seja o tema.
 - **Compatibilidade:** fichas salvas e arquivos exportados de versões anteriores precisam continuar abrindo. Mudanças no modelo passam pela migração em `js/state.js`.
 

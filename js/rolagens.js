@@ -84,6 +84,19 @@ window.OP = window.OP || {};
     return resultado;
   }
 
+  /** Teste puro de atributo ("Teste de Força"): só os d20, sem bônus de perícia. */
+  function rolarAtributo(ficha, idAtributo, opcoes) {
+    const atributo = OP.data.atributos.find(function (a) { return a.id === idAtributo; });
+    if (!atributo) return { ok: false, tipo: 'teste', titulo: 'Atributo', erro: 'Atributo desconhecido.' };
+    const o = normalizarOpcoes(opcoes);
+    const teste = OP.calc.testeAtributo(ficha, idAtributo, o.modDados);
+    const partes = [];
+    if (o.bonusExtra) partes.push({ rotulo: 'extra', valor: o.bonusExtra });
+    const resultado = montarTeste('Teste de ' + atributo.nome, teste.dados, partes, o);
+    resultado.subtipo = 'atributo';
+    return resultado;
+  }
+
   function tituloAtaque(ataque) {
     return 'Ataque: ' + (String(ataque.nome || '').trim() || 'sem nome');
   }
@@ -286,6 +299,7 @@ window.OP = window.OP || {};
 
   OP.rolagens = {
     rolarPericia: rolarPericia,
+    rolarAtributo: rolarAtributo,
     rolarAtaque: rolarAtaque,
     rolarDano: rolarDano,
     rolarLivre: rolarLivre,

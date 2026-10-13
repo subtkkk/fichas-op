@@ -1479,6 +1479,9 @@ html[data-diario-impressao="sim"] .bio__diario {
 @media print {
   .resumo-derivados,
   .trilho__agente,
+  .atributos__dica,
+  .aviso-classe,
+  .rolagens__voltar,
   .atributo__rolar {
     display: none !important;
   }
@@ -1547,4 +1550,28 @@ html[data-diario-impressao="sim"] .bio__diario {
       color: #444;
     }
   }
+}
+
+/* ---- Rodada 6: perícias preenchem a primeira página; cabeçalhos nunca ficam órfãos ---- */
+.tabela-pericias {
+  break-inside: auto;
+}
+
+.tabela-pericias .pericia {
+  break-inside: avoid;
+}
+
+.tabela-pericias thead {
+  display: table-header-group;
+}
+
+.subtitulo,
+.itens__cabecalho,
+.secao__titulo,
+.secao__cabecalho {
+  break-after: avoid;
+}
+
+.itens__cabecalho {
+  break-inside: avoid;
 }

@@ -612,6 +612,35 @@ window.OP = window.OP || {};
       { nome: 'E10 · OP.ui.auditarAcessibilidade() com a ficha renderizada → lista vazia', obtido: function () {
         return OP.ui.auditarAcessibilidade().map(function (p) { return p.tipo + ' ' + OP.ui.descrever(p.elemento) + ' (' + p.motivo + ')'; }).join('; ');
       }, esperado: '' },
+      // --- Linha de perícia compacta (botão de grau) ---
+      { nome: 'E10 · Toda perícia tem botão de grau com rótulo e nível', obtido: function () {
+        return OP.data.pericias.filter(function (p) {
+          const b = document.querySelector('[data-pericia="' + p.id + '"] .botao-grau');
+          return !b || !/^Grau de /.test(b.getAttribute('aria-label') || '') || !/^[0-3]$/.test(b.dataset.nivel);
+        }).length;
+      }, esperado: 0 },
+      { nome: 'E10 · Botão de grau: Destreinado → Treinado → Veterano → Expert → Destreinado', obtido: function () {
+        const ficha = OP.state.ficha;
+        const botao = document.querySelector('[data-pericia="luta"] .botao-grau');
+        const antes = ficha.pericias.luta.grau;
+        const concedida = OP.calc.estadoPericia(ficha, 'luta').concedidaPor;
+        if (!botao || concedida) return 'sem botão ou concedida';
+        try {
+          OP.state.atualizar('pericias.luta.grau', 0);
+          const graus = [];
+          for (let i = 0; i < 4; i++) {
+            botao.click();
+            graus.push(OP.state.ficha.pericias.luta.grau);
+          }
+          return graus.join(',');
+        } finally {
+          OP.state.atualizar('pericias.luta.grau', antes);
+        }
+      }, esperado: '1,2,3,0' },
+      { nome: 'E10 · Perícia "somente treinada" sem grau pede treinamento só por símbolo (sem texto "requer treinamento")', obtido: function () {
+        return document.querySelectorAll('.pericia__requer').length + '/' + document.querySelector('.tabela-pericias').textContent.indexOf('requer treinamento');
+      }, esperado: '0/-1' },
+
       { nome: 'E10 · Existe um único <h1>', obtido: function () { return document.querySelectorAll('h1').length; }, esperado: 1 },
       { nome: 'E10 · Títulos h2 e h3 sem pular nível', obtido: function () { return OP.ui.auditarTitulos().map(function (t) { return t.de + '→' + t.para; }).join(','); }, esperado: '' },
       { nome: 'E10 · Landmarks: header, nav, main, aside e footer existem', obtido: function () {

@@ -1663,9 +1663,6 @@ textarea.controle {
 
 /* Selos (etiquetas pequenas) */
 .selo-fonte,
-.pericia__fonte,
-.pericia__requer,
-.pericia__carga,
 .selo {
   display: inline-flex;
   align-items: center;
@@ -5730,6 +5727,10 @@ body.arrastando-arquivo::after {
   color: var(--papel-3);
 }
 
+.icone[hidden] {
+  display: none;
+}
+
 .icone svg {
   width: 100%;
   height: 100%;
@@ -5741,6 +5742,10 @@ body.arrastando-arquivo::after {
 }
 
 .icone--treinada { color: var(--acento); }
+.icone--treinada.icone--alerta { color: var(--aviso); }
+.icone--concedida { color: var(--ok); }
+.icone--carga.icone--ativo { color: var(--erro); }
+.icone--carga.icone--ativo svg { fill: currentColor; fill-opacity: 0.25; }
 .icone--kit { color: var(--san); }
 
 .icone--kit.icone--ativo svg {
@@ -5791,18 +5796,21 @@ body.arrastando-arquivo::after {
   background: color-mix(in srgb, var(--cor-texto) 2.5%, transparent);
 }
 
+/* Ícones (somente treinada, carga, kit, concedida) antes do nome; 3 vagas fixas alinham os nomes */
 .pericia__indicadores {
-  width: 70px;
-  padding-left: 12px !important;
-  white-space: nowrap;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 3px;
+  min-width: 51px;
 }
 
-.pericia--treinada > .pericia__indicadores {
+.pericia--treinada > .pericia__nome {
   box-shadow: inset 2px 0 0 var(--acento);
 }
 
-.pericia__indicadores .icone + .icone {
-  margin-left: 4px;
+.pericia__nome {
+  padding-left: 12px !important;
 }
 
 .pericia__nome-conteudo {
@@ -5828,25 +5836,12 @@ body.arrastando-arquivo::after {
   font-size: 0.8125rem;
 }
 
-.pericia__fonte { color: var(--ok); }
-
-.pericia__requer {
-  color: var(--aviso);
-  background: var(--aviso-fundo);
-  border-color: var(--aviso-borda);
-}
-
-.pericia__carga {
-  color: var(--erro);
-  background: var(--erro-fundo);
-  border-color: var(--erro-borda);
-}
-
 /* Somente treinada sem treinamento: recua pela cor, nunca por transparência
    (todo texto da linha continua acima de 4,5:1) */
 .pericia--requer-treino .controle,
 .pericia--requer-treino output,
-.pericia--requer-treino .caixa {
+.pericia--requer-treino .caixa,
+.pericia--requer-treino .botao-grau {
   color: var(--papel-3);
 }
 
@@ -5919,6 +5914,49 @@ body.arrastando-arquivo::after {
   box-shadow: 0 1px 0 color-mix(in srgb, var(--cor-realce) 35%, transparent) inset, 0 0 0 3px var(--acento-suave);
 }
 
+.pericia__atributo { width: 92px; }
+.pericia__dados { width: 96px; }
+.pericia__grau { width: 52px; text-align: center; }
+.pericia__outros { width: 74px; }
+.pericia__bonus { width: 56px; text-align: right; }
+
+/* Grau: três chevrons (como divisas); acendem 1 (Treinado), 2 (Veterano) ou 3 (Expert) */
+.botao-grau {
+  color: var(--papel-2);
+}
+
+.botao-grau svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
+}
+
+.botao-grau .grau__v {
+  opacity: 0.35;
+}
+
+.botao-grau[data-nivel="1"] .grau__v--1,
+.botao-grau[data-nivel="2"] .grau__v--1,
+.botao-grau[data-nivel="2"] .grau__v--2,
+.botao-grau[data-nivel="3"] .grau__v {
+  opacity: 1;
+}
+
+.pericia--treinada .botao-grau {
+  color: var(--acento);
+  border-color: var(--acento-linha);
+}
+
+.botao-grau:hover:not(:disabled) {
+  color: var(--acento);
+  background: var(--acento-suave);
+  border-color: var(--acento-linha);
+}
+
+.pericia__grau-impressao {
+  display: none;
+}
+
 .pericia__rolar {
   width: 52px;
   text-align: center;
@@ -5957,7 +5995,8 @@ body.arrastando-arquivo::after {
   }
 }
 
-/* Estreito: cada perícia vira um cartão */
+/* Estreito: cada perícia continua numa linha só (nome com os dados embaixo,
+   grau, outros, total e rolar); em edição entra uma 2ª linha com atributo e "concedida" */
 @container ficha (max-width: 759px) {
   .tabela-pericias {
     display: block;
@@ -5973,21 +6012,20 @@ body.arrastando-arquivo::after {
 
   .tabela-pericias tbody {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
-    gap: 10px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
   }
 
   .pericia {
     display: grid;
-    /* A 1ª coluna é só dos ícones: as outras linhas a atravessam */
-    grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr) auto auto auto auto;
     grid-template-areas:
-      "ind   nome  nome  nome   bonus"
-      "atr   atr   grau  grau   grau"
-      "dados dados conc  outros rolar";
-    align-items: end;
-    gap: 10px 8px;
-    padding: 12px 14px;
+      "nome  grau outros bonus rolar"
+      "dados grau outros bonus rolar"
+      "atr   atr  conc   conc  conc";
+    align-items: center;
+    gap: 0 6px;
+    padding: 4px 8px 4px 12px;
     background: color-mix(in oklab, var(--tinta-superficie) 88%, transparent);
     border: 1px solid var(--linha-1);
     border-radius: var(--raio-2);
@@ -6009,45 +6047,50 @@ body.arrastando-arquivo::after {
     box-shadow: none;
   }
 
-  .tabela-pericias .pericia > .pericia__dados,
-  .tabela-pericias .pericia > .pericia__concedida {
-    align-self: center;
+  .pericia__nome { grid-area: nome; align-self: end; }
+  .pericia__dados { grid-area: dados; align-self: start; }
+  .pericia__grau { grid-area: grau; width: auto; }
+  .pericia__outros { grid-area: outros; width: auto; }
+  .pericia__bonus { grid-area: bonus; width: auto; min-width: 2.2em; text-align: right; }
+  .pericia__rolar { grid-area: rolar; width: auto; text-align: right; }
+  .pericia__atributo { grid-area: atr; width: auto; padding-top: 6px !important; }
+  .pericia__concedida { grid-area: conc; width: auto; text-align: right; white-space: nowrap; padding-top: 6px !important; }
+
+  .pericia__nome-conteudo {
+    min-height: 0;
+    gap: 2px 6px;
+  }
+
+  /* Na linha estreita os ícones vêm depois do nome (o nome alinha à esquerda e não quebra) */
+  .pericia__indicadores {
+    order: 2;
+    min-width: 0;
   }
 
   .tabela-pericias .pericia > .pericia__outros .controle {
-    width: 64px;
+    width: 56px;
+    padding: 0 4px;
+    text-align: center;
   }
 
-  .pericia__indicadores { grid-area: ind; align-self: center; }
-  .pericia__nome { grid-area: nome; align-self: center; }
-  .pericia__bonus { grid-area: bonus; align-self: center; text-align: right; }
-  .pericia__atributo { grid-area: atr; }
-  .pericia__dados { grid-area: dados; }
-  .pericia__grau { grid-area: grau; }
-  .pericia__outros { grid-area: outros; }
-  .pericia__concedida { grid-area: conc; text-align: left; white-space: nowrap; }
-  .pericia__rolar { grid-area: rolar; width: auto; text-align: right; }
-
   .pericia__bonus output {
+    font-size: 1.125rem;
+  }
+
+  .pericia--treinada .pericia__bonus output {
     font-size: 1.25rem;
   }
 
   .pericia__dados output {
-    white-space: normal;
+    white-space: nowrap;
+    font-size: 0.75rem;
   }
 
   .pericia [data-rotulo]::before {
-    content: attr(data-rotulo);
-    display: block;
-    margin-bottom: 4px;
-    font: 500 var(--t-micro) / 1.2 var(--fonte-mono);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--papel-3);
+    display: none;
   }
 
   .pericia .controle {
-    width: 100%;
     height: var(--altura-controle);
     font-size: 1rem; /* evita zoom automático no iPhone */
   }
@@ -7365,14 +7408,10 @@ body.arrastando-arquivo::after {
   gap: 8px;
 }
 
-/* Perícias na mesa: nome, dados, bônus e rolar (o resto fica em "Editar perícias") */
-.secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(3),
-.secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(5),
-.secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(6),
-.secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(9),
+/* Perícias na mesa: sem atributo e sem "concedida" (ficam em "Editar perícias"); grau, outros e total sempre aparecem */
+.secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(2),
+.secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(8),
 .secao--pericias[data-modo="mesa"] .pericia > .pericia__atributo,
-.secao--pericias[data-modo="mesa"] .pericia > .pericia__grau,
-.secao--pericias[data-modo="mesa"] .pericia > .pericia__outros,
 .secao--pericias[data-modo="mesa"] .pericia > .pericia__concedida,
 .secao--pericias[data-modo="mesa"] .pericias__pontos,
 .secao--pericias[data-modo="mesa"] #contador-treinamento,
@@ -7389,48 +7428,11 @@ body.arrastando-arquivo::after {
   padding-bottom: 3px;
 }
 
-.secao--pericias[data-modo="mesa"] .pericia__nome-conteudo {
-  min-height: 38px;
-}
-
-/* Estreito, na mesa: cada perícia numa linha (nome, dados, bônus, rolar) */
 @container ficha (max-width: 759px) {
-  .secao--pericias[data-modo="mesa"] .tabela-pericias tbody {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 6px;
-  }
-
   .secao--pericias[data-modo="mesa"] .pericia {
-    grid-template-columns: auto minmax(0, 1fr) auto auto auto;
-    grid-template-areas: "ind nome dados bonus rolar";
-    align-items: center;
-    gap: 4px 10px;
-    padding: 6px 8px 6px 12px;
-  }
-
-  .secao--pericias[data-modo="mesa"] .pericia [data-rotulo]::before {
-    display: none;
-  }
-
-  .secao--pericias[data-modo="mesa"] .pericia__dados output {
-    white-space: nowrap;
-  }
-
-  /* Selos ("Requer treinamento", carga) quebram dentro da coluna do nome */
-  .secao--pericias[data-modo="mesa"] .pericia__nome-conteudo .selo,
-  .secao--pericias[data-modo="mesa"] .pericia__requer,
-  .secao--pericias[data-modo="mesa"] .pericia__carga,
-  .secao--pericias[data-modo="mesa"] .pericia__fonte {
-    max-width: 100%;
-    white-space: normal;
-  }
-
-  .secao--pericias[data-modo="mesa"] .pericia__bonus output {
-    font-size: 1.125rem;
-  }
-
-  .secao--pericias[data-modo="mesa"] .pericia--treinada .pericia__bonus output {
-    font-size: 1.25rem;
+    grid-template-areas:
+      "nome  grau outros bonus rolar"
+      "dados grau outros bonus rolar";
   }
 }
 

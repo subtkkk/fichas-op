@@ -11469,7 +11469,7 @@ kbd {
 
 .vital[data-nivel="baixo"] .vital__sigla::after { content: "baixo"; color: var(--aviso); }
 .vital[data-nivel="critico"] .vital__sigla::after { content: "crítico"; color: var(--erro); }
-.vital[data-nivel="zero"] .vital__sigla::after { content: "zerado"; color: var(--erro); }
+.vital[data-nivel="zero"] .vital__sigla::after { content: "zero"; color: var(--erro); }
 
 .vital__botao {
   color: var(--cor-vital);
@@ -12318,7 +12318,7 @@ button.trilho__agente::after {
 }
 
 .vista--central[data-vazia="sim"] .central__grade {
-  margin-top: 8px;
+  margin-top: 24px;
 }
 
 .vista--central[data-vazia="sim"] #central-continuar > .estado-vazio__conteudo {
@@ -12622,25 +12622,41 @@ body {
   font-size: 0.75rem;
 }
 
-/* ---- Celular e tablet: a lista vem antes da configuração (Rituais e Inventário) ---- */
+/* ---- A lista vem antes da configuração (Rituais e Inventário), em qualquer tamanho ---- */
+.secao--inventario,
+.secao--rituais {
+  display: flex;
+  flex-direction: column;
+}
+
+.secao--inventario > *,
+.secao--rituais > * {
+  order: 2;
+}
+
+.secao--inventario > .secao__titulo,
+.secao--rituais > .secao__cabecalho {
+  order: 0;
+}
+
+/* Inventário: itens primeiro; patente, crédito e carga depois */
+.secao--inventario > .inventario__topo {
+  order: 9;
+  margin-top: 16px;
+}
+
+/* Rituais: filtros e lista primeiro, DT/afinidade/turno depois */
+.secao--rituais > .rituais__topo {
+  order: 8;
+  margin-top: 16px;
+}
+
+.secao--rituais > .filtros-linha {
+  order: 1;
+}
+
 @media (max-width: 1279px) {
-  .secao--inventario,
-  .secao--rituais {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .secao--inventario > * ,
-  .secao--rituais > * {
-    order: 2;
-  }
-
-  .secao--inventario > .secao__titulo,
-  .secao--rituais > .secao__cabecalho {
-    order: 0;
-  }
-
-  /* Inventário: carga (resumo), itens e, por último, patente e crédito */
+  /* Celular: a carga (resumo) vem antes dos itens; a patente, por último */
   .inventario__topo {
     display: contents;
   }
@@ -12653,16 +12669,6 @@ body {
   .inventario__topo > .painel--patente {
     order: 9;
     margin-top: 16px;
-  }
-
-  /* Rituais: filtros e lista primeiro, DT/afinidade/turno depois */
-  .secao--rituais > .rituais__topo {
-    order: 8;
-    margin-top: 16px;
-  }
-
-  .secao--rituais > .filtros-linha {
-    order: 1;
   }
 }
 
@@ -12854,4 +12860,68 @@ body {
   button.trilho__agente {
     display: none;
   }
+}
+
+
+/* ==========================================================================
+   25. REVISÃO DE DESIGN (rodada 7)
+   ========================================================================== */
+
+/* "zerado" numa linha, com folga do numeral; rótulos dos vitais com contraste de sobra */
+.vital__sigla {
+  white-space: nowrap;
+  color: color-mix(in oklab, var(--cor-vital) 75%, var(--papel));
+}
+
+/* Selo "cond." ocupa só o próprio tamanho (não vira barra nos testes) */
+.selo-cond {
+  align-self: start;
+  justify-self: start;
+  width: fit-content;
+  height: fit-content;
+}
+
+/* Dano e crítico do ataque: a linha mais importante, legível */
+.ataque[data-modo="resumo"] .cartao-resumo {
+  font-size: 0.875rem;
+  color: var(--papel);
+}
+
+/* Avisos de pontos/graus no modo edição de perícias: curtos (a dica fica no título) */
+.secao--pericias .avisos {
+  padding: 8px 12px;
+  font-size: 0.8125rem;
+}
+
+.secao--pericias .avisos__dica {
+  display: none;
+}
+
+/* Tablet: defesa e testes em quatro colunas */
+@media (min-width: 700px) and (max-width: 1279px) {
+  .ficha-layout .grade-testes {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Celular deitado: sem a faixa de resultado enquanto não houver rolagem */
+@media (max-width: 1279px) and (max-height: 520px) {
+  .resultado-rapido[data-vazio="sim"] {
+    display: none;
+  }
+}
+
+/* 20 e 1 naturais ganham destaque na faixa de resultado */
+.resultado-rapido[data-falha="sim"] .resultado-rapido__total {
+  color: var(--erro);
+}
+
+.resultado-rapido__critico[data-natural="falha"] {
+  color: var(--erro);
+  border-color: var(--erro);
+}
+
+.resultado-rapido__critico[data-natural="acerto"] {
+  color: var(--acento);
+  border-color: var(--acento);
 }

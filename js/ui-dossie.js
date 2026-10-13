@@ -376,6 +376,12 @@ window.OP = window.OP || {};
   function montarFolhaVital() {
     refs.dialogoVital = document.getElementById('dialogo-vital');
     if (!refs.dialogoVital) return;
+    // Tocar fora da folha de ajuste fecha (o valor já foi gravado a cada toque)
+    refs.dialogoVital.addEventListener('click', function (evento) {
+      const caixa = refs.dialogoVital.getBoundingClientRect();
+      const fora = evento.clientX < caixa.left || evento.clientX > caixa.right || evento.clientY < caixa.top || evento.clientY > caixa.bottom;
+      if (fora) refs.dialogoVital.close();
+    });
     refs.vitalSigla = document.getElementById('vital-sigla');
     refs.vitalNome = document.getElementById('vital-nome');
     refs.vitalAtual = document.getElementById('vital-atual');

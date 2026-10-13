@@ -2411,8 +2411,14 @@ window.OP = window.OP || {};
     definirTexto(refs.rrAlvo, alvo);
     refs.rrAlvo.hidden = !alvo;
     refs.rrAlvo.setAttribute('data-resultado', resultado.acertou === true ? 'acerto' : (resultado.acertou === false ? 'falha' : ''));
-    refs.rrCritico.hidden = resultado.critico !== true;
-    refs.rrCaixa.setAttribute('data-critico', resultado.critico === true ? 'sim' : 'nao');
+    // 20 ou 1 natural num teste (sem ser crítico de ataque) também ganha destaque
+    const natural = resultado.tipo === 'teste' && resultado.critico !== true
+      ? (resultado.escolhido === 20 ? '20 natural' : (resultado.escolhido === 1 ? '1 natural' : '')) : '';
+    definirTexto(refs.rrCritico, resultado.critico === true ? 'Crítico' : natural);
+    refs.rrCritico.hidden = resultado.critico !== true && !natural;
+    refs.rrCritico.setAttribute('data-natural', natural === '1 natural' ? 'falha' : (natural ? 'acerto' : ''));
+    refs.rrCaixa.setAttribute('data-critico', resultado.critico === true || natural === '20 natural' ? 'sim' : 'nao');
+    refs.rrCaixa.setAttribute('data-falha', natural === '1 natural' ? 'sim' : 'nao');
     refs.rrCaixa.setAttribute('data-vazio', 'nao');
     refs.rrFicha = OP.state.ficha.id;
     // Reinicia o brilho curto de "rolou agora"
@@ -2430,6 +2436,7 @@ window.OP = window.OP || {};
     definirTexto(refs.rrAlvo, '');
     refs.rrAlvo.hidden = true;
     refs.rrCritico.hidden = true;
+    refs.rrCaixa.setAttribute('data-falha', 'nao');
     refs.rrCaixa.setAttribute('data-critico', 'nao');
     refs.rrCaixa.setAttribute('data-vazio', 'sim');
     refs.rrFicha = null;

@@ -964,6 +964,35 @@ window.OP = window.OP || {};
           return filhos.indexOf('atributo-sigla') < filhos.indexOf('pericia__grau-marca') || filhos.indexOf('atributo-sigla') < filhos.indexOf('marca-menor');
         }).length;
       }, esperado: 0 },
+      { nome: 'E17 · Som das rolagens: ligado por padrão e valor inválido volta ao padrão', obtido: function () {
+        const antes = OP.prefs.aparencia().som;
+        try {
+          OP.prefs.definirAparencia({ som: 'talvez' });
+          const invalido = OP.prefs.aparencia().som;
+          OP.prefs.definirAparencia({ som: 'nao' });
+          const desligado = OP.prefs.aparencia().som;
+          return invalido === antes && desligado === 'nao';
+        } finally {
+          OP.prefs.definirAparencia({ som: antes });
+        }
+      }, esperado: true },
+      { nome: 'E17 · OP.som: resultado com erro ou som desligado não toca nada', obtido: function () {
+        const antes = OP.prefs.aparencia().som;
+        try {
+          OP.prefs.definirAparencia({ som: 'nao' });
+          OP.som.silenciar(false);
+          const desligado = OP.som.tocarResultado({ ok: true, tipo: 'teste', escolhido: 20 });
+          OP.prefs.definirAparencia({ som: 'sim' });
+          const comErro = OP.som.tocarResultado({ ok: false });
+          return [desligado, comErro].join('|');
+        } finally {
+          OP.prefs.definirAparencia({ som: antes });
+          OP.som.silenciar(true);
+        }
+      }, esperado: 'false|false' },
+      { nome: 'E17 · Diálogo Aparência tem o grupo "Som das rolagens" (Ligado/Desligado)', obtido: function () {
+        return document.querySelectorAll('input[name="aparencia-som"]').length;
+      }, esperado: 2 },
       { nome: 'E10 · Diálogos: todos têm título (aria-labelledby) e são <dialog>', obtido: function () {
         return Array.prototype.filter.call(document.querySelectorAll('dialog'), function (d) {
           const alvo = document.getElementById(d.getAttribute('aria-labelledby') || '');

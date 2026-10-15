@@ -18,6 +18,10 @@ window.OP = window.OP || {};
   'use strict';
 
   const refs = {};
+  const SONS = [
+    { id: 'sim', nome: 'Ligado' },
+    { id: 'nao', nome: 'Desligado' }
+  ];
   const MOVIMENTOS = [
     { id: 'auto', nome: 'Automático' },
     { id: 'sim', nome: 'Sim' },
@@ -109,6 +113,7 @@ window.OP = window.OP || {};
     marcarGrupo('aparencia-tema', p.tema);
     marcarGrupo('aparencia-fonte', p.tamanhoFonte);
     marcarGrupo('aparencia-movimento', p.movimento);
+    marcarGrupo('aparencia-som', p.som);
     abrirDialogo(refs.aparencia, refs.botaoAparencia);
     const marcado = refs.aparencia.querySelector('input[name="aparencia-tema"]:checked');
     if (marcado) marcado.focus();
@@ -121,9 +126,11 @@ window.OP = window.OP || {};
     if (alvo.name === 'aparencia-tema') mudanca.tema = alvo.value;
     else if (alvo.name === 'aparencia-fonte') mudanca.tamanhoFonte = alvo.value;
     else if (alvo.name === 'aparencia-movimento') mudanca.movimento = alvo.value;
+    else if (alvo.name === 'aparencia-som') mudanca.som = alvo.value;
     else return;
     const gravou = OP.prefs.definirAparencia(mudanca);
     aplicarAparencia(OP.prefs.aparencia());
+    if (alvo.name === 'aparencia-som' && alvo.value === 'sim' && OP.som) OP.som.tocar(false); // amostra
     if (!gravou && OP.uiApp) OP.uiApp.aviso('aviso', 'Aviso: não foi possível guardar a aparência neste navegador (vale só até fechar a página).');
   }
 
@@ -184,6 +191,7 @@ window.OP = window.OP || {};
       return { id: t.id, nome: t.nome, detalhe: t.px + ' px' };
     }), p.tamanhoFonte);
     montarGrupo('aparencia-movimento-opcoes', 'aparencia-movimento', MOVIMENTOS, p.movimento);
+    montarGrupo('aparencia-som-opcoes', 'aparencia-som', SONS, p.som);
 
     refs.botaoAparencia.addEventListener('click', abrirAparencia);
     refs.botaoSobre.addEventListener('click', abrirSobre);

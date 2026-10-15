@@ -10,8 +10,8 @@
    - Temas: aparência elemental de cada ficha (data/temas-ficha.js). Só visual:
      não muda nenhuma regra. Padrão: o primeiro tema (neutro).
    - Aparência do SITE (Etapa 10): tema (data/temas.js: auto, escuro, claro,
-     contraste), tamanhoFonte (p, m, g, gg), movimento (auto, sim, nao) e
-     incluirDiarioNaImpressao. Valor inválido volta ao padrão. Um script no
+     contraste), tamanhoFonte (p, m, g, gg), movimento (auto, sim, nao),
+     som (sim, nao: sons das rolagens) e incluirDiarioNaImpressao. Valor inválido volta ao padrão. Um script no
      <head> do index.html lê as mesmas chaves antes da primeira pintura.
    ========================================================================== */
 window.OP = window.OP || {};
@@ -43,6 +43,7 @@ window.OP = window.OP || {};
   }
 
   const MOVIMENTOS = ['auto', 'sim', 'nao'];
+  const SONS = ['sim', 'nao'];
 
   /** Ids dos temas do site (data/temas.js) e dos tamanhos de texto. */
   function idsTemasApp() {
@@ -86,6 +87,7 @@ window.OP = window.OP || {};
       tema: dentroDe(bruto.tema, idsTemasApp(), 'auto'),
       tamanhoFonte: dentroDe(bruto.tamanhoFonte, idsTamanhos(), 'm'),
       movimento: dentroDe(bruto.movimento, MOVIMENTOS, 'auto'),
+      som: dentroDe(bruto.som, SONS, 'sim'),
       incluirDiarioNaImpressao: bruto.incluirDiarioNaImpressao === true
     };
   }
@@ -97,6 +99,7 @@ window.OP = window.OP || {};
       tema: prefs.tema,
       tamanhoFonte: prefs.tamanhoFonte,
       movimento: prefs.movimento,
+      som: prefs.som,
       incluirDiarioNaImpressao: prefs.incluirDiarioNaImpressao
     };
   }
@@ -111,6 +114,7 @@ window.OP = window.OP || {};
     if (m.tema !== undefined) prefs.tema = dentroDe(m.tema, idsTemasApp(), prefs.tema);
     if (m.tamanhoFonte !== undefined) prefs.tamanhoFonte = dentroDe(m.tamanhoFonte, idsTamanhos(), prefs.tamanhoFonte);
     if (m.movimento !== undefined) prefs.movimento = dentroDe(m.movimento, MOVIMENTOS, prefs.movimento);
+    if (m.som !== undefined) prefs.som = dentroDe(m.som, SONS, prefs.som);
     if (m.incluirDiarioNaImpressao !== undefined) prefs.incluirDiarioNaImpressao = m.incluirDiarioNaImpressao === true;
     const ok = gravar(prefs);
     avisar(prefs, 'aparencia');

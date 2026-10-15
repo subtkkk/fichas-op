@@ -48,7 +48,7 @@ Precisa de um navegador atual (Chrome, Edge, Safari ou Firefox recentes).
 - As listas de escolha abrem um painel próprio, com as opções agrupadas por livro, busca nas listas longas e, no celular, uma gaveta.
 
 **Rolagens**
-- Página com o resultado de cada teste (todos os d20 e qual valeu), dano, crítico, modificador de dados, bônus extra, DT do alvo, fórmula livre (ex.: `2d6+3`) e histórico. O **último resultado** fica numa faixa com o total grande (no alto da coluna da direita no computador; presa abaixo dos vitais no celular) até a próxima rolagem ou até fechar, com o atalho **Detalhes**.
+- Página com o resultado de cada teste (todos os d20 e qual valeu), dano, crítico, modificador de dados, bônus extra, DT do alvo, fórmula livre (ex.: `2d6+3`) e histórico. O **último resultado** fica numa faixa com o total grande (no alto da coluna da direita no computador; presa abaixo dos vitais no celular) até a próxima rolagem ou até fechar, com o atalho **Detalhes**. Toda rolagem toca o som de **dados chacoalhando** e o **20 natural** tem um som diferente (um arpejo brilhante). Os sons são sintetizados na hora (Web Audio, sem arquivos) e podem ser desligados em **Aparência → Som das rolagens**.
 
 **Aparência, celular e acessibilidade**
 - **Aparência** (botão no cabeçalho): tema do site (Automático, Escuro, Claro e Alto contraste), tamanho do texto (14, 16, 18 e 20 px) e animações (Automático, Sim, Não). Fica nas preferências do navegador, nunca na ficha, e vale sem piscar ao recarregar.
@@ -128,7 +128,7 @@ fonts/              Fontes locais (Cormorant Garamond e IBM Plex, licença OFL)
 
 - HTML, CSS e JavaScript puro, sem dependências e sem etapa de build: edite e recarregue.
 - Os scripts compartilham o objeto global `OP`. O fluxo é `OP.state.atualizar` → `OP.calc` → `OP.ui.desenhar`. As telas ligam os campos por atributos (`data-campo`, `data-saida`, `data-passo`…).
-- **Testes das fórmulas:** abra o site e rode `OP.runTests()` no console do navegador. O esperado é `{ total: 510, aprovados: 510, falhas: 0 }`. Em janela estreita (até 480 px) o teste de layout também confere a rolagem horizontal. As auditorias ficam em `OP.ui.auditarLayout()`, `auditarContraste(tema)`, `auditarAcessibilidade()`, `auditarTitulos()` e `auditarAlvosToque()`.
+- **Testes das fórmulas:** abra o site e rode `OP.runTests()` no console do navegador. O esperado é `{ total: 513, aprovados: 513, falhas: 0 }`. Em janela estreita (até 480 px) o teste de layout também confere a rolagem horizontal. As auditorias ficam em `OP.ui.auditarLayout()`, `auditarContraste(tema)`, `auditarAcessibilidade()`, `auditarTitulos()` e `auditarAlvosToque()`.
 - **Cores:** o CSS da tela não tem cor fixa fora de variáveis. As paletas (`--cor-*`, em `#rrggbb`) ficam no começo do `css/style.css`: escuro em `:root`, claro em `[data-tema="claro"]` (e no `@media (prefers-color-scheme: light)` do modo Automático) e alto contraste em `[data-tema="contraste"]`. O `css/print.css` mantém fundo branco e texto preto, qualquer que seja o tema.
 - **Compatibilidade:** fichas salvas e arquivos exportados de versões anteriores precisam continuar abrindo. Mudanças no modelo passam pela migração em `js/state.js`.
 

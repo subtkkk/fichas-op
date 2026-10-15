@@ -2451,6 +2451,7 @@ window.OP = window.OP || {};
       if (!naPagina && OP.uiApp) OP.uiApp.aviso('aviso', 'Aviso: ' + (resultado.erro || 'não foi possível rolar.'));
       return;
     }
+    if (OP.som) OP.som.tocarResultado(resultado); // dados chacoalhando (e um som especial no 20 natural)
     substituirFilhos(refs.resultado, [resultado.tipo === 'teste' ? criarResultadoTeste(resultado) : criarResultadoFormula(resultado)]);
     definirTexto(refs.ultimo, 'último: ' + resultado.total + (resultado.critico ? ' (crítico)' : ''));
     mostrarResultadoRapido(resultado);

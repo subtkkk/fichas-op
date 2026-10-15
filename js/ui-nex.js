@@ -3,7 +3,8 @@
    --------------------------------------------------------------------------
    Regra opcional "NEX e Experiência" (ficha.config.nexENivel). O painel só
    aparece com a regra ligada (js/ui-regras.js) e mostra:
-   - o NEX de exposição (campo manual) e o elemento da ficha;
+   - (o NEX de exposição é editado na faixa do agente, ao lado do Nível);
+   - o elemento da ficha;
    - as escolhas das alterações (perícia com −5, atributo somado ao PE);
    - os cartões de cada alteração (NEX 25%, 35%, 50% e as do elemento em
      60%, 75% e 90%) com o texto do livro por inteiro e o que a ficha aplica;
@@ -291,10 +292,32 @@ window.OP = window.OP || {};
     if (elemento.hidden === deveMostrar) elemento.hidden = !deveMostrar;
   }
 
+  /** Linha do resumo do bloco fechado: quantas alterações valem, a próxima, escolhas que faltam e o efeito de Energia. */
+  function desenharResumoBloco(f, e) {
+    const dados = OP.data.alteracoesNex;
+    let todas = dados.gerais.slice();
+    let nomeElemento = '';
+    if (e.elemento) {
+      todas = todas.concat(dados.elementos[e.elemento].alteracoes);
+      nomeElemento = dados.elementos[e.elemento].nome;
+    }
+    const proxima = todas.find(function (a) { return e.alcancadas.indexOf(a.id) === -1; });
+    const partes = [e.alcancadas.length + (e.alcancadas.length === 1 ? ' em vigor' : ' em vigor')];
+    if (proxima) partes.push('próxima: ' + proxima.titulo + (proxima.nex > 50 ? ' (' + nomeElemento + ')' : ''));
+    else if (e.elemento) partes.push('todas alcançadas');
+    else partes.push('escolha o elemento para ver as de 60%, 75% e 90%');
+    if (e.pendencias.length) partes.push(e.pendencias.length + (e.pendencias.length === 1 ? ' escolha pendente' : ' escolhas pendentes'));
+    if (e.energia.d6) partes.push('Energia: efeito ' + e.energia.d6);
+    const texto = partes.join(' · ');
+    if (refs.resumoBloco.textContent !== texto) refs.resumoBloco.textContent = texto;
+    refs.resumoBloco.classList.toggle('progressao__proximo--alerta', e.pendencias.length > 0);
+  }
+
   function desenhar(f, derivados) {
     const ativa = OP.calc.regraNexNivel(f);
     mostrar(refs.secao, ativa);
     if (!ativa) {
+      mostrar(refs.campoExposicao, false);
       desenharSelos(derivados); // some com a regra desligada
       return;
     }
@@ -302,11 +325,13 @@ window.OP = window.OP || {};
     const conj = derivados.conjuracao;
     const porEstagio = derivados.nex.unidade === 'estagio';
 
+    mostrar(refs.campoExposicao, true);
     const resumo = (porEstagio
       ? 'A progressão do Sobrevivente segue o estágio. '
       : 'Nível ' + OP.calc.nivelDaFicha(f) + ' (progressão: PV, PE, SAN, limite de PE e círculos; equivale a NEX ' + OP.calc.nexDoNivel(OP.calc.nivelDaFicha(f)) + '%). ') +
-      'O NEX (exposição) vale para afinidade e alterações. 1 nível = 5% de NEX.';
+      'O NEX (exposição) é o campo ao lado do nível, na faixa do agente, e vale para afinidade e alterações. 1 nível = 5% de NEX.';
     if (refs.resumo.textContent !== resumo) refs.resumo.textContent = resumo;
+    desenharResumoBloco(f, e);
 
     // Escolhas: cada uma aparece quando a alteração foi alcançada
     mostrar(refs.campoPenalidade25, e.alcancadas.indexOf('g25') !== -1);
@@ -360,6 +385,8 @@ window.OP = window.OP || {};
     refs.secao = document.getElementById('secao-alteracoes');
     if (!refs.secao) return;
     refs.resumo = document.getElementById('nex-resumo');
+    refs.resumoBloco = document.getElementById('alteracoes-resumo');
+    refs.campoExposicao = document.getElementById('campo-nex-exposicao');
     refs.selectElemento = document.getElementById('alt-elemento');
     refs.campoPenalidade25 = document.getElementById('nex-campo-penalidade25');
     refs.campoAtributo35 = document.getElementById('nex-campo-atributo35');

@@ -361,11 +361,23 @@
               </div>
 
               <div class="campo campo--nex">
-                <!-- NEX nas classes comuns; Estágio no Sobrevivente (js/ui-classe.js troca) -->
-                <label for="campo-nex" id="rotulo-nivel">NEX</label>
-                <select id="campo-nex" data-campo="identificacao.nex" data-tipo="inteiro"></select>
-                <select id="campo-nivel" data-campo="identificacao.nivel" data-tipo="inteiro" hidden></select>
-                <select id="campo-estagio" data-campo="identificacao.estagio" data-tipo="inteiro" hidden></select>
+                <div class="campo__nivel">
+                  <!-- NEX nas classes comuns; Nível (regra NEX e Experiência); Estágio no Sobrevivente (js/ui-classe.js troca) -->
+                  <label for="campo-nex" id="rotulo-nivel">NEX</label>
+                  <select id="campo-nex" data-campo="identificacao.nex" data-tipo="inteiro"></select>
+                  <select id="campo-nivel" data-campo="identificacao.nivel" data-tipo="inteiro" hidden></select>
+                  <select id="campo-estagio" data-campo="identificacao.estagio" data-tipo="inteiro" hidden></select>
+                </div>
+                <!-- Só com a regra NEX e Experiência: o NEX vira a exposição e fica ao lado do nível (campo manual, 0 a 99) -->
+                <div class="campo__exposicao" id="campo-nex-exposicao" hidden>
+                  <label for="nex-exposicao">NEX</label>
+                  <div class="passo">
+                    <button type="button" class="passo__botao" tabindex="-1" data-passo="-1" data-alvo="nex-exposicao" aria-label="Diminuir 1% de NEX">−</button>
+                    <input id="nex-exposicao" class="passo__valor" type="number" min="0" max="99" step="1" inputmode="numeric"
+                           aria-label="NEX (exposição) em %" data-campo="identificacao.nex" data-tipo="inteiro">
+                    <button type="button" class="passo__botao" tabindex="-1" data-passo="1" data-alvo="nex-exposicao" aria-label="Aumentar 1% de NEX">+</button>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
@@ -860,98 +872,6 @@
           </div>
 
           <div class="pagina-painel ficha__conteudo" role="tabpanel" id="pagina-habilidades" aria-label="Habilidades" data-pagina="habilidades" tabindex="-1" data-oculta>
-          <!-- ================= ALTERAÇÕES DE NEX (regra opcional NEX e Experiência; js/ui-nex.js) ================= -->
-          <section class="secao secao--alteracoes" id="secao-alteracoes" aria-labelledby="titulo-alteracoes" hidden>
-            <div class="secao__cabecalho">
-              <h2 class="secao__titulo" id="titulo-alteracoes">Alterações de NEX</h2>
-              <p class="secao__info">Regra opcional <strong>NEX e Experiência</strong></p>
-            </div>
-
-            <div class="nex-exposicao">
-              <div class="campo-bonus">
-                <label for="nex-exposicao">NEX (exposição)</label>
-                <div class="passo">
-                  <button type="button" class="passo__botao" tabindex="-1" data-passo="-1" data-alvo="nex-exposicao" aria-label="Diminuir 1% de NEX">−</button>
-                  <input id="nex-exposicao" class="passo__valor" type="number" min="0" max="99" step="1" inputmode="numeric"
-                         data-campo="identificacao.nex" data-tipo="inteiro">
-                  <button type="button" class="passo__botao" tabindex="-1" data-passo="1" data-alvo="nex-exposicao" aria-label="Aumentar 1% de NEX">+</button>
-                </div>
-                <span class="nex-exposicao__pct" aria-hidden="true">%</span>
-              </div>
-              <p class="secao__nota" id="nex-resumo"></p>
-            </div>
-
-            <fieldset class="nex-escolhas" id="nex-escolhas">
-              <legend>Escolhas</legend>
-              <div class="campo-texto" id="nex-campo-elemento">
-                <label for="alt-elemento">Elemento (o conectado)</label>
-                <select id="alt-elemento" class="controle" data-campo="conjuracao.elementoConectado" data-tipo="texto" data-padrao=""
-                        title="Só um elemento por ficha. É o mesmo da aba Rituais."></select>
-              </div>
-              <div class="campo-texto" id="nex-campo-penalidade25" hidden>
-                <label for="alt-penalidade25">NEX 25%: perícia com −5</label>
-                <select id="alt-penalidade25" class="controle" data-campo="alteracoesNex.penalidade25" data-tipo="texto">
-                  <option value="">— Escolha —</option>
-                  <option value="diplomacia">Diplomacia</option>
-                  <option value="enganacao">Enganação</option>
-                  <option value="intimidacao">Intimidação</option>
-                </select>
-              </div>
-              <div class="campo-texto" id="nex-campo-atributo35" hidden>
-                <label for="alt-atributo35">NEX 35%: atributo somado ao PE</label>
-                <select id="alt-atributo35" class="controle" data-campo="alteracoesNex.atributo35" data-tipo="texto">
-                  <option value="">— Escolha —</option>
-                  <option value="agi">Agilidade</option>
-                  <option value="for">Força</option>
-                  <option value="int">Intelecto</option>
-                  <option value="vig">Vigor</option>
-                </select>
-              </div>
-              <div class="campo-texto" id="nex-campo-penalidade35" hidden>
-                <label for="alt-penalidade35">NEX 35%: perícia com −5</label>
-                <select id="alt-penalidade35" class="controle" data-campo="alteracoesNex.penalidade35" data-tipo="texto">
-                  <option value="">— Escolha —</option>
-                  <option value="atletismo">Atletismo</option>
-                  <option value="fortitude">Fortitude</option>
-                  <option value="reflexos">Reflexos</option>
-                </select>
-              </div>
-            </fieldset>
-
-            <p class="aviso-neutro" id="nex-pendencia" role="status" hidden></p>
-            <p class="aviso-neutro" id="nex-sem-elemento" role="status" hidden>Escolha o <strong>elemento</strong> acima para ver as alterações de Sangue, Morte, Conhecimento ou Energia (NEX 60%, 75% e 90%).</p>
-
-            <div class="nex-extras" id="nex-extras">
-              <label class="caixa" id="nex-campo-sangue" hidden>
-                <input type="checkbox" id="alt-sangue-suspenso" data-campo="alteracoesNex.sangueSuspenso" data-tipo="booleano">
-                <span>Forma Monstruosa ativa (+2 PE): penalidades de Sangue suspensas</span>
-              </label>
-              <label class="caixa" id="nex-campo-escuridao" hidden>
-                <input type="checkbox" id="alt-escuridao" data-campo="alteracoesNex.escuridao" data-tipo="booleano">
-                <span>Em área de escuridão (ofuscado em vez de cego)</span>
-              </label>
-              <button type="button" class="botao botao--compacto" id="nex-interacao-social" hidden>Primeira interação social da cena: −3 PE</button>
-            </div>
-
-            <div class="nex-energia" id="nex-energia" hidden>
-              <h3 class="subtitulo">Energia: efeito da cena</h3>
-              <p class="secao__nota">No início de cada cena, role 1d6. O efeito vale até o fim da cena ("Fim da cena" nas Condições limpa).</p>
-              <div class="nex-energia__acoes">
-                <button type="button" class="botao botao--primario" id="nex-energia-sortear">Sortear efeito (1d6)</button>
-                <button type="button" class="botao botao--compacto" id="nex-energia-limpar" hidden>Limpar efeito</button>
-                <button type="button" class="botao botao--compacto" id="nex-energia-tique" hidden>Esqueci o tique</button>
-              </div>
-              <div class="nex-energia__efeito" id="nex-energia-efeito" role="status" aria-live="polite"></div>
-            </div>
-
-            <div class="nex-cartoes" id="nex-cartoes"></div>
-
-            <details class="nex-livro" id="nex-livro">
-              <summary>Como o NEX aumenta e a progressão (texto do livro)</summary>
-              <div class="nex-livro__corpo" id="nex-livro-corpo"></div>
-            </details>
-          </section>
-
           <!-- ================= HABILIDADES E PODERES ================= -->
           <section class="secao secao--habilidades" id="secao-habilidades" aria-labelledby="titulo-habilidades">
             <div class="secao__cabecalho">
@@ -1319,6 +1239,96 @@
                   </thead>
                   <tbody id="corpo-progressao"></tbody>
                 </table>
+              </div>
+            </details>
+          </section>
+
+          <!-- ================= ALTERAÇÕES DE NEX (regra opcional NEX e Experiência; js/ui-nex.js) =================
+               Bloco de consulta na página Agente, fechado por padrão como a "Progressão da classe".
+               O NEX (exposição) é editado na faixa do agente, ao lado do Nível. -->
+          <section class="secao secao--alteracoes" id="secao-alteracoes" aria-labelledby="titulo-alteracoes" hidden>
+            <div class="secao__cabecalho">
+              <h2 class="secao__titulo" id="titulo-alteracoes">Alterações de NEX</h2>
+              <p class="secao__info">Regra opcional <strong>NEX e Experiência</strong></p>
+            </div>
+
+            <details class="progressao alteracoes-bloco" id="alteracoes-bloco">
+              <summary>
+                <span class="progressao__titulo">Alterações em vigor</span>
+                <span class="progressao__proximo" id="alteracoes-resumo"></span>
+              </summary>
+              <div class="alteracoes-bloco__corpo">
+                <p class="secao__nota" id="nex-resumo"></p>
+
+                <fieldset class="nex-escolhas" id="nex-escolhas">
+                  <legend>Escolhas</legend>
+                  <div class="campo-texto" id="nex-campo-elemento">
+                    <label for="alt-elemento">Elemento (o conectado)</label>
+                    <select id="alt-elemento" class="controle" data-campo="conjuracao.elementoConectado" data-tipo="texto" data-padrao=""
+                            title="Só um elemento por ficha. É o mesmo da aba Rituais."></select>
+                  </div>
+                  <div class="campo-texto" id="nex-campo-penalidade25" hidden>
+                    <label for="alt-penalidade25">NEX 25%: perícia com −5</label>
+                    <select id="alt-penalidade25" class="controle" data-campo="alteracoesNex.penalidade25" data-tipo="texto">
+                      <option value="">— Escolha —</option>
+                      <option value="diplomacia">Diplomacia</option>
+                      <option value="enganacao">Enganação</option>
+                      <option value="intimidacao">Intimidação</option>
+                    </select>
+                  </div>
+                  <div class="campo-texto" id="nex-campo-atributo35" hidden>
+                    <label for="alt-atributo35">NEX 35%: atributo somado ao PE</label>
+                    <select id="alt-atributo35" class="controle" data-campo="alteracoesNex.atributo35" data-tipo="texto">
+                      <option value="">— Escolha —</option>
+                      <option value="agi">Agilidade</option>
+                      <option value="for">Força</option>
+                      <option value="int">Intelecto</option>
+                      <option value="vig">Vigor</option>
+                    </select>
+                  </div>
+                  <div class="campo-texto" id="nex-campo-penalidade35" hidden>
+                    <label for="alt-penalidade35">NEX 35%: perícia com −5</label>
+                    <select id="alt-penalidade35" class="controle" data-campo="alteracoesNex.penalidade35" data-tipo="texto">
+                      <option value="">— Escolha —</option>
+                      <option value="atletismo">Atletismo</option>
+                      <option value="fortitude">Fortitude</option>
+                      <option value="reflexos">Reflexos</option>
+                    </select>
+                  </div>
+                </fieldset>
+
+                <p class="aviso-neutro" id="nex-pendencia" role="status" hidden></p>
+                <p class="aviso-neutro" id="nex-sem-elemento" role="status" hidden>Escolha o <strong>elemento</strong> acima para ver as alterações de Sangue, Morte, Conhecimento ou Energia (NEX 60%, 75% e 90%).</p>
+
+                <div class="nex-extras" id="nex-extras">
+                  <label class="caixa" id="nex-campo-sangue" hidden>
+                    <input type="checkbox" id="alt-sangue-suspenso" data-campo="alteracoesNex.sangueSuspenso" data-tipo="booleano">
+                    <span>Forma Monstruosa ativa (+2 PE): penalidades de Sangue suspensas</span>
+                  </label>
+                  <label class="caixa" id="nex-campo-escuridao" hidden>
+                    <input type="checkbox" id="alt-escuridao" data-campo="alteracoesNex.escuridao" data-tipo="booleano">
+                    <span>Em área de escuridão (ofuscado em vez de cego)</span>
+                  </label>
+                  <button type="button" class="botao botao--compacto" id="nex-interacao-social" hidden>Primeira interação social da cena: −3 PE</button>
+                </div>
+
+                <div class="nex-energia" id="nex-energia" hidden>
+                  <h3 class="subtitulo">Energia: efeito da cena</h3>
+                  <p class="secao__nota">No início de cada cena, role 1d6. O efeito vale até o fim da cena ("Fim da cena" nas Condições limpa).</p>
+                  <div class="nex-energia__acoes">
+                    <button type="button" class="botao botao--primario" id="nex-energia-sortear">Sortear efeito (1d6)</button>
+                    <button type="button" class="botao botao--compacto" id="nex-energia-limpar" hidden>Limpar efeito</button>
+                    <button type="button" class="botao botao--compacto" id="nex-energia-tique" hidden>Esqueci o tique</button>
+                  </div>
+                  <div class="nex-energia__efeito" id="nex-energia-efeito" role="status" aria-live="polite"></div>
+                </div>
+
+                <div class="nex-cartoes" id="nex-cartoes"></div>
+
+                <details class="nex-livro" id="nex-livro">
+                  <summary>Como o NEX aumenta e a progressão (texto do livro)</summary>
+                  <div class="nex-livro__corpo" id="nex-livro-corpo"></div>
+                </details>
               </div>
             </details>
           </section>

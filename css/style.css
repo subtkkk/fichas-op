@@ -13269,28 +13269,6 @@ body[data-vista="ficha"][data-sem-sanidade="sim"] {
   display: none;
 }
 
-.nex-exposicao {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 18px;
-  margin-bottom: 12px;
-}
-
-.nex-exposicao .campo-bonus {
-  align-items: center;
-}
-
-.nex-exposicao__pct {
-  font: 600 1rem/1 var(--fonte-mono);
-  color: var(--papel-2);
-}
-
-.nex-exposicao .secao__nota {
-  flex: 1 1 260px;
-  margin: 0;
-}
-
 .nex-escolhas {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -13523,14 +13501,81 @@ body[data-vista="ficha"][data-sem-sanidade="sim"] {
   overflow-wrap: anywhere;
 }
 
-.nex-exposicao .campo-bonus {
-  display: grid;
-  grid-template-columns: auto auto;
-  align-items: center;
-  justify-content: start;
-  gap: 4px 8px;
+/* ==========================================================================
+   31. NEX E EXPERIÊNCIA — NEX ao lado do Nível na faixa do agente; alterações como bloco de consulta na página Agente
+   ========================================================================== */
+.campo__nivel {
+  min-width: 0;
 }
 
-.nex-exposicao .campo-bonus label {
-  grid-column: 1 / -1;
+.campo__exposicao[hidden] {
+  display: none;
+}
+
+body[data-nex-nivel="sim"] .campo--nex {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 12px;
+}
+
+body[data-nex-nivel="sim"] .campo--nex .campo__nivel {
+  flex: 1 1 70px;
+}
+
+body[data-nex-nivel="sim"] .campo--nex .campo__exposicao {
+  flex: 0 0 auto;
+}
+
+/* O passo do NEX na faixa: mesma altura dos campos vizinhos */
+.secao--dossie .campo__exposicao .passo {
+  display: flex;
+  width: auto;
+  height: 40px;
+}
+
+.secao--dossie .campo__exposicao .passo__valor {
+  width: 38px;
+  height: 100%;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  font: 600 0.9375rem/1 var(--fonte-mono);
+}
+
+.secao--dossie .campo__exposicao .passo__botao {
+  width: 26px;
+}
+
+/* Faixa do agente no computador: a última coluna cresce para caber Nível e NEX lado a lado e a Classe nunca é cortada */
+@media (min-width: 1280px) {
+  body[data-nex-nivel="sim"] .zona--info .secao--dossie .grade-campos {
+    grid-template-columns: 72px minmax(0, 1fr) minmax(0, 1fr) minmax(118px, 1.1fr) minmax(100px, 1.2fr) minmax(190px, 0.9fr);
+    column-gap: 12px;
+  }
+}
+
+/* Cartão estreito (página Agente no celular): nível e NEX ganham a própria linha */
+@container ficha (max-width: 560px) {
+  body[data-nex-nivel="sim"] .secao--dossie .grade-campos {
+    grid-template-areas:
+      "selo nome nome"
+      "jog  jog  jog"
+      "orig orig orig"
+      "clas clas clas"
+      "nex  nex  nex"
+      "tril tril tril";
+  }
+}
+
+.alteracoes-bloco__corpo {
+  padding: 0 16px 16px;
+}
+
+.progressao__proximo--alerta {
+  color: var(--aviso);
+}
+
+.secao--alteracoes > .progressao {
+  margin-top: 4px;
 }

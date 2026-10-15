@@ -1631,8 +1631,13 @@ html[data-diario-impressao="sim"] .bio__diario {
 @media print {
   .nex-energia__acoes,
   .nex-extras .botao,
-  .nex-exposicao .passo__botao {
+  .campo__exposicao .passo__botao {
     display: none !important;
+  }
+
+  /* Identificação: o NEX (exposição) fica abaixo do nível; escondido (regra desligada), nada vai ao papel */
+  .campo__exposicao {
+    margin-top: 2pt;
   }
 
   .alteracao {

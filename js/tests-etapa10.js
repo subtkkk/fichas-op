@@ -993,6 +993,15 @@ window.OP = window.OP || {};
       { nome: 'E17 · Diálogo Aparência tem o grupo "Som das rolagens" (Ligado/Desligado)', obtido: function () {
         return document.querySelectorAll('input[name="aparencia-som"]').length;
       }, esperado: 2 },
+      { nome: 'E18 · Identificação: Origem, Classe, Trilha e NEX são texto clicável, sem caixa', obtido: function () {
+        const ids = ['campo-origem', 'campo-classe', 'campo-trilha', 'campo-nex'];
+        return ids.filter(function (id) {
+          const botao = document.getElementById(id).parentElement.querySelector('.seletor');
+          if (!botao) return true;
+          const cs = getComputedStyle(botao);
+          return !(parseFloat(cs.borderTopWidth) === 0 && cs.backgroundColor === 'rgba(0, 0, 0, 0)');
+        }).length;
+      }, esperado: 0 },
       { nome: 'E10 · Diálogos: todos têm título (aria-labelledby) e são <dialog>', obtido: function () {
         return Array.prototype.filter.call(document.querySelectorAll('dialog'), function (d) {
           const alvo = document.getElementById(d.getAttribute('aria-labelledby') || '');

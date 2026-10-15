@@ -13039,3 +13039,73 @@ body {
   display: inline-flex;
   visibility: hidden;
 }
+
+/* ==========================================================================
+   28. IDENTIFICAÇÃO — Origem, Classe, Trilha e NEX como texto clicável
+   (sem caixa; o rótulo em cima e o valor embaixo, como a sigla do atributo nas perícias)
+   ========================================================================== */
+.secao--dossie .campo .seletor {
+  align-self: flex-start;
+  width: auto;
+  max-width: 100%;
+  min-height: 32px;
+  padding: 0 4px;
+  margin-left: -4px;
+  gap: 6px;
+  font: 600 1rem/1.2 var(--fonte-ui);
+  color: var(--papel);
+  background: transparent;
+  border: 0;
+  border-radius: var(--raio-1);
+  box-shadow: none;
+}
+
+.secao--dossie .campo .seletor:hover:not(:disabled) {
+  color: var(--acento);
+  text-decoration: underline dotted;
+  text-underline-offset: 4px;
+  background: transparent;
+}
+
+.secao--dossie .campo .seletor.seletor--aberto {
+  color: color-mix(in srgb, var(--acento) 72%, var(--papel));
+  background: var(--acento-suave);
+  border: 0;
+  box-shadow: none;
+}
+
+/* A setinha só aparece ao passar o mouse, focar ou abrir (o texto já se lê como clicável) */
+.secao--dossie .campo .seletor .seletor__seta {
+  opacity: 0;
+  transition: opacity var(--dur-1) var(--curva), transform var(--dur-2) var(--curva);
+}
+
+.secao--dossie .campo .seletor:hover .seletor__seta,
+.secao--dossie .campo .seletor:focus-visible .seletor__seta,
+.secao--dossie .campo .seletor.seletor--aberto .seletor__seta {
+  opacity: 1;
+}
+
+/* Sem mouse (celular, tablet): sem "passar por cima", então o valor ganha um sublinhado pontilhado e a seta fica à vista */
+@media (hover: none) {
+  .secao--dossie .campo .seletor {
+    min-height: 44px;
+    text-decoration: underline dotted color-mix(in srgb, var(--papel-3) 70%, transparent);
+    text-underline-offset: 5px;
+  }
+
+  .secao--dossie .campo .seletor .seletor__seta {
+    opacity: 0.7;
+  }
+}
+
+.secao--dossie .campo .seletor:disabled {
+  opacity: 0.55;
+  cursor: default;
+  text-decoration: none;
+}
+
+/* Texto clicável: a largura é a do valor atual (sem reservar a da maior opção) */
+.secao--dossie .campo .seletor__medida > span {
+  display: none;
+}

@@ -171,7 +171,7 @@ window.OP = window.OP || {};
      ------------------------------------------------------------------------ */
 
   /** Vitais calculados { pv, pe, san } com atual, máximo e % (ou null sem classe). */
-  function vitais(derivados) {
+  function vitais(derivados, semSanidade) {
     const resultado = {};
     let definido = false;
     OP.data.recursos.forEach(function (recurso) {
@@ -185,6 +185,12 @@ window.OP = window.OP || {};
         percentual: estado ? OP.calc.numero(estado.percentual) : 0
       };
     });
+    // Sem Sanidade (regra opcional): PD no lugar do PE e sem SAN
+    if (semSanidade) {
+      resultado.pe.sigla = 'PD';
+      resultado.pe.nome = 'Pontos de Determinação';
+      delete resultado.san;
+    }
     return definido ? resultado : null;
   }
 
@@ -229,7 +235,7 @@ window.OP = window.OP || {};
     base.jogador = String(ident.jogador || '').trim();
     base.origem = identidade.origem ? identidade.origem.nome : (ident.origem === 'outra' ? String(ident.origemTexto || '').trim() : '');
     base.trilha = identidade.trilha ? identidade.trilha.nome : (ident.trilha === 'outra' ? String(ident.trilhaTexto || '').trim() : '');
-    base.vitais = vitais(derivados);
+    base.vitais = vitais(derivados, OP.calc.semSanidade(ficha));
     base.defesa = derivados.defesa ? derivados.defesa.total : null;
     return base;
   }
@@ -266,6 +272,7 @@ window.OP = window.OP || {};
     const lista = criar('dl', 'mini-vitais' + (classeExtra ? ' ' + classeExtra : ''));
     ['pv', 'pe', 'san'].forEach(function (id) {
       const vital = resumo.vitais[id];
+      if (!vital) return;
       const zerado = vital.atual === 0 && vital.max > 0;
       const item = criar('div', 'mini-vital mini-vital--' + id + (zerado ? ' mini-vital--zero' : ''));
       item.title = vital.nome + ': ' + vital.atual + ' de ' + vital.max + (zerado ? ' (zerado)' : '');

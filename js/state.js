@@ -412,7 +412,8 @@ window.OP = window.OP || {};
       // Preferências desta ficha
       config: {
         modoLivre: false,         // desliga os avisos de criação dos atributos
-        modoLivrePericias: false  // desliga o aviso de pontos de treinamento excedidos
+        modoLivrePericias: false, // desliga o aviso de pontos de treinamento excedidos
+        semSanidade: false        // regra opcional "Jogando sem Sanidade": PD no lugar de PE e SAN
       },
 
       identificacao: {

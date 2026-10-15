@@ -3222,6 +3222,9 @@ window.OP = window.OP || {};
     const perdas = OP.data.formasRitual.map(function (forma) {
       return forma.nome + ' ' + OP.calc.numero(regra.perdaPermanente[forma.id]);
     }).join(', ');
+    if (OP.calc.semSanidade(OP.state.ficha)) {
+      return 'Ritual de Medo (sem Sanidade): ao conjurar, ' + (regra.sanPorCusto ? 'perde PD, além do custo, igual ao custo em PE.' : 'sem perda extra.');
+    }
     return 'Ritual de Medo: ao conjurar, ' + (regra.sanPorCusto ? 'perde Sanidade igual ao custo em PE e ' : '') +
       'perde Sanidade permanente (' + perdas + '), que reduz o máximo.';
   }
@@ -3293,13 +3296,16 @@ window.OP = window.OP || {};
       return;
     }
     const nomeForma = nomeNaLista(OP.data.formasRitual, idForma) || idForma;
+    const sem = OP.calc.semSanidade(OP.state.ficha);
     const itens = ['PE: ' + plano.peAtual + ' → ' + plano.peDepois];
-    if (plano.medo && plano.sanAtual !== null) itens.push('Sanidade: ' + plano.sanAtual + ' → ' + plano.sanDepois);
-    if (plano.medo && plano.sanMaxDepois !== null) itens.push('Sanidade máxima: ' + (plano.sanMaxDepois + plano.permanente) + ' → ' + plano.sanMaxDepois);
+    if (!sem && plano.medo && plano.sanAtual !== null) itens.push('Sanidade: ' + plano.sanAtual + ' → ' + plano.sanDepois);
+    if (!sem && plano.medo && plano.sanMaxDepois !== null) itens.push('Sanidade máxima: ' + (plano.sanMaxDepois + plano.permanente) + ' → ' + plano.sanMaxDepois);
     confirmar({
       titulo: plano.medo ? 'Conjurar ritual de Medo' : 'Conjurar mesmo assim?',
       texto: plano.medo
-        ? 'Ritual de Medo (' + nomeForma + '): −' + plano.pe + ' PE, −' + plano.san + ' Sanidade, −' + plano.permanente + ' Sanidade permanente.'
+        ? (sem
+          ? 'Ritual de Medo (' + nomeForma + '): −' + plano.pe + ' PE e −' + plano.perdaMental + ' PE pela perda de Sanidade.'
+          : 'Ritual de Medo (' + nomeForma + '): −' + plano.pe + ' PE, −' + plano.san + ' Sanidade, −' + plano.permanente + ' Sanidade permanente.')
         : 'Forma ' + nomeForma + ': −' + plano.pe + ' PE. Confira os avisos abaixo (eles não impedem a conjuração).',
       itens: itens,
       avisos: avisos,

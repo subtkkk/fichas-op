@@ -291,6 +291,9 @@ Tocar na sigla e no valor de um vital abre o ajuste: no desktop, uma janela; no 
 ### Cartões em resumo
 Ataques e rituais na mesa: o nome lê como título (o campo continua editável), uma linha de resumo em mono (dano, crítico, tipo, alcance, munição; ou elemento, execução, alcance) e os botões de rolar ou conjurar. O botão "Editar" (contorno de 1px, `raio-2`) vira "Recolher" com borda de acento. Remover só aparece na edição.
 
+### Regras opcionais
+Um texto mono de 11px, apagado (`papel-3`, 70% de opacidade), no canto superior direito da faixa do agente: "regras opcionais" (com "· 1 ligada" em acento quando há regra ligada). Abre um diálogo `dialogo--regras` com uma linha por regra (caixa de seleção, nome e fonte), a tabela dos números e duas listas curtas: o que a ficha faz e o que fica por conta da mesa. A regra "Jogando sem Sanidade" esconde a SAN (`body[data-sem-sanidade="sim"]`) e troca PE por PD nos textos.
+
 ### Termos da ficha
 Glossário recolhido logo depois da capa: o título em rótulo mono com uma seta desenhada em CSS, e a lista em duas colunas com o termo em acento e a explicação em `papel-2`.
 

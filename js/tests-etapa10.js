@@ -1002,6 +1002,76 @@ window.OP = window.OP || {};
           return !(parseFloat(cs.borderTopWidth) === 0 && cs.backgroundColor === 'rgba(0, 0, 0, 0)');
         }).length;
       }, esperado: 0 },
+      { nome: 'E19 · Sem Sanidade: Combatente NEX 35% com PRE 2 tem 38 PD (e 28 PE com a regra desligada)', obtido: function () {
+        const f = fichaDeTeste({ classe: 'combatente', nex: 35, atributos: { pre: 2 } });
+        const antes = calc.peMax(f);
+        f.config.semSanidade = true;
+        return antes + '|' + calc.peMax(f);
+      }, esperado: '28|38' },
+      { nome: 'E19 · Sem Sanidade: PD inicial por classe (Combatente 6, Especialista 8, Ocultista 10, Sobrevivente 4, mais PRE)', obtido: function () {
+        return ['combatente', 'especialista', 'ocultista', 'sobrevivente'].map(function (classe) {
+          const f = fichaDeTeste({ classe: classe, nex: 5, estagio: 1, atributos: { pre: 1 } });
+          f.config.semSanidade = true;
+          return calc.peMax(f);
+        }).join('|');
+      }, esperado: '7|9|11|5' },
+      { nome: 'E19 · Sem Sanidade: Sobrevivente soma 2 PD por estágio (sem PRE)', obtido: function () {
+        const f = fichaDeTeste({ classe: 'sobrevivente', estagio: 3, atributos: { pre: 1 } });
+        f.config.semSanidade = true;
+        return calc.peMax(f);
+      }, esperado: 9 },
+      { nome: 'E19 · Sem Sanidade: a SAN guardada não é apagada e o estado de Sanidade fica "sã"', obtido: function () {
+        const f = fichaDeTeste({ classe: 'ocultista', nex: 5, atributos: { pre: 1 } });
+        f.recursos.san.atual = 0;
+        const antes = calc.estadoCondicoes(f).sanidade;
+        f.config.semSanidade = true;
+        return antes + '|' + calc.estadoCondicoes(f).sanidade + '|' + f.recursos.san.atual;
+      }, esperado: 'enlouquecendo|sao|0' },
+      { nome: 'E19 · Sem Sanidade: ritual de Medo tira PD (custo + perda), sem perda permanente nem SAN', obtido: function () {
+        const f = fichaDeTeste({ classe: 'ocultista', nex: 5, atributos: { pre: 1 } });
+        f.config.semSanidade = true;
+        f.recursos.pe.atual = 10;
+        const ritual = OP.state.novoRitual({ elemento: 'medo', formas: { padrao: { custo: 3 } } });
+        const p = calc.planoConjuracao(f, ritual, 'padrao');
+        return [p.ok, p.pe, p.perdaMental, p.san, p.permanente, p.peDepois, p.peGastoTurnoDepois].join('|');
+      }, esperado: 'true|3|3|0|0|4|3' },
+      { nome: 'E19 · Sem Sanidade: a perda mental não impede a conjuração (PD vai a 0, não abaixo)', obtido: function () {
+        const f = fichaDeTeste({ classe: 'ocultista', nex: 5, atributos: { pre: 1 } });
+        f.config.semSanidade = true;
+        f.recursos.pe.atual = 4;
+        const ritual = OP.state.novoRitual({ elemento: 'medo', formas: { padrao: { custo: 3 } } });
+        const p = calc.planoConjuracao(f, ritual, 'padrao');
+        return [p.ok, p.peDepois].join('|');
+      }, esperado: 'true|0' },
+      { nome: 'E19 · Sem Sanidade: dormir recupera só PV', obtido: function () {
+        const f = fichaDeTeste({ classe: 'ocultista', nex: 35 });
+        f.config.semSanidade = true;
+        const r = calc.recuperacaoDescanso(f, 'dormir', 'normal');
+        return [r.pv > 0, r.pe, r.san].join('|');
+      }, esperado: 'true|0|0' },
+      { nome: 'E19 · Regras opcionais: botão na faixa do agente e diálogo com a tabela de PD das 4 classes', obtido: function () {
+        return [Boolean(document.getElementById('botao-regras-opcionais')), document.querySelectorAll('#regra-sem-sanidade-tabela tbody tr').length].join('|');
+      }, esperado: 'true|4' },
+      { nome: 'E19 · Ligar a regra mostra PD no lugar do PE, esconde a SAN e desligar devolve tudo', obtido: function () {
+        const estavaLigada = OP.state.ficha.config.semSanidade === true;
+        const fichaEl = document.getElementById('ficha');
+        const lerVitais = function () {
+          return Array.prototype.filter.call(document.querySelectorAll('#trilho-vitais .vital'), function (v) { return getComputedStyle(v).display !== 'none'; })
+            .map(function (v) { return v.querySelector('.vital__sigla').textContent; }).join(',');
+        };
+        try {
+          OP.state.atualizar('config.semSanidade', false);
+          const antes = lerVitais();
+          OP.state.atualizar('config.semSanidade', true);
+          const ligada = lerVitais();
+          OP.state.atualizar('config.semSanidade', false);
+          const depois = lerVitais();
+          const sobrou = /\bPD\b/.test(fichaEl.textContent);
+          return [antes, ligada, depois, sobrou].join('|');
+        } finally {
+          OP.state.atualizar('config.semSanidade', estavaLigada);
+        }
+      }, esperado: 'PV,PE,SAN|PV,PD|PV,PE,SAN|false' },
       { nome: 'E10 · Diálogos: todos têm título (aria-labelledby) e são <dialog>', obtido: function () {
         return Array.prototype.filter.call(document.querySelectorAll('dialog'), function (d) {
           const alvo = document.getElementById(d.getAttribute('aria-labelledby') || '');

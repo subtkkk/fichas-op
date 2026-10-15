@@ -278,6 +278,15 @@ window.OP = window.OP || {};
     return OP.data.recursos.find(function (recurso) { return recurso.id === idRecurso; }) || null;
   }
 
+  /**
+   * Regra opcional "Jogando sem Sanidade" ligada nesta ficha? Os pontos de esforço
+   * e a sanidade se juntam nos Pontos de Determinação (PD): a ficha segue usando o
+   * recurso "pe" como PD e a SAN fica de fora (os valores dela não são apagados).
+   */
+  function semSanidade(ficha) {
+    return Boolean(ficha && ficha.config && ficha.config.semSanidade === true);
+  }
+
   /** Inteiro ≥ 0 (vazio, texto, NaN e negativos viram 0). */
   function inteiroNaoNegativo(valor) {
     return Math.max(0, Math.trunc(numero(valor)));
@@ -321,8 +330,11 @@ window.OP = window.OP || {};
     };
     if (!composicao.classeDefinida) return composicao;
 
-    composicao.inicialClasse = numero(classe[definicao.campoInicial]);
-    composicao.porNexClasse = numero(classe[definicao.campoPorNex]);
+    // Regra opcional "Jogando sem Sanidade": os PE viram PD, com inicial e ganho por NEX próprios (por classe)
+    const campoInicial = idRecurso === 'pe' && semSanidade(ficha) ? 'pdInicial' : definicao.campoInicial;
+    const campoPorNex = idRecurso === 'pe' && semSanidade(ficha) ? 'pdPorNex' : definicao.campoPorNex;
+    composicao.inicialClasse = numero(classe[campoInicial]);
+    composicao.porNexClasse = numero(classe[campoPorNex]);
     composicao.inicial = composicao.inicialClasse + composicao.valorAtributo;
     composicao.porNex = composicao.porNexClasse + (composicao.somaAtributo ? composicao.valorAtributo : 0);
     composicao.ganhoNex = composicao.porNex * composicao.passos;
@@ -1301,9 +1313,12 @@ window.OP = window.OP || {};
    */
   function projetarCustos(ficha, custos) {
     const c = custos || {};
+    // Sem Sanidade: a perda de Sanidade vira perda de PD (não conta no limite por turno, e não há perda permanente)
+    const semSan = semSanidade(ficha);
     const pe = inteiroNaoNegativo(c.pe);
-    const san = inteiroNaoNegativo(c.san);
-    const permanente = inteiroNaoNegativo(c.permanente);
+    const perdaMental = semSan ? inteiroNaoNegativo(c.san) : 0;
+    const san = semSan ? 0 : inteiroNaoNegativo(c.san);
+    const permanente = semSan ? 0 : inteiroNaoNegativo(c.permanente);
     const limite = limitePEporTurno(ficha);
     const gastoAntes = inteiroNaoNegativo(ficha.conjuracao && ficha.conjuracao.peGastoTurno);
     const estadoPe = estadoRecurso(ficha, 'pe');
@@ -1313,6 +1328,7 @@ window.OP = window.OP || {};
       motivo: '',
       pe: pe,
       san: san,
+      perdaMental: perdaMental,
       permanente: permanente,
       peAtual: estadoPe.atual,
       peDepois: estadoPe.atual,
@@ -1329,16 +1345,17 @@ window.OP = window.OP || {};
       mudancas: []
     };
 
-    if (pe > 0) {
+    if (pe > 0 || perdaMental > 0) {
       if (!estadoPe.classeDefinida) return Object.assign(projecao, { ok: false, motivo: 'Escolha uma classe para calcular o PE.' });
       if (pe > estadoPe.atual) return Object.assign(projecao, { ok: false, motivo: 'PE insuficiente' });
-      projecao.peDepois = estadoPe.atual - pe;
-      projecao.peGastoTurnoDepois = gastoAntes + pe;
-      projecao.avisoLimite = projecao.peGastoTurnoDepois > limite;
-      projecao.mudancas.push(
-        { caminho: 'recursos.pe.atual', valor: projecao.peDepois },
-        { caminho: 'conjuracao.peGastoTurno', valor: projecao.peGastoTurnoDepois }
-      );
+      // A perda mental (só sem Sanidade) tira PD até 0, sem impedir a conjuração
+      projecao.peDepois = Math.max(0, estadoPe.atual - pe - perdaMental);
+      projecao.mudancas.push({ caminho: 'recursos.pe.atual', valor: projecao.peDepois });
+      if (pe > 0) {
+        projecao.peGastoTurnoDepois = gastoAntes + pe;
+        projecao.avisoLimite = projecao.peGastoTurnoDepois > limite;
+        projecao.mudancas.push({ caminho: 'conjuracao.peGastoTurno', valor: projecao.peGastoTurnoDepois });
+      }
     }
 
     if (san > 0 || permanente > 0) {
@@ -2287,6 +2304,8 @@ window.OP = window.OP || {};
     const id = condicaoDescansoValida(condicao);
     const limite = limitePEporTurno(ficha);
     if (tipo === 'meditacao') return { pv: 0, pe: limite * numero(cfg.meditacaoPorLimitePE[id]), san: 0 };
+    // Sem Sanidade: dormir recupera só PV (os PD voltam com a ação de relaxar, que a ficha não modela)
+    if (semSanidade(ficha)) return { pv: limite * numero(cfg.dormir.pvPorLimitePE[id]), pe: 0, san: 0 };
     return {
       pv: limite * numero(cfg.dormir.pvPorLimitePE[id]),
       pe: limite * numero(cfg.dormir.pePorLimitePE[id]),
@@ -2348,7 +2367,7 @@ window.OP = window.OP || {};
     const efetivas = condicoesEfetivas(salvas);
     return {
       saude: pv.classeDefinida ? estadoSaude(pv.atual, pv.max) : 'ileso',
-      sanidade: san.classeDefinida ? estadoSanidade(san.atual, san.max) : 'sao',
+      sanidade: san.classeDefinida && !semSanidade(ficha) ? estadoSanidade(san.atual, san.max) : 'sao',
       morrendo: statusMorrendo(ficha),
       mod: mod,
       efetivas: efetivas,
@@ -2679,6 +2698,7 @@ window.OP = window.OP || {};
     composicaoRecurso: composicaoRecurso,
     pvMax: pvMax,
     peMax: peMax,
+    semSanidade: semSanidade,
     sanMax: sanMax,
     atualEfetivo: atualEfetivo,
     ajustarAtual: ajustarAtual,

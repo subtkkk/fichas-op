@@ -13109,3 +13109,145 @@ body {
 .secao--dossie .campo .seletor__medida > span {
   display: none;
 }
+
+/* ==========================================================================
+   29. REGRAS OPCIONAIS — botão discreto na faixa do agente e diálogo
+   ========================================================================== */
+.secao--dossie {
+  position: relative;
+}
+
+.regras-opcionais {
+  position: absolute;
+  top: 3px;
+  right: 16px;
+  z-index: 2;
+  padding: 0 4px;
+  font: 500 0.6875rem/1.4 var(--fonte-mono);
+  letter-spacing: 0.06em;
+  color: var(--papel-3);
+  background: none;
+  border: 0;
+  border-radius: var(--raio-1);
+  opacity: 0.7;
+  cursor: pointer;
+  transition: opacity var(--dur-1) var(--curva), color var(--dur-1) var(--curva);
+}
+
+.regras-opcionais:hover,
+.regras-opcionais:focus-visible {
+  opacity: 1;
+  color: var(--acento);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.regras-opcionais__marca {
+  color: var(--acento);
+}
+
+/* Toque: alvo de 44px (o texto continua pequeno) */
+@media (pointer: coarse) {
+  .regras-opcionais {
+    min-height: 44px;
+    top: -6px;
+  }
+}
+
+.dialogo--regras .dialogo__corpo {
+  max-width: 560px;
+}
+
+.alternar-regra {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--cor-texto) 5%, transparent);
+  border: 1px solid var(--linha-2);
+  border-radius: var(--raio-3);
+  cursor: pointer;
+}
+
+.alternar-regra input {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  accent-color: var(--acento);
+}
+
+.alternar-regra__texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.alternar-regra__texto small {
+  font-size: 0.8125rem;
+  color: var(--papel-2);
+}
+
+.alternar-regra:has(input:checked) {
+  border-color: var(--acento-linha);
+  background: var(--acento-suave);
+}
+
+.alternar-regra:has(input:focus-visible) {
+  outline: 3px solid var(--acento);
+  outline-offset: 2px;
+}
+
+.regra-opcional {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.regra-opcional__lista {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--papel-2);
+}
+
+.tabela-regra {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.tabela-regra th,
+.tabela-regra td {
+  padding: 6px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--linha-1);
+}
+
+.tabela-regra thead th {
+  font: 500 0.75rem/1.2 var(--fonte-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+}
+
+.tabela-regra tbody th {
+  font-weight: 600;
+  color: var(--papel);
+}
+
+/* ---- Jogando sem Sanidade: a SAN sai de cena (o PE vira PD pelo js/ui-regras.js) ---- */
+body[data-sem-sanidade="sim"] .vital--san,
+body[data-sem-sanidade="sim"] .recurso--san,
+body[data-sem-sanidade="sim"] #cond-estado-sanidade,
+body[data-sem-sanidade="sim"] .campo-texto:has(#descanso-san) {
+  display: none !important;
+}
+
+@media (max-width: 1279px) {
+  body[data-sem-sanidade="sim"] .hud__vitais {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

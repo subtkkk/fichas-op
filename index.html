@@ -309,6 +309,8 @@
         <div class="zona zona--info ficha__conteudo" data-pagina="agente" data-fixa>
           <!-- ===================== IDENTIFICAÇÃO (capa do dossiê) ===================== -->
           <section class="secao secao--dossie" id="secao-identificacao"  aria-labelledby="titulo-identificacao">
+            <!-- Discreto de propósito: regras opcionais (por ficha). Abre o diálogo #dialogo-regras (js/ui-regras.js) -->
+            <button type="button" class="regras-opcionais" id="botao-regras-opcionais" aria-haspopup="dialog">regras opcionais<span class="regras-opcionais__marca" id="regras-opcionais-marca" hidden> · 1 ligada</span></button>
 
             <h2 class="secao__titulo" id="titulo-identificacao">Identificação</h2>
 
@@ -1506,6 +1508,46 @@
     </div>
   </dialog>
 
+  <!-- ================= REGRAS OPCIONAIS (por ficha; js/ui-regras.js) ================= -->
+  <dialog class="dialogo dialogo--regras" id="dialogo-regras" aria-labelledby="regras-titulo">
+    <div class="dialogo__corpo">
+      <div class="dialogo__topo">
+        <h2 class="dialogo__titulo" id="regras-titulo">Regras opcionais</h2>
+        <button type="button" class="botao-icone" data-fechar-dialogo aria-label="Fechar">
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>
+        </button>
+      </div>
+      <p class="dialogo__dica">Valem só para esta ficha. Combine com a mesa antes de ligar.</p>
+
+      <section class="regra-opcional" aria-labelledby="regra-sem-sanidade-titulo">
+        <label class="alternar-regra">
+          <input type="checkbox" id="regra-sem-sanidade">
+          <span class="alternar-regra__texto">
+            <strong id="regra-sem-sanidade-titulo">Jogando sem Sanidade</strong>
+            <small>Pontos de Determinação (PD) no lugar de PE e SAN · <em>Sobrevivendo ao Horror</em></small>
+          </span>
+        </label>
+        <p class="dialogo__texto">Com a regra ligada, os pontos de esforço e a Sanidade viram um recurso só, os <strong>Pontos de Determinação</strong>. A ficha passa a mostrar PD no lugar do PE, esconde a SAN (os valores dela ficam guardados e voltam se você desligar) e calcula o máximo de PD pela classe:</p>
+        <table class="tabela-regra" id="regra-sem-sanidade-tabela">
+          <caption class="visualmente-oculto">Pontos de Determinação por classe</caption>
+          <thead><tr><th scope="col">Classe</th><th scope="col">PD inicial</th><th scope="col">A cada novo NEX</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <p class="dialogo__texto">O que a ficha faz sozinha:</p>
+        <ul class="regra-opcional__lista">
+          <li>Tudo o que gasta PE passa a gastar PD (rituais, habilidades, limite por turno).</li>
+          <li>Perda de Sanidade, como a dos rituais de Medo, tira PD no lugar da SAN (sem perda permanente).</li>
+          <li>Dormir recupera só PV; os PD voltam com a meditação ou editando o valor na mão.</li>
+        </ul>
+        <p class="dialogo__texto">O que fica por sua conta, na mesa: a ação de relaxar, o prato favorito (PD temporários), o ajuste do dano mental das criaturas, o poder Cicatrizes Psicológicas e as regras de Insanidade &amp; Loucura. Confira os detalhes no livro.</p>
+      </section>
+
+      <div class="dialogo__botoes">
+        <button type="button" class="botao botao--primario" data-fechar-dialogo>Pronto</button>
+      </div>
+    </div>
+  </dialog>
+
   <!-- ================= AJUDA DE TECLADO (tecla ?) ================= -->
   <dialog class="dialogo dialogo--ajuda" id="dialogo-ajuda" aria-labelledby="ajuda-titulo">
     <div class="dialogo__corpo">
@@ -1619,6 +1661,7 @@
   <script src="js/ui-biografia.js"></script>
   <script src="js/ui-verificacoes.js"></script>
   <script src="js/ui-aparencia.js"></script>
+  <script src="js/ui-regras.js"></script>
   <script src="js/ui-auditoria.js"></script>
   <script src="js/main.js"></script>
   <!-- Testes: não rodam sozinhos. Digite OP.runTests() no console. -->

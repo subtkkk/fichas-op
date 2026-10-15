@@ -544,6 +544,10 @@ window.OP = window.OP || {};
       return 'Meditação em descanso ' + nome + ': limite de PE por turno (' + limite + ') × ' + fator + ' = ' + (limite * fator) + ' PE. Só PE.';
     }
     const dormir = cfg.dormir;
+    if (OP.calc.semSanidade(ficha())) {
+      return 'Dormir em descanso ' + nome + ' (sem Sanidade, sugestão provisória, confira no livro): só PV = limite de PE por turno (' + limite + ') × ' +
+        dormir.pvPorLimitePE[condicao] + '. Os PE voltam com a meditação.';
+    }
     return 'Dormir em descanso ' + nome + ' (sugestão provisória, confira no livro): PV = limite de PE por turno (' + limite + ') × ' +
       dormir.pvPorLimitePE[condicao] + ', PE = ' + limite + ' × ' + dormir.pePorLimitePE[condicao] + ', SAN +' + dormir.san[condicao] + '.';
   }
@@ -606,7 +610,7 @@ window.OP = window.OP || {};
     });
 
     const ganho = function (id) { return novo[id] === null || novo[id] === undefined ? 0 : Math.max(0, novo[id] - antes[id]); };
-    let texto = 'Recuperou ' + ganho('pv') + ' PV, ' + ganho('pe') + ' PE, ' + ganho('san') + ' SAN';
+    let texto = 'Recuperou ' + ganho('pv') + ' PV, ' + ganho('pe') + ' PE' + (OP.calc.semSanidade(f) ? '' : ', ' + ganho('san') + ' SAN');
     if (refs.descansoCena.checked) {
       texto += '. Cena encerrada' + (removidas.length ? ': saíram ' + lista(removidas.map(nomeDaCondicao)) : '');
     }

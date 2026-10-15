@@ -1618,3 +1618,10 @@ html[data-diario-impressao="sim"] .bio__diario {
     visibility: hidden;
   }
 }
+
+/* Regras opcionais: o botão da tela não vai para o papel (a SAN escondida também some) */
+@media print {
+  .regras-opcionais {
+    display: none !important;
+  }
+}

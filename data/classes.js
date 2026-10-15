@@ -1,4 +1,4 @@
-/* Classes: recursos, perícias, proficiências e tabela de progressão por NEX (ou estágio). Sobrevivente: os valores "por NEX" valem por ESTÁGIO. Gerado a partir do Guia de Consulta (Livro de Regras v1.3, Sobrevivendo ao Horror v1.2 e aventuras AS). Contém só nomes e números; as descrições devem ser digitadas pelo usuário. */
+/* Classes: recursos, perícias, proficiências e tabela de progressão por NEX (ou estágio). Sobrevivente: os valores "por NEX" valem por ESTÁGIO. Gerado a partir do Guia de Consulta (Livro de Regras v1.3, Sobrevivendo ao Horror v1.2 e aventuras AS). Contém só nomes e números (pdInicial/pdPorNex: Pontos de Determinação da regra opcional "Jogando sem Sanidade"); as descrições devem ser digitadas pelo usuário. */
 window.OP = window.OP || {};
 OP.data = OP.data || {};
 OP.data.classes = {
@@ -13,6 +13,8 @@ OP.data.classes = {
   "pePorNex": 2,
   "sanInicial": 12,
   "sanPorNex": 3,
+  "pdInicial": 6,
+  "pdPorNex": 3,
   "pontosTreinamento": 1,
   "pericias": {
    "fixas": [],
@@ -232,6 +234,8 @@ OP.data.classes = {
   "pePorNex": 3,
   "sanInicial": 16,
   "sanPorNex": 4,
+  "pdInicial": 8,
+  "pdPorNex": 4,
   "pontosTreinamento": 7,
   "pericias": {
    "fixas": [],
@@ -453,6 +457,8 @@ OP.data.classes = {
   "pePorNex": 4,
   "sanInicial": 20,
   "sanPorNex": 5,
+  "pdInicial": 10,
+  "pdPorNex": 5,
   "pontosTreinamento": 3,
   "pericias": {
    "fixas": [
@@ -670,6 +676,8 @@ OP.data.classes = {
   "pePorNex": 1,
   "sanInicial": 8,
   "sanPorNex": 2,
+  "pdInicial": 4,
+  "pdPorNex": 2,
   "pontosTreinamento": 1,
   "pericias": {
    "fixas": [],

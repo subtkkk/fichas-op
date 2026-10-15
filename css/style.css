@@ -131,7 +131,7 @@
   --cor-aco: #a6b8cc;
   --cor-poco: #000000;
   /* Temas elementais da ficha (data-elemento): acento, acento claro, 2º e 3º acentos e tinta sobre o acento */
-  --tema-sangue: #e5476f; --tema-sangue-claro: #ff8aa3; --tema-sangue-2: #8f1c2c; --tema-sangue-3: #ff4fd8; --tema-sangue-texto: #1a0605;
+  --tema-sangue: #ec4636; --tema-sangue-claro: #ff7b68; --tema-sangue-2: #a41d16; --tema-sangue-3: #ff5a2a; --tema-sangue-texto: #1a0605;
   --tema-morte: #ab9bd3; --tema-morte-claro: #cfc3f0; --tema-morte-2: #5e5a6e; --tema-morte-3: #ab9bd3; --tema-morte-texto: #120f1a;
   --tema-conhecimento: #e3c04e; --tema-conhecimento-claro: #f7df8f; --tema-conhecimento-2: #8a6a2a; --tema-conhecimento-3: #e3c04e; --tema-conhecimento-texto: #191304;
   --tema-energia: #b571ff; --tema-energia-claro: #d9adff; --tema-energia-2: #2fe0ff; --tema-energia-3: #ff4fd8; --tema-energia-texto: #12051f;
@@ -153,6 +153,8 @@
   --tinta-4: #1b1e23;
   --tinta-5: #23272d;
   --campo-fundo: #0b0d10;
+  /* 0 nos temas escuro e de alto contraste, 1 no claro: o elemento tinge o papel só no claro */
+  --claro: 0;
   --cor-sombra-suave: color-mix(in srgb, var(--cor-sombra) 70%, transparent);
   color-scheme: dark;
 }
@@ -182,7 +184,7 @@
   --cor-aco: #4c5e75;
   --cor-poco: #b9b2a1;
   /* Temas elementais da ficha (data-elemento): acento, acento claro, 2º e 3º acentos e tinta sobre o acento */
-  --tema-sangue: #b3203f; --tema-sangue-claro: #d9486a; --tema-sangue-2: #8f1c2c; --tema-sangue-3: #b0208f; --tema-sangue-texto: #ffffff;
+  --tema-sangue: #b5200f; --tema-sangue-claro: #d63a22; --tema-sangue-2: #c71f0d; --tema-sangue-3: #c2410c; --tema-sangue-texto: #ffffff;
   --tema-morte: #5b4a8f; --tema-morte-claro: #7d6bb3; --tema-morte-2: #5e5a6e; --tema-morte-3: #5b4a8f; --tema-morte-texto: #ffffff;
   --tema-conhecimento: #7a5a14; --tema-conhecimento-claro: #a07a22; --tema-conhecimento-2: #8a6a2a; --tema-conhecimento-3: #7a5a14; --tema-conhecimento-texto: #ffffff;
   --tema-energia: #6a2fb8; --tema-energia-claro: #8c52d9; --tema-energia-2: #0a7a96; --tema-energia-3: #b0208f; --tema-energia-texto: #ffffff;
@@ -202,6 +204,7 @@
   --tinta-4: #ffffff;
   --tinta-5: #efe9db;
   --campo-fundo: #ffffff;
+  --claro: 1;
   color-scheme: light;
 }
 
@@ -231,7 +234,7 @@
     --cor-aco: #4c5e75;
     --cor-poco: #b9b2a1;
     /* Temas elementais da ficha (data-elemento): acento, acento claro, 2º e 3º acentos e tinta sobre o acento */
-    --tema-sangue: #b3203f; --tema-sangue-claro: #d9486a; --tema-sangue-2: #8f1c2c; --tema-sangue-3: #b0208f; --tema-sangue-texto: #ffffff;
+    --tema-sangue: #b5200f; --tema-sangue-claro: #d63a22; --tema-sangue-2: #c71f0d; --tema-sangue-3: #c2410c; --tema-sangue-texto: #ffffff;
     --tema-morte: #5b4a8f; --tema-morte-claro: #7d6bb3; --tema-morte-2: #5e5a6e; --tema-morte-3: #5b4a8f; --tema-morte-texto: #ffffff;
     --tema-conhecimento: #7a5a14; --tema-conhecimento-claro: #a07a22; --tema-conhecimento-2: #8a6a2a; --tema-conhecimento-3: #7a5a14; --tema-conhecimento-texto: #ffffff;
     --tema-energia: #6a2fb8; --tema-energia-claro: #8c52d9; --tema-energia-2: #0a7a96; --tema-energia-3: #b0208f; --tema-energia-texto: #ffffff;
@@ -251,6 +254,7 @@
     --tinta-4: #ffffff;
     --tinta-5: #efe9db;
     --campo-fundo: #ffffff;
+    --claro: 1;
     color-scheme: light;
   }
 }
@@ -452,9 +456,11 @@
   --acento-2: var(--tema-sangue-2);
   --acento-3: var(--tema-sangue-3);
   --acento-texto: var(--tema-sangue-texto);
-  --luz-a: color-mix(in srgb, var(--tema-sangue-2) 40%, transparent);
-  --luz-b: color-mix(in srgb, var(--tema-sangue-2) 30%, transparent);
-  --tinta-superficie: color-mix(in srgb, var(--cor-superficie) 93%, var(--tema-sangue-2));
+  --papel-tom: #dc2a10;
+  --papel-forca: 11%;
+  --luz-a: color-mix(in srgb, var(--tema-sangue-2) calc(40% - 22% * var(--claro)), transparent);
+  --luz-b: color-mix(in srgb, var(--tema-sangue-2) calc(30% - 20% * var(--claro)), transparent);
+  --tinta-superficie: color-mix(in srgb, var(--cor-superficie) calc(93% - 3% * var(--claro)), var(--tema-sangue-2));
 }
 
 /* Morte: violetas fechados, cinzas frios, névoa difusa */
@@ -464,9 +470,11 @@
   --acento-2: var(--tema-morte-2);
   --acento-3: var(--tema-morte-3);
   --acento-texto: var(--tema-morte-texto);
-  --luz-a: color-mix(in srgb, var(--tema-morte) 14%, transparent);
-  --luz-b: color-mix(in srgb, var(--tema-morte-2) 12%, transparent);
-  --tinta-superficie: color-mix(in srgb, var(--cor-superficie) 94%, var(--tema-morte));
+  --papel-tom: #6c68b0;
+  --papel-forca: 22%;
+  --luz-a: color-mix(in srgb, var(--tema-morte) calc(14% + 16% * var(--claro)), transparent);
+  --luz-b: color-mix(in srgb, var(--tema-morte-2) calc(12% + 14% * var(--claro)), transparent);
+  --tinta-superficie: color-mix(in srgb, var(--cor-superficie) calc(94% - 8% * var(--claro)), var(--tema-morte));
   --papel: color-mix(in oklab, var(--cor-texto) 90%, var(--tema-morte));
   --papel-2: color-mix(in oklab, var(--cor-texto-suave) 90%, var(--tema-morte));
   --papel-3: color-mix(in oklab, var(--cor-texto-fraco) 90%, var(--tema-morte));
@@ -479,8 +487,10 @@
   --acento-2: var(--tema-conhecimento-2);
   --acento-3: var(--tema-conhecimento-3);
   --acento-texto: var(--tema-conhecimento-texto);
-  --luz-a: color-mix(in srgb, var(--tema-conhecimento) 13%, transparent);
-  --luz-b: color-mix(in srgb, var(--tema-conhecimento-2) 10%, transparent);
+  --papel-tom: #d6ad2e;
+  --papel-forca: 13%;
+  --luz-a: color-mix(in srgb, var(--tema-conhecimento) calc(13% + 5% * var(--claro)), transparent);
+  --luz-b: color-mix(in srgb, var(--tema-conhecimento-2) calc(10% + 4% * var(--claro)), transparent);
   --tinta-superficie: color-mix(in srgb, var(--cor-superficie) 95%, var(--tema-conhecimento-2));
 }
 
@@ -491,9 +501,11 @@
   --acento-2: var(--tema-energia-2);
   --acento-3: var(--tema-energia-3);
   --acento-texto: var(--tema-energia-texto);
-  --luz-a: color-mix(in srgb, var(--tema-energia) 17%, transparent);
-  --luz-b: color-mix(in srgb, var(--tema-energia-3) 11%, transparent);
-  --tinta-superficie: color-mix(in srgb, var(--cor-superficie) 94%, var(--tema-energia));
+  --papel-tom: #8d4dff;
+  --papel-forca: 16%;
+  --luz-a: color-mix(in srgb, var(--tema-energia) calc(17% + 15% * var(--claro)), transparent);
+  --luz-b: color-mix(in srgb, var(--tema-energia-2) calc(11% * (1 - var(--claro)) + 24% * var(--claro)), transparent);
+  --tinta-superficie: color-mix(in srgb, var(--cor-superficie) calc(94% - 8% * var(--claro)), var(--tema-energia));
 }
 
 /* Medo: preto profundo, branco pálido e cinzas neutros; quase silêncio */
@@ -503,8 +515,10 @@
   --acento-2: var(--tema-medo-2);
   --acento-3: var(--tema-medo-3);
   --acento-texto: var(--tema-medo-texto);
-  --luz-a: color-mix(in srgb, var(--tema-medo) 3.5%, transparent);
-  --luz-b: color-mix(in srgb, var(--tema-medo) 2%, transparent);
+  --papel-tom: #4c5663;
+  --papel-forca: 14%;
+  --luz-a: color-mix(in srgb, var(--tema-medo) calc(3.5% + 5% * var(--claro)), transparent);
+  --luz-b: color-mix(in srgb, var(--tema-medo) calc(2% + 4% * var(--claro)), transparent);
   --tinta-superficie: var(--cor-superficie);
   --linha-3: color-mix(in srgb, var(--cor-texto) 20%, transparent);
 }
@@ -514,6 +528,35 @@
   --luz-a: transparent;
   --luz-b: transparent;
   --tinta-superficie: var(--cor-superficie);
+}
+
+/* Tema claro: o papel e a barra ganham a cor do elemento (no escuro --claro vale 0 e nada muda) */
+.atmosfera[data-elemento] {
+  background: color-mix(in srgb, var(--tinta-1) calc(100% - var(--papel-forca, 0%) * var(--claro)), var(--papel-tom, var(--tinta-1)));
+}
+
+.atmosfera[data-elemento]:not([data-elemento="neutro"]):not([data-elemento="conhecimento"]) {
+  --latao: color-mix(in srgb, var(--cor-destaque) calc(100% - 100% * var(--claro)), var(--acento));
+}
+
+body[data-vista="ficha"][data-tema-ficha="sangue"] {
+  --latao: color-mix(in srgb, var(--cor-destaque) calc(100% - 100% * var(--claro)), var(--tema-sangue));
+  --latao-claro: color-mix(in srgb, var(--cor-destaque-claro) calc(100% - 100% * var(--claro)), var(--tema-sangue-claro));
+}
+
+body[data-vista="ficha"][data-tema-ficha="morte"] {
+  --latao: color-mix(in srgb, var(--cor-destaque) calc(100% - 100% * var(--claro)), var(--tema-morte));
+  --latao-claro: color-mix(in srgb, var(--cor-destaque-claro) calc(100% - 100% * var(--claro)), var(--tema-morte-claro));
+}
+
+body[data-vista="ficha"][data-tema-ficha="energia"] {
+  --latao: color-mix(in srgb, var(--cor-destaque) calc(100% - 100% * var(--claro)), var(--tema-energia));
+  --latao-claro: color-mix(in srgb, var(--cor-destaque-claro) calc(100% - 100% * var(--claro)), var(--tema-energia-claro));
+}
+
+body[data-vista="ficha"][data-tema-ficha="medo"] {
+  --latao: color-mix(in srgb, var(--cor-destaque) calc(100% - 100% * var(--claro)), var(--tema-medo));
+  --latao-claro: color-mix(in srgb, var(--cor-destaque-claro) calc(100% - 100% * var(--claro)), var(--tema-medo-claro));
 }
 
 /* Troca de tema: as cores registradas deslizam (só enquanto troca) */
@@ -10835,7 +10878,7 @@ kbd {
 
   .dock__contador {
     font: 500 0.75rem var(--fonte-mono);
-    color: var(--papel-3);
+    color: var(--papel-2);
   }
 
   /* Folha do índice: sobe de baixo */

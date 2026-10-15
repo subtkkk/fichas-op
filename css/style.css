@@ -13146,6 +13146,14 @@ body {
   color: var(--acento);
 }
 
+/* Faixa do agente no computador: o campo do jogador desce um pouco para não encostar no texto */
+@media (min-width: 1280px) {
+  .zona--info .secao--dossie .campo--jogador {
+    position: relative;
+    top: 12px;
+  }
+}
+
 /* Toque: alvo de 44px (o texto continua pequeno) */
 @media (pointer: coarse) {
   .regras-opcionais {

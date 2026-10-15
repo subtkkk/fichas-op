@@ -3,7 +3,10 @@
    --------------------------------------------------------------------------
    - Botão discreto "regras opcionais" na faixa do agente; abre um diálogo com
      as regras opcionais, ligadas POR FICHA (ficha.config). Começa com
-     "Jogando sem Sanidade" (Sobrevivendo ao Horror): PD no lugar de PE e SAN.
+     "Jogando sem Sanidade" (Sobrevivendo ao Horror): PD no lugar de PE e SAN, e
+     "NEX e Experiência" (Novas regras opcionais): nível para a progressão e NEX
+     só para a exposição (painel em js/ui-nex.js; contas em js/calc.js; textos
+     do livro em data/alteracoes-nex.js).
    - Os números da regra ficam em data/classes.js (pdInicial/pdPorNex) e as
      contas em js/calc.js; aqui só tem tela.
    - Com a regra ligada: <body data-sem-sanidade="sim"> (o CSS esconde a SAN) e
@@ -142,6 +145,7 @@ window.OP = window.OP || {};
 
   function abrir() {
     refs.caixa.checked = OP.calc.semSanidade(OP.state.ficha);
+    refs.caixaNex.checked = OP.calc.regraNexNivel(OP.state.ficha);
     if (OP.ui.abrirDialogo) OP.ui.abrirDialogo(refs.dialogo, refs.botao);
     else refs.dialogo.showModal();
     refs.caixa.focus();
@@ -155,6 +159,69 @@ window.OP = window.OP || {};
   }
 
   /* ------------------------------------------------------------------------
+     NEX e Experiência
+     ------------------------------------------------------------------------ */
+
+  function preencherLivroNex() {
+    const dados = OP.data.regraNexNivel;
+    const filhos = [];
+    function bloco(titulo, paragrafos, classe) {
+      const caixa = document.createElement('div');
+      caixa.className = classe;
+      const h = document.createElement('h3');
+      h.className = 'subtitulo';
+      h.textContent = titulo;
+      caixa.appendChild(h);
+      paragrafos.forEach(function (texto) {
+        const p = document.createElement('p');
+        p.className = 'dialogo__texto';
+        p.textContent = texto;
+        caixa.appendChild(p);
+      });
+      filhos.push(caixa);
+    }
+    dados.secoes.forEach(function (secao) { bloco(secao.titulo, secao.paragrafos, 'regra-livro__secao'); });
+    dados.caixas.forEach(function (caixa) { bloco(caixa.titulo, caixa.paragrafos, 'regra-livro__secao regra-livro__secao--caixa'); });
+    OP.ui.substituirFilhos(refs.livroNex, filhos);
+  }
+
+  /** Liga: o NEX da regra padrão vira o nível equivalente e o NEX de exposição começa em 0. Desliga: o NEX volta a ser o do nível. */
+  function trocarNexENivel(ligar) {
+    const f = OP.state.ficha;
+    if (ligar) {
+      OP.state.atualizar('identificacao.nivel', OP.calc.nivelDoNex(f.identificacao.nex), { silencioso: true });
+      OP.state.atualizar('identificacao.nex', 0, { silencioso: true });
+    } else {
+      OP.state.atualizar('identificacao.nex', OP.calc.nexDoNivel(OP.calc.nivelDaFicha(f)), { silencioso: true });
+    }
+    OP.state.atualizar('config.nexENivel', ligar);
+    if (OP.uiApp && OP.uiApp.anunciar) {
+      OP.uiApp.anunciar(ligar ? 'NEX e Experiência ligado: nível para a progressão, NEX para a exposição.' : 'NEX e Experiência desligado.');
+    }
+  }
+
+  function aoMudarRegraNex() {
+    const ligar = refs.caixaNex.checked === true;
+    const f = OP.state.ficha;
+    const exposicao = OP.calc.numero(f.identificacao.nex);
+    if (ligar || exposicao === 0 || !OP.ui.confirmar) {
+      trocarNexENivel(ligar);
+      return;
+    }
+    // Desligar descarta o NEX de exposição: pede confirmação
+    const nivel = OP.calc.nivelDaFicha(f);
+    const aberto = OP.ui.confirmar({
+      titulo: 'Desligar NEX e Experiência?',
+      texto: 'O NEX da ficha volta a ser o equivalente ao nível (nível ' + nivel + ' = NEX ' + OP.calc.nexDoNivel(nivel) + '%) e o NEX de exposição atual (' + exposicao + '%) é descartado.',
+      textoConfirmar: 'Desligar',
+      perigo: true,
+      aoConfirmar: function () { trocarNexENivel(false); },
+      aoCancelar: function () { refs.caixaNex.checked = true; }
+    });
+    if (!aberto) refs.caixaNex.checked = true;
+  }
+
+  /* ------------------------------------------------------------------------
      Ciclo de desenho
      ------------------------------------------------------------------------ */
 
@@ -162,8 +229,14 @@ window.OP = window.OP || {};
     const sem = OP.calc.semSanidade(ficha);
     document.body.setAttribute('data-sem-sanidade', sem ? 'sim' : 'nao');
     aplicarRotulos(sem);
-    refs.marca.hidden = !sem;
+    const nex = OP.calc.regraNexNivel(ficha);
+    document.body.setAttribute('data-nex-nivel', nex ? 'sim' : 'nao');
+    const ligadas = (sem ? 1 : 0) + (nex ? 1 : 0);
+    refs.marca.hidden = ligadas === 0;
+    const textoMarca = ' · ' + ligadas + (ligadas === 1 ? ' ligada' : ' ligadas');
+    if (ligadas && refs.marca.textContent !== textoMarca) refs.marca.textContent = textoMarca;
     if (refs.dialogo.open && refs.caixa.checked !== sem) refs.caixa.checked = sem;
+    if (refs.dialogo.open && refs.caixaNex.checked !== nex && !document.getElementById('dialogo-confirmar').open) refs.caixaNex.checked = nex;
   }
 
   function montar() {
@@ -172,8 +245,12 @@ window.OP = window.OP || {};
     refs.dialogo = document.getElementById('dialogo-regras');
     refs.caixa = document.getElementById('regra-sem-sanidade');
     refs.tabela = document.getElementById('regra-sem-sanidade-tabela');
-    if (!refs.botao || !refs.dialogo || !refs.caixa || !refs.tabela) return;
+    refs.caixaNex = document.getElementById('regra-nex-nivel');
+    refs.livroNex = document.getElementById('regra-nex-nivel-livro-corpo');
+    if (!refs.botao || !refs.dialogo || !refs.caixa || !refs.tabela || !refs.caixaNex || !refs.livroNex) return;
     preencherTabelaPd();
+    preencherLivroNex();
+    refs.caixaNex.addEventListener('change', aoMudarRegraNex);
     refs.botao.addEventListener('click', abrir);
     refs.caixa.addEventListener('change', aoMudarRegra);
     refs.dialogo.addEventListener('click', function (evento) {
@@ -184,6 +261,7 @@ window.OP = window.OP || {};
 
   OP.uiRegras = {
     montar: montar,
-    abrir: abrir
+    abrir: abrir,
+    trocarNexENivel: trocarNexENivel
   };
 })(window.OP);

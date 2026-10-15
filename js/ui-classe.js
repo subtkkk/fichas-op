@@ -52,8 +52,10 @@ window.OP = window.OP || {};
   }
 
   /** "NEX 10%" ou "Estágio 2". */
-  function textoNivel(nivel, unidade) {
-    return unidade === 'estagio' ? 'Estágio ' + nivel : 'NEX ' + nivel + '%';
+  function textoNivel(nivel, unidade, porNivel) {
+    if (unidade === 'estagio') return 'Estágio ' + nivel;
+    // NEX e Experiência: 1 nível = 5% de NEX (nível 20 = 99%)
+    return porNivel ? 'Nível ' + OP.calc.nivelDoNex(nivel) + ' (equivale a NEX ' + nivel + '%)' : 'NEX ' + nivel + '%';
   }
 
   /** Linha "Rótulo: valor" de um painel. */
@@ -298,7 +300,7 @@ window.OP = window.OP || {};
   /** Item da lista de habilidades da trilha: marco, nome, situação e botão. */
   function itemHabilidade(ficha, habilidade, unidade, rotuloExtra) {
     const item = criar('li', 'trilha__habilidade ' + (habilidade.liberada ? 'trilha__habilidade--liberada' : 'trilha__habilidade--bloqueada'));
-    item.appendChild(criar('span', 'trilha__marco', textoNivel(habilidade.marco, unidade)));
+    item.appendChild(criar('span', 'trilha__marco', textoNivel(habilidade.marco, unidade, OP.calc.regraNexNivel(ficha))));
     item.appendChild(criar('span', 'trilha__nome', habilidade.nome + (rotuloExtra ? ' (' + rotuloExtra + ')' : '')));
     item.appendChild(criar('span', 'trilha__situacao', habilidade.liberada ? 'liberada' : 'bloqueada'));
     item.appendChild(botaoAdicionar(ficha, habilidade.nome, 'trilha'));
@@ -390,20 +392,21 @@ window.OP = window.OP || {};
     OP.ui.substituirFilhos(refs.contadores, itens);
   }
 
-  function desenharTabela(progressao) {
-    const chave = JSON.stringify([progressao.unidade, progressao.nivel, progressao.linhas]);
+  function desenharTabela(progressao, porNivel) {
+    const chave = JSON.stringify([progressao.unidade, progressao.nivel, progressao.linhas, porNivel]);
     if (chave === assinaturas.progressao) return;
     assinaturas.progressao = chave;
 
     refs.tabela.hidden = !progressao.classeDefinida;
     refs.semClasse.hidden = progressao.classeDefinida;
-    refs.colunaNivel.textContent = progressao.unidade === 'estagio' ? 'Estágio' : 'NEX';
+    refs.colunaNivel.textContent = progressao.unidade === 'estagio' ? 'Estágio' : (porNivel ? 'Nível (NEX)' : 'NEX');
 
     const linhas = progressao.linhas.map(function (linha) {
       const tr = criar('tr', 'progressao__linha' +
         (linha.alcancada ? ' progressao__linha--alcancada' : '') + (linha.atual ? ' progressao__linha--atual' : ''));
       if (linha.atual) tr.setAttribute('aria-current', 'step');
-      const th = criar('th', '', progressao.unidade === 'estagio' ? String(linha.nivel) : linha.nivel + '%');
+      const th = criar('th', '', progressao.unidade === 'estagio' ? String(linha.nivel)
+        : (porNivel ? OP.calc.nivelDoNex(linha.nivel) + ' (' + linha.nivel + '%)' : linha.nivel + '%'));
       th.scope = 'row';
       tr.appendChild(th);
       const td = criar('td', '');
@@ -419,11 +422,11 @@ window.OP = window.OP || {};
     OP.ui.substituirFilhos(refs.corpoTabela, linhas);
   }
 
-  function desenharProximo(progressao) {
+  function desenharProximo(progressao, porNivel) {
     let texto = '';
     if (progressao.classeDefinida) {
       texto = progressao.proximo
-        ? 'Próximo marco: ' + textoNivel(progressao.proximo.nivel, progressao.proximo.unidade) + ' — ' + progressao.proximo.rotulos.join(', ')
+        ? 'Próximo marco: ' + textoNivel(progressao.proximo.nivel, progressao.proximo.unidade, porNivel) + ' — ' + progressao.proximo.rotulos.join(', ')
         : 'Todos os marcos alcançados';
     }
     if (refs.proximo.textContent !== texto) refs.proximo.textContent = texto;
@@ -450,15 +453,18 @@ window.OP = window.OP || {};
     refs.selectTrilha.disabled = !ident.classe && ident.trilha === '';
 
     // NEX ou Estágio (Sobrevivente)
+    // Regra opcional NEX e Experiência: o campo é o Nível (o NEX de exposição fica em "Alterações de NEX")
     const porEstagio = derivados.nex.unidade === 'estagio';
-    refs.selectNex.hidden = porEstagio;
+    const porNivel = OP.calc.regraNexNivel(ficha) && !porEstagio;
+    refs.selectNex.hidden = porEstagio || porNivel;
+    refs.selectNivel.hidden = !porNivel;
     refs.selectEstagio.hidden = !porEstagio;
-    refs.rotuloNivel.textContent = porEstagio ? 'Estágio' : 'NEX';
-    refs.rotuloNivel.htmlFor = porEstagio ? 'campo-estagio' : 'campo-nex';
+    refs.rotuloNivel.textContent = porEstagio ? 'Estágio' : (porNivel ? 'Nível' : 'NEX');
+    refs.rotuloNivel.htmlFor = porEstagio ? 'campo-estagio' : (porNivel ? 'campo-nivel' : 'campo-nex');
 
     desenharContadores(derivados.progressao);
-    desenharTabela(derivados.progressao);
-    desenharProximo(derivados.progressao);
+    desenharTabela(derivados.progressao, porNivel);
+    desenharProximo(derivados.progressao, porNivel);
   }
 
   /* ------------------------------------------------------------------------
@@ -524,6 +530,7 @@ window.OP = window.OP || {};
     refs.selectTrilha = document.getElementById('campo-trilha');
     refs.trilhaTexto = document.getElementById('campo-trilha-texto');
     refs.selectNex = document.getElementById('campo-nex');
+    refs.selectNivel = document.getElementById('campo-nivel');
     refs.selectEstagio = document.getElementById('campo-estagio');
     refs.rotuloNivel = document.getElementById('rotulo-nivel');
     refs.contadores = document.getElementById('progressao-contadores');

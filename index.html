@@ -310,7 +310,7 @@
           <!-- ===================== IDENTIFICAÇÃO (capa do dossiê) ===================== -->
           <section class="secao secao--dossie" id="secao-identificacao"  aria-labelledby="titulo-identificacao">
             <!-- Discreto de propósito: regras opcionais (por ficha). Abre o diálogo #dialogo-regras (js/ui-regras.js) -->
-            <button type="button" class="regras-opcionais" id="botao-regras-opcionais" aria-haspopup="dialog">regras opcionais<span class="regras-opcionais__marca" id="regras-opcionais-marca" hidden> · 1 ligada</span></button>
+            <button type="button" class="regras-opcionais" id="botao-regras-opcionais" aria-haspopup="dialog">regras opcionais<span class="regras-opcionais__marca" id="regras-opcionais-marca" hidden></span></button>
 
             <h2 class="secao__titulo" id="titulo-identificacao">Identificação</h2>
 
@@ -364,6 +364,7 @@
                 <!-- NEX nas classes comuns; Estágio no Sobrevivente (js/ui-classe.js troca) -->
                 <label for="campo-nex" id="rotulo-nivel">NEX</label>
                 <select id="campo-nex" data-campo="identificacao.nex" data-tipo="inteiro"></select>
+                <select id="campo-nivel" data-campo="identificacao.nivel" data-tipo="inteiro" hidden></select>
                 <select id="campo-estagio" data-campo="identificacao.estagio" data-tipo="inteiro" hidden></select>
               </div>
             </div>
@@ -859,6 +860,98 @@
           </div>
 
           <div class="pagina-painel ficha__conteudo" role="tabpanel" id="pagina-habilidades" aria-label="Habilidades" data-pagina="habilidades" tabindex="-1" data-oculta>
+          <!-- ================= ALTERAÇÕES DE NEX (regra opcional NEX e Experiência; js/ui-nex.js) ================= -->
+          <section class="secao secao--alteracoes" id="secao-alteracoes" aria-labelledby="titulo-alteracoes" hidden>
+            <div class="secao__cabecalho">
+              <h2 class="secao__titulo" id="titulo-alteracoes">Alterações de NEX</h2>
+              <p class="secao__info">Regra opcional <strong>NEX e Experiência</strong></p>
+            </div>
+
+            <div class="nex-exposicao">
+              <div class="campo-bonus">
+                <label for="nex-exposicao">NEX (exposição)</label>
+                <div class="passo">
+                  <button type="button" class="passo__botao" tabindex="-1" data-passo="-1" data-alvo="nex-exposicao" aria-label="Diminuir 1% de NEX">−</button>
+                  <input id="nex-exposicao" class="passo__valor" type="number" min="0" max="99" step="1" inputmode="numeric"
+                         data-campo="identificacao.nex" data-tipo="inteiro">
+                  <button type="button" class="passo__botao" tabindex="-1" data-passo="1" data-alvo="nex-exposicao" aria-label="Aumentar 1% de NEX">+</button>
+                </div>
+                <span class="nex-exposicao__pct" aria-hidden="true">%</span>
+              </div>
+              <p class="secao__nota" id="nex-resumo"></p>
+            </div>
+
+            <fieldset class="nex-escolhas" id="nex-escolhas">
+              <legend>Escolhas</legend>
+              <div class="campo-texto" id="nex-campo-elemento">
+                <label for="alt-elemento">Elemento (o conectado)</label>
+                <select id="alt-elemento" class="controle" data-campo="conjuracao.elementoConectado" data-tipo="texto" data-padrao=""
+                        title="Só um elemento por ficha. É o mesmo da aba Rituais."></select>
+              </div>
+              <div class="campo-texto" id="nex-campo-penalidade25" hidden>
+                <label for="alt-penalidade25">NEX 25%: perícia com −5</label>
+                <select id="alt-penalidade25" class="controle" data-campo="alteracoesNex.penalidade25" data-tipo="texto">
+                  <option value="">— Escolha —</option>
+                  <option value="diplomacia">Diplomacia</option>
+                  <option value="enganacao">Enganação</option>
+                  <option value="intimidacao">Intimidação</option>
+                </select>
+              </div>
+              <div class="campo-texto" id="nex-campo-atributo35" hidden>
+                <label for="alt-atributo35">NEX 35%: atributo somado ao PE</label>
+                <select id="alt-atributo35" class="controle" data-campo="alteracoesNex.atributo35" data-tipo="texto">
+                  <option value="">— Escolha —</option>
+                  <option value="agi">Agilidade</option>
+                  <option value="for">Força</option>
+                  <option value="int">Intelecto</option>
+                  <option value="vig">Vigor</option>
+                </select>
+              </div>
+              <div class="campo-texto" id="nex-campo-penalidade35" hidden>
+                <label for="alt-penalidade35">NEX 35%: perícia com −5</label>
+                <select id="alt-penalidade35" class="controle" data-campo="alteracoesNex.penalidade35" data-tipo="texto">
+                  <option value="">— Escolha —</option>
+                  <option value="atletismo">Atletismo</option>
+                  <option value="fortitude">Fortitude</option>
+                  <option value="reflexos">Reflexos</option>
+                </select>
+              </div>
+            </fieldset>
+
+            <p class="aviso-neutro" id="nex-pendencia" role="status" hidden></p>
+            <p class="aviso-neutro" id="nex-sem-elemento" role="status" hidden>Escolha o <strong>elemento</strong> acima para ver as alterações de Sangue, Morte, Conhecimento ou Energia (NEX 60%, 75% e 90%).</p>
+
+            <div class="nex-extras" id="nex-extras">
+              <label class="caixa" id="nex-campo-sangue" hidden>
+                <input type="checkbox" id="alt-sangue-suspenso" data-campo="alteracoesNex.sangueSuspenso" data-tipo="booleano">
+                <span>Forma Monstruosa ativa (+2 PE): penalidades de Sangue suspensas</span>
+              </label>
+              <label class="caixa" id="nex-campo-escuridao" hidden>
+                <input type="checkbox" id="alt-escuridao" data-campo="alteracoesNex.escuridao" data-tipo="booleano">
+                <span>Em área de escuridão (ofuscado em vez de cego)</span>
+              </label>
+              <button type="button" class="botao botao--compacto" id="nex-interacao-social" hidden>Primeira interação social da cena: −3 PE</button>
+            </div>
+
+            <div class="nex-energia" id="nex-energia" hidden>
+              <h3 class="subtitulo">Energia: efeito da cena</h3>
+              <p class="secao__nota">No início de cada cena, role 1d6. O efeito vale até o fim da cena ("Fim da cena" nas Condições limpa).</p>
+              <div class="nex-energia__acoes">
+                <button type="button" class="botao botao--primario" id="nex-energia-sortear">Sortear efeito (1d6)</button>
+                <button type="button" class="botao botao--compacto" id="nex-energia-limpar" hidden>Limpar efeito</button>
+                <button type="button" class="botao botao--compacto" id="nex-energia-tique" hidden>Esqueci o tique</button>
+              </div>
+              <div class="nex-energia__efeito" id="nex-energia-efeito" role="status" aria-live="polite"></div>
+            </div>
+
+            <div class="nex-cartoes" id="nex-cartoes"></div>
+
+            <details class="nex-livro" id="nex-livro">
+              <summary>Como o NEX aumenta e a progressão (texto do livro)</summary>
+              <div class="nex-livro__corpo" id="nex-livro-corpo"></div>
+            </details>
+          </section>
+
           <!-- ================= HABILIDADES E PODERES ================= -->
           <section class="secao secao--habilidades" id="secao-habilidades" aria-labelledby="titulo-habilidades">
             <div class="secao__cabecalho">
@@ -1542,6 +1635,31 @@
         <p class="dialogo__texto">O que fica por sua conta, na mesa: a ação de relaxar, o prato favorito (PD temporários), o ajuste do dano mental das criaturas, o poder Cicatrizes Psicológicas e as regras de Insanidade &amp; Loucura. Confira os detalhes no livro.</p>
       </section>
 
+      <section class="regra-opcional" aria-labelledby="regra-nex-nivel-titulo">
+        <label class="alternar-regra">
+          <input type="checkbox" id="regra-nex-nivel">
+          <span class="alternar-regra__texto">
+            <strong id="regra-nex-nivel-titulo">NEX e Experiência</strong>
+            <small>Nível de experiência para a progressão e NEX só para a exposição ao paranormal · <em>Novas regras opcionais</em></small>
+          </span>
+        </label>
+        <p class="dialogo__texto">Com a regra ligada, a ficha ganha o campo <strong>Nível</strong> (1 a 20), que passa a mandar na progressão, e o <strong>NEX</strong> vira só o grau de exposição ao Outro Lado, que começa em 0%. Ao ligar, o NEX que a ficha tinha vira o nível equivalente (1 nível = 5% de NEX, nível 20 = NEX 99%) e o NEX de exposição começa zerado. Ao desligar, o NEX volta a ser o equivalente ao nível.</p>
+        <p class="dialogo__texto">O que a ficha faz sozinha:</p>
+        <ul class="regra-opcional__lista">
+          <li>Progressão pelo nível: PV, PE (ou PD), SAN, limite de PE por turno, DT de rituais, círculos liberados, aumentos de atributo, graus de treinamento, poderes e trilha.</li>
+          <li>O NEX (exposição) fica num campo manual, de 0% a 99%, para você somar o que o mestre der. A afinidade segue o NEX.</li>
+          <li>As alterações de NEX (25%, 35%, 50% e as do elemento em 60%, 75% e 90%) aplicam os bônus, as penalidades e os efeitos em perícias, PE, condições e custo de rituais.</li>
+          <li>O sorteio do 1d6 de Energia a cada cena, com os efeitos.</li>
+          <li>Rituais das alterações com −1 PE no custo (pelo nome do ritual).</li>
+        </ul>
+        <p class="dialogo__texto">O que fica por sua conta, na mesa: o NEX que cada exposição rende, o ritual de conexão (Transcender), pré-requisitos e efeitos de origens e habilidades que o livro dá por NEX (agora por nível), não escolher 10, a ordem das ações do NEX 90% de Morte e os efeitos da Energia que dependem do mestre.</p>
+        <p class="dialogo__texto">Várias penalidades somam: dados de alteração se juntam aos de condição (fontes diferentes), e dentro das alterações um estágio novo troca o anterior ("aumenta para").</p>
+        <details class="regra-livro" id="regra-nex-nivel-livro">
+          <summary>Texto do livro: NEX &amp; Experiência</summary>
+          <div class="regra-livro__corpo" id="regra-nex-nivel-livro-corpo"></div>
+        </details>
+      </section>
+
       <div class="dialogo__botoes">
         <button type="button" class="botao botao--primario" data-fechar-dialogo>Pronto</button>
       </div>
@@ -1642,6 +1760,7 @@
   <script src="data/temas.js"></script>
   <script src="data/temas-ficha.js"></script>
   <script src="data/condicoes.js"></script>
+  <script src="data/alteracoes-nex.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/prefs.js"></script>
   <script src="js/state.js"></script>
@@ -1662,6 +1781,7 @@
   <script src="js/ui-verificacoes.js"></script>
   <script src="js/ui-aparencia.js"></script>
   <script src="js/ui-regras.js"></script>
+  <script src="js/ui-nex.js"></script>
   <script src="js/ui-auditoria.js"></script>
   <script src="js/main.js"></script>
   <!-- Testes: não rodam sozinhos. Digite OP.runTests() no console. -->

@@ -71,6 +71,22 @@ window.OP = window.OP || {};
     return resultado;
   }
 
+  /**
+   * Alterações de NEX no resultado (regra opcional): os dados que elas somaram e, com o efeito 5 da
+   * Energia (o mestre anota valores de d20 no início da cena), o aviso quando um dos d20 rolados
+   * repete um valor anotado.
+   */
+  function marcarAlteracoes(ficha, resultado, dadosAlteracoes) {
+    resultado.alteracoesDados = dadosAlteracoes;
+    const energia = OP.calc.efeitosAlteracoes(ficha).energia;
+    if (energia.d6 !== 5 || !energia.valores.length) return;
+    const repetidos = resultado.resultados.filter(function (valor) { return energia.valores.indexOf(valor) !== -1; });
+    if (!repetidos.length) return;
+    const dano = OP.dados.rolarFormula('1d6');
+    resultado.avisoEnergia = 'Valor anotado de Energia (' + repetidos[0] + ') saiu num d20: você e as criaturas em alcance curto sofrem ' +
+      (dano.ok ? dano.total : '1d6') + ' pontos de dano de Energia.';
+  }
+
   /** Teste de perícia: { titulo, resultados, escolhido, modo, bonus, total, ... }. */
   function rolarPericia(ficha, idPericia, opcoes) {
     const o = normalizarOpcoes(opcoes);
@@ -81,6 +97,7 @@ window.OP = window.OP || {};
     const resultado = montarTeste(nome, teste.dados, partes, o);
     resultado.subtipo = 'pericia';
     resultado.condicoesDados = OP.calc.dadosCondicoesPericia(ficha, idPericia); // −1 = "condições: −1d20"
+    marcarAlteracoes(ficha, resultado, OP.calc.dadosAlteracoesPericia(ficha, idPericia));
     return resultado;
   }
 
@@ -94,6 +111,7 @@ window.OP = window.OP || {};
     if (o.bonusExtra) partes.push({ rotulo: 'extra', valor: o.bonusExtra });
     const resultado = montarTeste('Teste de ' + atributo.nome, teste.dados, partes, o);
     resultado.subtipo = 'atributo';
+    marcarAlteracoes(ficha, resultado, OP.calc.dadosAlteracoesAtributo(ficha, idAtributo));
     return resultado;
   }
 
@@ -124,6 +142,7 @@ window.OP = window.OP || {};
     const resultado = montarTeste(titulo, teste.dados, partes, o);
     resultado.subtipo = 'ataque';
     resultado.condicoesDados = OP.calc.dadosCondicoesAtaque(ficha, ataque);
+    marcarAlteracoes(ficha, resultado, OP.calc.dadosAlteracoesPericia(ficha, ataque.pericia));
     resultado.idAtaque = ataque.id;
     resultado.critMargem = inteiro(ataque.critMargem);
     resultado.critico = OP.calc.ehCritico(resultado.escolhido, ataque.critMargem);

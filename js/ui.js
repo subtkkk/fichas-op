@@ -174,6 +174,14 @@ window.OP = window.OP || {};
       document.getElementById('campo-nex'),
       OP.data.nex.map(function (n) { return { valor: n, texto: n + '%' }; })
     );
+    // Níveis de experiência (regra opcional NEX e Experiência): 1 a 20; o title diz o NEX equivalente na regra padrão
+    const niveis = [];
+    for (let n = 1; n <= OP.calc.NIVEL_MAXIMO; n++) niveis.push({ valor: n, texto: 'Nível ' + n });
+    const selectNivel = document.getElementById('campo-nivel');
+    preencherSelect(selectNivel, niveis);
+    Array.prototype.forEach.call(selectNivel.options, function (opcao) {
+      opcao.title = 'Equivale a NEX ' + OP.calc.nexDoNivel(Number(opcao.value)) + '% na regra padrão.';
+    });
     // Estágios (Sobrevivente): 1 até o maior estagioMax das classes de estágio
     const maximo = OP.calc.classesLista().reduce(function (maior, c) {
       return c.unidadeProgressao === 'estagio' ? Math.max(maior, OP.calc.numero(c.estagioMax)) : maior;
@@ -1406,6 +1414,7 @@ window.OP = window.OP || {};
     const porPasso = c.unidade === 'estagio' ? 'por estágio' : 'por NEX';
     const resumo = c.inicial + ' inicial' + termoComSinal(c.ganhoNex, porPasso) +
       termoComSinal(c.bonus, 'bônus') +
+      (c.bonusAlteracoes ? termoComSinal(c.bonusAlteracoes, 'alteração de NEX (' + siglaAtributo(c.atributoAlteracoes) + ')') : '') +
       (c.perdaPermanente ? ' − ' + c.perdaPermanente + ' perda permanente' : '') + ' = ' + c.max;
 
     const parteAtributo = c.atributo ? siglaAtributo(c.atributo) + ' ' + c.valorAtributo : '';
@@ -2290,6 +2299,7 @@ window.OP = window.OP || {};
     const detalhesDados = [];
     if (resultado.modDados) detalhesDados.push('modificador ' + formatarComSinal(resultado.modDados));
     if (resultado.condicoesDados) detalhesDados.push('condições: ' + formatarComSinal(resultado.condicoesDados) + 'd20');
+    if (resultado.alteracoesDados) detalhesDados.push('alterações de NEX: ' + formatarComSinal(resultado.alteracoesDados) + 'd20');
     const regra = resultado.qtd + 'd20, fica o ' + resultado.modo +
       (detalhesDados.length ? ' (' + detalhesDados.join('; ') + ')' : '');
     const conta = resultado.escolhido + resultado.partesBonus.map(function (parte) {
@@ -2302,6 +2312,7 @@ window.OP = window.OP || {};
     caixa.appendChild(criarDadosTeste(resultado));
     caixa.appendChild(criarElemento('p', 'resultado__regra', regra));
     if (resultado.aviso) caixa.appendChild(criarElemento('p', 'resultado__aviso', resultado.aviso));
+    if (resultado.avisoEnergia) caixa.appendChild(criarElemento('p', 'resultado__aviso', resultado.avisoEnergia));
     caixa.appendChild(criarFimResultado(conta, resultado.total));
     if (alvo) caixa.appendChild(criarElemento('p', 'resultado__alvo resultado__alvo--' + (resultado.acertou ? 'sim' : 'nao'), alvo));
     const acoes = criarAcoesResultado(resultado);
@@ -2452,6 +2463,7 @@ window.OP = window.OP || {};
       return;
     }
     if (OP.som) OP.som.tocarResultado(resultado); // dados chacoalhando (e um som especial no 20 natural)
+    if (resultado.avisoEnergia && OP.uiApp) OP.uiApp.aviso('aviso', 'Aviso: ' + resultado.avisoEnergia);
     substituirFilhos(refs.resultado, [resultado.tipo === 'teste' ? criarResultadoTeste(resultado) : criarResultadoFormula(resultado)]);
     definirTexto(refs.ultimo, 'último: ' + resultado.total + (resultado.critico ? ' (crítico)' : ''));
     mostrarResultadoRapido(resultado);
@@ -3660,6 +3672,7 @@ window.OP = window.OP || {};
     somarAoCampo: somarAoCampo,
     removerDeLista: removerComDesfazer,
     abrirRolagens: function (aberto) { abrirPainel(aberto !== false); },
+    mostrarResultado: mostrarResultado,
     formatarNumero: formatarNumero,
     criarElemento: criarElemento,
     substituirFilhos: substituirFilhos,

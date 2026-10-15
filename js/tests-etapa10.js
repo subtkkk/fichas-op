@@ -16,6 +16,26 @@ window.OP = window.OP || {};
     const cfg = OP.data.config;
     const fichaDeTeste = ajuda.fichaDeTeste;
 
+    /** Ficha com a regra NEX e Experiência ligada: { classe, nivel, nex (exposição), atributos }. */
+    function fichaRegra(opc) {
+      const f = fichaDeTeste({ classe: opc.classe || 'combatente', nex: 5, atributos: opc.atributos || {} });
+      f.config.nexENivel = true;
+      f.identificacao.nivel = opc.nivel || 1;
+      f.identificacao.nex = opc.nex === undefined ? 0 : opc.nex;
+      return f;
+    }
+
+    /** d20 que sai v (para forçar dados). */
+    function r(valor, faces) { return (valor - 0.5) / faces; }
+
+    /** Roda a conta com o gerador de dados trocado por uma fila e SEMPRE restaura o original. */
+    function comDadosE10(fila, conta) {
+      const original = OP.dados.getRng();
+      let posicao = 0;
+      OP.dados.setRng(function () { const v = fila[posicao]; posicao += 1; return v === undefined ? 0 : v; });
+      try { return conta(); } finally { OP.dados.setRng(original); }
+    }
+
     /** Troca o catálogo de condições durante a conta e SEMPRE restaura o original. */
     function comCatalogo(lista, conta) {
       const original = OP.data.condicoes;
@@ -1072,6 +1092,205 @@ window.OP = window.OP || {};
           OP.state.atualizar('config.semSanidade', estavaLigada);
         }
       }, esperado: 'PV,PE,SAN|PV,PD|PV,PE,SAN|false' },
+      { nome: 'E20 · NEX e Experiência: 1 nível = 5% de NEX (nível 1 = 5%, 7 = 35%, 20 = 99%) e a volta', obtido: function () {
+        return [calc.nexDoNivel(1), calc.nexDoNivel(7), calc.nexDoNivel(20), calc.nivelDoNex(5), calc.nivelDoNex(35), calc.nivelDoNex(99), calc.nivelDoNex(0)].join('|');
+      }, esperado: '5|35|99|1|7|20|1' },
+      { nome: 'E20 · NEX e Experiência: o nível manda na progressão (Ocultista nível 7 = os PE da regra padrão com NEX 35%)', obtido: function () {
+        const padrao = fichaDeTeste({ classe: 'ocultista', nex: 35, atributos: { pre: 2, vig: 1 } });
+        const regra = fichaRegra({ classe: 'ocultista', nivel: 7, nex: 0, atributos: { pre: 2, vig: 1 } });
+        return [calc.pvMax(regra) === calc.pvMax(padrao), calc.peMax(regra) === calc.peMax(padrao), calc.sanMax(regra) === calc.sanMax(padrao),
+          calc.limitePEporTurno(regra) === calc.limitePEporTurno(padrao)].join('|');
+      }, esperado: 'true|true|true|true' },
+      { nome: 'E20 · NEX e Experiência: o NEX de exposição não mexe na progressão (nível 1 com NEX 90% segue como NEX 5%)', obtido: function () {
+        const f = fichaRegra({ classe: 'combatente', nivel: 1, nex: 90, atributos: { vig: 1, pre: 1 } });
+        const cinco = fichaDeTeste({ classe: 'combatente', nex: 5, atributos: { vig: 1, pre: 1 } });
+        return [calc.pvMax(f) === calc.pvMax(cinco), calc.limitePEporTurno(f)].join('|');
+      }, esperado: 'true|1' },
+      { nome: 'E20 · NEX e Experiência: o círculo de ritual segue o nível; a afinidade segue o NEX', obtido: function () {
+        const a = calc.estadoConjuracao(fichaRegra({ classe: 'ocultista', nivel: 5, nex: 0 }));
+        const b = calc.estadoConjuracao(fichaRegra({ classe: 'ocultista', nivel: 1, nex: 50 }));
+        const c = calc.estadoConjuracao(fichaRegra({ classe: 'ocultista', nivel: 20, nex: 0 }));
+        return [a.circulosLiberados, a.afinidadeLiberada, b.circulosLiberados, b.afinidadeLiberada, c.circulosLiberados, c.afinidadeLiberada].join('|');
+      }, esperado: '2|false|1|true|4|false' },
+      { nome: 'E20 · NEX e Experiência: Sobrevivente continua pelo estágio (o nível não vale)', obtido: function () {
+        const normal = fichaDeTeste({ classe: 'sobrevivente', estagio: 3, atributos: { vig: 1, pre: 1 } });
+        const regra = fichaRegra({ classe: 'sobrevivente', nivel: 20, nex: 0, atributos: { vig: 1, pre: 1 } });
+        regra.identificacao.estagio = 3;
+        return calc.pvMax(regra) === calc.pvMax(normal) && calc.nivelProgressao(regra) === 3;
+      }, esperado: true },
+      { nome: 'E20 · Com a regra desligada o campo nível é ignorado', obtido: function () {
+        const f = fichaDeTeste({ classe: 'combatente', nex: 35 });
+        f.identificacao.nivel = 20;
+        return calc.nexProgressao(f) + '|' + calc.nivelProgressao(f);
+      }, esperado: '35|35' },
+      { nome: 'E20 · Correções: com a regra o NEX vale de 0 a 99 (37 serve, 150 vira 99); sem a regra só a tabela', obtido: function () {
+        const comRegra = function (nex) { const f = fichaRegra({ classe: 'combatente', nex: nex }); return calc.correcoes(f).filter(function (c) { return c.caminho === 'identificacao.nex'; }).map(function (c) { return c.valor; }).join(','); };
+        const sem = fichaDeTeste({ classe: 'combatente', nex: 37 });
+        const corrigeSem = calc.correcoes(sem).filter(function (c) { return c.caminho === 'identificacao.nex'; }).map(function (c) { return c.valor; }).join(',');
+        return ['[' + comRegra(37) + ']', '[' + comRegra(150) + ']', '[' + comRegra(-4) + ']', '[' + corrigeSem + ']'].join('');
+      }, esperado: '[][99][0][35]' },
+      { nome: 'E20 · NEX 25%: Ocultismo sem treino deixa de exigir treino; treinado ganha +2; −5 na perícia escolhida', obtido: function () {
+        const sem = fichaRegra({ classe: 'combatente', nex: 25 });
+        sem.alteracoesNex.penalidade25 = 'diplomacia';
+        const treinada = fichaRegra({ classe: 'ocultista', nex: 25 });
+        const normal = fichaDeTeste({ classe: 'ocultista', nex: 5 });
+        const base = fichaDeTeste({ classe: 'combatente', nex: 5 });
+        return [calc.estadoPericia(sem, 'ocultismo').requerTreinamento, calc.periciaBonus(treinada, 'ocultismo') - calc.periciaBonus(normal, 'ocultismo'),
+          calc.periciaBonus(sem, 'diplomacia') - calc.periciaBonus(base, 'diplomacia'), calc.periciaBonus(sem, 'enganacao') - calc.periciaBonus(base, 'enganacao')].join('|');
+      }, esperado: 'false|2|-5|0' },
+      { nome: 'E20 · NEX 25%: sem escolher a perícia não há penalidade e a ficha avisa', obtido: function () {
+        const f = fichaRegra({ classe: 'combatente', nex: 25 });
+        return calc.periciaBonus(f, 'diplomacia') + '|' + calc.efeitosAlteracoes(f).pendencias.length + '|' +
+          calc.verificarFicha(f).some(function (v) { return v.codigo === 'alteracao-sem-escolha-penalidade25'; });
+      }, esperado: '0|1|true' },
+      { nome: 'E20 · NEX 35%: o atributo escolhido soma no PE e há −5 na perícia escolhida', obtido: function () {
+        const f = fichaRegra({ classe: 'ocultista', nex: 35, atributos: { int: 2, pre: 1 } });
+        const antes = calc.peMax(f);
+        f.alteracoesNex.atributo35 = 'int';
+        f.alteracoesNex.penalidade35 = 'reflexos';
+        return [calc.peMax(f) - antes, calc.periciaBonus(f, 'reflexos') - calc.periciaBonus(fichaRegra({ classe: 'ocultista', nex: 0, atributos: { int: 2, pre: 1 } }), 'reflexos')].join('|');
+      }, esperado: '2|-5' },
+      { nome: 'E20 · Alterações de Conhecimento: ofuscado (60%), −2d20 (75%), cego fora da escuridão (90%)', obtido: function () {
+        function em(nex, escuro) {
+          const f = fichaRegra({ classe: 'ocultista', nex: nex });
+          f.conjuracao.elementoConectado = 'conhecimento';
+          f.alteracoesNex.escuridao = escuro === true;
+          const m = calc.modificadoresCondicoes(f);
+          return [m.dadosPorPericia.percepcao || 0, m.dadosAtaque, m.dadosAtributos.agi].join(',');
+        }
+        return [em(55), em(60), em(75), em(90), em(90, true)].join('|');
+      }, esperado: '0,0,0|-1,-1,0|-2,-2,0|0,0,-2|-2,-2,0' },
+      { nome: 'E20 · Ofuscado das alterações não soma com o ofuscado posto à mão (vale o mais severo)', obtido: function () {
+        const f = fichaRegra({ classe: 'ocultista', nex: 75 });
+        f.conjuracao.elementoConectado = 'conhecimento';
+        f.condicoes.ativas = [OP.state.novaCondicao({ id: 'ofuscado' })];
+        return calc.modificadoresCondicoes(f).dadosPorPericia.percepcao;
+      }, esperado: -2 },
+      { nome: 'E20 · Alterações de Sangue: +1d20 Sobrevivência (60%); −1d20 e depois −2d20 em Ciências, Medicina e Tecnologia; Forma Monstruosa suspende', obtido: function () {
+        function em(nex, suspenso) {
+          const f = fichaRegra({ classe: 'ocultista', nex: nex });
+          f.conjuracao.elementoConectado = 'sangue';
+          f.alteracoesNex.sangueSuspenso = suspenso === true;
+          return [calc.dadosAlteracoesPericia(f, 'sobrevivencia'), calc.dadosAlteracoesPericia(f, 'ciencias')].join(',');
+        }
+        return [em(60), em(75), em(90), em(90, true)].join('|');
+      }, esperado: '1,0|1,-1|1,-2|1,0' },
+      { nome: 'E20 · Alterações de Morte: +1d20 Iniciativa/Reflexos e −1d20 Diplomacia/Intuição; aos 75% −2d20 e vale também para Enganação e Intimidação', obtido: function () {
+        function em(nex) {
+          const f = fichaRegra({ classe: 'ocultista', nex: nex });
+          f.conjuracao.elementoConectado = 'morte';
+          return ['iniciativa', 'reflexos', 'diplomacia', 'intuicao', 'enganacao', 'intimidacao'].map(function (id) { return calc.dadosAlteracoesPericia(f, id); }).join(',');
+        }
+        return [em(60), em(75)].join('|');
+      }, esperado: '1,1,-1,-1,0,0|1,1,-2,-2,-2,-2' },
+      { nome: 'E20 · Só vale o elemento conectado: sem elemento (ou com Medo) as alterações de elemento não entram', obtido: function () {
+        const a = fichaRegra({ classe: 'ocultista', nex: 90 });
+        const b = fichaRegra({ classe: 'ocultista', nex: 90 });
+        b.conjuracao.elementoConectado = 'medo';
+        return [calc.efeitosAlteracoes(a).alcancadas.length, calc.efeitosAlteracoes(b).alcancadas.length].join('|');
+      }, esperado: '3|3' },
+      { nome: 'E20 · Dados de alteração somam com os de condição (fontes diferentes)', obtido: function () {
+        const f = fichaRegra({ classe: 'ocultista', nex: 60, atributos: { pre: 3 } });
+        f.conjuracao.elementoConectado = 'morte';
+        f.condicoes.ativas = [OP.state.novaCondicao({ id: 'abalado' })];
+        const dados = calc.periciaDados(f, 'intuicao');
+        return [calc.dadosCondicoesPericia(f, 'intuicao'), calc.dadosAlteracoesPericia(f, 'intuicao'), dados.qtd].join('|');
+      }, esperado: '-1|-1|1' },
+      { nome: 'E20 · Rituais das alterações: −1 PE no custo pelo nome (sem acento ou maiúscula) e só se a alteração foi alcançada', obtido: function () {
+        function plano(nex, nome) {
+          const f = fichaRegra({ classe: 'ocultista', nex: nex, atributos: { pre: 1 } });
+          f.conjuracao.elementoConectado = 'conhecimento';
+          f.recursos.pe.atual = 20;
+          return calc.planoConjuracao(f, OP.state.novoRitual({ nome: nome, circulo: 1, formas: { padrao: { custo: 3 } } }), 'padrao').pe;
+        }
+        return [plano(60, 'Terceiro Olho'), plano(60, 'terceiro olho'), plano(60, 'Detecção de Ameaças'), plano(75, 'DETECCAO DE AMEACAS'), plano(60, 'Outro ritual'), plano(50, 'Terceiro Olho')].join('|');
+      }, esperado: '2|2|3|2|3|3' },
+      { nome: 'E20 · Energia, efeito 1 do d6: −Xd20 em Presença e nas perícias baseadas, menos Vontade', obtido: function () {
+        const f = fichaRegra({ classe: 'ocultista', nex: 75, atributos: { pre: 3 } });
+        f.conjuracao.elementoConectado = 'energia';
+        f.alteracoesNex.energia = { d6: 1, valores: [], intensidade: 2 };
+        return [calc.dadosAlteracoesAtributo(f, 'pre'), calc.dadosAlteracoesPericia(f, 'diplomacia'), calc.dadosAlteracoesPericia(f, 'vontade'), calc.dadosAlteracoesPericia(f, 'luta')].join('|');
+      }, esperado: '-2|-2|0|0' },
+      { nome: 'E20 · Energia, efeito 5: o aviso aparece quando um d20 repete o valor anotado', obtido: function () {
+        const f = fichaRegra({ classe: 'combatente', nex: 60, atributos: { for: 1 } });
+        f.conjuracao.elementoConectado = 'energia';
+        f.alteracoesNex.energia = { d6: 5, valores: [14], intensidade: 1 };
+        const fila = [r(14, 20), r(4, 6)];
+        const acerta = comDadosE10(fila, function () { return OP.rolagens.rolarPericia(f, 'luta', {}); });
+        const erra = comDadosE10([r(13, 20)], function () { return OP.rolagens.rolarPericia(f, 'luta', {}); });
+        return [typeof acerta.avisoEnergia === 'string' && /14/.test(acerta.avisoEnergia), erra.avisoEnergia === undefined].join('|');
+      }, esperado: 'true|true' },
+      { nome: 'E20 · Teste de atributo e de ataque também levam os dados das alterações', obtido: function () {
+        const f = fichaRegra({ classe: 'ocultista', nex: 60, atributos: { pre: 2, for: 2 } });
+        f.conjuracao.elementoConectado = 'sangue';
+        f.alteracoesNex.penalidade25 = 'diplomacia';
+        const atq = OP.state.novoAtaque({ pericia: 'luta', dano: '1d4' });
+        return [calc.testeAtributo(f, 'for', 0).dados.qtd, calc.ataqueTeste(f, atq, 0).dados.qtd].join('|');
+      }, esperado: '2|2' },
+      { nome: 'E20 · trocarNexENivel: ligar vira nível equivalente com NEX 0; desligar volta ao NEX do nível', obtido: function () {
+        const f = OP.state.ficha;
+        const guardado = { nex: f.identificacao.nex, nivel: f.identificacao.nivel, cfg: f.config.nexENivel };
+        try {
+          OP.state.atualizar('config.nexENivel', false, { silencioso: true });
+          OP.state.atualizar('identificacao.nex', 35, { silencioso: true });
+          OP.uiRegras.trocarNexENivel(true);
+          const ligada = [f.config.nexENivel, f.identificacao.nivel, f.identificacao.nex].join(',');
+          OP.state.atualizar('identificacao.nex', 12, { silencioso: true });
+          OP.uiRegras.trocarNexENivel(false);
+          return ligada + '|' + [f.config.nexENivel, f.identificacao.nex].join(',');
+        } finally {
+          OP.state.atualizar('identificacao.nex', guardado.nex, { silencioso: true });
+          OP.state.atualizar('identificacao.nivel', guardado.nivel, { silencioso: true });
+          OP.state.atualizar('config.nexENivel', guardado.cfg === true);
+        }
+      }, esperado: 'true,7,0|false,35' },
+      { nome: 'E20 · Exportar e importar mantém a regra, o nível, o NEX de exposição e as escolhas das alterações', obtido: function () {
+        const f = OP.state.completarPadroes(fichaRegra({ classe: 'ocultista', nivel: 9, nex: 62 }));
+        f.alteracoesNex.penalidade25 = 'intimidacao';
+        f.alteracoesNex.atributo35 = 'vig';
+        f.alteracoesNex.energia = { d6: 4, valores: [], intensidade: 2 };
+        const lida = OP.state.lerImportacao(JSON.stringify(OP.state.envelopeFicha(f))).fichas[0];
+        return [lida.config.nexENivel, lida.identificacao.nivel, lida.identificacao.nex, lida.alteracoesNex.penalidade25, lida.alteracoesNex.atributo35, lida.alteracoesNex.energia.d6].join('|');
+      }, esperado: 'true|9|62|intimidacao|vig|4' },
+      { nome: 'E20 · Ficha antiga (sem os campos novos) abre com a regra desligada, nível 1 e escolhas vazias', obtido: function () {
+        const f = OP.state.completarPadroes({ identificacao: { classe: 'combatente', nex: 35 } });
+        return [f.config.nexENivel, f.identificacao.nivel, f.alteracoesNex.penalidade25 === '', f.alteracoesNex.energia.d6].join('|');
+      }, esperado: 'false|1|true|0' },
+      { nome: 'E20 · A composição do PE mostra a alteração de NEX (atributo somado)', obtido: function () {
+        const f = fichaRegra({ classe: 'ocultista', nex: 35, atributos: { int: 2 } });
+        f.alteracoesNex.atributo35 = 'int';
+        const c = calc.estadoRecurso(f, 'pe');
+        return [c.bonusAlteracoes, c.atributoAlteracoes].join('|');
+      }, esperado: '2|int' },
+      { nome: 'E20 · "Fim da cena" encerra o efeito sorteado de Energia', obtido: function () {
+        const f = OP.state.ficha;
+        const energia = JSON.stringify(f.alteracoesNex.energia);
+        const ativas = JSON.stringify(f.condicoes.ativas);
+        const turnos = f.condicoes.turnosMorrendo;
+        try {
+          OP.state.atualizar('alteracoesNex.energia', { d6: 2, valores: [], intensidade: 1 });
+          document.getElementById('cond-fim-cena').click();
+          return f.alteracoesNex.energia.d6;
+        } finally {
+          OP.state.atualizar('alteracoesNex.energia', JSON.parse(energia), { silencioso: true });
+          OP.state.atualizar('condicoes.ativas', JSON.parse(ativas), { silencioso: true });
+          OP.state.atualizar('condicoes.turnosMorrendo', turnos);
+        }
+      }, esperado: 0 },
+      { nome: 'E20 · Painel Alterações de NEX só aparece com a regra ligada e o campo da identificação vira "Nível"', obtido: function () {
+        const estava = OP.state.ficha.config.nexENivel === true;
+        const secao = document.getElementById('secao-alteracoes');
+        const rotulo = document.getElementById('rotulo-nivel');
+        try {
+          OP.state.atualizar('config.nexENivel', false);
+          const desligada = [secao.hidden, rotulo.textContent].join(',');
+          OP.state.atualizar('config.nexENivel', true);
+          const ligada = [secao.hidden, rotulo.textContent].join(',');
+          return desligada + '|' + ligada;
+        } finally {
+          OP.state.atualizar('config.nexENivel', estava);
+        }
+      }, esperado: 'true,NEX|false,Nível' },
       { nome: 'E10 · Diálogos: todos têm título (aria-labelledby) e são <dialog>', obtido: function () {
         return Array.prototype.filter.call(document.querySelectorAll('dialog'), function (d) {
           const alvo = document.getElementById(d.getAttribute('aria-labelledby') || '');

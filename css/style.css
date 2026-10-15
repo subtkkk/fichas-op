@@ -13261,3 +13261,276 @@ body[data-vista="ficha"][data-sem-sanidade="sim"] {
 .mini-vital--pd {
   --cor-vital: var(--san);
 }
+
+/* ==========================================================================
+   30. REGRA OPCIONAL NEX E EXPERIÊNCIA — painel Alterações de NEX e texto do livro no diálogo
+   ========================================================================== */
+.secao--alteracoes[hidden] {
+  display: none;
+}
+
+.nex-exposicao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  margin-bottom: 12px;
+}
+
+.nex-exposicao .campo-bonus {
+  align-items: center;
+}
+
+.nex-exposicao__pct {
+  font: 600 1rem/1 var(--fonte-mono);
+  color: var(--papel-2);
+}
+
+.nex-exposicao .secao__nota {
+  flex: 1 1 260px;
+  margin: 0;
+}
+
+.nex-escolhas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px 14px;
+  min-width: 0;
+  margin: 0 0 12px;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--linha-1);
+  border-radius: var(--raio-2);
+}
+
+.nex-escolhas legend {
+  padding: 0 6px;
+  font: 500 0.75rem/1.2 var(--fonte-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+}
+
+.nex-escolhas .campo-texto[hidden] {
+  display: none;
+}
+
+.nex-extras {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 12px;
+}
+
+.nex-extras:empty,
+.nex-extras[hidden] {
+  display: none;
+}
+
+.nex-extras .caixa[hidden],
+.nex-extras .botao[hidden] {
+  display: none;
+}
+
+.nex-energia {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--el-energia, var(--acento)) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--el-energia, var(--acento)) 40%, var(--linha-1));
+  border-radius: var(--raio-3);
+}
+
+.nex-energia[hidden] {
+  display: none;
+}
+
+.nex-energia__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.nex-energia__acoes [hidden] {
+  display: none;
+}
+
+.nex-energia__numero {
+  margin: 6px 0 2px;
+  font: 700 0.9375rem/1.3 var(--fonte-ui);
+  color: var(--papel);
+}
+
+.nex-energia__texto,
+.nex-energia__aplicado,
+.nex-energia__vazio {
+  margin: 4px 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--papel-2);
+}
+
+.nex-energia__aplicado {
+  padding-left: 10px;
+  border-left: 3px solid var(--acento-linha);
+  color: var(--papel);
+}
+
+.nex-cartoes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.alteracao {
+  padding: 0 14px;
+  background: color-mix(in srgb, var(--cor-texto) 4%, transparent);
+  border: 1px solid var(--linha-1);
+  border-radius: var(--raio-3);
+}
+
+.alteracao--ativa {
+  border-color: var(--acento-linha);
+  box-shadow: inset 3px 0 0 var(--acento);
+}
+
+.alteracao--aguardando {
+  opacity: 0.8;
+}
+
+.alteracao__resumo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  min-height: 44px;
+  padding: 10px 0;
+  cursor: pointer;
+}
+
+.alteracao__nex {
+  font: 700 0.9375rem/1.2 var(--fonte-mono);
+  color: var(--papel);
+}
+
+.alteracao__grupo {
+  font: 600 0.75rem/1.2 var(--fonte-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+}
+
+.alteracao__estado {
+  margin-left: auto;
+  font-size: 0.8125rem;
+  color: var(--papel-2);
+}
+
+.alteracao--ativa .alteracao__estado {
+  color: color-mix(in srgb, var(--acento) 72%, var(--papel));
+  font-weight: 600;
+}
+
+.alteracao__narrativa {
+  margin: 0 0 10px;
+  font-style: italic;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--papel-2);
+}
+
+.alteracao__texto {
+  margin: 0 0 10px;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--papel);
+}
+
+.alteracao__efeitos {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  background: var(--acento-suave);
+  border-radius: var(--raio-2);
+}
+
+.alteracao__efeitos-titulo {
+  margin: 8px 0 4px;
+  font: 600 0.75rem/1.2 var(--fonte-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--papel-2);
+}
+
+.alteracao__efeitos .alteracao__efeitos-titulo {
+  margin-top: 0;
+}
+
+.alteracao__efeitos-lista {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--papel);
+}
+
+.alteracao__tabela {
+  margin: 0 0 12px;
+  padding-left: 22px;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--papel-2);
+}
+
+.alteracao__tabela li {
+  margin-bottom: 6px;
+}
+
+.nex-livro,
+.regra-livro {
+  margin-top: 12px;
+  padding: 0 14px;
+  border: 1px solid var(--linha-1);
+  border-radius: var(--raio-3);
+}
+
+.nex-livro > summary,
+.regra-livro > summary {
+  min-height: 44px;
+  padding: 10px 0;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.nex-livro__corpo,
+.regra-livro__corpo {
+  padding-bottom: 12px;
+}
+
+.regra-livro__secao--caixa {
+  margin: 12px 0;
+  padding: 4px 12px 8px;
+  background: color-mix(in srgb, var(--cor-texto) 5%, transparent);
+  border-radius: var(--raio-2);
+}
+
+.selo-alt {
+  color: color-mix(in srgb, var(--acento) 72%, var(--papel));
+  border-color: var(--acento-linha);
+}
+
+.alteracao__efeitos-lista li,
+.regra-livro__secao .dialogo__texto {
+  overflow-wrap: anywhere;
+}
+
+.nex-exposicao .campo-bonus {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  justify-content: start;
+  gap: 4px 8px;
+}
+
+.nex-exposicao .campo-bonus label {
+  grid-column: 1 / -1;
+}

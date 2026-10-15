@@ -1435,6 +1435,7 @@ html[data-diario-impressao="sim"] .bio__diario {
 #secao-pericias { order: 60; }
 #secao-ataques { order: 70; }
 #secao-habilidades { order: 80; }
+#secao-alteracoes { order: 78; }
 #secao-rituais { order: 90; }
 #secao-inventario { order: 100; }
 #secao-biografia { order: 110; }
@@ -1622,6 +1623,29 @@ html[data-diario-impressao="sim"] .bio__diario {
 /* Regras opcionais: o botão da tela não vai para o papel (a SAN escondida também some) */
 @media print {
   .regras-opcionais {
+    display: none !important;
+  }
+}
+
+/* Alterações de NEX: botões e escolhas já aparecem preenchidos; o painel vai inteiro para o papel */
+@media print {
+  .nex-energia__acoes,
+  .nex-extras .botao,
+  .nex-exposicao .passo__botao {
+    display: none !important;
+  }
+
+  .alteracao {
+    break-inside: avoid;
+    opacity: 1 !important;
+  }
+}
+
+/* Só as alterações de NEX em vigor vão para o papel (o texto do livro fica no diálogo e na tela) */
+@media print {
+  .alteracao--aguardando,
+  .nex-livro,
+  .nex-energia__acoes {
     display: none !important;
   }
 }

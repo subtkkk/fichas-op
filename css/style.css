@@ -13251,3 +13251,13 @@ body[data-sem-sanidade="sim"] .campo-texto:has(#descanso-san) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+
+/* Jogando sem Sanidade: os PD (no lugar de PE e SAN) usam o azul da Sanidade */
+body[data-vista="ficha"][data-sem-sanidade="sim"] {
+  --pe: var(--cor-san);
+}
+
+.mini-vital--pd {
+  --cor-vital: var(--san);
+}

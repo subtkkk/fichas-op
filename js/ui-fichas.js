@@ -274,7 +274,7 @@ window.OP = window.OP || {};
       const vital = resumo.vitais[id];
       if (!vital) return;
       const zerado = vital.atual === 0 && vital.max > 0;
-      const item = criar('div', 'mini-vital mini-vital--' + id + (zerado ? ' mini-vital--zero' : ''));
+      const item = criar('div', 'mini-vital mini-vital--' + id + (id === 'pe' && vital.sigla === 'PD' ? ' mini-vital--pd' : '') + (zerado ? ' mini-vital--zero' : ''));
       item.title = vital.nome + ': ' + vital.atual + ' de ' + vital.max + (zerado ? ' (zerado)' : '');
       item.appendChild(criar('dt', 'mini-vital__sigla', vital.sigla));
       const valor = criar('dd', 'mini-vital__valor');

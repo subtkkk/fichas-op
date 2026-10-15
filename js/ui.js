@@ -485,19 +485,21 @@ window.OP = window.OP || {};
         '</th>' +
         // Atributo e dados: a sigla é um botão discreto que abre o painel para trocar o atributo
         '<td class="pericia__dados">' +
-          '<button type="button" class="atributo-sigla" data-atributo-pericia="' + id + '"' +
-            ' aria-haspopup="dialog" aria-expanded="false" aria-controls="seletor-atributo"></button>' +
+          // na mesa o grau é só um marcador de texto (T, V ou E); a edição fica em "Editar perícias".
+          // Marcador e seta ficam ANTES da sigla: assim a sigla não muda de lugar quando eles aparecem.
+          '<span class="pericia__grau-marca" role="img"></span>' +
           // aparece só quando o teste rola "menor" (atributo 0 ou menos)
           '<span class="marca-menor" role="img" hidden><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
             '<path d="M3.5 5.5 8 10l4.5-4.5"/></svg></span>' +
+          // a sigla é um botão discreto que abre o painel para trocar o atributo
+          '<button type="button" class="atributo-sigla" data-atributo-pericia="' + id + '"' +
+            ' aria-haspopup="dialog" aria-expanded="false" aria-controls="seletor-atributo"></button>' +
           // os dados (ex.: 3d20 maior) não aparecem na linha: ficam para leitor de tela e no rótulo do botão de rolar
           '<output class="visualmente-oculto" data-saida="' + caminho + '.dados" data-formato="dados"></output>' +
         '</td>' +
         '<td class="pericia__grau">' +
           '<button type="button" class="botao-icone botao-grau" data-grau-pericia="' + id + '" data-nivel="0">' +
             SVG_GRAU + '</button>' +
-          // na mesa o grau é só um marcador de texto (T, V ou E); a edição fica em "Editar perícias"
-          '<span class="pericia__grau-marca" role="img"></span>' +
           // só na impressão: o nome do grau no lugar do símbolo
           '<span class="pericia__grau-impressao"></span>' +
         '</td>' +

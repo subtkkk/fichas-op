@@ -958,6 +958,12 @@ window.OP = window.OP || {};
           OP.state.atualizar('ataques', OP.state.ficha.ataques.slice(0, antes));
         }
       }, esperado: '1|0' },
+      { nome: 'E16 · Perícia: marcador de grau e seta do "menor" vêm antes da sigla do atributo (a sigla não se move)', obtido: function () {
+        return Array.prototype.filter.call(document.querySelectorAll('.pericia__dados'), function (celula) {
+          const filhos = Array.prototype.map.call(celula.children, function (f) { return f.className.split(' ')[0]; });
+          return filhos.indexOf('atributo-sigla') < filhos.indexOf('pericia__grau-marca') || filhos.indexOf('atributo-sigla') < filhos.indexOf('marca-menor');
+        }).length;
+      }, esperado: 0 },
       { nome: 'E10 · Diálogos: todos têm título (aria-labelledby) e são <dialog>', obtido: function () {
         return Array.prototype.filter.call(document.querySelectorAll('dialog'), function (d) {
           const alvo = document.getElementById(d.getAttribute('aria-labelledby') || '');

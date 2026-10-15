@@ -128,7 +128,7 @@ fonts/              Fontes locais (Cormorant Garamond e IBM Plex, licença OFL)
 
 - HTML, CSS e JavaScript puro, sem dependências e sem etapa de build: edite e recarregue.
 - Os scripts compartilham o objeto global `OP`. O fluxo é `OP.state.atualizar` → `OP.calc` → `OP.ui.desenhar`. As telas ligam os campos por atributos (`data-campo`, `data-saida`, `data-passo`…).
-- **Testes das fórmulas:** abra o site e rode `OP.runTests()` no console do navegador. O esperado é `{ total: 509, aprovados: 509, falhas: 0 }`. Em janela estreita (até 480 px) o teste de layout também confere a rolagem horizontal. As auditorias ficam em `OP.ui.auditarLayout()`, `auditarContraste(tema)`, `auditarAcessibilidade()`, `auditarTitulos()` e `auditarAlvosToque()`.
+- **Testes das fórmulas:** abra o site e rode `OP.runTests()` no console do navegador. O esperado é `{ total: 510, aprovados: 510, falhas: 0 }`. Em janela estreita (até 480 px) o teste de layout também confere a rolagem horizontal. As auditorias ficam em `OP.ui.auditarLayout()`, `auditarContraste(tema)`, `auditarAcessibilidade()`, `auditarTitulos()` e `auditarAlvosToque()`.
 - **Cores:** o CSS da tela não tem cor fixa fora de variáveis. As paletas (`--cor-*`, em `#rrggbb`) ficam no começo do `css/style.css`: escuro em `:root`, claro em `[data-tema="claro"]` (e no `@media (prefers-color-scheme: light)` do modo Automático) e alto contraste em `[data-tema="contraste"]`. O `css/print.css` mantém fundo branco e texto preto, qualquer que seja o tema.
 - **Compatibilidade:** fichas salvas e arquivos exportados de versões anteriores precisam continuar abrindo. Mudanças no modelo passam pela migração em `js/state.js`.
 

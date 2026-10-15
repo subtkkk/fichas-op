@@ -1606,3 +1606,15 @@ html[data-diario-impressao="sim"] .bio__diario {
     display: none !important;
   }
 }
+
+/* Perícias na impressão: a seta do "menor" reserva espaço, e a sigla fica sempre na mesma coluna */
+@media print {
+  .pericia__dados {
+    text-align: left;
+  }
+
+  .pericia__dados > .marca-menor[hidden] {
+    display: inline-flex !important;
+    visibility: hidden;
+  }
+}

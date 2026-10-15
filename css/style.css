@@ -7499,6 +7499,8 @@ body.arrastando-arquivo::after {
 /* Perícias na mesa: sem "concedida" (fica em "Editar perícias"); atributo, grau, outros e total sempre aparecem */
 .secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(7),
 .secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(4),
+.secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(3),
+.secao--pericias[data-modo="mesa"] .pericia > .pericia__grau,
 .secao--pericias[data-modo="mesa"] .pericia > .pericia__outros,
 .secao--pericias[data-modo="mesa"] .botao-grau,
 .secao--pericias[data-modo="mesa"] .pericia > .pericia__concedida,
@@ -7549,8 +7551,9 @@ body.arrastando-arquivo::after {
   border: 1px solid var(--acento-linha);
 }
 
+/* Sem grau: o espaço do marcador continua reservado (a sigla do atributo nunca muda de lugar) */
 .secao--pericias[data-modo="mesa"] .pericia__grau-marca:empty {
-  display: none;
+  visibility: hidden;
 }
 
 /* Recursos: bônus de máximo e a conta, recolhidos */
@@ -13017,4 +13020,22 @@ body {
 /* Rolagens: o botão "Voltar" lê como botão */
 .rolagens__voltar {
   background: color-mix(in srgb, var(--cor-texto) 6%, transparent);
+}
+
+
+/* ---- Perícias: marcador de grau (T/V/E) e seta do "menor" ficam antes da sigla; a sigla não se move ---- */
+.pericia__dados {
+  text-align: right;
+}
+
+.pericia__dados > .pericia__grau-marca,
+.pericia__dados > .marca-menor {
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+/* A seta do "menor" reserva o próprio espaço mesmo oculta */
+.pericia__dados > .marca-menor[hidden] {
+  display: inline-flex;
+  visibility: hidden;
 }

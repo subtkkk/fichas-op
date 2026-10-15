@@ -174,6 +174,14 @@ window.OP = window.OP || {};
       document.getElementById('campo-nex'),
       OP.data.nex.map(function (n) { return { valor: n, texto: n + '%' }; })
     );
+    // Níveis de experiência (regra opcional NEX e Experiência): 1 a 20; o title diz o NEX equivalente na regra padrão
+    const niveis = [];
+    for (let n = 1; n <= OP.calc.NIVEL_MAXIMO; n++) niveis.push({ valor: n, texto: 'Nível ' + n });
+    const selectNivel = document.getElementById('campo-nivel');
+    preencherSelect(selectNivel, niveis);
+    Array.prototype.forEach.call(selectNivel.options, function (opcao) {
+      opcao.title = 'Equivale a NEX ' + OP.calc.nexDoNivel(Number(opcao.value)) + '% na regra padrão.';
+    });
     // Estágios (Sobrevivente): 1 até o maior estagioMax das classes de estágio
     const maximo = OP.calc.classesLista().reduce(function (maior, c) {
       return c.unidadeProgressao === 'estagio' ? Math.max(maior, OP.calc.numero(c.estagioMax)) : maior;
@@ -485,19 +493,21 @@ window.OP = window.OP || {};
         '</th>' +
         // Atributo e dados: a sigla é um botão discreto que abre o painel para trocar o atributo
         '<td class="pericia__dados">' +
-          '<button type="button" class="atributo-sigla" data-atributo-pericia="' + id + '"' +
-            ' aria-haspopup="dialog" aria-expanded="false" aria-controls="seletor-atributo"></button>' +
+          // na mesa o grau é só um marcador de texto (T, V ou E); a edição fica em "Editar perícias".
+          // Marcador e seta ficam ANTES da sigla: assim a sigla não muda de lugar quando eles aparecem.
+          '<span class="pericia__grau-marca" role="img"></span>' +
           // aparece só quando o teste rola "menor" (atributo 0 ou menos)
           '<span class="marca-menor" role="img" hidden><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
             '<path d="M3.5 5.5 8 10l4.5-4.5"/></svg></span>' +
+          // a sigla é um botão discreto que abre o painel para trocar o atributo
+          '<button type="button" class="atributo-sigla" data-atributo-pericia="' + id + '"' +
+            ' aria-haspopup="dialog" aria-expanded="false" aria-controls="seletor-atributo"></button>' +
           // os dados (ex.: 3d20 maior) não aparecem na linha: ficam para leitor de tela e no rótulo do botão de rolar
           '<output class="visualmente-oculto" data-saida="' + caminho + '.dados" data-formato="dados"></output>' +
         '</td>' +
         '<td class="pericia__grau">' +
           '<button type="button" class="botao-icone botao-grau" data-grau-pericia="' + id + '" data-nivel="0">' +
             SVG_GRAU + '</button>' +
-          // na mesa o grau é só um marcador de texto (T, V ou E); a edição fica em "Editar perícias"
-          '<span class="pericia__grau-marca" role="img"></span>' +
           // só na impressão: o nome do grau no lugar do símbolo
           '<span class="pericia__grau-impressao"></span>' +
         '</td>' +
@@ -1404,6 +1414,7 @@ window.OP = window.OP || {};
     const porPasso = c.unidade === 'estagio' ? 'por estágio' : 'por NEX';
     const resumo = c.inicial + ' inicial' + termoComSinal(c.ganhoNex, porPasso) +
       termoComSinal(c.bonus, 'bônus') +
+      (c.bonusAlteracoes ? termoComSinal(c.bonusAlteracoes, 'alteração de NEX (' + siglaAtributo(c.atributoAlteracoes) + ')') : '') +
       (c.perdaPermanente ? ' − ' + c.perdaPermanente + ' perda permanente' : '') + ' = ' + c.max;
 
     const parteAtributo = c.atributo ? siglaAtributo(c.atributo) + ' ' + c.valorAtributo : '';
@@ -2288,6 +2299,7 @@ window.OP = window.OP || {};
     const detalhesDados = [];
     if (resultado.modDados) detalhesDados.push('modificador ' + formatarComSinal(resultado.modDados));
     if (resultado.condicoesDados) detalhesDados.push('condições: ' + formatarComSinal(resultado.condicoesDados) + 'd20');
+    if (resultado.alteracoesDados) detalhesDados.push('alterações de NEX: ' + formatarComSinal(resultado.alteracoesDados) + 'd20');
     const regra = resultado.qtd + 'd20, fica o ' + resultado.modo +
       (detalhesDados.length ? ' (' + detalhesDados.join('; ') + ')' : '');
     const conta = resultado.escolhido + resultado.partesBonus.map(function (parte) {
@@ -2300,6 +2312,7 @@ window.OP = window.OP || {};
     caixa.appendChild(criarDadosTeste(resultado));
     caixa.appendChild(criarElemento('p', 'resultado__regra', regra));
     if (resultado.aviso) caixa.appendChild(criarElemento('p', 'resultado__aviso', resultado.aviso));
+    if (resultado.avisoEnergia) caixa.appendChild(criarElemento('p', 'resultado__aviso', resultado.avisoEnergia));
     caixa.appendChild(criarFimResultado(conta, resultado.total));
     if (alvo) caixa.appendChild(criarElemento('p', 'resultado__alvo resultado__alvo--' + (resultado.acertou ? 'sim' : 'nao'), alvo));
     const acoes = criarAcoesResultado(resultado);
@@ -2449,6 +2462,8 @@ window.OP = window.OP || {};
       if (!naPagina && OP.uiApp) OP.uiApp.aviso('aviso', 'Aviso: ' + (resultado.erro || 'não foi possível rolar.'));
       return;
     }
+    if (OP.som) OP.som.tocarResultado(resultado); // dados chacoalhando (e um som especial no 20 natural)
+    if (resultado.avisoEnergia && OP.uiApp) OP.uiApp.aviso('aviso', 'Aviso: ' + resultado.avisoEnergia);
     substituirFilhos(refs.resultado, [resultado.tipo === 'teste' ? criarResultadoTeste(resultado) : criarResultadoFormula(resultado)]);
     definirTexto(refs.ultimo, 'último: ' + resultado.total + (resultado.critico ? ' (crítico)' : ''));
     mostrarResultadoRapido(resultado);
@@ -3219,6 +3234,9 @@ window.OP = window.OP || {};
     const perdas = OP.data.formasRitual.map(function (forma) {
       return forma.nome + ' ' + OP.calc.numero(regra.perdaPermanente[forma.id]);
     }).join(', ');
+    if (OP.calc.semSanidade(OP.state.ficha)) {
+      return 'Ritual de Medo (sem Sanidade): ao conjurar, ' + (regra.sanPorCusto ? 'perde PD, além do custo, igual ao custo em PE.' : 'sem perda extra.');
+    }
     return 'Ritual de Medo: ao conjurar, ' + (regra.sanPorCusto ? 'perde Sanidade igual ao custo em PE e ' : '') +
       'perde Sanidade permanente (' + perdas + '), que reduz o máximo.';
   }
@@ -3290,13 +3308,16 @@ window.OP = window.OP || {};
       return;
     }
     const nomeForma = nomeNaLista(OP.data.formasRitual, idForma) || idForma;
+    const sem = OP.calc.semSanidade(OP.state.ficha);
     const itens = ['PE: ' + plano.peAtual + ' → ' + plano.peDepois];
-    if (plano.medo && plano.sanAtual !== null) itens.push('Sanidade: ' + plano.sanAtual + ' → ' + plano.sanDepois);
-    if (plano.medo && plano.sanMaxDepois !== null) itens.push('Sanidade máxima: ' + (plano.sanMaxDepois + plano.permanente) + ' → ' + plano.sanMaxDepois);
+    if (!sem && plano.medo && plano.sanAtual !== null) itens.push('Sanidade: ' + plano.sanAtual + ' → ' + plano.sanDepois);
+    if (!sem && plano.medo && plano.sanMaxDepois !== null) itens.push('Sanidade máxima: ' + (plano.sanMaxDepois + plano.permanente) + ' → ' + plano.sanMaxDepois);
     confirmar({
       titulo: plano.medo ? 'Conjurar ritual de Medo' : 'Conjurar mesmo assim?',
       texto: plano.medo
-        ? 'Ritual de Medo (' + nomeForma + '): −' + plano.pe + ' PE, −' + plano.san + ' Sanidade, −' + plano.permanente + ' Sanidade permanente.'
+        ? (sem
+          ? 'Ritual de Medo (' + nomeForma + '): −' + plano.pe + ' PE e −' + plano.perdaMental + ' PE pela perda de Sanidade.'
+          : 'Ritual de Medo (' + nomeForma + '): −' + plano.pe + ' PE, −' + plano.san + ' Sanidade, −' + plano.permanente + ' Sanidade permanente.')
         : 'Forma ' + nomeForma + ': −' + plano.pe + ' PE. Confira os avisos abaixo (eles não impedem a conjuração).',
       itens: itens,
       avisos: avisos,
@@ -3651,6 +3672,7 @@ window.OP = window.OP || {};
     somarAoCampo: somarAoCampo,
     removerDeLista: removerComDesfazer,
     abrirRolagens: function (aberto) { abrirPainel(aberto !== false); },
+    mostrarResultado: mostrarResultado,
     formatarNumero: formatarNumero,
     criarElemento: criarElemento,
     substituirFilhos: substituirFilhos,

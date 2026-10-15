@@ -468,9 +468,17 @@ window.OP = window.OP || {};
     }
   }
 
+  /** O efeito de Energia (regra NEX e Experiência) vale só até o fim da cena. */
+  function encerrarEfeitoEnergia(silencioso) {
+    const energia = ficha().alteracoesNex && ficha().alteracoesNex.energia;
+    if (!energia || !energia.d6) return;
+    OP.state.atualizar('alteracoesNex.energia', { d6: 0, valores: [], intensidade: 0 }, { silencioso: silencioso === true });
+  }
+
   function aoFimDaCena() {
     const resultado = OP.calc.fimDaCena(ficha());
     OP.state.atualizar('condicoes.ativas', resultado.ativas, { silencioso: true });
+    encerrarEfeitoEnergia(true);
     OP.state.atualizar('condicoes.turnosMorrendo', resultado.turnosMorrendo);
     const partes = [];
     if (resultado.removidas.length) partes.push('saíram ' + lista(resultado.removidas.map(nomeDaCondicao)));
@@ -544,6 +552,10 @@ window.OP = window.OP || {};
       return 'Meditação em descanso ' + nome + ': limite de PE por turno (' + limite + ') × ' + fator + ' = ' + (limite * fator) + ' PE. Só PE.';
     }
     const dormir = cfg.dormir;
+    if (OP.calc.semSanidade(ficha())) {
+      return 'Dormir em descanso ' + nome + ' (sem Sanidade, sugestão provisória, confira no livro): só PV = limite de PE por turno (' + limite + ') × ' +
+        dormir.pvPorLimitePE[condicao] + '. Os PE voltam com a meditação.';
+    }
     return 'Dormir em descanso ' + nome + ' (sugestão provisória, confira no livro): PV = limite de PE por turno (' + limite + ') × ' +
       dormir.pvPorLimitePE[condicao] + ', PE = ' + limite + ' × ' + dormir.pePorLimitePE[condicao] + ', SAN +' + dormir.san[condicao] + '.';
   }
@@ -600,13 +612,14 @@ window.OP = window.OP || {};
       removidas = fim.removidas;
       mudancas.push(['condicoes.ativas', fim.ativas]);
       mudancas.push(['condicoes.turnosMorrendo', 0]);
+      if (f.alteracoesNex && f.alteracoesNex.energia && f.alteracoesNex.energia.d6) mudancas.push(['alteracoesNex.energia', { d6: 0, valores: [], intensidade: 0 }]);
     }
     mudancas.forEach(function (m, i) {
       OP.state.atualizar(m[0], m[1], { silencioso: i < mudancas.length - 1 });
     });
 
     const ganho = function (id) { return novo[id] === null || novo[id] === undefined ? 0 : Math.max(0, novo[id] - antes[id]); };
-    let texto = 'Recuperou ' + ganho('pv') + ' PV, ' + ganho('pe') + ' PE, ' + ganho('san') + ' SAN';
+    let texto = 'Recuperou ' + ganho('pv') + ' PV, ' + ganho('pe') + ' PE' + (OP.calc.semSanidade(f) ? '' : ', ' + ganho('san') + ' SAN');
     if (refs.descansoCena.checked) {
       texto += '. Cena encerrada' + (removidas.length ? ': saíram ' + lista(removidas.map(nomeDaCondicao)) : '');
     }

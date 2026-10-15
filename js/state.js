@@ -361,6 +361,27 @@ window.OP = window.OP || {};
     return { dtBonus: 0, elementoConectado: null, afinidadeDesenvolvida: false, peGastoTurno: 0 };
   }
 
+  /**
+   * Alterações de NEX (regra opcional NEX e Experiência):
+   * - penalidade25: perícia com −5 do NEX 25% (diplomacia | enganacao | intimidacao | '');
+   * - atributo35: atributo somado ao PE no NEX 35% (agi | for | int | vig | '');
+   * - penalidade35: perícia com −5 do NEX 35% (atletismo | fortitude | reflexos | '');
+   * - sangueSuspenso: Forma Monstruosa ativa (as penalidades do Sangue ficam suspensas);
+   * - escuridao: o personagem está numa área de escuridão (NEX 90% de Conhecimento: ofuscado em vez de cego);
+   * - energia: efeito da cena sorteado { d6: 0 (nenhum) a 6, valores: d20 anotados do efeito 5, intensidade }.
+   * O elemento é o elemento conectado (conjuracao.elementoConectado).
+   */
+  function novasAlteracoesNex() {
+    return {
+      penalidade25: '',
+      atributo35: '',
+      penalidade35: '',
+      sangueSuspenso: false,
+      escuridao: false,
+      energia: { d6: 0, valores: [], intensidade: 0 }
+    };
+  }
+
   /** Escolhas de perícias da origem e da classe (ids de OP.data.pericias). */
   function novasEscolhas() {
     return {
@@ -412,8 +433,13 @@ window.OP = window.OP || {};
       // Preferências desta ficha
       config: {
         modoLivre: false,         // desliga os avisos de criação dos atributos
-        modoLivrePericias: false  // desliga o aviso de pontos de treinamento excedidos
+        modoLivrePericias: false, // desliga o aviso de pontos de treinamento excedidos
+        semSanidade: false,       // regra opcional "Jogando sem Sanidade": PD no lugar de PE e SAN
+        nexENivel: false          // regra opcional "NEX e Experiência": o nível (1 a 20) vira a progressão e o NEX, a exposição
       },
+
+      // Regra opcional NEX e Experiência: escolhas e estado das alterações de NEX (js/calc.js, js/ui-nex.js)
+      alteracoesNex: novasAlteracoesNex(),
 
       identificacao: {
         nome: '',
@@ -426,6 +452,7 @@ window.OP = window.OP || {};
         versatilidade: '',        // NEX 50%: id de outra trilha da classe ou ''
         nex: 5,                   // em %, um dos valores de OP.data.nex
         estagio: 1,               // Sobrevivente: estágio (1 a classe.estagioMax)
+        nivel: 1,                 // regra NEX e Experiência: nível de experiência (1 a 20); 1 nível = 5% de NEX
         escolhas: novasEscolhas()
       },
 

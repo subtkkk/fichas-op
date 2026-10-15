@@ -139,6 +139,48 @@ window.OP = window.OP || {};
     return Math.max(0, Math.floor((valor - 5) / 5));
   }
 
+  /* ---------- Regra opcional NEX e Experiência: nível x NEX ---------- */
+
+  const NIVEL_MAXIMO = 20; // nível 20 equivale a NEX 99%
+
+  /** A regra opcional "NEX e Experiência" está ligada nesta ficha? */
+  function regraNexNivel(ficha) {
+    return Boolean(ficha && ficha.config && ficha.config.nexENivel === true);
+  }
+
+  /** NEX (em %) equivalente a um nível: 1 nível = 5% (nível 20 = 99%). */
+  function nexDoNivel(nivel) {
+    const n = Math.min(NIVEL_MAXIMO, Math.max(1, Math.trunc(numero(nivel)) || 1));
+    return n >= NIVEL_MAXIMO ? 99 : n * 5;
+  }
+
+  /** Nível equivalente a um NEX da regra padrão (5% = 1 ... 99% = 20). */
+  function nivelDoNex(nex) {
+    const n = numero(nex);
+    if (n >= 99) return NIVEL_MAXIMO;
+    return Math.min(NIVEL_MAXIMO, Math.max(1, Math.floor(n / 5)));
+  }
+
+  /** Nível de experiência da ficha (1 a 20). */
+  function nivelDaFicha(ficha) {
+    const bruto = Math.trunc(numero(ficha && ficha.identificacao && ficha.identificacao.nivel));
+    return Math.min(NIVEL_MAXIMO, Math.max(1, bruto || 1));
+  }
+
+  /**
+   * NEX que vale para a progressão (PV/PE/SAN, limite de PE, círculos, tabela da classe):
+   * na regra padrão é o NEX da ficha; com NEX e Experiência é o equivalente ao nível.
+   */
+  function nexProgressao(ficha) {
+    if (regraNexNivel(ficha)) return nexDoNivel(nivelDaFicha(ficha));
+    return numero(ficha && ficha.identificacao && ficha.identificacao.nex);
+  }
+
+  /** NEX de exposição (afinidade, alterações, poderes paranormais): o campo NEX da ficha. */
+  function nexExposicao(ficha) {
+    return numero(ficha && ficha.identificacao && ficha.identificacao.nex);
+  }
+
   /** Unidade da progressão: 'estagio' (Sobrevivente) ou 'nex' (demais e sem classe). */
   function unidadeProgressao(ficha) {
     const classe = classeDaFicha(ficha);
@@ -154,7 +196,7 @@ window.OP = window.OP || {};
 
   /** Nível atual na unidade da classe: NEX (%) ou estágio. */
   function nivelProgressao(ficha) {
-    return unidadeProgressao(ficha) === 'estagio' ? estagioDaFicha(ficha) : numero(ficha.identificacao.nex);
+    return unidadeProgressao(ficha) === 'estagio' ? estagioDaFicha(ficha) : nexProgressao(ficha);
   }
 
   /**
@@ -163,7 +205,7 @@ window.OP = window.OP || {};
    * Sobrevivente → estágio − 1.
    */
   function passosProgressao(ficha) {
-    return unidadeProgressao(ficha) === 'estagio' ? estagioDaFicha(ficha) - 1 : passosNex(ficha.identificacao.nex);
+    return unidadeProgressao(ficha) === 'estagio' ? estagioDaFicha(ficha) - 1 : passosNex(nexProgressao(ficha));
   }
 
   /**
@@ -175,7 +217,7 @@ window.OP = window.OP || {};
     if (fichaOuNex !== null && typeof fichaOuNex === 'object') {
       const classe = classeDaFicha(fichaOuNex);
       if (classe && typeof classe.limitePEFixo === 'number') return classe.limitePEFixo;
-      return limitePEporTurno(fichaOuNex.identificacao ? fichaOuNex.identificacao.nex : 0);
+      return limitePEporTurno(fichaOuNex.identificacao ? nexProgressao(fichaOuNex) : 0);
     }
     return Math.max(0, Math.round(numero(fichaOuNex) / 5));
   }
@@ -278,6 +320,15 @@ window.OP = window.OP || {};
     return OP.data.recursos.find(function (recurso) { return recurso.id === idRecurso; }) || null;
   }
 
+  /**
+   * Regra opcional "Jogando sem Sanidade" ligada nesta ficha? Os pontos de esforço
+   * e a sanidade se juntam nos Pontos de Determinação (PD): a ficha segue usando o
+   * recurso "pe" como PD e a SAN fica de fora (os valores dela não são apagados).
+   */
+  function semSanidade(ficha) {
+    return Boolean(ficha && ficha.config && ficha.config.semSanidade === true);
+  }
+
   /** Inteiro ≥ 0 (vazio, texto, NaN e negativos viram 0). */
   function inteiroNaoNegativo(valor) {
     return Math.max(0, Math.trunc(numero(valor)));
@@ -317,16 +368,28 @@ window.OP = window.OP || {};
       ganhoNex: 0,
       bonus: numero(salvo.bonusMax),
       perdaPermanente: inteiroNaoNegativo(salvo.perdaPermanente),
+      bonusAlteracoes: 0, // PE: atributo escolhido no NEX 35% (regra opcional NEX e Experiência)
+      atributoAlteracoes: null,
       max: 0
     };
     if (!composicao.classeDefinida) return composicao;
 
-    composicao.inicialClasse = numero(classe[definicao.campoInicial]);
-    composicao.porNexClasse = numero(classe[definicao.campoPorNex]);
+    // Regra opcional "Jogando sem Sanidade": os PE viram PD, com inicial e ganho por NEX próprios (por classe)
+    const campoInicial = idRecurso === 'pe' && semSanidade(ficha) ? 'pdInicial' : definicao.campoInicial;
+    const campoPorNex = idRecurso === 'pe' && semSanidade(ficha) ? 'pdPorNex' : definicao.campoPorNex;
+    composicao.inicialClasse = numero(classe[campoInicial]);
+    composicao.porNexClasse = numero(classe[campoPorNex]);
     composicao.inicial = composicao.inicialClasse + composicao.valorAtributo;
     composicao.porNex = composicao.porNexClasse + (composicao.somaAtributo ? composicao.valorAtributo : 0);
     composicao.ganhoNex = composicao.porNex * composicao.passos;
-    composicao.max = Math.max(0, composicao.inicial + composicao.ganhoNex + composicao.bonus - composicao.perdaPermanente);
+    if (idRecurso === 'pe') {
+      const alteracoes = efeitosAlteracoes(ficha);
+      if (alteracoes.bonusPE) {
+        composicao.bonusAlteracoes = alteracoes.bonusPE.valor;
+        composicao.atributoAlteracoes = alteracoes.bonusPE.atributo;
+      }
+    }
+    composicao.max = Math.max(0, composicao.inicial + composicao.ganhoNex + composicao.bonus + composicao.bonusAlteracoes - composicao.perdaPermanente);
     return composicao;
   }
 
@@ -835,7 +898,7 @@ window.OP = window.OP || {};
   /** Dados de uma perícia: { qtd, modo } ("maior" ou "menor"). */
   function periciaDados(ficha, idPericia) {
     const atributo = atributoDaPericia(ficha, idPericia);
-    return resolverReserva(atributo ? totalAtributo(ficha, atributo) : 0, dadosCondicoesPericia(ficha, idPericia));
+    return resolverReserva(atributo ? totalAtributo(ficha, atributo) : 0, dadosCondicoesPericia(ficha, idPericia) + dadosAlteracoesPericia(ficha, idPericia));
   }
 
   /** Texto dos dados: { qtd: 3, modo: 'maior' } → "3d20 maior". */
@@ -856,6 +919,7 @@ window.OP = window.OP || {};
     let bonus = bonusDoGrau(grauEfetivo(ficha, idPericia)) + numero(periciaSalva(ficha, idPericia).outros);
     bonus -= penalidadeSemKit(ficha, idPericia);
     if (definicao.penalidadeCarga) bonus -= penalidadeCarga(ficha);
+    bonus += bonusAlteracoesPericia(ficha, idPericia); // alterações de NEX (regra opcional)
     return bonus;
   }
 
@@ -894,11 +958,13 @@ window.OP = window.OP || {};
       atributoAlterado: atributo !== definicao.atributoPadrao,
       dados: periciaDados(ficha, idPericia),
       dadosCondicoes: dadosCondicoesPericia(ficha, idPericia), // soma de dados das condições (negativa = menos dados)
+      dadosAlteracoes: dadosAlteracoesPericia(ficha, idPericia), // idem, das alterações de NEX
+      bonusAlteracoes: bonusAlteracoesPericia(ficha, idPericia),
       grau: grau,
       grauSalvo: grauDaPericia(ficha, idPericia),
       concedidaPor: fonteConcedida(ficha, idPericia), // 'classe' | 'origem' | null
       treinada: grau >= 1,
-      requerTreinamento: definicao.somenteTreinada === true && grau === 0,
+      requerTreinamento: definicao.somenteTreinada === true && grau === 0 && !(idPericia === 'ocultismo' && efeitosAlteracoes(ficha).ocultismoSemTreino),
       bonus: periciaBonus(ficha, idPericia),
       penalidadeCarga: definicao.penalidadeCarga ? penalidadeCarga(ficha) : 0,
       kitAtivo: definicao.kit ? kitAtivo(ficha, idPericia) : false,
@@ -1088,7 +1154,7 @@ window.OP = window.OP || {};
   function testePericia(ficha, idPericia, modDados) {
     const atributo = atributoDaPericia(ficha, idPericia);
     return {
-      dados: resolverReserva(atributo ? totalAtributo(ficha, atributo) : 0, numero(modDados) + dadosCondicoesPericia(ficha, idPericia)),
+      dados: resolverReserva(atributo ? totalAtributo(ficha, atributo) : 0, numero(modDados) + dadosCondicoesPericia(ficha, idPericia) + dadosAlteracoesPericia(ficha, idPericia)),
       bonus: periciaBonus(ficha, idPericia)
     };
   }
@@ -1096,7 +1162,7 @@ window.OP = window.OP || {};
   /** Teste puro de um atributo (sem perícia): { dados: { qtd, modo }, bonus: 0 }. As condições que mexem no atributo entram. */
   function testeAtributo(ficha, idAtributo, modDados) {
     const dadosCond = modificadorDadosTeste(modificadoresCondicoes(ficha), { atributo: idAtributo });
-    return { dados: resolverReserva(totalAtributo(ficha, idAtributo), numero(modDados) + dadosCond), bonus: 0 };
+    return { dados: resolverReserva(totalAtributo(ficha, idAtributo), numero(modDados) + dadosCond + dadosAlteracoesAtributo(ficha, idAtributo)), bonus: 0 };
   }
 
   /**
@@ -1107,7 +1173,7 @@ window.OP = window.OP || {};
     // dadosCondicoesAtaque já traz as condições da perícia e as de ataque (ex.: Agarrado, Caído)
     const atributo = atributoDaPericia(ficha, ataque.pericia);
     return {
-      dados: resolverReserva(atributo ? totalAtributo(ficha, atributo) : 0, numero(modDados) + dadosCondicoesAtaque(ficha, ataque)),
+      dados: resolverReserva(atributo ? totalAtributo(ficha, atributo) : 0, numero(modDados) + dadosCondicoesAtaque(ficha, ataque) + dadosAlteracoesPericia(ficha, ataque.pericia)),
       bonus: periciaBonus(ficha, ataque.pericia) + numero(ataque.testeBonus)
     };
   }
@@ -1184,6 +1250,208 @@ window.OP = window.OP || {};
       if (ataque.itemId !== null && !armaDoAtaque(ficha, ataque)) {
         correcoes.push({ caminho: caminho + '.itemId', valor: null });
       }
+    });
+    return correcoes;
+  }
+
+  /* ------------------------------------------------------------------------
+     Regra opcional NEX e Experiência: alterações de NEX
+     (textos e números em data/alteracoes-nex.js). Só valem com ficha.config.nexENivel.
+     O elemento é o elemento conectado da ficha (um só por ficha). Os efeitos ficam
+     SEPARADOS dos das condições: dados de alteração somam com os de condição
+     (fontes diferentes), e dentro das alterações um estágio novo troca o anterior
+     ("aumenta para"). Tudo cumulativo, como diz o livro.
+     ------------------------------------------------------------------------ */
+
+  const ELEMENTOS_ALTERACOES = ['sangue', 'morte', 'conhecimento', 'energia'];
+
+  function normalizarNome(texto) {
+    return String(texto === null || texto === undefined ? '' : texto).normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase().replace(/\s+/g, ' ').trim();
+  }
+
+  function alteracoesSalvas(ficha) {
+    const salvo = ficha && ficha.alteracoesNex;
+    return salvo !== null && typeof salvo === 'object' && !Array.isArray(salvo) ? salvo : {};
+  }
+
+  /** Elemento das alterações: o elemento conectado, se for Sangue, Morte, Conhecimento ou Energia. */
+  function elementoDasAlteracoes(ficha) {
+    const id = ficha && ficha.conjuracao && ficha.conjuracao.elementoConectado;
+    return ELEMENTOS_ALTERACOES.indexOf(id) !== -1 ? id : null;
+  }
+
+  /** Alterações já alcançadas pelo NEX (exposição): as gerais e as do elemento. [] com a regra desligada. */
+  function alteracoesAlcancadas(ficha) {
+    const dados = OP.data.alteracoesNex;
+    if (!regraNexNivel(ficha) || !dados) return [];
+    const nex = nexExposicao(ficha);
+    const elemento = elementoDasAlteracoes(ficha);
+    let lista = dados.gerais.slice();
+    if (elemento && dados.elementos[elemento]) lista = lista.concat(dados.elementos[elemento].alteracoes);
+    return lista.filter(function (alteracao) { return alteracao.nex <= nex; });
+  }
+
+  function efeitosAlteracoesNeutros() {
+    return {
+      ativa: false, nex: 0, elemento: null, alcancadas: [],
+      ocultismoSemTreino: false,
+      bonusPericia: {},                                   // bônus fixos por perícia (+2 Ocultismo, −5 das escolhas)
+      dadosPericias: 0,
+      dadosAtributos: { agi: 0, for: 0, int: 0, pre: 0, vig: 0 },
+      dadosPorPericia: {},                                // dados (+/−) por perícia
+      dadosAtaque: 0,
+      dadosAtaqueCorpoACorpo: 0,
+      bonusPE: null,                                      // { atributo, valor }: atributo escolhido no NEX 35%
+      condicoes: [],                                      // condições mantidas pelas alterações: { id, efeitos, nome }
+      reducaoRitual: [],                                  // rituais com −1 PE: { nome, nota, norm }
+      lembretes: [],
+      pendencias: [],                                     // escolhas por fazer: { campo, rotulo, alteracao }
+      interacaoSocialPE: 0,                               // NEX 90% de Morte: PE perdidos na 1ª interação social da cena
+      suspensaoDisponivel: false,                         // NEX 90% de Sangue: Forma Monstruosa suspende as penalidades
+      escuridaoAlternavel: false,                         // NEX 90% de Conhecimento: cego fora da escuridão
+      intensidadeEnergia: 0,                              // 1, 2 ou 3 (NEX 60%, 75% ou 90% de Energia)
+      energia: { d6: 0, valores: [], intensidade: 0 }     // efeito sorteado da cena
+    };
+  }
+
+  const ALTERACOES_NEUTRAS = efeitosAlteracoesNeutros();
+
+  function somarEm(mapa, id, valor) {
+    mapa[id] = (mapa[id] || 0) + valor;
+  }
+
+  /** Tudo o que as alterações de NEX fazem nesta ficha (ver efeitosAlteracoesNeutros). */
+  function efeitosAlteracoes(ficha) {
+    if (!regraNexNivel(ficha)) return ALTERACOES_NEUTRAS;
+    const r = efeitosAlteracoesNeutros();
+    const salvas = alteracoesSalvas(ficha);
+    const alcancadas = alteracoesAlcancadas(ficha);
+    r.ativa = true;
+    r.nex = nexExposicao(ficha);
+    r.elemento = elementoDasAlteracoes(ficha);
+    r.alcancadas = alcancadas.map(function (a) { return a.id; });
+
+    const bons = {};
+    const penalidades = {};
+    let condicao = null;
+    alcancadas.forEach(function (alteracao) {
+      const e = alteracao.efeitos || {};
+      if (e.ocultismoSemTreino) r.ocultismoSemTreino = true;
+      Object.keys(e.bonusPericiaTreinada || {}).forEach(function (id) {
+        if (grauEfetivo(ficha, id) >= 1) somarEm(r.bonusPericia, id, numero(e.bonusPericiaTreinada[id]));
+      });
+      if (e.escolhaPenalidade) {
+        const esc = e.escolhaPenalidade;
+        if (esc.opcoes.indexOf(salvas[esc.campo]) !== -1) somarEm(r.bonusPericia, salvas[esc.campo], numero(esc.valor));
+        else r.pendencias.push({ campo: esc.campo, rotulo: esc.rotulo, alteracao: alteracao.titulo });
+      }
+      if (e.escolhaAtributoPE) {
+        const esc = e.escolhaAtributoPE;
+        if (esc.opcoes.indexOf(salvas[esc.campo]) !== -1) r.bonusPE = { atributo: salvas[esc.campo], valor: totalAtributo(ficha, salvas[esc.campo]) };
+        else r.pendencias.push({ campo: esc.campo, rotulo: esc.rotulo, alteracao: alteracao.titulo });
+      }
+      Object.assign(bons, e.dadosPorPericia || {});
+      Object.assign(penalidades, e.penalidadeDadosPorPericia || {});
+      if (e.condicaoPermanente) condicao = e.condicaoPermanente;
+      (e.reducaoRitual || []).forEach(function (ritual) {
+        r.reducaoRitual.push({ nome: ritual.nome, nota: ritual.nota || '', norm: normalizarNome(ritual.nome) });
+      });
+      (e.lembretes || []).forEach(function (texto) { r.lembretes.push(texto); });
+      if (e.interacaoSocialPE) r.interacaoSocialPE = numero(e.interacaoSocialPE);
+      if (e.suspensao === 'sangue') r.suspensaoDisponivel = true;
+      if (e.escuridaoAlternavel) r.escuridaoAlternavel = true;
+      if (e.energia) r.intensidadeEnergia = numero(e.energia);
+    });
+
+    // Forma Monstruosa (+2 PE): as penalidades causadas pelas alterações de Sangue ficam suspensas
+    if (r.elemento === 'sangue' && salvas.sangueSuspenso === true && r.suspensaoDisponivel) {
+      Object.keys(penalidades).forEach(function (id) { delete penalidades[id]; });
+    }
+    Object.keys(bons).forEach(function (id) { somarEm(r.dadosPorPericia, id, numero(bons[id])); });
+    Object.keys(penalidades).forEach(function (id) { somarEm(r.dadosPorPericia, id, numero(penalidades[id])); });
+
+    // Condição que a alteração mantém (Conhecimento: ofuscado, e cego fora da escuridão no NEX 90%)
+    if (condicao) {
+      const efetiva = salvas.escuridao === true && condicao.escuridao ? condicao.escuridao : condicao;
+      const definicao = definicaoCondicao(efetiva.id);
+      if (definicao) {
+        r.condicoes.push({
+          id: efetiva.id, efeitos: efetiva.efeitos || null,
+          nome: definicao.nome + ' (alteração de NEX)', nomeCurto: efetiva.nomeExibido || definicao.nome
+        });
+      }
+    }
+
+    // Energia: o efeito 1 do 1d6 (−Xd20 em Presença e nas perícias baseadas, exceto Vontade)
+    const energia = salvas.energia && typeof salvas.energia === 'object' ? salvas.energia : {};
+    if (r.intensidadeEnergia > 0) {
+      const d6 = Math.min(6, Math.max(0, Math.trunc(numero(energia.d6))));
+      const intensidade = Math.min(3, Math.max(1, Math.trunc(numero(energia.intensidade)) || r.intensidadeEnergia));
+      r.energia = {
+        d6: d6, intensidade: intensidade,
+        valores: Array.isArray(energia.valores) ? energia.valores.map(function (v) { return Math.trunc(numero(v)); }) : []
+      };
+      if (d6 === 1) {
+        r.dadosAtributos.pre -= intensidade;
+        somarEm(r.dadosPorPericia, 'vontade', intensidade);
+      }
+    }
+    return r;
+  }
+
+  /** Bônus fixo das alterações numa perícia (+2 em Ocultismo para treinados, −5 das escolhas). */
+  function bonusAlteracoesPericia(ficha, idPericia) {
+    return numero(efeitosAlteracoes(ficha).bonusPericia[idPericia]);
+  }
+
+  /** Dados das alterações no teste de uma perícia (soma com os das condições: são fontes diferentes). */
+  function dadosAlteracoesPericia(ficha, idPericia) {
+    const e = efeitosAlteracoes(ficha);
+    if (!e.ativa) return 0;
+    return modificadorDadosTeste(e, { atributo: atributoDaPericia(ficha, idPericia), ehPericia: true, idPericia: idPericia });
+  }
+
+  /** Dados das alterações num teste puro de atributo. */
+  function dadosAlteracoesAtributo(ficha, idAtributo) {
+    const e = efeitosAlteracoes(ficha);
+    return e.ativa ? modificadorDadosTeste(e, { atributo: idAtributo }) : 0;
+  }
+
+  /** −1 PE no custo do ritual se uma alteração de NEX o reduz (o personagem já o conhece: está na lista). 0 ou 1. */
+  function reducaoCustoRitual(ficha, ritual) {
+    const e = efeitosAlteracoes(ficha);
+    if (!e.ativa || !ritual) return 0;
+    const nome = normalizarNome(ritual.nome);
+    return nome && e.reducaoRitual.some(function (r) { return r.norm === nome; }) ? 1 : 0;
+  }
+
+  /** Custo de um ritual com as condições (Alquebrado) e a redução das alterações de NEX; nunca abaixo de 0. */
+  function custoRitualFinal(ficha, ritual, custoBase) {
+    const comCondicoes = custoComCondicoes(ficha, custoBase);
+    return comCondicoes > 0 ? Math.max(0, comCondicoes - reducaoCustoRitual(ficha, ritual)) : comCondicoes;
+  }
+
+  /** Valor do d6 de Energia: nível de intensidade pelo NEX, e a perda de Sanidade/PD do "tique" esquecido. */
+  function intensidadeEnergia(ficha) {
+    return efeitosAlteracoes(ficha).intensidadeEnergia;
+  }
+
+  /** Correções das escolhas das alterações (valor que não existe volta ao vazio). */
+  function correcoesAlteracoesNex(ficha) {
+    const correcoes = [];
+    const salvas = alteracoesSalvas(ficha);
+    const dados = OP.data.alteracoesNex;
+    if (!dados) return correcoes;
+    const campos = {};
+    dados.gerais.forEach(function (a) {
+      const e = a.efeitos || {};
+      if (e.escolhaPenalidade) campos[e.escolhaPenalidade.campo] = e.escolhaPenalidade.opcoes;
+      if (e.escolhaAtributoPE) campos[e.escolhaAtributoPE.campo] = e.escolhaAtributoPE.opcoes;
+    });
+    Object.keys(campos).forEach(function (campo) {
+      const valor = salvas[campo];
+      if (valor !== '' && campos[campo].indexOf(valor) === -1) correcoes.push({ caminho: 'alteracoesNex.' + campo, valor: '' });
     });
     return correcoes;
   }
@@ -1301,9 +1569,12 @@ window.OP = window.OP || {};
    */
   function projetarCustos(ficha, custos) {
     const c = custos || {};
+    // Sem Sanidade: a perda de Sanidade vira perda de PD (não conta no limite por turno, e não há perda permanente)
+    const semSan = semSanidade(ficha);
     const pe = inteiroNaoNegativo(c.pe);
-    const san = inteiroNaoNegativo(c.san);
-    const permanente = inteiroNaoNegativo(c.permanente);
+    const perdaMental = semSan ? inteiroNaoNegativo(c.san) : 0;
+    const san = semSan ? 0 : inteiroNaoNegativo(c.san);
+    const permanente = semSan ? 0 : inteiroNaoNegativo(c.permanente);
     const limite = limitePEporTurno(ficha);
     const gastoAntes = inteiroNaoNegativo(ficha.conjuracao && ficha.conjuracao.peGastoTurno);
     const estadoPe = estadoRecurso(ficha, 'pe');
@@ -1313,6 +1584,7 @@ window.OP = window.OP || {};
       motivo: '',
       pe: pe,
       san: san,
+      perdaMental: perdaMental,
       permanente: permanente,
       peAtual: estadoPe.atual,
       peDepois: estadoPe.atual,
@@ -1329,16 +1601,17 @@ window.OP = window.OP || {};
       mudancas: []
     };
 
-    if (pe > 0) {
+    if (pe > 0 || perdaMental > 0) {
       if (!estadoPe.classeDefinida) return Object.assign(projecao, { ok: false, motivo: 'Escolha uma classe para calcular o PE.' });
       if (pe > estadoPe.atual) return Object.assign(projecao, { ok: false, motivo: 'PE insuficiente' });
-      projecao.peDepois = estadoPe.atual - pe;
-      projecao.peGastoTurnoDepois = gastoAntes + pe;
-      projecao.avisoLimite = projecao.peGastoTurnoDepois > limite;
-      projecao.mudancas.push(
-        { caminho: 'recursos.pe.atual', valor: projecao.peDepois },
-        { caminho: 'conjuracao.peGastoTurno', valor: projecao.peGastoTurnoDepois }
-      );
+      // A perda mental (só sem Sanidade) tira PD até 0, sem impedir a conjuração
+      projecao.peDepois = Math.max(0, estadoPe.atual - pe - perdaMental);
+      projecao.mudancas.push({ caminho: 'recursos.pe.atual', valor: projecao.peDepois });
+      if (pe > 0) {
+        projecao.peGastoTurnoDepois = gastoAntes + pe;
+        projecao.avisoLimite = projecao.peGastoTurnoDepois > limite;
+        projecao.mudancas.push({ caminho: 'conjuracao.peGastoTurno', valor: projecao.peGastoTurnoDepois });
+      }
     }
 
     if (san > 0 || permanente > 0) {
@@ -1382,7 +1655,7 @@ window.OP = window.OP || {};
     const regra = OP.data.config.medo;
     const custo = custoForma(ritual, idForma);
     const projecao = projetarCustos(ficha, {
-      pe: custoComCondicoes(ficha, custo),
+      pe: custoRitualFinal(ficha, ritual, custo),
       san: medo && regra.sanPorCusto ? custo : 0,
       permanente: medo ? inteiroNaoNegativo(regra.perdaPermanente[idForma]) : 0
     });
@@ -1442,7 +1715,7 @@ window.OP = window.OP || {};
     if (!forma || typeof forma !== 'object') return [];
     const avisos = [];
     const requer = circuloValido(forma.requerCirculo);
-    const liberados = circulosLiberados(ficha.identificacao.nex);
+    const liberados = circulosLiberados(nexProgressao(ficha));
     if (requer > liberados) {
       avisos.push({
         tipo: 'circulo',
@@ -1466,7 +1739,7 @@ window.OP = window.OP || {};
 
   /** O círculo do ritual passa do que o NEX da ficha libera? (só aviso) */
   function ritualAlemDoCirculo(ficha, ritual) {
-    return numero(ritual.circulo) > circulosLiberados(ficha.identificacao.nex);
+    return numero(ritual.circulo) > circulosLiberados(nexProgressao(ficha));
   }
 
   function elementoValido(idElemento) {
@@ -1505,7 +1778,7 @@ window.OP = window.OP || {};
    * afinidade e PE gasto no turno.
    */
   function estadoConjuracao(ficha) {
-    const nex = ficha.identificacao.nex;
+    const nex = nexProgressao(ficha);
     const conjuracao = ficha.conjuracao || {};
     const limite = limitePEporTurno(ficha);
     const gasto = Math.max(0, numero(conjuracao.peGastoTurno));
@@ -1513,7 +1786,7 @@ window.OP = window.OP || {};
     return {
       dt: dtRituais(ficha),
       circulosLiberados: circulosLiberados(nex),
-      afinidadeLiberada: afinidadeLiberada(nex),
+      afinidadeLiberada: afinidadeLiberada(nexExposicao(ficha)), // a afinidade segue o NEX (exposição)
       nexAfinidade: numero(OP.data.config.nexAfinidade),
       elementoConectado: conectado,
       afinidadeDesenvolvida: Boolean(conectado) && conjuracao.afinidadeDesenvolvida === true,
@@ -1543,7 +1816,8 @@ window.OP = window.OP || {};
         formas[definicao.id] = {
           ativa: definicao.id === 'padrao' || forma.ativa === true,
           custo: custo,
-          custoComCondicoes: custoComCondicoes(ficha, custo),
+          custoComCondicoes: custoRitualFinal(ficha, ritual, custo),
+          reducaoAlteracao: custo > 0 ? reducaoCustoRitual(ficha, ritual) : 0,
           adicional: definicao.id === 'padrao' ? 0 : inteiroNaoNegativo(forma.custoAdicional),
           requerCirculo: definicao.id === 'padrao' ? null : circuloValido(forma.requerCirculo),
           requerAfinidade: definicao.id !== 'padrao' && forma.requerAfinidade === true,
@@ -1712,9 +1986,14 @@ window.OP = window.OP || {};
     if (identificacao.classe !== '' && !classe) {
       correcoes.push({ caminho: 'identificacao.classe', valor: '' });
     }
-    if (OP.data.nex.indexOf(identificacao.nex) === -1) {
+    if (regraNexNivel(ficha)) {
+      // NEX e Experiência: o NEX é a exposição (0 a 99, qualquer inteiro: +1%, +2%, + círculo do ritual...)
+      const exposicao = Math.min(99, Math.max(0, Math.trunc(numero(identificacao.nex))));
+      if (identificacao.nex !== exposicao) correcoes.push({ caminho: 'identificacao.nex', valor: exposicao });
+    } else if (OP.data.nex.indexOf(identificacao.nex) === -1) {
       correcoes.push({ caminho: 'identificacao.nex', valor: nexValido(identificacao.nex) });
     }
+    if (identificacao.nivel !== nivelDaFicha(ficha)) correcoes.push({ caminho: 'identificacao.nivel', valor: nivelDaFicha(ficha) });
     const estagio = estagioDaFicha(ficha);
     if (estagio !== identificacao.estagio) correcoes.push({ caminho: 'identificacao.estagio', valor: estagio });
 
@@ -2106,9 +2385,18 @@ window.OP = window.OP || {};
     const resultado = modificadoresNeutros();
     if (salvas.aplicarEfeitos === false) return resultado;
 
-    const itens = condicoesEfetivas(salvas).map(function (id) {
+    // Condições que as alterações de NEX mantêm (Conhecimento: ofuscado; no NEX 90%, cego): entram como as demais,
+    // então "efeitos iguais não se acumulam" vale também contra uma condição colocada à mão.
+    const mantidas = efeitosAlteracoes(ficha).condicoes;
+    const comMantidas = mantidas.length
+      ? Object.assign({}, salvas, { ativas: listaAtivas(salvas).concat(mantidas.filter(function (c) { return !c.efeitos; }).map(function (c) { return { id: c.id }; })) })
+      : salvas;
+    const itens = condicoesEfetivas(comMantidas).map(function (id) {
       const definicao = definicaoCondicao(id);
       return { nome: definicao.nome, efeitos: definicao.efeitos || null };
+    });
+    mantidas.filter(function (c) { return c.efeitos; }).forEach(function (c) {
+      itens.push({ nome: c.nome, efeitos: c.efeitos });
     });
     listaAtivas(salvas).forEach(function (item) {
       if (item.id !== 'personalizada') return;
@@ -2287,6 +2575,8 @@ window.OP = window.OP || {};
     const id = condicaoDescansoValida(condicao);
     const limite = limitePEporTurno(ficha);
     if (tipo === 'meditacao') return { pv: 0, pe: limite * numero(cfg.meditacaoPorLimitePE[id]), san: 0 };
+    // Sem Sanidade: dormir recupera só PV (os PD voltam com a ação de relaxar, que a ficha não modela)
+    if (semSanidade(ficha)) return { pv: limite * numero(cfg.dormir.pvPorLimitePE[id]), pe: 0, san: 0 };
     return {
       pv: limite * numero(cfg.dormir.pvPorLimitePE[id]),
       pe: limite * numero(cfg.dormir.pePorLimitePE[id]),
@@ -2348,7 +2638,7 @@ window.OP = window.OP || {};
     const efetivas = condicoesEfetivas(salvas);
     return {
       saude: pv.classeDefinida ? estadoSaude(pv.atual, pv.max) : 'ileso',
-      sanidade: san.classeDefinida ? estadoSanidade(san.atual, san.max) : 'sao',
+      sanidade: san.classeDefinida && !semSanidade(ficha) ? estadoSanidade(san.atual, san.max) : 'sao',
       morrendo: statusMorrendo(ficha),
       mod: mod,
       efetivas: efetivas,
@@ -2463,8 +2753,13 @@ window.OP = window.OP || {};
 
     // Identificação
     correcoesIdentificacao(ficha).forEach(function (c) {
-      if (c.caminho === 'identificacao.nex') aviso('nex-invalido', 'identificacao', 'campo-nex', 'NEX fora da tabela (' + ficha.identificacao.nex + '%).');
+      if (c.caminho === 'identificacao.nex') aviso('nex-invalido', 'identificacao', regraNexNivel(ficha) ? 'nex-exposicao' : 'campo-nex', regraNexNivel(ficha) ? 'NEX fora do intervalo de 0% a 99% (' + ficha.identificacao.nex + '%).' : 'NEX fora da tabela (' + ficha.identificacao.nex + '%).');
+      if (c.caminho === 'identificacao.nivel') aviso('nivel-invalido', 'identificacao', 'campo-nivel', 'Nível fora do intervalo de 1 a ' + NIVEL_MAXIMO + '.');
       if (c.caminho === 'identificacao.estagio') aviso('estagio-invalido', 'identificacao', 'campo-estagio', 'Estágio fora do intervalo da classe.');
+    });
+    // NEX e Experiência: alteração sem a escolha feita (a perícia ou o atributo ainda não foram marcados)
+    efeitosAlteracoes(ficha).pendencias.forEach(function (p) {
+      aviso('alteracao-sem-escolha-' + p.campo, 'alteracoes', 'alt-' + p.campo, 'Alteração de ' + p.alteracao + ' sem escolha: ' + p.rotulo.toLowerCase() + '.');
     });
 
     // Atributos
@@ -2576,7 +2871,8 @@ window.OP = window.OP || {};
       correcoesInventario(ficha),
       correcoesAtaques(ficha),
       correcoesConjuracao(ficha),
-      correcoesCondicoes(ficha)
+      correcoesCondicoes(ficha),
+      correcoesAlteracoesNex(ficha)
     );
   }
 
@@ -2679,6 +2975,23 @@ window.OP = window.OP || {};
     composicaoRecurso: composicaoRecurso,
     pvMax: pvMax,
     peMax: peMax,
+    semSanidade: semSanidade,
+    regraNexNivel: regraNexNivel,
+    nexDoNivel: nexDoNivel,
+    nivelDoNex: nivelDoNex,
+    nivelDaFicha: nivelDaFicha,
+    nexProgressao: nexProgressao,
+    nexExposicao: nexExposicao,
+    efeitosAlteracoes: efeitosAlteracoes,
+    alteracoesAlcancadas: alteracoesAlcancadas,
+    elementoDasAlteracoes: elementoDasAlteracoes,
+    dadosAlteracoesPericia: dadosAlteracoesPericia,
+    dadosAlteracoesAtributo: dadosAlteracoesAtributo,
+    bonusAlteracoesPericia: bonusAlteracoesPericia,
+    reducaoCustoRitual: reducaoCustoRitual,
+    custoRitualFinal: custoRitualFinal,
+    normalizarNome: normalizarNome,
+    NIVEL_MAXIMO: NIVEL_MAXIMO,
     sanMax: sanMax,
     atualEfetivo: atualEfetivo,
     ajustarAtual: ajustarAtual,

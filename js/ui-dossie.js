@@ -199,7 +199,9 @@ window.OP = window.OP || {};
     const classe = OP.data.classes[ficha.identificacao.classe];
     const nivel = classe && classe.unidadeProgressao === 'estagio'
       ? 'Estágio ' + OP.calc.numero(ficha.identificacao.estagio)
-      : 'NEX ' + OP.calc.numero(ficha.identificacao.nex) + '%';
+      : (OP.calc.regraNexNivel(ficha)
+        ? 'Nível ' + OP.calc.nivelDaFicha(ficha) + ' · NEX ' + OP.calc.numero(ficha.identificacao.nex) + '%'
+        : 'NEX ' + OP.calc.numero(ficha.identificacao.nex) + '%');
     if (refs.avisoClasse) refs.avisoClasse.hidden = Boolean(classe);
     definirTexto(refs.trilhoAgente, [nome || 'Sem nome', classe ? classe.nome : 'escolha a classe', nivel].join(' · '));
     // Outra ficha: o primeiro valor dela não é uma variação

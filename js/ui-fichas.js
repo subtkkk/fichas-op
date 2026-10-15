@@ -125,10 +125,17 @@ window.OP = window.OP || {};
   }
 
   /** "Ocultista · NEX 5%" (Sobrevivente: "Sobrevivente · Estágio 2"). */
-  function resumoClasseNex(classe, nex, estagio) {
+  function resumoClasseNex(classe, nex, estagio, nivel) {
     const dados = OP.calc.classeDados(classe);
     if (dados && dados.unidadeProgressao === 'estagio') return dados.nome + ' · Estágio ' + (Number(estagio) || 1);
+    // Regra opcional NEX e Experiência: o nível vem primeiro e o NEX é a exposição
+    if (typeof nivel === 'number') return nomeClasse(classe) + ' · Nível ' + nivel + ' · NEX ' + (Number(nex) || 0) + '%';
     return nomeClasse(classe) + ' · NEX ' + (Number(nex) || 0) + '%';
+  }
+
+  /** Nível da regra NEX e Experiência (ou undefined com a regra desligada). */
+  function nivelDaRegra(ficha) {
+    return OP.calc.regraNexNivel(ficha) ? OP.calc.nivelDaFicha(ficha) : undefined;
   }
 
   function dadosTema(id) {
@@ -171,7 +178,7 @@ window.OP = window.OP || {};
      ------------------------------------------------------------------------ */
 
   /** Vitais calculados { pv, pe, san } com atual, máximo e % (ou null sem classe). */
-  function vitais(derivados) {
+  function vitais(derivados, semSanidade) {
     const resultado = {};
     let definido = false;
     OP.data.recursos.forEach(function (recurso) {
@@ -185,6 +192,12 @@ window.OP = window.OP || {};
         percentual: estado ? OP.calc.numero(estado.percentual) : 0
       };
     });
+    // Sem Sanidade (regra opcional): PD no lugar do PE e sem SAN
+    if (semSanidade) {
+      resultado.pe.sigla = 'PD';
+      resultado.pe.nome = 'Pontos de Determinação';
+      delete resultado.san;
+    }
     return definido ? resultado : null;
   }
 
@@ -224,12 +237,12 @@ window.OP = window.OP || {};
     base.nomeVazio = String(ident.nome || '').trim() === '';
     base.monograma = monograma(ident.nome);
     base.classeId = ident.classe;
-    base.classeTexto = resumoClasseNex(ident.classe, ident.nex, ident.estagio);
-    base.nivel = derivados.nex.unidade === 'estagio' ? OP.calc.numero(ident.estagio) : OP.calc.numero(ident.nex);
+    base.classeTexto = resumoClasseNex(ident.classe, ident.nex, ident.estagio, nivelDaRegra(ficha));
+    base.nivel = derivados.nex.nivel; // estágio, ou o NEX da progressão (o do nível, com a regra NEX e Experiência)
     base.jogador = String(ident.jogador || '').trim();
     base.origem = identidade.origem ? identidade.origem.nome : (ident.origem === 'outra' ? String(ident.origemTexto || '').trim() : '');
     base.trilha = identidade.trilha ? identidade.trilha.nome : (ident.trilha === 'outra' ? String(ident.trilhaTexto || '').trim() : '');
-    base.vitais = vitais(derivados);
+    base.vitais = vitais(derivados, OP.calc.semSanidade(ficha));
     base.defesa = derivados.defesa ? derivados.defesa.total : null;
     return base;
   }
@@ -266,8 +279,9 @@ window.OP = window.OP || {};
     const lista = criar('dl', 'mini-vitais' + (classeExtra ? ' ' + classeExtra : ''));
     ['pv', 'pe', 'san'].forEach(function (id) {
       const vital = resumo.vitais[id];
+      if (!vital) return;
       const zerado = vital.atual === 0 && vital.max > 0;
-      const item = criar('div', 'mini-vital mini-vital--' + id + (zerado ? ' mini-vital--zero' : ''));
+      const item = criar('div', 'mini-vital mini-vital--' + id + (id === 'pe' && vital.sigla === 'PD' ? ' mini-vital--pd' : '') + (zerado ? ' mini-vital--zero' : ''));
       item.title = vital.nome + ': ' + vital.atual + ' de ' + vital.max + (zerado ? ' (zerado)' : '');
       item.appendChild(criar('dt', 'mini-vital__sigla', vital.sigla));
       const valor = criar('dd', 'mini-vital__valor');
@@ -729,7 +743,7 @@ window.OP = window.OP || {};
 
   function resumoImportacao(ficha) {
     return nomeExibido(ficha.identificacao.nome) + ' — ' +
-      resumoClasseNex(ficha.identificacao.classe, ficha.identificacao.nex, ficha.identificacao.estagio);
+      resumoClasseNex(ficha.identificacao.classe, ficha.identificacao.nex, ficha.identificacao.estagio, nivelDaRegra(ficha));
   }
 
   /**

@@ -922,6 +922,7 @@ window.OP = window.OP || {};
   function runTests() {
     let aprovados = 0;
     const lista = casos();
+    if (OP.som) OP.som.silenciar(true); // os testes clicam em botões de rolar
 
     console.group('[OP] Testes de fórmulas');
     lista.forEach(function (caso) {
@@ -940,6 +941,7 @@ window.OP = window.OP || {};
     });
     console.log(aprovados + ' de ' + lista.length + ' testes OK');
     console.groupEnd();
+    if (OP.som) OP.som.silenciar(false);
 
     return { total: lista.length, aprovados: aprovados, falhas: lista.length - aprovados };
   }

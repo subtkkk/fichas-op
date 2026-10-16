@@ -49,14 +49,15 @@
 
       <section class="admin__secao" aria-labelledby="admin-conteudo-titulo">
         <h2 id="admin-conteudo-titulo">Conteúdo protegido</h2>
-        <p class="admin__dica">Envie um arquivo <code>.json</code> no formato <code>{ "itens": [ { "chave": "id-unico", "titulo": "Nome", "texto": "Texto integral", "ordem": 0 } ] }</code>. Enviar de novo para o mesmo nome substitui o conteúdo inteiro. Esse texto só existe no servidor: nunca coloque no repositório.</p>
+        <p class="admin__dica">Envie um ou vários arquivos <code>.json</code> no formato <code>{ "itens": [ { "chave": "id-unico", "titulo": "Nome", "texto": "Texto integral", "ordem": 0 } ] }</code>. Com vários arquivos de uma vez, o nome de cada conteúdo vem do nome do arquivo (<code>rituais.json</code> publica <code>rituais</code>). Enviar de novo para o mesmo nome substitui o conteúdo inteiro. Esse texto só existe no servidor: nunca coloque no repositório.</p>
         <form class="admin__form" id="admin-form-conteudo">
           <div class="campo"><label for="ct-escopo">Nome do conteúdo (minúsculas, números e hífen)</label><input type="text" id="ct-escopo" value="habilidades" pattern="[a-z0-9\-]{1,40}" required></div>
-          <div class="campo"><label for="ct-arquivo">Arquivo .json</label><input type="file" id="ct-arquivo" accept=".json,application/json" required></div>
+          <div class="campo"><label for="ct-arquivo">Arquivos .json</label><input type="file" id="ct-arquivo" accept=".json,application/json" multiple required></div>
           <button type="submit" class="botao botao--primario">Publicar</button>
         </form>
+        <p class="admin__dica" id="ct-nomes" hidden></p>
         <p class="aviso-neutro" id="admin-conteudo-aviso" role="status" hidden></p>
-        <div class="admin__rolagem"><table class="admin__tabela" id="admin-conteudos"><thead><tr><th scope="col">Conteúdo</th><th scope="col">Itens</th><th scope="col">Atualizado</th></tr></thead><tbody></tbody></table></div>
+        <div class="admin__rolagem"><table class="admin__tabela" id="admin-conteudos"><thead><tr><th scope="col">Conteúdo</th><th scope="col">Itens</th><th scope="col">Atualizado</th><th scope="col"><span class="visualmente-oculto">Ações</span></th></tr></thead><tbody></tbody></table></div>
       </section>
     </div>
   </main>

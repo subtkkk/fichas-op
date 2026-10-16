@@ -42,9 +42,16 @@ vm.createContext(ctx);
 });
 const D = ctx.OP.data;
 
-const slug = (t) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const LIMITE_CHAVE = 80; // o Worker aceita chaves de até 80 caracteres
+const slug = (t) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, LIMITE_CHAVE).replace(/-$/, '');
 const PEQUENAS = new Set(['de', 'do', 'da', 'dos', 'das', 'e', 'o', 'a', 'os', 'as', 'em', 'no', 'na', 'nos', 'nas', 'por', 'para', 'com', 'sem', 'ao', 'à', 'um', 'uma', 'que', 'se', 'ou']);
 function titulo(nome) {
+  // Nomes entre aspas (frases): tira as aspas e deixa só a primeira letra maiúscula
+  if (/^[“"]/.test(nome)) {
+    const frase = nome.replace(/[“”"]/g, '').trim();
+    const baixa = frase === frase.toUpperCase() ? frase.toLowerCase() : frase;
+    return (baixa.charAt(0).toUpperCase() + baixa.slice(1)).replace(/([.!?]\s+)(\p{L})/gu, function (m, pontuacao, letra) { return pontuacao + letra.toUpperCase(); });
+  }
   if (nome !== nome.toUpperCase()) return nome;
   return nome.toLowerCase().split(/(\s+|-|\/)/).map(function (p, i) {
     if (/^(\s+|-|\/)$/.test(p) || !p) return p;
@@ -88,7 +95,7 @@ blocos.forEach(function (bloco) {
   if (usados.has(chave)) chave = slug(nome + ' ' + contexto);
   let n = 2;
   const base = chave;
-  while (usados.has(chave)) chave = base + '-' + n++;
+  while (usados.has(chave)) chave = base.slice(0, LIMITE_CHAVE - 4) + '-' + n++;
   usados.add(chave);
   const cab = [tipo];
   if (campos.Classe) cab.push(campos.Classe);
@@ -247,6 +254,16 @@ entradas.forEach(function (e) {
   }
   protegido[e.escopo].push({ chave: e.chave, titulo: e.nome, texto: texto, ordem: ordem[e.escopo]++ });
 });
+// Os mesmos limites do Worker (worker/index.js): confere antes de você tentar publicar
+Object.keys(protegido).forEach(function (escopo) {
+  const itens = protegido[escopo];
+  if (itens.length > 500) problemas.push(escopo + ': ' + itens.length + ' itens (o Worker aceita até 500)');
+  itens.forEach(function (it, i) {
+    if (!/^[a-zA-Z0-9._-]{1,80}$/.test(it.chave)) problemas.push(escopo + ' item ' + (i + 1) + ': chave inválida "' + it.chave + '"');
+    if (!it.titulo || it.titulo.length > 200) problemas.push(escopo + ' item ' + (i + 1) + ': título vazio ou longo demais');
+    if (!it.texto || it.texto.length > 100000) problemas.push(escopo + ' item ' + (i + 1) + ': texto vazio ou maior que 100 mil caracteres');
+  });
+});
 Object.keys(protegido).forEach(function (escopo) {
   fs.writeFileSync(path.join(pastaSaida, escopo + '.json'), JSON.stringify({ itens: protegido[escopo] }, null, 1));
 });
@@ -256,4 +273,7 @@ fs.writeFileSync(path.join(pastaSaida, 'bruto.json'), JSON.stringify(entradas.ma
 
 console.log('Entradas:', entradas.length, '· origens', protegido.origens.length, '· habilidades', protegido.habilidades.length, '· rituais', protegido.rituais.length);
 console.log('Com dados de automação:', comAuto, '· com efeitos:', Object.keys(efeitos).length);
-if (problemas.length) console.log('Atenção:\n - ' + problemas.join('\n - '));
+if (problemas.length) {
+  console.log('Atenção:\n - ' + problemas.join('\n - '));
+  process.exitCode = 1;
+}

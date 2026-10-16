@@ -369,6 +369,13 @@ async function publicarConteudo(request, env, escopo) {
   return resposta({ ok: true, itens: limpos.length });
 }
 
+async function apagarConteudo(env, escopo) {
+  if (!ESCOPO_VALIDO.test(escopo)) return erro(400, 'Nome de conteúdo inválido.');
+  const existente = await env.DB.prepare('SELECT COUNT(*) AS n FROM conteudo WHERE escopo = ?').bind(escopo).first();
+  await env.DB.prepare('DELETE FROM conteudo WHERE escopo = ?').bind(escopo).run();
+  return resposta({ ok: true, apagados: existente ? existente.n : 0 });
+}
+
 /* ------------------------------------------------------------------------
    Roteador
    ------------------------------------------------------------------------ */
@@ -408,6 +415,7 @@ async function tratar(request, env) {
     if (metodo === 'GET' && caminho === '/api/admin/conteudo') return listarEscoposDeConteudo(env);
     achado = caminho.match(/^\/api\/admin\/conteudo\/([^/]+)$/);
     if (metodo === 'PUT' && achado) return publicarConteudo(request, env, achado[1]);
+    if (metodo === 'DELETE' && achado) return apagarConteudo(env, achado[1]);
   }
   return erro(404, 'Não encontrado.');
 }

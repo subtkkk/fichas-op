@@ -3013,6 +3013,10 @@ body {
   justify-content: flex-end;
 }
 
+.habilidade__leitura {
+  display: none;
+}
+
 /* Linha de campos que se reorganiza conforme a largura */
 .campos-linha {
   display: flex;

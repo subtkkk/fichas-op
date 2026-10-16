@@ -6557,7 +6557,62 @@ body.arrastando-arquivo::after {
 
 .habilidade__rodape {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Leitura x edição: só tela (a impressão mostra os campos e esconde a leitura) */
+.habilidade__edicao {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.habilidade[data-modo="leitura"] .habilidade__edicao,
+.habilidade[data-modo="edicao"] .habilidade__leitura {
+  display: none;
+}
+
+.habilidade__leitura {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.habilidade__leitura-linha {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--papel-2);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.habilidade__leitura-linha strong {
+  color: var(--cor-texto);
+}
+
+.habilidade__leitura-rotulo {
+  margin: 4px 0 0;
+  font: 500 0.6875rem/1.4 var(--fonte-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+}
+
+.habilidade__leitura-vazia {
+  margin: 0;
+  color: var(--papel-3);
+  font-size: 0.875rem;
+}
+
+.habilidade__editar {
+  color: var(--papel-3);
+}
+
+.habilidade__editar:hover,
+.habilidade__editar[aria-expanded="true"] {
+  color: var(--acento);
 }
 
 .campos-linha {

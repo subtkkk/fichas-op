@@ -967,6 +967,7 @@ window.OP = window.OP || {};
     abrirPoderes: abrirPoderes,
     abrirRituais: abrirRituais,
     descreverDefinicao: descreverDefinicao,
+    criarTextoLivro: criarTextoLivro,
     criarRitualDoCatalogo: criarRitualDoCatalogo
   };
 })(window.OP);

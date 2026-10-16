@@ -2637,6 +2637,7 @@ window.OP = window.OP || {};
     const acoes = [
       ['[data-aba-fonte]', function (b) { escolherAbaFonte(b.dataset.abaFonte); }],
       ['[data-alternar-habilidade]', function (b) { alternarHabilidade(b.dataset.alternarHabilidade); }],
+      ['[data-editar-habilidade]', function (b) { alternarEdicaoHabilidade(b.dataset.editarHabilidade); }],
       ['[data-usar-habilidade]', function (b) { usarHabilidadeNaTela(b.dataset.usarHabilidade); }],
       ['[data-remover-habilidade]', function (b) { removerDaLista('habilidades', b.dataset.removerHabilidade); }],
       ['[data-acao="adicionar-habilidade"]', function () { adicionarHabilidade(); }],
@@ -2669,7 +2670,7 @@ window.OP = window.OP || {};
   const filtrosHabilidades = { fonte: 'todas', busca: '' };
 
   // Atributos que recebem o id da habilidade (por setAttribute, em criarComIds).
-  const IDS_HABILIDADE = ['data-habilidade', 'data-alternar-habilidade', 'data-usar-habilidade', 'data-remover-habilidade'];
+  const IDS_HABILIDADE = ['data-habilidade', 'data-alternar-habilidade', 'data-usar-habilidade', 'data-editar-habilidade', 'data-remover-habilidade'];
 
   /** Opções de "Calcular DT com": Nenhum (grava null) e os atributos. */
   function htmlOpcoesAtributoDT() {
@@ -2695,6 +2696,9 @@ window.OP = window.OP || {};
         '</div>' +
         '<p class="mensagem-acao" data-hab-mensagem role="status" aria-live="polite" hidden></p>' +
         '<div class="habilidade__detalhes" id="' + idDetalhes + '" hidden>' +
+          // Leitura: o texto do livro (com acesso) ou a descrição escrita pela pessoa; só tela
+          '<div class="habilidade__leitura" data-hab-leitura></div>' +
+          '<div class="habilidade__edicao" data-hab-edicao>' +
           '<div class="campos-linha">' +
             htmlCampoAtaque('nome', 'Nome',
               '<input type="text" class="controle" autocomplete="off" data-campo="' + c + '.nome" data-tipo="texto" data-hab-campo-nome>') +
@@ -2722,7 +2726,9 @@ window.OP = window.OP || {};
           '</div>' +
           htmlCampoAtaque('descricao', 'Descrição',
             '<textarea class="controle" rows="4" placeholder="Escreva aqui o que a habilidade faz" data-campo="' + c + '.descricao" data-tipo="texto"></textarea>') +
+          '</div>' +
           '<div class="habilidade__rodape">' +
+            '<button type="button" class="botao-texto habilidade__editar" data-editar-habilidade aria-expanded="false">Editar</button>' +
             '<button type="button" class="botao-texto" data-remover-habilidade>Remover habilidade</button>' +
           '</div>' +
         '</div>' +
@@ -2746,6 +2752,7 @@ window.OP = window.OP || {};
     refs.habilidadesRenderizadas = null;
     refs.elementosHabilidades = Object.create(null);
     refs.habilidadesAbertas = Object.create(null); // id → detalhes abertos (estado só da tela)
+    refs.habilidadesEditando = Object.create(null); // id → formulário de edição aberto (estado só da tela)
   }
 
   function sincronizarHabilidades(ficha) {
@@ -2766,6 +2773,9 @@ window.OP = window.OP || {};
         meta: artigo.querySelector('[data-hab-meta]'),
         mensagem: artigo.querySelector('[data-hab-mensagem]'),
         detalhes: artigo.querySelector('.habilidade__detalhes'),
+        leitura: artigo.querySelector('[data-hab-leitura]'),
+        editar: artigo.querySelector('[data-editar-habilidade]'),
+        leituraAssinatura: null,
         campoNome: artigo.querySelector('[data-hab-campo-nome]'),
         dt: artigo.querySelector('[data-hab-dt]')
       };
@@ -2778,6 +2788,40 @@ window.OP = window.OP || {};
     const p = estado.partes;
     return 'DT ' + estado.dt + ' = ' + p.base + parteComSinal('limite de PE', p.limitePE) +
       parteComSinal(siglaAtributo(estado.idAtributo), p.atributo) + parteComSinal('bônus', p.bonus);
+  }
+
+  /** Texto de leitura da habilidade: o do livro (se a conta o tem) e/ou o que a pessoa escreveu. */
+  function desenharLeituraHabilidade(el, habilidade) {
+    const t = habilidade.catalogo && OP.livro && OP.livro.texto ? OP.livro.texto(habilidade.catalogo) : null;
+    const descricao = String(habilidade.descricao || '').trim();
+    const prerequisito = String(habilidade.prerequisito || '').trim();
+    const assinatura = [t ? 'livro:' + habilidade.catalogo : '', prerequisito, descricao].join('\u0001');
+    if (el.leituraAssinatura === assinatura) return;
+    el.leituraAssinatura = assinatura;
+    const filhos = [];
+    function paragrafo(classe, texto) {
+      const p = document.createElement('p');
+      p.className = classe;
+      p.textContent = texto;
+      return p;
+    }
+    if (t && OP.uiLivro && OP.uiLivro.criarTextoLivro) filhos.push(OP.uiLivro.criarTextoLivro(habilidade.catalogo));
+    if (prerequisito) {
+      const p = paragrafo('habilidade__leitura-linha', '');
+      const rotulo = document.createElement('strong');
+      rotulo.textContent = 'Pré-requisito: ';
+      p.appendChild(rotulo);
+      p.appendChild(document.createTextNode(prerequisito));
+      filhos.push(p);
+    }
+    if (descricao) {
+      if (t) filhos.push(paragrafo('habilidade__leitura-rotulo', 'Suas anotações'));
+      descricao.split('\n').forEach(function (linha) {
+        if (linha.trim()) filhos.push(paragrafo('habilidade__leitura-linha', linha));
+      });
+    }
+    if (!filhos.length) filhos.push(paragrafo('habilidade__leitura-vazia', 'Sem descrição. Toque em Editar para escrever o que a habilidade faz.'));
+    substituirFilhos(el.leitura, filhos);
   }
 
   function desenharHabilidades(ficha) {
@@ -2811,6 +2855,14 @@ window.OP = window.OP || {};
       el.alternar.setAttribute('aria-expanded', String(aberta));
       el.artigo.classList.toggle('habilidade--aberta', aberta);
 
+      const editando = refs.habilidadesEditando[habilidade.id] === true;
+      const modo = editando ? 'edicao' : 'leitura';
+      if (el.artigo.dataset.modo !== modo) el.artigo.dataset.modo = modo;
+      const textoEditar = editando ? 'Concluir edição' : 'Editar';
+      if (el.editar.textContent !== textoEditar) el.editar.textContent = textoEditar;
+      if (el.editar.getAttribute('aria-expanded') !== String(editando)) el.editar.setAttribute('aria-expanded', String(editando));
+      desenharLeituraHabilidade(el, habilidade);
+
       const casaFonte = filtrosHabilidades.fonte === 'todas' || habilidade.fonte === filtrosHabilidades.fonte;
       const casaBusca = !termo || normalizarBusca(habilidade.nome).indexOf(termo) !== -1;
       const visivel = casaFonte && casaBusca;
@@ -2834,6 +2886,13 @@ window.OP = window.OP || {};
     desenharHabilidades(OP.state.ficha);
   }
 
+  function alternarEdicaoHabilidade(id) {
+    refs.habilidadesEditando[id] = !refs.habilidadesEditando[id];
+    desenharHabilidades(OP.state.ficha);
+    const el = refs.elementosHabilidades[id];
+    if (el && refs.habilidadesEditando[id] && el.campoNome) el.campoNome.focus();
+  }
+
   /** Nova habilidade: já na aba escolhida (se houver), aberta e com o foco no nome. */
   function adicionarHabilidade() {
     const fonte = filtrosHabilidades.fonte !== 'todas' ? filtrosHabilidades.fonte : 'classe';
@@ -2841,6 +2900,7 @@ window.OP = window.OP || {};
     refs.buscaHabilidades.value = '';
     const nova = OP.state.novaHabilidade({ fonte: fonte });
     refs.habilidadesAbertas[nova.id] = true;
+    refs.habilidadesEditando[nova.id] = true;
     OP.state.atualizar('habilidades', OP.state.obter('habilidades').concat([nova]));
     const el = refs.elementosHabilidades[nova.id];
     if (el) el.campoNome.focus();

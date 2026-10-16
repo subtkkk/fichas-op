@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Administração · Dossiê</title>
+  <link rel="stylesheet" href="css/style.css" media="screen">
+  <link rel="stylesheet" href="css/admin.css" media="screen">
+</head>
+<body class="admin">
+  <main class="admin__pagina">
+    <header class="admin__topo">
+      <h1>Administração</h1>
+      <a class="botao" href="./">Voltar à ficha</a>
+    </header>
+
+    <p class="aviso-neutro" id="admin-estado" role="status">Carregando…</p>
+
+    <div id="admin-painel" hidden>
+      <section class="admin__secao" aria-labelledby="admin-codigo-titulo">
+        <h2 id="admin-codigo-titulo">Gerar código de acesso</h2>
+        <p class="admin__dica">Cada código vale para uma pessoa, uma única vez. Quando ele é resgatado, a conta passa a ler os conteúdos escolhidos pelo número de dias abaixo. O código aparece <strong>só agora</strong>: o servidor guarda apenas uma marca dele.</p>
+        <form class="admin__form" id="admin-form-codigo">
+          <div class="campo"><label for="ac-rotulo">Para quem é</label><input type="text" id="ac-rotulo" maxlength="80" required></div>
+          <div class="campo"><label for="ac-escopos">Conteúdos (separe por vírgula)</label><input type="text" id="ac-escopos" value="habilidades" required></div>
+          <div class="campo"><label for="ac-dias">Dias de acesso</label><input type="number" id="ac-dias" min="1" max="365" value="30" required></div>
+          <div class="campo"><label for="ac-horas">O código vale por (horas)</label><input type="number" id="ac-horas" min="1" max="168" value="24" required></div>
+          <div class="campo"><label for="ac-discord">ID do Discord (opcional: só essa pessoa resgata)</label><input type="text" id="ac-discord" inputmode="numeric" pattern="[0-9]{5,25}"></div>
+          <button type="submit" class="botao botao--primario">Gerar código</button>
+        </form>
+        <div class="admin__novo" id="admin-novo" hidden>
+          <p>Código gerado para <strong id="admin-novo-para"></strong>. Copie agora:</p>
+          <p class="admin__codigo" id="admin-novo-codigo"></p>
+          <p class="admin__dica" id="admin-novo-detalhe"></p>
+          <button type="button" class="botao" id="admin-copiar">Copiar código</button>
+        </div>
+      </section>
+
+      <section class="admin__secao" aria-labelledby="admin-codigos-titulo">
+        <h2 id="admin-codigos-titulo">Códigos gerados</h2>
+        <div class="admin__rolagem"><table class="admin__tabela" id="admin-codigos"><thead><tr><th scope="col">Para</th><th scope="col">Conteúdos</th><th scope="col">Dias</th><th scope="col">Situação</th><th scope="col"><span class="sr-only">Ação</span></th></tr></thead><tbody></tbody></table></div>
+      </section>
+
+      <section class="admin__secao" aria-labelledby="admin-acessos-titulo">
+        <h2 id="admin-acessos-titulo">Acessos ativos</h2>
+        <div class="admin__rolagem"><table class="admin__tabela" id="admin-acessos"><thead><tr><th scope="col">Pessoa</th><th scope="col">Conteúdo</th><th scope="col">Vence em</th><th scope="col"><span class="sr-only">Ação</span></th></tr></thead><tbody></tbody></table></div>
+      </section>
+
+      <section class="admin__secao" aria-labelledby="admin-conteudo-titulo">
+        <h2 id="admin-conteudo-titulo">Conteúdo protegido</h2>
+        <p class="admin__dica">Envie um arquivo <code>.json</code> no formato <code>{ "itens": [ { "chave": "id-unico", "titulo": "Nome", "texto": "Texto integral", "ordem": 0 } ] }</code>. Enviar de novo para o mesmo nome substitui o conteúdo inteiro. Esse texto só existe no servidor: nunca coloque no repositório.</p>
+        <form class="admin__form" id="admin-form-conteudo">
+          <div class="campo"><label for="ct-escopo">Nome do conteúdo (minúsculas, números e hífen)</label><input type="text" id="ct-escopo" value="habilidades" pattern="[a-z0-9\-]{1,40}" required></div>
+          <div class="campo"><label for="ct-arquivo">Arquivo .json</label><input type="file" id="ct-arquivo" accept=".json,application/json" required></div>
+          <button type="submit" class="botao botao--primario">Publicar</button>
+        </form>
+        <p class="aviso-neutro" id="admin-conteudo-aviso" role="status" hidden></p>
+        <div class="admin__rolagem"><table class="admin__tabela" id="admin-conteudos"><thead><tr><th scope="col">Conteúdo</th><th scope="col">Itens</th><th scope="col">Atualizado</th></tr></thead><tbody></tbody></table></div>
+      </section>
+    </div>
+  </main>
+  <script src="js/admin.js"></script>
+</body>
+</html>

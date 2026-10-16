@@ -1,0 +1,10 @@
+# O que o Cloudflare NÃO publica como arquivo do site (nada daqui pode ser baixado)
+worker
+wrangler.jsonc
+.assetsignore
+.git
+.github
+.claude
+.impeccable
+node_modules
+*.md

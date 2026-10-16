@@ -145,3 +145,7 @@ fonts/              Fontes locais (Cormorant Garamond e IBM Plex, licença OFL)
 Ordem Paranormal RPG pertence aos seus criadores e editora. Este projeto não tem relação oficial com eles.
 
 As fontes Cormorant Garamond e IBM Plex são distribuídas sob a SIL Open Font License (ver `fonts/`).
+
+## Conta e conteúdo protegido (opcional)
+
+Além do site estático, o repositório tem um Worker do Cloudflare (`worker/`, `wrangler.jsonc`): login com o Discord, códigos de acesso de uso único e um conteúdo que só aparece para quem o administrador liberou por alguns dias. O conteúdo fica no banco D1, nunca nos arquivos do site. Sem o Worker (arquivo aberto direto, outro servidor) o botão "Conta" some e a ficha funciona igual. Passo a passo e como testar: `worker/LEIA-ME.md`.

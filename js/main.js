@@ -56,6 +56,7 @@ window.OP = window.OP || {};
     OP.uiBiografia.montar();   // retrato, aliados, rivais e diário
     OP.uiVerificacoes.montar(); // painel de verificações
     OP.uiAparencia.montar();   // tema, tamanho do texto, animações, Sobre e ajuda de teclado
+    OP.conta.montar();         // conta (login com o Discord e códigos); só aparece se a API existir
     OP.uiRegras.montar();      // regras opcionais (por ficha): Jogando sem Sanidade e NEX e Experiência
     OP.uiNex.montar();         // painel Alterações de NEX (regra NEX e Experiência)
     OP.state.aoMudar(aoMudarFicha);

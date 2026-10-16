@@ -1,0 +1,111 @@
+/* Página de administração (admin.html). Usa as cores do tema da ficha (css/style.css). */
+.admin {
+  min-height: 100vh;
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+  font-family: var(--fonte-ui);
+}
+
+.admin__pagina {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+.admin__topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.admin__topo h1 {
+  margin: 0;
+  font: 600 1.75rem/1.2 var(--fonte-display);
+}
+
+.admin__secao {
+  margin: 0 0 28px;
+  padding: 18px;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+}
+
+.admin__secao h2 {
+  margin: 0 0 8px;
+  font: 600 1.25rem/1.3 var(--fonte-display);
+}
+
+.admin__dica {
+  margin: 0 0 14px;
+  color: var(--cor-texto-suave);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.admin__form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.admin__form .campo input {
+  width: 100%;
+}
+
+.admin__novo {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px dashed var(--cor-destaque);
+  border-radius: 8px;
+}
+
+.admin__codigo {
+  margin: 6px 0;
+  font: 600 1.75rem/1.2 var(--fonte-mono);
+  letter-spacing: 0.14em;
+  user-select: all;
+}
+
+.admin__rolagem {
+  margin-top: 14px;
+  overflow-x: auto;
+}
+
+.admin__tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+.admin__tabela th,
+.admin__tabela td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--cor-borda);
+  vertical-align: middle;
+}
+
+.admin__tabela th {
+  font: 500 0.75rem/1.4 var(--fonte-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cor-texto-suave);
+}
+
+.admin__vazio {
+  color: var(--cor-texto-suave);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

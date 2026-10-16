@@ -2083,6 +2083,39 @@ window.OP = window.OP || {};
     return { trilha: trilha.id, nomeTrilha: trilha.nome, marco: primeira.marco, nome: primeira.nome, liberada: versatilidadeLiberada(ficha) };
   }
 
+  /**
+   * Habilidades que a ficha ganha sozinha: a da origem, as da trilha já liberadas pelo NEX (ou estágio)
+   * e a da versatilidade (a partir do NEX 50%). Devolve [{ id, nome, fonte, catalogo }].
+   * O id leva a origem/trilha/marco: trocar a origem ou a trilha troca as habilidades. Ids "auto-…".
+   * catalogo é a chave do livro (só existe com o conteúdo liberado; vazio sem ele).
+   */
+  function habilidadesAutomaticas(ficha) {
+    const lista = [];
+    const ident = (ficha && ficha.identificacao) || {};
+    const cat = catalogoLivro();
+    function id(partes) {
+      return ('auto-' + partes.join('-')).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 64);
+    }
+    const origem = origemDados(ident.origem);
+    if (origem && origem.habilidade) {
+      lista.push({ id: id(['origem', origem.id]), nome: origem.habilidade, fonte: 'origem', catalogo: (cat.origens && cat.origens[origem.id]) || '' });
+    }
+    const trilha = trilhaDaFicha(ficha);
+    if (trilha) {
+      habilidadesTrilha(ficha).forEach(function (h) {
+        if (!h.liberada) return;
+        lista.push({ id: id(['trilha', trilha.id, h.marco]), nome: h.nome, fonte: 'trilha',
+          catalogo: (cat.trilhas && cat.trilhas[trilha.id] && cat.trilhas[trilha.id][String(h.marco)]) || '' });
+      });
+    }
+    const versat = habilidadeVersatilidade(ficha);
+    if (versat && versat.liberada) {
+      lista.push({ id: id(['versatilidade', versat.trilha, versat.marco]), nome: versat.nome, fonte: 'trilha',
+        catalogo: (cat.trilhas && cat.trilhas[versat.trilha] && cat.trilhas[versat.trilha][String(versat.marco)]) || '' });
+    }
+    return lista;
+  }
+
   /** Tudo o que a tela precisa de origem, classe e trilha (dados de jogo só para leitura). */
   function estadoIdentidade(ficha) {
     const identificacao = ficha.identificacao || {};
@@ -3738,6 +3771,7 @@ window.OP = window.OP || {};
     trilhasDaClasse: trilhasDaClasse,
     trilhaDaFicha: trilhaDaFicha,
     habilidadesTrilha: habilidadesTrilha,
+    habilidadesAutomaticas: habilidadesAutomaticas,
     versatilidadeLiberada: versatilidadeLiberada,
     habilidadeVersatilidade: habilidadeVersatilidade,
     proximoMarco: proximoMarco,

@@ -250,14 +250,35 @@ window.OP = window.OP || {};
      Diálogo de escolha (origem, poderes, rituais)
      ------------------------------------------------------------------------ */
 
-  const lista = { config: null, itens: [], aba: 'todos', usos: [], busca: '', expandidos: Object.create(null), gatilho: null };
+  const lista = { config: null, itens: [], aba: 'todos', sel: Object.create(null), busca: '', expandidos: Object.create(null), gatilho: null };
 
-  function itemCasa(item) {
+  /** Grupos de filtro que valem na aba atual (cada um pode se esconder em certas abas). */
+  function gruposVisiveis() {
+    const grupos = (lista.config && lista.config.filtros) || [];
+    return grupos.filter(function (g) { return !(g.escondeEm && g.escondeEm.indexOf(lista.aba) !== -1); });
+  }
+
+  function grupoCasa(item, g) {
+    const marcados = lista.sel[g.id] || [];
+    if (!marcados.length) return true;
+    const valores = (item.filtros && item.filtros[g.id]) || [];
+    return valores.some(function (v) { return marcados.indexOf(v) !== -1; });
+  }
+
+  /**
+   * Um item aparece quando casa com a aba, com a busca e com todos os grupos de filtro:
+   * dentro de um grupo, qualquer marcado serve (1º OU 2º círculo); entre grupos, todos valem (círculo E elemento).
+   * `ignorar` deixa um grupo de fora (para contar quanto cada botão daria).
+   */
+  function itemCasa(item, ignorar) {
     if (lista.aba !== 'todos' && item.abas && item.abas.indexOf(lista.aba) === -1) return false;
-    // Filtros de uso (Combate, Ambos, Utilidade): sem nenhum marcado, mostra tudo; marcados, só quem combina com algum
-    if (lista.usos.length && (!item.abas2 || !item.abas2.some(function (u) { return lista.usos.indexOf(u) !== -1; }))) return false;
+    if (!gruposVisiveis().every(function (g) { return g.id === ignorar || grupoCasa(item, g); })) return false;
     const termo = normalizar(lista.busca);
     return !termo || normalizar(item.busca || item.titulo).indexOf(termo) !== -1;
+  }
+
+  function haFiltros() {
+    return gruposVisiveis().some(function (g) { return (lista.sel[g.id] || []).length > 0; });
   }
 
   function desenharLista() {
@@ -280,6 +301,12 @@ window.OP = window.OP || {};
       (bloco && item.grupo ? bloco : raiz).appendChild(criarLinha(item));
     });
     refs.vazio.hidden = filtrados.length > 0;
+    if (refs.resultado) {
+      const total = lista.itens.filter(function (i) { return lista.aba === 'todos' || !i.abas || i.abas.indexOf(lista.aba) !== -1; }).length;
+      const filtrando = haFiltros() || normalizar(lista.busca) !== '';
+      refs.resultado.textContent = filtrando ? 'Mostrando ' + filtrados.length + ' de ' + total : total + ' no total';
+    }
+    if (refs.limpar) refs.limpar.hidden = !haFiltros();
   }
 
   function criarLinha(item) {
@@ -336,9 +363,8 @@ window.OP = window.OP || {};
     return id === 'todos' ? lista.itens.length : lista.itens.filter(function (i) { return i.abas && i.abas.indexOf(id) !== -1; }).length;
   }
 
-  function filtrosVisiveis() {
-    const f = lista.config && lista.config.filtros;
-    return Boolean(f) && !(f.escondeEm && f.escondeEm.indexOf(lista.aba) !== -1);
+  function gruposDaConfig() {
+    return (lista.config && lista.config.filtros) || [];
   }
 
   /** Abas (uma só vale) e filtros de uso (marcam-se e desmarcam-se), com a contagem de cada um. */
@@ -355,7 +381,7 @@ window.OP = window.OP || {};
       b.appendChild(el('span', 'livro-aba__n', String(contarAba(aba.id))));
       b.addEventListener('click', function () {
         lista.aba = aba.id;
-        if (!filtrosVisiveis()) lista.usos = [];
+        gruposDaConfig().forEach(function (g) { if (g.escondeEm && g.escondeEm.indexOf(lista.aba) !== -1) lista.sel[g.id] = []; });
         desenharControles();
         desenharLista();
         refs.lista.scrollTop = 0;
@@ -364,35 +390,54 @@ window.OP = window.OP || {};
       });
       refs.abas.appendChild(b);
     });
+    desenharFiltros();
+  }
+
+  /**
+   * Filtros em grupos independentes (ex.: Círculo e Elemento). Todos começam desligados (mostra tudo);
+   * cada botão liga e desliga; o número é quantos itens apareceriam ao marcá-lo com os outros grupos como estão.
+   */
+  function desenharFiltros() {
+    const grupos = gruposVisiveis();
     refs.abas2.textContent = '';
-    const mostrarFiltros = filtrosVisiveis();
-    refs.abas2.hidden = !mostrarFiltros;
-    if (!mostrarFiltros) return;
-    refs.abas2.setAttribute('aria-label', c.filtros.rotulo || 'Filtrar');
-    refs.abas2.appendChild(el('span', 'livro-filtros__rotulo', c.filtros.rotulo || 'Filtrar'));
-    c.filtros.itens.forEach(function (filtro) {
-      const n = lista.itens.filter(function (i) {
-        return (lista.aba === 'todos' || (i.abas && i.abas.indexOf(lista.aba) !== -1)) && i.abas2 && i.abas2.indexOf(filtro.id) !== -1;
-      }).length;
-      const marcado = lista.usos.indexOf(filtro.id) !== -1;
-      const b = el('button', 'livro-filtro');
-      b.type = 'button';
-      b.setAttribute('data-livro-filtro', filtro.id);
-      b.setAttribute('aria-pressed', String(marcado));
-      b.appendChild(el('span', 'livro-filtro__ponto'));
-      b.lastChild.setAttribute('aria-hidden', 'true');
-      b.appendChild(el('span', 'livro-filtro__nome', filtro.nome));
-      b.appendChild(el('span', 'livro-filtro__n', String(n)));
-      b.addEventListener('click', function () {
-        lista.usos = marcado ? lista.usos.filter(function (u) { return u !== filtro.id; }) : lista.usos.concat([filtro.id]);
-        desenharControles();
-        desenharLista();
-        refs.lista.scrollTop = 0;
-        const novo = refs.abas2.querySelector('[data-livro-filtro="' + filtro.id + '"]');
-        if (novo) novo.focus();
+    refs.abas2.hidden = !grupos.length;
+    if (!grupos.length) return;
+    grupos.forEach(function (g) {
+      const linha = el('div', 'livro-filtros__grupo');
+      linha.setAttribute('role', 'group');
+      linha.setAttribute('aria-label', g.rotulo);
+      linha.appendChild(el('span', 'livro-filtros__rotulo', g.rotulo));
+      g.itens.forEach(function (filtro) {
+        const n = lista.itens.filter(function (i) {
+          return itemCasa(i, g.id) && i.filtros && i.filtros[g.id] && i.filtros[g.id].indexOf(filtro.id) !== -1;
+        }).length;
+        const marcado = (lista.sel[g.id] || []).indexOf(filtro.id) !== -1;
+        const b = el('button', 'livro-filtro' + (n === 0 && !marcado ? ' livro-filtro--vazio' : ''));
+        b.type = 'button';
+        b.setAttribute('data-livro-filtro', filtro.id);
+        b.setAttribute('data-livro-grupo', g.id);
+        b.setAttribute('aria-pressed', String(marcado));
+        b.appendChild(el('span', 'livro-filtro__ponto'));
+        b.lastChild.setAttribute('aria-hidden', 'true');
+        b.appendChild(el('span', 'livro-filtro__nome', filtro.nome));
+        b.appendChild(el('span', 'livro-filtro__n', String(n)));
+        b.addEventListener('click', function () {
+          const atual = lista.sel[g.id] || [];
+          lista.sel[g.id] = marcado ? atual.filter(function (u) { return u !== filtro.id; }) : atual.concat([filtro.id]);
+          redesenharAposFiltro(g.id, filtro.id);
+        });
+        linha.appendChild(b);
       });
-      refs.abas2.appendChild(b);
+      refs.abas2.appendChild(linha);
     });
+  }
+
+  function redesenharAposFiltro(grupo, filtro) {
+    desenharControles();
+    desenharLista();
+    refs.lista.scrollTop = 0;
+    const novo = refs.abas2.querySelector('[data-livro-grupo="' + grupo + '"][data-livro-filtro="' + filtro + '"]');
+    if (novo) novo.focus();
   }
 
   /**
@@ -403,7 +448,7 @@ window.OP = window.OP || {};
     lista.config = config;
     lista.itens = config.itens;
     lista.aba = config.abaInicial || 'todos';
-    lista.usos = [];
+    lista.sel = Object.create(null);
     lista.busca = '';
     lista.expandidos = Object.create(null);
     lista.gatilho = config.gatilho || null;
@@ -624,7 +669,7 @@ window.OP = window.OP || {};
         grupo: grupoPar ? grupoPar.nome : (uso ? uso.titulo : ''),
         elemento: grupoPar ? grupoPar.id : (uso ? 'uso-' + uso.id : ''),
         abas: [idAba(p)],
-        abas2: p.tipo === 'paranormal' ? null : [p.categoria],
+        filtros: { uso: p.tipo === 'paranormal' ? [] : [p.categoria] },
         busca: p.nome + ' ' + (grupoPar ? grupoPar.nome : (uso ? uso.titulo : '')),
         marcado: naFicha ? 'Na ficha' : '',
         detalhes: detalhesDoCatalogo(p.id),
@@ -641,7 +686,7 @@ window.OP = window.OP || {};
       titulo: 'Poderes do livro', dica: 'Abre na sua classe. Toque na seta para ler o poder e ver o que a ficha faz sozinha; Adicionar põe o poder na lista de habilidades.',
       busca: 'Buscar poder…', abas: abas, itens: itens, gatilho: gatilho,
       abaInicial: CLASSES_COM_PODERES.indexOf(classeFicha) !== -1 ? classeFicha : (classeFicha ? 'geral' : CLASSES_COM_PODERES[0]),
-      filtros: { rotulo: 'Uso', escondeEm: ['paranormal'], itens: USOS_PODER }
+      filtros: [{ id: 'uso', rotulo: 'Uso', escondeEm: ['paranormal'], itens: USOS_PODER }]
     });
   }
 
@@ -657,7 +702,7 @@ window.OP = window.OP || {};
         titulo: r.nome,
         meta: metaDoRitual(r),
         grupo: r.circulo + 'º círculo',
-        abas: ['todos', String(r.circulo), r.elemento || 'varios'],
+        filtros: { circulo: [String(r.circulo)], elemento: [r.elemento || 'varios'] },
         busca: r.nome + ' ' + nomeElemento(r.elemento) + ' ' + r.circulo + 'º círculo',
         marcado: naFicha ? 'Na ficha' : '',
         detalhes: detalhesDoCatalogo(r.id),
@@ -667,11 +712,15 @@ window.OP = window.OP || {};
         }
       };
     });
-    const abas = [{ id: 'todos', nome: 'Todos' }, { id: '1', nome: '1º círculo' }, { id: '2', nome: '2º' }, { id: '3', nome: '3º' }, { id: '4', nome: '4º' }];
-    OP.data.elementos.forEach(function (e) { abas.push({ id: e.id, nome: e.nome }); });
+    const elementos = OP.data.elementos.map(function (e) { return { id: e.id, nome: e.nome }; });
+    if (rituais.some(function (r) { return !r.elemento; })) elementos.push({ id: 'varios', nome: 'Sem elemento' });
     abrirLista({
       titulo: 'Rituais do livro', dica: 'Adicionar já preenche círculo, elemento, alcance, duração, resistência, custos e dano do ritual.',
-      busca: 'Buscar ritual…', abas: abas, itens: itens, gatilho: gatilho
+      busca: 'Buscar ritual…', itens: itens, gatilho: gatilho,
+      filtros: [
+        { id: 'circulo', rotulo: 'Círculo', itens: [1, 2, 3, 4].map(function (n) { return { id: String(n), nome: n + 'º' }; }) },
+        { id: 'elemento', rotulo: 'Elemento', itens: elementos }
+      ]
     });
   }
 
@@ -927,6 +976,8 @@ window.OP = window.OP || {};
     refs.abas2 = document.getElementById('livro-abas2');
     refs.lista = document.getElementById('livro-lista');
     refs.vazio = document.getElementById('livro-vazio');
+    refs.resultado = document.getElementById('livro-resultado');
+    refs.limpar = document.getElementById('livro-limpar');
     refs.mensagem = document.getElementById('livro-mensagem');
     refs.secao = document.getElementById('secao-livro');
     refs.nota = document.getElementById('livro-nota');
@@ -939,7 +990,15 @@ window.OP = window.OP || {};
     refs.addPoder = document.getElementById('livro-add-poder');
     refs.addRitual = document.getElementById('livro-add-ritual');
 
-    refs.busca.addEventListener('input', function () { lista.busca = refs.busca.value; desenharLista(); });
+    refs.limpar.addEventListener('click', function () {
+      lista.sel = Object.create(null);
+      desenharControles();
+      desenharLista();
+      refs.lista.scrollTop = 0;
+      const primeiro = refs.abas2.querySelector('.livro-filtro');
+      if (primeiro) primeiro.focus();
+    });
+    refs.busca.addEventListener('input', function () { lista.busca = refs.busca.value; desenharControles(); desenharLista(); });
     refs.dialogo.addEventListener('click', function (evento) {
       if (evento.target.closest('[data-fechar-dialogo]')) fecharLista();
     });
@@ -967,6 +1026,8 @@ window.OP = window.OP || {};
     abrirPoderes: abrirPoderes,
     abrirRituais: abrirRituais,
     descreverDefinicao: descreverDefinicao,
+    criarTextoLivro: criarTextoLivro,
+    blocosDoTexto: blocosDoTexto,
     criarRitualDoCatalogo: criarRitualDoCatalogo
   };
 })(window.OP);

@@ -7,8 +7,9 @@
      controles de escolha de perícias) e religa os campos (data-campo);
    - desenhar(): no fim, atualiza textos, a tabela de progressão e os
      contadores.
-   O site só guarda nomes e números: "Adicionar às habilidades" cria a
-   habilidade só com o nome (a descrição o usuário digita).
+   O site só guarda nomes e números: a habilidade da origem e as da trilha entram
+   sozinhas em Habilidades e poderes (OP.state.sincronizarHabilidadesAutomaticas),
+   só com o nome (a descrição é do livro, com acesso, ou o usuário digita).
    Dados entram na página só por textContent, .value ou setAttribute.
    ========================================================================== */
 window.OP = window.OP || {};
@@ -66,29 +67,6 @@ window.OP = window.OP || {};
     return linha;
   }
 
-  /** A ficha já tem uma habilidade com este nome e esta fonte? */
-  function habilidadeExiste(ficha, nome, fonte) {
-    const alvo = semAcento(nome);
-    return ficha.habilidades.some(function (h) { return h.fonte === fonte && semAcento(h.nome) === alvo; });
-  }
-
-  /** Botão "Adicionar às habilidades" (ou "Nas habilidades" se já existir). */
-  function botaoAdicionar(ficha, nome, fonte) {
-    const existe = habilidadeExiste(ficha, nome, fonte);
-    const botao = criar('button', 'botao-barra botao-barra--pequeno identidade__adicionar', existe ? 'Nas habilidades ✓' : 'Adicionar às habilidades');
-    botao.type = 'button';
-    botao.setAttribute('data-adicionar-habilidade', nome);
-    botao.setAttribute('data-fonte-habilidade', fonte);
-    botao.setAttribute('aria-label', existe ? nome + ' já está nas habilidades' : 'Adicionar ' + nome + ' às habilidades');
-    botao.disabled = existe;
-    return botao;
-  }
-
-  /** Assinatura das habilidades (para saber quando os botões mudam). */
-  function assinaturaHabilidades(ficha) {
-    return ficha.habilidades.map(function (h) { return h.fonte + ':' + semAcento(h.nome); }).join('|');
-  }
-
   /**
    * Recria o conteúdo de um contêiner, devolvendo o foco ao campo que o
    * tinha (pelo data-campo), e religa os campos ao ciclo do ui.js.
@@ -110,12 +88,6 @@ window.OP = window.OP || {};
       if (campos[i].getAttribute('data-campo') === caminho) return campos[i];
     }
     return null;
-  }
-
-  function mostrarMensagem(tipo, texto) {
-    refs.mensagem.hidden = !texto;
-    refs.mensagem.dataset.tipo = tipo;
-    refs.mensagem.textContent = tipo === 'aviso' && texto && !/^aviso:/i.test(texto) ? 'Aviso: ' + texto : texto;
   }
 
   /* ------------------------------------------------------------------------
@@ -233,7 +205,7 @@ window.OP = window.OP || {};
   function sincronizarOrigem(ficha, identidade) {
     const ident = ficha.identificacao;
     const origem = identidade.origem;
-    const chave = ident.origem + '|' + (origem ? habilidadeExiste(ficha, origem.habilidade, 'origem') : '');
+    const chave = ident.origem + '|' + (origem ? origem.habilidade : '');
     if (chave === assinaturas.origem) return false;
     assinaturas.origem = chave;
 
@@ -251,7 +223,7 @@ window.OP = window.OP || {};
     if (origem.escolha) filhos.push(controlesEscolhaOrigem(origem, identidade));
     const habilidade = criar('div', 'identidade__habilidade');
     habilidade.appendChild(linhaInfo('Habilidade', origem.habilidade));
-    habilidade.appendChild(botaoAdicionar(ficha, origem.habilidade, 'origem'));
+    habilidade.appendChild(criar('p', 'identidade__nota', 'Já entra sozinha em Habilidades e poderes.'));
     filhos.push(habilidade);
     return recriar(refs.conteudoOrigem, filhos);
   }
@@ -302,8 +274,7 @@ window.OP = window.OP || {};
     const item = criar('li', 'trilha__habilidade ' + (habilidade.liberada ? 'trilha__habilidade--liberada' : 'trilha__habilidade--bloqueada'));
     item.appendChild(criar('span', 'trilha__marco', textoNivel(habilidade.marco, unidade, OP.calc.regraNexNivel(ficha))));
     item.appendChild(criar('span', 'trilha__nome', habilidade.nome + (rotuloExtra ? ' (' + rotuloExtra + ')' : '')));
-    item.appendChild(criar('span', 'trilha__situacao', habilidade.liberada ? 'liberada' : 'bloqueada'));
-    item.appendChild(botaoAdicionar(ficha, habilidade.nome, 'trilha'));
+    item.appendChild(criar('span', 'trilha__situacao', habilidade.liberada ? 'liberada · já nas habilidades' : 'bloqueada'));
     return item;
   }
 
@@ -311,7 +282,7 @@ window.OP = window.OP || {};
     const ident = ficha.identificacao;
     const ativas = OP.prefs.fontesAtivas();
     const chave = [ident.classe, ident.trilha, identidade.nivel, ident.versatilidade, identidade.versatilidadeLiberada,
-      JSON.stringify(ativas), assinaturaHabilidades(ficha)].join('|');
+      JSON.stringify(ativas)].join('|');
     if (chave === assinaturas.trilha) return false;
     assinaturas.trilha = chave;
 
@@ -471,24 +442,6 @@ window.OP = window.OP || {};
      Ações: adicionar habilidade e fontes
      ------------------------------------------------------------------------ */
 
-  function adicionarHabilidade(nome, fonte) {
-    const ficha = OP.state.ficha;
-    if (habilidadeExiste(ficha, nome, fonte)) {
-      mostrarMensagem('aviso', '"' + nome + '" já está em Habilidades e poderes.');
-      return;
-    }
-    const nova = OP.state.novaHabilidade({ nome: nome, fonte: fonte });
-    OP.state.atualizar('habilidades', OP.state.obter('habilidades').concat([nova]));
-    mostrarMensagem('ok', '"' + nome + '" foi adicionada em Habilidades e poderes. A descrição é sua: escreva lá.');
-  }
-
-  function aoClicar(evento) {
-    const botao = evento.target.closest('[data-adicionar-habilidade]');
-    if (botao && !botao.disabled) {
-      adicionarHabilidade(botao.getAttribute('data-adicionar-habilidade'), botao.getAttribute('data-fonte-habilidade'));
-    }
-  }
-
   /** Caixas da janela "Fontes" (uma por fonte, com quantas origens e trilhas ela tem). */
   function montarFontes() {
     const itens = Object.keys(OP.data.fontes).map(function (id) {
@@ -521,7 +474,6 @@ window.OP = window.OP || {};
 
   function montar() {
     refs.secao = document.querySelector('.secao--identidade');
-    refs.mensagem = document.getElementById('identidade-mensagem');
     refs.conteudoOrigem = document.getElementById('conteudo-origem');
     refs.conteudoClasse = document.getElementById('conteudo-classe');
     refs.conteudoTrilha = document.getElementById('conteudo-trilha');
@@ -542,7 +494,6 @@ window.OP = window.OP || {};
     refs.dialogoFontes = document.getElementById('dialogo-fontes');
     refs.listaFontes = document.getElementById('lista-fontes');
 
-    refs.secao.addEventListener('click', aoClicar);
     document.getElementById('botao-fontes').addEventListener('click', abrirFontes);
     refs.dialogoFontes.addEventListener('click', function (evento) {
       if (evento.target === refs.dialogoFontes || evento.target.closest('[data-fechar-fontes]')) refs.dialogoFontes.close();

@@ -17,7 +17,7 @@ O site continua estático e funciona sozinho (até abrindo o arquivo direto). Es
    - *Reset Secret* e copie o **Client Secret** (guarde só no Cloudflare, passo 4);
    - em **Redirects**, adicione exatamente `https://SEU-WORKER.workers.dev/api/auth/discord/retorno` (o endereço do seu Worker).
    - Seu **ID de usuário**: no Discord, *Configurações → Avançado → Modo desenvolvedor*; depois clique com o botão direito no seu nome e *Copiar ID do usuário*.
-2. **Banco D1:** Cloudflare → *Storage & Databases → D1 → Create database* com o nome `fichas-op`. Copie o **Database ID**. Abra o banco → aba **Console** → cole o conteúdo de `worker/schema.sql` e execute (se reclamar de várias instruções, rode uma tabela por vez).
+2. **Banco D1:** Cloudflare → *Storage & Databases → D1 → Create database* com o nome `fichas-op`. Copie o **Database ID**. Abra o banco → aba **Console** → cole o conteúdo de `worker/schema.sql` e clique em *Execute*. O arquivo não tem comentários de propósito: o Console junta tudo numa linha só ao colar, e um comentário `--` apagaria o resto (erro "No SQL statements detected"). Se ainda reclamar, rode uma tabela por vez.
 3. **`wrangler.jsonc`:** preencha `database_id`, `DISCORD_CLIENT_ID` e `ADMIN_DISCORD_ID` (nenhum dos três é segredo). Faça isso **antes** de mesclar, senão a publicação falha.
 4. **Segredos** (Cloudflare → Workers & Pages → `fichas-op` → *Settings → Variables and Secrets → Add*, tipo **Secret**):
    - `DISCORD_CLIENT_SECRET`: o Client Secret do passo 1;

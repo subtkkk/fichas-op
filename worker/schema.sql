@@ -1,6 +1,3 @@
--- Banco D1 da conta (worker/index.js). Rode uma vez: npx wrangler d1 execute fichas-op --remote --file=worker/schema.sql
--- Datas em segundos desde 1970 (UTC). Nenhum segredo fica aqui: só hashes.
-
 CREATE TABLE IF NOT EXISTS usuarios (
   discord_id    TEXT PRIMARY KEY,
   nome          TEXT NOT NULL,
@@ -9,7 +6,6 @@ CREATE TABLE IF NOT EXISTS usuarios (
   ultimo_acesso INTEGER NOT NULL
 );
 
--- token_hash = SHA-256 do token do cookie (o token em si não fica no banco)
 CREATE TABLE IF NOT EXISTS sessoes (
   token_hash TEXT PRIMARY KEY,
   discord_id TEXT NOT NULL,
@@ -18,7 +14,6 @@ CREATE TABLE IF NOT EXISTS sessoes (
 );
 CREATE INDEX IF NOT EXISTS idx_sessoes_expira ON sessoes (expira_em);
 
--- hash = HMAC-SHA256(SEGREDO, código sem hífens); uso único; escopos = lista JSON
 CREATE TABLE IF NOT EXISTS codigos (
   id              INTEGER PRIMARY KEY AUTOINCREMENT,
   hash            TEXT NOT NULL UNIQUE,
@@ -41,7 +36,6 @@ CREATE TABLE IF NOT EXISTS acessos (
   PRIMARY KEY (discord_id, escopo)
 );
 
--- O conteúdo protegido: só o Worker lê, e só para quem tem acesso ao escopo
 CREATE TABLE IF NOT EXISTS conteudo (
   escopo        TEXT NOT NULL,
   chave         TEXT NOT NULL,
@@ -52,7 +46,6 @@ CREATE TABLE IF NOT EXISTS conteudo (
   PRIMARY KEY (escopo, chave)
 );
 
--- Tentativas de resgate (limite por hora)
 CREATE TABLE IF NOT EXISTS tentativas (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   discord_id TEXT NOT NULL,

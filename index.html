@@ -65,6 +65,7 @@
     <symbol id="ic-estado-1" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4v16" /><path d="M12 4a8 8 0 0 0 0 16z"/></symbol>
     <symbol id="ic-estado-2" viewBox="0 0 24 24"><path d="M12 3.5 21.5 20h-19z"/><path d="M12 10v4.5M12 17.2v.3"/></symbol>
     <symbol id="ic-estado-3" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="m8.8 8.8 6.4 6.4M15.2 8.8l-6.4 6.4"/></symbol>
+    <symbol id="ic-conta" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></symbol>
     <symbol id="ic-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 11v5M12 7.8v.3"/></symbol>
     <symbol id="ic-descanso" viewBox="0 0 24 24"><path d="M19.5 14.5A7.5 7.5 0 0 1 9.5 4.5a7.5 7.5 0 1 0 10 10z"/></symbol>
     <symbol id="ic-dado" viewBox="0 0 16 16"><path d="M8 1.5 14 5v6l-6 3.5L2 11V5z"/><path d="M8 1.5 4.5 7h7z"/><path d="M2 5l2.5 2M14 5l-2.5 2M4.5 7 8 14.5 11.5 7"/></symbol>
@@ -109,6 +110,9 @@
 
       <div class="app-barra__acoes">
         <p class="status-salvamento" id="status-salvamento" role="status"></p>
+        <button type="button" class="botao-barra botao-barra--pequeno app-barra__botao" id="botao-conta" aria-haspopup="dialog" aria-label="Conta" hidden>
+          <svg class="icone-ui" aria-hidden="true" focusable="false"><use href="#ic-conta"/></svg><span class="app-barra__botao-texto">Conta</span>
+        </button>
         <button type="button" class="botao-barra botao-barra--pequeno app-barra__botao" id="botao-aparencia" aria-haspopup="dialog" aria-label="Aparência">
           <svg class="icone-ui" aria-hidden="true" focusable="false"><use href="#ic-aparencia"/></svg><span class="app-barra__botao-texto">Aparência</span>
         </button>
@@ -1592,7 +1596,7 @@
         </button>
       </div>
       <p class="dialogo__texto">Projeto de fã, <strong>não oficial</strong>, para a ficha de Ordem Paranormal RPG. “Ordem Paranormal” e os seus elementos pertencem aos respectivos detentores.</p>
-      <p class="dialogo__texto">O site guarda só nomes e números, tudo neste navegador, e <strong>não substitui o livro</strong>: descrições de condições, poderes e rituais são digitadas por quem joga.</p>
+      <p class="dialogo__texto">As fichas guardam só nomes e números, tudo neste navegador, e o site <strong>não substitui o livro</strong>: descrições de condições, poderes e rituais são digitadas por quem joga. Quem entra com uma conta e recebe um código do administrador pode liberar textos extras, que ficam no servidor e vencem depois de alguns dias.</p>
       <dl class="sobre__dados">
         <div><dt>Versão do site</dt><dd id="sobre-versao">—</dd></div>
         <div><dt>Versão do modelo da ficha</dt><dd id="sobre-modelo">—</dd></div>
@@ -1607,6 +1611,45 @@
           <svg class="icone-ui" aria-hidden="true"><use href="#ic-teclado"/></svg>Ajuda de teclado
         </button>
         <button type="button" class="botao botao--primario" data-fechar-dialogo>Fechar</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ================= CONTA (login com o Discord e códigos de acesso; js/conta.js) ================= -->
+  <dialog class="dialogo dialogo--conta" id="dialogo-conta" aria-labelledby="conta-titulo">
+    <div class="dialogo__corpo">
+      <div class="dialogo__topo">
+        <h2 class="dialogo__titulo" id="conta-titulo">Conta</h2>
+        <button type="button" class="botao-icone" data-fechar-dialogo aria-label="Fechar">
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>
+        </button>
+      </div>
+
+      <div id="conta-desconectado">
+        <p class="dialogo__texto">Entre com o Discord para liberar os conteúdos que o administrador autorizou para você. A ficha funciona do mesmo jeito sem conta.</p>
+        <div class="dialogo__botoes">
+          <a class="botao botao--primario" id="conta-entrar" href="/api/auth/discord">Entrar com o Discord</a>
+          <button type="button" class="botao" data-fechar-dialogo>Fechar</button>
+        </div>
+      </div>
+
+      <div id="conta-conectado" hidden>
+        <p class="dialogo__texto">Conectado como <strong id="conta-nome"></strong>.</p>
+        <h3 class="conta__subtitulo" id="conta-acessos-titulo">Seus acessos</h3>
+        <ul class="conta__acessos" id="conta-acessos" aria-labelledby="conta-acessos-titulo"></ul>
+        <form class="conta__form" id="conta-form" autocomplete="off">
+          <div class="campo">
+            <label for="conta-codigo">Código de acesso</label>
+            <input type="text" id="conta-codigo" class="conta__codigo" inputmode="text" autocapitalize="characters" spellcheck="false" maxlength="20" placeholder="XXXX-XXXX-XXXX">
+          </div>
+          <button type="submit" class="botao botao--primario" id="conta-resgatar">Resgatar</button>
+        </form>
+        <p class="aviso-neutro" id="conta-aviso" role="status" hidden></p>
+        <div class="dialogo__botoes">
+          <a class="botao" id="conta-admin" href="admin.html" hidden>Painel do administrador</a>
+          <button type="button" class="botao" id="conta-sair">Sair</button>
+          <button type="button" class="botao botao--primario" data-fechar-dialogo>Fechar</button>
+        </div>
       </div>
     </div>
   </dialog>
@@ -1790,6 +1833,7 @@
   <script src="js/ui-biografia.js"></script>
   <script src="js/ui-verificacoes.js"></script>
   <script src="js/ui-aparencia.js"></script>
+  <script src="js/conta.js"></script>
   <script src="js/ui-regras.js"></script>
   <script src="js/ui-nex.js"></script>
   <script src="js/ui-auditoria.js"></script>

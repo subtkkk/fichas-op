@@ -1,0 +1,25 @@
+{
+  // Site estático + API da conta no mesmo Worker (veja worker/LEIA-ME.md)
+  "name": "fichas-op",
+  "main": "worker/index.js",
+  "compatibility_date": "2025-09-01",
+  "assets": {
+    "directory": "./",
+    "binding": "ASSETS",
+    // Só /api/* passa pelo Worker; o resto são arquivos estáticos (o que NÃO deve ser publicado está em .assetsignore)
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "fichas-op",
+      // Troque pelo ID que o painel do Cloudflare mostra para o banco (Storage → D1)
+      "database_id": "d9012042-6063-4d31-aa10-a4f897a7c2ab"
+    }
+  ],
+  "vars": {
+    // Não são segredos: o ID público do aplicativo do Discord e o SEU ID de usuário (admin)
+    "DISCORD_CLIENT_ID": "1560477841404071998",
+    "ADMIN_DISCORD_ID": "722951622900187248"
+  }
+}

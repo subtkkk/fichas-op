@@ -13630,3 +13630,62 @@ body[data-nex-nivel="sim"] .campo--nex .campo__exposicao {
 .secao--alteracoes > .progressao {
   margin-top: 4px;
 }
+
+/* ==========================================================================
+   32. CONTA — diálogo de login e códigos de acesso (js/conta.js)
+   ========================================================================== */
+.dialogo--conta .dialogo__corpo {
+  max-width: 460px;
+}
+
+.conta__subtitulo {
+  margin: 14px 0 6px;
+  font: 500 0.6875rem/1.4 var(--fonte-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+}
+
+.conta__acessos {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+  color: var(--papel-2);
+}
+
+.conta__acessos li {
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--cor-texto) 5%, transparent);
+  border-radius: var(--raio-2);
+}
+
+.conta__acessos .conta__vazio {
+  color: var(--papel-3);
+  background: none;
+  padding: 0;
+}
+
+.conta__form {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.conta__form .campo {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.conta__codigo {
+  font-family: var(--fonte-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.aviso-neutro--erro {
+  color: var(--cor-perigo);
+}

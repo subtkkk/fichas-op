@@ -25,7 +25,7 @@
                            botões e caixa "crítico" dos ataques
    - data-filtro-lista="habilidades-busca|rituais-busca|rituais-elemento", data-aba-fonte="id"
                            filtros das listas de habilidades e rituais (só da tela)
-   - data-usar-habilidade, data-conjurar + data-forma, data-rolar-dano-ritual + data-forma,
+   - data-usar-habilidade, data-rolar-dano-ritual + data-forma,
      data-acao="novo-turno"  gastam PE / rolam dano / zeram o PE gasto no turno
    - data-requer-circulo   select "Requer círculo" de uma forma (sugere o "+PE" da forma)
    - data-tipo="inteiroOpcional" campo numérico em que vazio grava null (automático)
@@ -891,7 +891,7 @@ window.OP = window.OP || {};
   function desenharModoCartao(cartao, botao, modo, nome, tipo) {
     if (cartao.dataset.modo !== modo) cartao.dataset.modo = modo;
     const editando = modo === 'edicao';
-    const texto = editando ? 'Recolher' : 'Editar';
+    const texto = editando ? (tipo === 'ritual' ? 'Concluir edição' : 'Recolher') : 'Editar';
     if (botao.textContent !== texto) botao.textContent = texto;
     if (botao.getAttribute('aria-expanded') !== String(editando)) botao.setAttribute('aria-expanded', String(editando));
     const rotulo = (editando ? 'Recolher ' : 'Editar ') + tipo + (String(nome || '').trim() ? ' ' + String(nome).trim() : '');
@@ -2641,7 +2641,8 @@ window.OP = window.OP || {};
       ['[data-usar-habilidade]', function (b) { usarHabilidadeNaTela(b.dataset.usarHabilidade); }],
       ['[data-remover-habilidade]', function (b) { removerDaLista('habilidades', b.dataset.removerHabilidade); }],
       ['[data-acao="adicionar-habilidade"]', function () { adicionarHabilidade(); }],
-      ['[data-conjurar]', function (b) { conjurarNaTela(b.dataset.conjurar, b.dataset.forma); }],
+      ['[data-ligar-efeito-ritual]', function (b) { ligarEfeitoRitualNaTela(b.dataset.ligarEfeitoRitual, b.dataset.forma); }],
+      ['[data-desligar-efeito-ritual]', function (b) { desligarEfeitoRitualNaTela(b.dataset.desligarEfeitoRitual); }],
       ['[data-rolar-dano-ritual]', function (b) { rolarDanoRitualNaTela(b.dataset.rolarDanoRitual, b.dataset.forma); }],
       ['[data-rolar-cura-ritual]', function (b) { rolarCuraRitualNaTela(b.dataset.rolarCuraRitual, b.dataset.forma); }],
       ['[data-remover-ritual]', function (b) { removerDaLista('rituais', b.dataset.removerRitual); }],
@@ -2925,7 +2926,7 @@ window.OP = window.OP || {};
     ['duracao', 'Duração', 'duracao'], ['pagina', 'Página']
   ];
   // Atributos que recebem o id do ritual (por setAttribute, em criarComIds).
-  const IDS_RITUAL = ['data-ritual', 'data-conjurar', 'data-rolar-dano-ritual', 'data-rolar-cura-ritual', 'data-remover-ritual', 'data-alternar-edicao'];
+  const IDS_RITUAL = ['data-ritual', 'data-rolar-dano-ritual', 'data-rolar-cura-ritual', 'data-remover-ritual', 'data-alternar-edicao'];
 
   function ordinal(numero) {
     return numero + 'º';
@@ -2996,8 +2997,6 @@ window.OP = window.OP || {};
           htmlCampoAtaque('efeito', 'Efeito',
             '<textarea class="controle" rows="2" placeholder="O que esta forma faz" data-campo="' + c + '.efeito" data-tipo="texto"></textarea>') +
           '<div class="forma__acoes">' +
-            '<button type="button" class="botao-rolagem botao-rolagem--conjurar" data-conjurar data-forma="' + definicao.id + '">' +
-              '<span data-texto-conjurar>Conjurar</span></button>' +
             '<button type="button" class="botao-rolagem botao-rolagem--dano" data-rolar-dano-ritual data-forma="' + definicao.id + '" hidden>' +
               ICONE_DADO + '<span>Rolar dano</span></button>' +
             '<button type="button" class="botao-rolagem botao-rolagem--dano" data-rolar-cura-ritual data-forma="' + definicao.id + '" hidden>' +
@@ -3027,9 +3026,6 @@ window.OP = window.OP || {};
           '<div class="ataque__acoes">' +
             '<button type="button" class="botao-rolagem botao-rolagem--secundario" data-rolar-pericia="ocultismo" title="Rola Ocultismo no painel de rolagens">' +
               ICONE_DADO + '<span>Ocultismo</span></button>' +
-            htmlBotaoEdicao('ritual') +
-            '<button type="button" class="botao-icone botao-icone--perigo" data-remover-ritual title="Remover ritual">' +
-              ICONES_ITEM.remover + '<span class="visualmente-oculto">Remover ritual</span></button>' +
           '</div>' +
         '</div>' +
         '<p class="cartao-resumo" data-resumo-mesa></p>' +
@@ -3037,6 +3033,8 @@ window.OP = window.OP || {};
         '<p class="ritual__resistencia" data-resumo-resistencia hidden></p>' +
         '<p class="ritual__aviso" data-aviso-circulo hidden></p>' +
         '<p class="ritual__medo" data-aviso-medo hidden></p>' +
+        // Leitura: identificação, descrição e formas (texto do livro com acesso, senão o que a pessoa escreveu); só tela
+        '<div class="ritual__leitura" data-rit-leitura></div>' +
         '<div class="ritual__detalhes">' +
           CAMPOS_RITUAL.map(function (campo) {
             const lista = campo[2] ? ' list="sugestoes-ritual-' + campo[2] + '"' : '';
@@ -3058,6 +3056,10 @@ window.OP = window.OP || {};
           '<input type="text" class="controle" autocomplete="off" data-campo="' + c + '.notas" data-tipo="texto">') +
         '<div class="ritual__formas">' +
           OP.data.formasRitual.map(function (definicao) { return htmlForma(indice, definicao); }).join('') +
+        '</div>' +
+        '<div class="ritual__rodape">' +
+          '<button type="button" class="botao-texto ritual__editar" data-alternar-edicao aria-expanded="false" data-tipo-cartao="ritual">Editar</button>' +
+          '<button type="button" class="botao-texto" data-remover-ritual>Remover ritual</button>' +
         '</div>' +
       '</div>';
   }
@@ -3154,7 +3156,6 @@ window.OP = window.OP || {};
           dano: bloco.querySelector('.forma__dano'),
           erro: bloco.querySelector('[data-erro-dano]'),
           avisos: bloco.querySelector('[data-avisos-forma]'),
-          textoConjurar: bloco.querySelector('[data-texto-conjurar]'),
           botaoDano: bloco.querySelector('[data-rolar-dano-ritual]'),
           cura: bloco.querySelector('.forma__cura'),
           erroCura: bloco.querySelector('[data-erro-cura]'),
@@ -3172,6 +3173,8 @@ window.OP = window.OP || {};
         efeito: cartao.querySelector('[data-efeito-resistencia]'),
         resumo: cartao.querySelector('[data-resumo-mesa]'),
         editar: cartao.querySelector('[data-alternar-edicao]'),
+        leitura: cartao.querySelector('[data-rit-leitura]'),
+        leituraAssinatura: null,
         formas: formas
       };
     });
@@ -3221,6 +3224,127 @@ window.OP = window.OP || {};
     const pagina = String(ritual.pagina || '').trim();
     if (pagina) partes.push('p. ' + pagina);
     return partes.join(' · ') || 'Toque em Editar para preencher execução, alcance e efeitos.';
+  }
+
+  /** Lê o texto do livro de um ritual: { descricao, formas: { discente, verdadeira: { rotulo, texto } } } ou null. */
+  function textoLivroDoRitual(ritual) {
+    const t = ritual.catalogo && OP.livro && OP.livro.texto ? OP.livro.texto(ritual.catalogo) : null;
+    if (!t || !OP.uiLivro || !OP.uiLivro.blocosDoTexto) return null;
+    const saida = { descricao: '', formas: {} };
+    OP.uiLivro.blocosDoTexto(t.corpo).blocos.forEach(function (b) {
+      if (b.rotulo === 'Descrição') saida.descricao = b.texto;
+      else if (/^Discente/.test(b.rotulo)) saida.formas.discente = { rotulo: b.rotulo, texto: b.texto };
+      else if (/^Verdadeir/.test(b.rotulo)) saida.formas.verdadeira = { rotulo: b.rotulo, texto: b.texto };
+    });
+    return saida;
+  }
+
+  function botaoDeLeitura(classe, idRitual, atributo, idForma, rotulo, comDado) {
+    const b = elementoDeHtml('<button type="button" class="' + classe + '">' + (comDado ? ICONE_DADO : '') + '<span></span></button>');
+    b.setAttribute(atributo, idRitual);
+    if (idForma) b.setAttribute('data-forma', idForma);
+    b.lastChild.textContent = rotulo;
+    return b;
+  }
+
+  /**
+   * Leitura do ritual (modo resumo): identificação (execução, alcance, alvo…), descrição e as formas Discente e
+   * Verdadeira, cada uma com os botões que só rolam dano ou cura (mostram o resultado, nada é aplicado na ficha).
+   */
+  function desenharLeituraRitual(el, ritual, estado, ficha) {
+    const livro = textoLivroDoRitual(ritual);
+    const ativavel = ritual.catalogo ? OP.calc.ativaveisDaFicha(ficha).find(function (a) { return a.chave === ritual.catalogo; }) : null;
+    const partes = OP.data.formasRitual.map(function (definicao) {
+      const forma = (ritual.formas && ritual.formas[definicao.id]) || {};
+      const info = estado.formas[definicao.id] || {};
+      return [definicao.id, info.ativa ? 1 : 0, forma.efeito || '', forma.dano || '', forma.cura || '', forma.custoAdicional || 0, info.danoValido ? 1 : 0, info.curaValida ? 1 : 0].join('~');
+    });
+    const campos = CAMPOS_RITUAL.map(function (c) { return ritual[c[0]] || ''; });
+    const assinatura = [ritual.id, ritual.nome, ritual.circulo, ritual.elemento, ritual.notas || '', campos.join('~'),
+      livro ? JSON.stringify(livro) : '-', partes.join('|'), ativavel ? (ativavel.ligado ? 'on:' + ((ativavel.ativo && ativavel.ativo.forma) || '') : 'off') : '-'].join('\u0001');
+    if (el.leituraAssinatura === assinatura) return;
+    el.leituraAssinatura = assinatura;
+
+    const filhos = [];
+    function texto(tag, classe, conteudo) {
+      const n = document.createElement(tag);
+      n.className = classe;
+      n.textContent = conteudo;
+      return n;
+    }
+    function paragrafos(conteudo, classe) {
+      return String(conteudo || '').split('\n').filter(function (l) { return l.trim() !== ''; }).map(function (l) { return texto('p', classe, l); });
+    }
+
+    // Identificação: só o que está preenchido
+    const lista = document.createElement('dl');
+    lista.className = 'ritual__ident';
+    CAMPOS_RITUAL.forEach(function (campo) {
+      if (campo[0] === 'pagina') return;
+      const valor = String(ritual[campo[0]] || '').trim();
+      if (!valor) return;
+      const par = document.createElement('div');
+      par.appendChild(texto('dt', 'ritual__ident-rotulo', campo[1]));
+      par.appendChild(texto('dd', 'ritual__ident-valor', valor));
+      lista.appendChild(par);
+    });
+    const cabeca = [nomeNaLista(OP.data.elementos, ritual.elemento), ordinal(ritual.circulo) + ' círculo'];
+    if (String(ritual.pagina || '').trim()) cabeca.push('p. ' + String(ritual.pagina).trim());
+    filhos.push(texto('p', 'ritual__leitura-meta', cabeca.filter(Boolean).join(' · ')));
+    if (lista.children.length) filhos.push(lista);
+
+    function acoesDaForma(definicao) {
+      const forma = (ritual.formas && ritual.formas[definicao.id]) || {};
+      const info = estado.formas[definicao.id] || {};
+      const acoes = document.createElement('div');
+      acoes.className = 'ritual__leitura-acoes';
+      if (info.danoValido) acoes.appendChild(botaoDeLeitura('botao-rolagem botao-rolagem--dano', ritual.id, 'data-rolar-dano-ritual', definicao.id, 'Rolar dano · ' + String(forma.dano).trim(), true));
+      if (info.curaValida) acoes.appendChild(botaoDeLeitura('botao-rolagem botao-rolagem--dano', ritual.id, 'data-rolar-cura-ritual', definicao.id, 'Rolar cura · ' + String(forma.cura).trim(), true));
+      if (ativavel && !ativavel.ligado) acoes.appendChild(botaoDeLeitura('botao botao--pequeno', ritual.id, 'data-ligar-efeito-ritual', definicao.id, 'Ligar efeito', false));
+      return acoes.children.length ? acoes : null;
+    }
+
+    OP.data.formasRitual.forEach(function (definicao) {
+      const forma = (ritual.formas && ritual.formas[definicao.id]) || {};
+      const info = estado.formas[definicao.id] || {};
+      const doLivro = definicao.id === 'padrao' ? (livro && livro.descricao) : (livro && livro.formas[definicao.id]);
+      const proprio = String(forma.efeito || '').trim();
+      let corpo;
+      let titulo = '';
+      if (definicao.id === 'padrao') {
+        corpo = (doLivro || proprio || String(ritual.notas || '').trim());
+        titulo = 'Descrição';
+      } else {
+        if (!info.ativa && !doLivro) return;
+        corpo = doLivro ? doLivro.texto : proprio;
+        titulo = doLivro ? doLivro.rotulo : definicao.nome + (forma.custoAdicional ? ' (+' + forma.custoAdicional + ' PE)' : '');
+      }
+      const acoes = acoesDaForma(definicao);
+      if (!corpo && !acoes) return;
+      const secao = document.createElement('div');
+      secao.className = 'ritual__leitura-forma';
+      secao.setAttribute('data-forma-leitura', definicao.id);
+      if (corpo || definicao.id !== 'padrao') secao.appendChild(texto('p', 'ritual__leitura-titulo', titulo));
+      if (corpo) paragrafos(corpo, 'ritual__leitura-texto').forEach(function (p) { secao.appendChild(p); });
+      if (acoes) secao.appendChild(acoes);
+      filhos.push(secao);
+    });
+    if (filhos.length <= 2 && !lista.children.length) filhos.push(texto('p', 'ritual__leitura-vazia', 'Sem descrição. Toque em Editar para preencher o ritual.'));
+
+    if (ativavel && ativavel.ligado) {
+      const ligado = document.createElement('div');
+      ligado.className = 'ritual__leitura-acoes';
+      ligado.appendChild(botaoDeLeitura('botao botao--pequeno botao--ligado', ritual.id, 'data-desligar-efeito-ritual', '', 'Desligar efeito', false));
+      filhos.push(ligado);
+    }
+    const mensagem = document.createElement('p');
+    mensagem.className = 'mensagem-acao';
+    mensagem.setAttribute('data-rit-mensagem', '');
+    mensagem.setAttribute('role', 'status');
+    mensagem.setAttribute('aria-live', 'polite');
+    mensagem.hidden = true;
+    filhos.push(mensagem);
+    substituirFilhos(el.leitura, filhos);
   }
 
   function desenharRituais(ficha, derivados) {
@@ -3290,10 +3414,8 @@ window.OP = window.OP || {};
         if (forma.erroCura.hidden === curaInvalida) forma.erroCura.hidden = !curaInvalida;
         definirTexto(forma.erroCura, info.curaErro);
         if (forma.botaoCura.hidden === info.curaValida) forma.botaoCura.hidden = !info.curaValida;
-        // Medo: a Sanidade aparece no botão; a perda permanente fica no lembrete do cartão.
-        definirTexto(forma.textoConjurar, 'Conjurar · ' + (info.custoComCondicoes > 0 ? info.custoComCondicoes + ' PE' : 'sem custo') +
-          (info.san ? ' · ' + info.san + ' SAN' : ''));
       });
+      desenharLeituraRitual(el, ritual, estado, ficha);
 
       const casaElemento = !filtrosRituais.elemento || ritual.elemento === filtrosRituais.elemento;
       const casaBusca = !termo || normalizarBusca(ritual.nome).indexOf(termo) !== -1;
@@ -3368,49 +3490,24 @@ window.OP = window.OP || {};
     return OP.state.ficha.rituais.find(function (r) { return r.id === id; }) || null;
   }
 
-  /** Conjura de fato (o estado aplica tudo de uma vez) e mostra a mensagem na forma. */
-  function executarConjuracao(idRitual, idForma) {
-    const ritual = acharRitual(idRitual);
-    if (!ritual) return;
-    const resultado = OP.rolagens.conjurarRitual(OP.state.ficha, ritual, idForma);
+  function mensagemDoRitual(idRitual) {
     const el = refs.elementosRituais[idRitual];
-    const forma = el && el.formas[idForma];
-    mostrarMensagem(forma && forma.mensagem, mensagemGasto(resultado, 'Conjurado', resultado.ok ? resultado.dt : undefined));
+    return el ? el.leitura.querySelector('[data-rit-mensagem]') : null;
   }
 
-  /**
-   * Conjurar: pede confirmação nos rituais de Medo (mostra PE, Sanidade e
-   * perda permanente) e quando a forma tem avisos (círculo exigido acima do
-   * liberado, afinidade que falta). Os avisos não bloqueiam. Sem PE
-   * suficiente, nada muda e só aparece a mensagem.
-   */
-  function conjurarNaTela(idRitual, idForma) {
+  /** Liga o efeito automático do ritual na forma indicada (sem gastar PE: o custo você marca na ficha). */
+  function ligarEfeitoRitualNaTela(idRitual, idForma) {
     const ritual = acharRitual(idRitual);
     if (!ritual) return;
-    const plano = OP.calc.planoConjuracao(OP.state.ficha, ritual, idForma);
-    const avisos = (plano.avisos || []).map(function (aviso) { return aviso.texto; });
-    if (!plano.ok || (!plano.medo && !avisos.length)) {
-      executarConjuracao(idRitual, idForma);
-      return;
-    }
-    const nomeForma = nomeNaLista(OP.data.formasRitual, idForma) || idForma;
-    const sem = OP.calc.semSanidade(OP.state.ficha);
-    const itens = ['PE: ' + plano.peAtual + ' → ' + plano.peDepois];
-    if (!sem && plano.medo && plano.sanAtual !== null) itens.push('Sanidade: ' + plano.sanAtual + ' → ' + plano.sanDepois);
-    if (!sem && plano.medo && plano.sanMaxDepois !== null) itens.push('Sanidade máxima: ' + (plano.sanMaxDepois + plano.permanente) + ' → ' + plano.sanMaxDepois);
-    confirmar({
-      titulo: plano.medo ? 'Conjurar ritual de Medo' : 'Conjurar mesmo assim?',
-      texto: plano.medo
-        ? (sem
-          ? 'Ritual de Medo (' + nomeForma + '): −' + plano.pe + ' PE e −' + plano.perdaMental + ' PE pela perda de Sanidade.'
-          : 'Ritual de Medo (' + nomeForma + '): −' + plano.pe + ' PE, −' + plano.san + ' Sanidade, −' + plano.permanente + ' Sanidade permanente.')
-        : 'Forma ' + nomeForma + ': −' + plano.pe + ' PE. Confira os avisos abaixo (eles não impedem a conjuração).',
-      itens: itens,
-      avisos: avisos,
-      destaque: plano.sanZera ? 'Atenção: a Sanidade vai chegar a 0.' : '',
-      textoConfirmar: 'Confirmar',
-      aoConfirmar: function () { executarConjuracao(idRitual, idForma); }
-    });
+    const resultado = OP.rolagens.ligarEfeitoRitual(OP.state.ficha, ritual, idForma);
+    mostrarMensagem(mensagemDoRitual(idRitual), resultado.ok
+      ? { tipo: 'ok', texto: 'Efeito ligado. Para encerrar, use Desligar efeito ou Fim da cena.' }
+      : { tipo: 'erro', texto: resultado.motivo });
+  }
+
+  function desligarEfeitoRitualNaTela(idRitual) {
+    const ritual = acharRitual(idRitual);
+    if (ritual && ritual.catalogo) OP.rolagens.desativarEfeito(OP.state.ficha, ritual.catalogo);
   }
 
   /* ------------------------------------------------------------------------

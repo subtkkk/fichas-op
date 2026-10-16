@@ -436,6 +436,13 @@ window.OP = window.OP || {};
     return true;
   }
 
+  /** Liga o efeito automático de um ritual numa forma, sem gastar PE. Devolve { ok, titulo, motivo?, evento? }. */
+  function ligarEfeitoRitual(ficha, ritual, idForma) {
+    const titulo = 'Efeito: ' + nomeOuPadrao(ritual && ritual.nome, 'ritual sem nome') + ' (' + nomeForma(idForma) + ')';
+    if (!ligarEfeitoDoRitual(ficha, ritual, idForma)) return { ok: false, titulo: titulo, motivo: 'Este ritual não tem efeito automático.' };
+    return { ok: true, titulo: titulo, evento: eventoDaFicha(ficha, titulo, 'efeito ligado') };
+  }
+
   /** Liga um efeito ativável (gasta o PE dele). Devolve { ok, titulo, motivo?, evento? }. */
   function ativarEfeito(ficha, chave) {
     const a = OP.calc.ativaveisDaFicha(ficha).find(function (x) { return x.chave === chave; });
@@ -536,6 +543,7 @@ window.OP = window.OP || {};
     registrarEvento: registrarEvento,
     usarHabilidade: usarHabilidade,
     conjurarRitual: conjurarRitual,
+    ligarEfeitoRitual: ligarEfeitoRitual,
     rolarDanoRitual: rolarDanoRitual,
     rolarCuraRitual: rolarCuraRitual,
     ativarEfeito: ativarEfeito,

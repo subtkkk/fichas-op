@@ -3013,7 +3013,8 @@ body {
   justify-content: flex-end;
 }
 
-.habilidade__leitura {
+.habilidade__leitura,
+.ritual__leitura {
   display: none;
 }
 

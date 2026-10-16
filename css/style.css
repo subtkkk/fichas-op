@@ -7544,7 +7544,7 @@ body.arrastando-arquivo::after {
   }
 }
 
-/* Ritual em resumo */
+/* Ritual em resumo (leitura): nome, identificação, descrição e formas; "Editar" abre o formulário */
 .ritual[data-modo="resumo"] {
   gap: 10px;
 }
@@ -7554,14 +7554,12 @@ body.arrastando-arquivo::after {
 }
 
 .ritual[data-modo="resumo"] .ritual__cabecalho > .ataque__campo:not(.ataque__campo--nome),
-.ritual[data-modo="resumo"] .ritual__cabecalho [data-remover-ritual],
 .ritual[data-modo="resumo"] .ritual__detalhes,
 .ritual[data-modo="resumo"] .ritual__resistencia-campos,
 .ritual[data-modo="resumo"] > .ataque__campo--notas,
-.ritual[data-modo="resumo"] .forma[data-ativa="nao"],
-.ritual[data-modo="resumo"] .forma__cabecalho .caixa,
-.ritual[data-modo="resumo"] .forma__sempre,
-.ritual[data-modo="resumo"] .forma__corpo > :not(.forma__acoes):not(.mensagem-acao):not(.forma__avisos) {
+.ritual[data-modo="resumo"] .ritual__formas,
+.ritual[data-modo="resumo"] .cartao-resumo,
+.ritual[data-modo="edicao"] .ritual__leitura {
   display: none;
 }
 
@@ -7573,38 +7571,100 @@ body.arrastando-arquivo::after {
   clip: rect(0 0 0 0);
 }
 
-.ritual[data-modo="resumo"] .cartao-resumo {
-  display: block;
-  margin-top: -4px;
+.ritual__leitura {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.ritual[data-modo="resumo"] .ritual__formas {
+.ritual__leitura-meta {
+  margin: 0;
+  font: 500 0.7812rem/1.5 var(--fonte-mono);
+  color: var(--papel-2);
+}
+
+.ritual__ident {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px 16px;
+  margin: 0;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--cor-texto) 4%, transparent);
+  border-left: 2px solid var(--cor-elemento, var(--acento));
+  border-radius: var(--raio-1);
+}
+
+.ritual__ident > div {
+  min-width: 0;
+}
+
+.ritual__ident-rotulo {
+  font: 500 0.6875rem/1.4 var(--fonte-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+}
+
+.ritual__ident-valor {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.ritual__leitura-forma {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ritual__leitura-forma[data-forma-leitura="discente"],
+.ritual__leitura-forma[data-forma-leitura="verdadeira"] {
+  padding-left: 12px;
+  border-left: 2px solid var(--linha-2);
+}
+
+.ritual__leitura-titulo {
+  margin: 0;
+  font: 500 0.6875rem/1.4 var(--fonte-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+}
+
+.ritual__leitura-texto {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--papel-2);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.ritual__leitura-vazia {
+  margin: 0;
+  color: var(--papel-3);
+  font-size: 0.875rem;
+}
+
+.ritual__leitura-acoes {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 14px;
-  padding-top: 10px;
-}
-
-.ritual[data-modo="resumo"] .forma {
-  flex: 0 1 auto;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 10px;
-  padding: 0;
-  background: transparent;
-  border: 0;
-}
-
-.ritual[data-modo="resumo"] .forma__cabecalho {
-  min-height: 0;
-}
-
-.ritual[data-modo="resumo"] .forma__corpo {
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
   gap: 8px;
+}
+
+.ritual__rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ritual__editar {
+  color: var(--papel-3);
+}
+
+.ritual__editar:hover,
+.ritual__editar[aria-expanded="true"] {
+  color: var(--acento);
 }
 
 /* Perícias na mesa: sem "concedida" (fica em "Editar perícias"); atributo, grau, outros e total sempre aparecem */

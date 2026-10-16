@@ -1027,6 +1027,7 @@ window.OP = window.OP || {};
     abrirRituais: abrirRituais,
     descreverDefinicao: descreverDefinicao,
     criarTextoLivro: criarTextoLivro,
+    blocosDoTexto: blocosDoTexto,
     criarRitualDoCatalogo: criarRitualDoCatalogo
   };
 })(window.OP);

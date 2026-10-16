@@ -1415,6 +1415,7 @@ window.OP = window.OP || {};
     const resumo = c.inicial + ' inicial' + termoComSinal(c.ganhoNex, porPasso) +
       termoComSinal(c.bonus, 'bônus') +
       (c.bonusAlteracoes ? termoComSinal(c.bonusAlteracoes, 'alteração de NEX (' + siglaAtributo(c.atributoAlteracoes) + ')') : '') +
+      (c.bonusEfeitos ? termoComSinal(c.bonusEfeitos, 'poderes') : '') +
       (c.perdaPermanente ? ' − ' + c.perdaPermanente + ' perda permanente' : '') + ' = ' + c.max;
 
     const parteAtributo = c.atributo ? siglaAtributo(c.atributo) + ' ' + c.valorAtributo : '';
@@ -1918,7 +1919,8 @@ window.OP = window.OP || {};
       parteComSinal('manual', defesa.protecao) +
       parteComSinal('outros', defesa.outros) +
       (defesa.sobrecarga ? ' − sobrecarga ' + defesa.sobrecarga : '') +
-      (defesa.condicoes ? parteComSinal('condições', defesa.condicoes) : ''));
+      (defesa.condicoes ? parteComSinal('condições', defesa.condicoes) : '') +
+      (defesa.efeitos ? parteComSinal('poderes', defesa.efeitos) : ''));
 
     const nomes = derivados.inventario.nomesProtecoes.map(function (nome) { return nome || 'sem nome'; });
     definirTexto(refs.nomesProtecoes, nomes.length ? '(' + nomes.join(', ') + ')' : '');
@@ -2313,6 +2315,11 @@ window.OP = window.OP || {};
     caixa.appendChild(criarElemento('p', 'resultado__regra', regra));
     if (resultado.aviso) caixa.appendChild(criarElemento('p', 'resultado__aviso', resultado.aviso));
     if (resultado.avisoEnergia) caixa.appendChild(criarElemento('p', 'resultado__aviso', resultado.avisoEnergia));
+    if (resultado.poderes) {
+      caixa.appendChild(criarElemento('p', 'resultado__aviso', 'Poderes usados: ' + resultado.poderes.join(', ') +
+        (resultado.poderesCusto ? ' (−' + resultado.poderesCusto + ' PE)' : '') +
+        (resultado.poderesDados ? ' · ' + formatarComSinal(resultado.poderesDados) + 'd20' : '') + '.'));
+    }
     caixa.appendChild(criarFimResultado(conta, resultado.total));
     if (alvo) caixa.appendChild(criarElemento('p', 'resultado__alvo resultado__alvo--' + (resultado.acertou ? 'sim' : 'nao'), alvo));
     const acoes = criarAcoesResultado(resultado);
@@ -2357,7 +2364,9 @@ window.OP = window.OP || {};
     const termos = criarElemento('div', 'resultado__termos');
     resultado.termos.forEach(function (termo, indice) { termos.appendChild(criarTermo(termo, indice)); });
     caixa.appendChild(termos);
-    caixa.appendChild(criarFimResultado((resultado.formula || '') + (tipo ? ' · ' + tipo.nome : ''), resultado.total));
+    caixa.appendChild(criarFimResultado((resultado.formula || '') + (tipo ? ' · ' + tipo.nome : '') + (resultado.cura ? ' · cura' : ''), resultado.total));
+    if (resultado.aplicado) caixa.appendChild(criarElemento('p', 'resultado__aviso', 'Aplicado na ficha: ' + resultado.aplicado + '.'));
+    if (resultado.poderes) caixa.appendChild(criarElemento('p', 'resultado__aviso', 'Poderes usados: ' + resultado.poderes.join(', ') + (resultado.poderesCusto ? ' (−' + resultado.poderesCusto + ' PE)' : '') + '.'));
     return caixa;
   }
 
@@ -3109,7 +3118,8 @@ window.OP = window.OP || {};
     definirTexto(refs.composicaoDt, p.base +
       (conj.dt.somaLimitePE ? parteComSinal('limite de PE', p.limitePE) : '') +
       parteComSinal(siglaAtributo(conj.dt.idAtributo), p.atributo) +
-      parteComSinal('bônus', p.bonus));
+      parteComSinal('bônus', p.bonus) +
+      (p.efeitos ? parteComSinal('poderes', p.efeitos) : ''));
     definirTexto(refs.textoCirculos, conj.circulosLiberados ? 'até o ' + ordinal(conj.circulosLiberados) : 'nenhum');
 
     // Elemento conectado (NEX 50%) e afinidade (só depois de transcender, com elemento conectado)

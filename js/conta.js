@@ -84,6 +84,12 @@ window.OP = window.OP || {};
       estado.disponivel = false; // sem API: a ficha segue normal
     }
     desenhar();
+    recarregarLivro();
+  }
+
+  /** O conteúdo do livro depende dos acessos: recarrega (ou esvazia) quando eles mudam. */
+  function recarregarLivro() {
+    if (OP.livro) OP.livro.carregar();
   }
 
   async function resgatar(evento) {
@@ -107,6 +113,7 @@ window.OP = window.OP || {};
         mostrarAviso('Código aceito. Conteúdo liberado.');
         Object.keys(memoria).forEach(function (k) { delete memoria[k]; });
         desenhar();
+        recarregarLivro();
       } else {
         mostrarAviso(r.dados.erro || 'Não foi possível resgatar o código.', 'erro');
       }
@@ -127,6 +134,7 @@ window.OP = window.OP || {};
     Object.keys(memoria).forEach(function (k) { delete memoria[k]; });
     mostrarAviso('');
     desenhar();
+    recarregarLivro();
   }
 
   /** Conteúdo protegido de um escopo; só em memória. Resolve com a lista de itens, ou rejeita com a mensagem do servidor. */

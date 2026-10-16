@@ -216,8 +216,9 @@ window.OP = window.OP || {};
   function limitePEporTurno(fichaOuNex) {
     if (fichaOuNex !== null && typeof fichaOuNex === 'object') {
       const classe = classeDaFicha(fichaOuNex);
-      if (classe && typeof classe.limitePEFixo === 'number') return classe.limitePEFixo;
-      return limitePEporTurno(fichaOuNex.identificacao ? nexProgressao(fichaOuNex) : 0);
+      const extra = efeitosDaFicha(fichaOuNex).limitePE;
+      if (classe && typeof classe.limitePEFixo === 'number') return classe.limitePEFixo + extra;
+      return limitePEporTurno(fichaOuNex.identificacao ? nexProgressao(fichaOuNex) : 0) + extra;
     }
     return Math.max(0, Math.round(numero(fichaOuNex) / 5));
   }
@@ -368,6 +369,7 @@ window.OP = window.OP || {};
       ganhoNex: 0,
       bonus: numero(salvo.bonusMax),
       perdaPermanente: inteiroNaoNegativo(salvo.perdaPermanente),
+      bonusEfeitos: 0,    // poderes e habilidades com efeito automático (data/efeitos*.js)
       bonusAlteracoes: 0, // PE: atributo escolhido no NEX 35% (regra opcional NEX e Experiência)
       atributoAlteracoes: null,
       max: 0
@@ -389,7 +391,8 @@ window.OP = window.OP || {};
         composicao.atributoAlteracoes = alteracoes.bonusPE.atributo;
       }
     }
-    composicao.max = Math.max(0, composicao.inicial + composicao.ganhoNex + composicao.bonus + composicao.bonusAlteracoes - composicao.perdaPermanente);
+    composicao.bonusEfeitos = numero(efeitosDaFicha(ficha)[idRecurso]);
+    composicao.max = Math.max(0, composicao.inicial + composicao.ganhoNex + composicao.bonus + composicao.bonusAlteracoes + composicao.bonusEfeitos - composicao.perdaPermanente);
     return composicao;
   }
 
@@ -505,7 +508,7 @@ window.OP = window.OP || {};
    * Com FOR total ≤ 0: capacidadeForcaZero + bônus manual. Nunca abaixo de 0.
    */
   function capacidadeCarga(ficha) {
-    return Math.max(0, capacidadeBase(ficha) + numero(inventarioSalvo(ficha).capacidadeBonus));
+    return Math.max(0, capacidadeBase(ficha) + numero(inventarioSalvo(ficha).capacidadeBonus) + efeitosDaFicha(ficha).carga);
   }
 
   /** Espaços usados = soma de espaços × quantidade de TODOS os itens. */
@@ -760,7 +763,7 @@ window.OP = window.OP || {};
    * = fixas da classe + escolhas da classe + perícias da origem + escolhas
    * da origem (sem repetir; a classe vem primeiro).
    */
-  function periciasConcedidasDetalhe(ficha) {
+  function periciasConcedidasBaseDetalhe(ficha) {
     const lista = [];
     const vistos = Object.create(null);
     function incluir(id, fonte) {
@@ -784,6 +787,20 @@ window.OP = window.OP || {};
       origem.pericias.forEach(function (id) { incluir(id, 'origem'); });
       periciasDaEscolhaOrigem(origem, escolhas.origem).forEach(function (id) { incluir(id, 'origem'); });
     }
+    return lista;
+  }
+
+  /** Ids das perícias concedidas só pela classe e pela origem (sem efeitos de poderes). */
+  function periciasConcedidasBase(ficha) {
+    return periciasConcedidasBaseDetalhe(ficha).map(function (item) { return item.id; });
+  }
+
+  /** Perícias concedidas pela classe, pela origem e por efeitos de poderes ("treino"): [{ id, fonte }]. */
+  function periciasConcedidasDetalhe(ficha) {
+    const lista = periciasConcedidasBaseDetalhe(ficha);
+    treinosDeEfeitos(ficha).concede.forEach(function (id) {
+      if (!lista.some(function (item) { return item.id === id; })) lista.push({ id: id, fonte: 'poder' });
+    });
     return lista;
   }
 
@@ -920,6 +937,7 @@ window.OP = window.OP || {};
     bonus -= penalidadeSemKit(ficha, idPericia);
     if (definicao.penalidadeCarga) bonus -= penalidadeCarga(ficha);
     bonus += bonusAlteracoesPericia(ficha, idPericia); // alterações de NEX (regra opcional)
+    bonus += bonusEfeitosPericia(ficha, idPericia);    // poderes e habilidades com efeito automático
     return bonus;
   }
 
@@ -1037,10 +1055,11 @@ window.OP = window.OP || {};
       protecao: numero(defesa.protecao && defesa.protecao.defesa), // bônus de proteção manual
       outros: numero(defesa.outros),
       sobrecarga: sobrecarregado(ficha) ? numero(OP.data.config.sobrecarga.defesa) : 0,
-      condicoes: modificadoresCondicoes(ficha).defesa // o mais severo entre as condições ativas
+      condicoes: modificadoresCondicoes(ficha).defesa, // o mais severo entre as condições ativas
+      efeitos: efeitosDaFicha(ficha).def // poderes e habilidades com efeito automático
     };
     composicao.total = composicao.base + composicao.valorAtributo + composicao.protecoesInventario +
-      composicao.protecao + composicao.outros - composicao.sobrecarga + composicao.condicoes;
+      composicao.protecao + composicao.outros - composicao.sobrecarga + composicao.condicoes + composicao.efeitos;
     // Defesa contra um tipo de ataque (Caído: −5 contra corpo a corpo, +5 contra à distância)
     const mod = modificadoresCondicoes(ficha);
     composicao.totalCorpoACorpo = composicao.total - composicao.condicoes + mod.defesaCorpoACorpo;
@@ -1106,7 +1125,7 @@ window.OP = window.OP || {};
   function deslocamento(ficha) {
     const config = OP.data.config;
     const base = numero(config.deslocamentoBase);
-    const bonus = numero(defesaSalva(ficha).deslocamentoBonus);
+    const bonus = numero(defesaSalva(ficha).deslocamentoBonus) + efeitosDaFicha(ficha).desl;
     const sobrecarga = sobrecarregado(ficha) ? numero(config.sobrecarga.deslocamento) : 0;
     const mod = modificadoresCondicoes(ficha);
     const multiplicador = mod.deslocamentoMult;
@@ -1154,7 +1173,7 @@ window.OP = window.OP || {};
   function testePericia(ficha, idPericia, modDados) {
     const atributo = atributoDaPericia(ficha, idPericia);
     return {
-      dados: resolverReserva(atributo ? totalAtributo(ficha, atributo) : 0, numero(modDados) + dadosCondicoesPericia(ficha, idPericia) + dadosAlteracoesPericia(ficha, idPericia)),
+      dados: resolverReserva(atributo ? totalAtributo(ficha, atributo) : 0, numero(modDados) + dadosCondicoesPericia(ficha, idPericia) + dadosAlteracoesPericia(ficha, idPericia) + dadosEfeitosPericia(ficha, idPericia)),
       bonus: periciaBonus(ficha, idPericia)
     };
   }
@@ -1162,7 +1181,7 @@ window.OP = window.OP || {};
   /** Teste puro de um atributo (sem perícia): { dados: { qtd, modo }, bonus: 0 }. As condições que mexem no atributo entram. */
   function testeAtributo(ficha, idAtributo, modDados) {
     const dadosCond = modificadorDadosTeste(modificadoresCondicoes(ficha), { atributo: idAtributo });
-    return { dados: resolverReserva(totalAtributo(ficha, idAtributo), numero(modDados) + dadosCond + dadosAlteracoesAtributo(ficha, idAtributo)), bonus: 0 };
+    return { dados: resolverReserva(totalAtributo(ficha, idAtributo), numero(modDados) + dadosCond + dadosAlteracoesAtributo(ficha, idAtributo) + dadosEfeitosAtributo(ficha, idAtributo)), bonus: 0 };
   }
 
   /**
@@ -1173,8 +1192,8 @@ window.OP = window.OP || {};
     // dadosCondicoesAtaque já traz as condições da perícia e as de ataque (ex.: Agarrado, Caído)
     const atributo = atributoDaPericia(ficha, ataque.pericia);
     return {
-      dados: resolverReserva(atributo ? totalAtributo(ficha, atributo) : 0, numero(modDados) + dadosCondicoesAtaque(ficha, ataque) + dadosAlteracoesPericia(ficha, ataque.pericia)),
-      bonus: periciaBonus(ficha, ataque.pericia) + numero(ataque.testeBonus)
+      dados: resolverReserva(atributo ? totalAtributo(ficha, atributo) : 0, numero(modDados) + dadosCondicoesAtaque(ficha, ataque) + dadosAlteracoesPericia(ficha, ataque.pericia) + dadosEfeitosAtaque(ficha, ataque)),
+      bonus: periciaBonus(ficha, ataque.pericia) + numero(ataque.testeBonus) + bonusEfeitosAtaque(ficha, ataque).teste
     };
   }
 
@@ -1429,7 +1448,7 @@ window.OP = window.OP || {};
   /** Custo de um ritual com as condições (Alquebrado) e a redução das alterações de NEX; nunca abaixo de 0. */
   function custoRitualFinal(ficha, ritual, custoBase) {
     const comCondicoes = custoComCondicoes(ficha, custoBase);
-    return comCondicoes > 0 ? Math.max(0, comCondicoes - reducaoCustoRitual(ficha, ritual)) : comCondicoes;
+    return comCondicoes > 0 ? Math.max(0, comCondicoes - reducaoCustoRitual(ficha, ritual) + ajusteCustoRitualEfeitos(ficha, ritual)) : comCondicoes;
   }
 
   /** Valor do d6 de Energia: nível de intensidade pelo NEX, e a perda de Sanidade/PD do "tique" esquecido. */
@@ -1506,9 +1525,10 @@ window.OP = window.OP || {};
     const regra = OP.data.config.dtRitual;
     const dt = dtHabilidade(ficha, regra.atributo);
     const bonus = numero(ficha.conjuracao && ficha.conjuracao.dtBonus);
+    const efeitos = efeitosDaFicha(ficha).dt;
     return {
-      total: dt.total + bonus,
-      partes: Object.assign({}, dt.partes, { bonus: bonus }),
+      total: dt.total + bonus + efeitos,
+      partes: Object.assign({}, dt.partes, { bonus: bonus, efeitos: efeitos }),
       idAtributo: regra.atributo,
       somaLimitePE: regra.somaLimitePE === true
     };
@@ -2860,6 +2880,771 @@ window.OP = window.OP || {};
   }
 
   /* ------------------------------------------------------------------------
+     Efeitos automáticos de origens, habilidades, poderes e rituais
+     Os dados (OP.data.efeitos e OP.data.catalogo) só existem com o conteúdo do
+     livro liberado (js/livro.js); sem ele tudo aqui devolve valores neutros.
+     Formato: data/efeitos.js.
+     ------------------------------------------------------------------------ */
+
+  const GRUPO_FISICO = ['cortante', 'impacto', 'perfurante', 'balistico'];
+  const PERICIAS_RESISTENCIA = ['fortitude', 'reflexos', 'vontade'];
+
+  function definicoesEfeitos() {
+    return OP.data.efeitos !== null && typeof OP.data.efeitos === 'object' ? OP.data.efeitos : {};
+  }
+
+  function catalogoLivro() {
+    return OP.data.catalogo !== null && typeof OP.data.catalogo === 'object' ? OP.data.catalogo : {};
+  }
+
+  function temEfeitosCarregados() {
+    return Object.keys(definicoesEfeitos()).length > 0;
+  }
+
+  function listaDeEfeitos(ficha, campo) {
+    const e = ficha && ficha.efeitos;
+    return e && Array.isArray(e[campo]) ? e[campo].filter(function (x) { return x !== null && typeof x === 'object'; }) : [];
+  }
+
+  function nomeDaFonte(chave) {
+    const t = OP.livro && OP.livro.texto ? OP.livro.texto(chave) : null;
+    return t ? t.titulo : chave;
+  }
+
+  /**
+   * Fontes de efeitos desta ficha: [{ chave, nome, tipo, base, def }].
+   * base: 'exposicao' (poderes paranormais usam o NEX de exposição) ou 'progressao'.
+   */
+  function fontesEfeitos(ficha) {
+    const defs = definicoesEfeitos();
+    if (!temEfeitosCarregados() || !ficha) return [];
+    const cat = catalogoLivro();
+    const fontes = [];
+    const vistas = Object.create(null);
+    function incluir(chave, tipo, base) {
+      if (!chave || vistas[chave] || !defs[chave]) return;
+      vistas[chave] = true;
+      fontes.push({ chave: chave, nome: nomeDaFonte(chave), tipo: tipo, base: base || 'progressao', def: defs[chave] });
+    }
+    const ident = ficha.identificacao || {};
+    if (cat.origens) incluir(cat.origens[ident.origem], 'origem');
+    const classe = classeDaFicha(ficha);
+    if (classe && cat.classe) (cat.classe[classe.id] || []).forEach(function (h) { incluir(h.chave, 'classe'); });
+    const trilha = trilhaDaFicha(ficha);
+    if (trilha && cat.trilhas && cat.trilhas[trilha.id]) {
+      habilidadesTrilha(ficha).forEach(function (h) { if (h.liberada) incluir(cat.trilhas[trilha.id][String(h.marco)], 'trilha'); });
+    }
+    const versat = habilidadeVersatilidade(ficha);
+    if (versat && versat.liberada && cat.trilhas && cat.trilhas[versat.trilha]) incluir(cat.trilhas[versat.trilha][String(versat.marco)], 'trilha');
+    const poderes = Array.isArray(cat.poderes) ? cat.poderes : [];
+    (Array.isArray(ficha.habilidades) ? ficha.habilidades : []).forEach(function (h) {
+      if (!h || typeof h.catalogo !== 'string' || !h.catalogo) return;
+      const p = poderes.find(function (x) { return x.id === h.catalogo; });
+      incluir(h.catalogo, 'poder', p && p.tipo === 'paranormal' ? 'exposicao' : 'progressao');
+    });
+    (Array.isArray(ficha.rituais) ? ficha.rituais : []).forEach(function (r) {
+      if (r && typeof r.catalogo === 'string' && r.catalogo) incluir(r.catalogo, 'ritual');
+    });
+    return fontes;
+  }
+
+  function nivelDaFonte(ficha, fonte) {
+    if (fonte && fonte.base === 'exposicao') return nivelDoNex(nexExposicao(ficha));
+    return unidadeProgressao(ficha) === 'estagio' ? estagioDaFicha(ficha) : nivelDoNex(nexProgressao(ficha));
+  }
+
+  function nexDaFonte(ficha, fonte) {
+    if (fonte && fonte.base === 'exposicao') return nexExposicao(ficha);
+    return unidadeProgressao(ficha) === 'estagio' ? estagioDaFicha(ficha) : nexProgressao(ficha);
+  }
+
+  /** Valor (V) de um efeito: ver data/efeitos.js. */
+  function valorDeEfeito(ficha, v, fonte) {
+    if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+    if (v === null || typeof v !== 'object') return 0;
+    if (v.nivel !== undefined) return Math.floor(numero(v.nivel) * nivelDaFonte(ficha, fonte) + 1e-9);
+    if (v.atr !== undefined) return Math.floor(totalAtributo(ficha, v.atr) * (v.x === undefined ? 1 : numero(v.x)) + 1e-9);
+    if (Array.isArray(v.tabela)) {
+      const nex = nexDaFonte(ficha, fonte);
+      let achado = 0;
+      v.tabela.forEach(function (par) { if (Array.isArray(par) && nex >= numero(par[0])) achado = numero(par[1]); });
+      return achado;
+    }
+    if (Array.isArray(v.soma)) return v.soma.reduce(function (s, parte) { return s + valorDeEfeito(ficha, parte, fonte); }, 0);
+    if (v.metade !== undefined) return Math.floor(valorDeEfeito(ficha, v.metade, fonte) / 2);
+    return 0;
+  }
+
+  /** Tem afinidade desenvolvida com o elemento ('qualquer' = com algum)? */
+  function temAfinidadeEfeito(ficha, elemento) {
+    const c = (ficha && ficha.conjuracao) || {};
+    if (c.afinidadeDesenvolvida !== true || !afinidadeValida(c.elementoConectado)) return false;
+    return elemento === 'qualquer' || c.elementoConectado === elemento;
+  }
+
+  /** Condição (se) de um efeito, gasto ou ativável. Sem "se", vale. */
+  function condicaoDeEfeito(ficha, se, fonte, ignorarTreino, forma) {
+    if (se === undefined || se === null) return true;
+    if (typeof se !== 'object') return false;
+    if (se.nex !== undefined && nexDaFonte(ficha, fonte) < numero(se.nex)) return false;
+    if (se.afinidade !== undefined && !temAfinidadeEfeito(ficha, se.afinidade === true ? 'qualquer' : se.afinidade)) return false;
+    if (se.semAfinidade !== undefined && temAfinidadeEfeito(ficha, se.semAfinidade === true ? 'qualquer' : se.semAfinidade)) return false;
+    if (se.classe !== undefined && (ficha.identificacao || {}).classe !== se.classe) return false;
+    if (se.treinado !== undefined && !ignorarTreino && grauEfetivo(ficha, se.treinado) < 1) return false;
+    if (se.forma !== undefined && [].concat(se.forma).indexOf(forma || 'padrao') === -1) return false;
+    return true;
+  }
+
+  /** Escolha da pessoa (id do campo) numa fonte; '' se não escolheu. */
+  function escolhaDeEfeito(ficha, chave, campo) {
+    const achada = listaDeEfeitos(ficha, 'escolhas').find(function (e) { return e.chave === chave && e.campo === campo; });
+    return achada && typeof achada.valor === 'string' ? achada.valor : '';
+  }
+
+  function escolhasDaFonte(def) {
+    return def && Array.isArray(def.escolhas) ? def.escolhas : [];
+  }
+
+  /** Ids de perícia de um alvo (id, lista, 'todas', { atr }, { escolha }); null se a escolha falta. */
+  function periciasDoAlvo(ficha, fonte, alvo) {
+    if (alvo === 'todas') return OP.data.pericias.map(function (p) { return p.id; });
+    if (typeof alvo === 'string') return [alvo];
+    if (Array.isArray(alvo)) return alvo.slice();
+    if (alvo && typeof alvo === 'object' && alvo.atr) {
+      return OP.data.pericias.filter(function (p) { return atributoDaPericia(ficha, p.id) === alvo.atr; }).map(function (p) { return p.id; });
+    }
+    if (alvo && typeof alvo === 'object' && alvo.escolha) {
+      const v = escolhaDeEfeito(ficha, fonte.chave, alvo.escolha);
+      return v ? [v] : null;
+    }
+    return [];
+  }
+
+  function efeitosNeutrosDaFicha() {
+    return {
+      ativo: false,
+      pv: 0, pe: 0, san: 0, def: 0, desl: 0, dt: 0, limitePE: 0, carga: 0, cura: 0, danoRitual: 0, curaRitual: 0,
+      per: {},
+      rd: {},
+      dadosPericia: {},     // id da perícia → d20
+      dadosTodasPericias: 0,
+      dadosAtributo: {},
+      dadosAtaque: { corpo: 0, distancia: 0 },
+      ataque: { corpo: 0, distancia: 0 },
+      dano: { corpo: 0, distancia: 0 },
+      margem: { corpo: 0, distancia: 0 },
+      custoRitual: [],      // { v, circulo, elemento }
+      origens: [],          // { chave, nome, texto }: de onde vem cada bônus (para a tela)
+      pendencias: []        // { chave, nome, campo, rotulo }
+    };
+  }
+
+  function somarMapa(mapa, id, valor) {
+    mapa[id] = (mapa[id] || 0) + valor;
+  }
+
+  function sinalNum(n) {
+    return (n < 0 ? '−' : '+') + Math.abs(n);
+  }
+
+  function nomePericiaEf(id) {
+    const p = definicaoPericia(id);
+    return p ? p.nome : String(id);
+  }
+
+  /** Anota que falta uma escolha da pessoa para o efeito valer. */
+  function pendenciaDeEscolha(r, fonte, campo) {
+    const esc = escolhasDaFonte(fonte.def).find(function (e) { return e.id === campo; });
+    r.pendencias.push({ chave: fonte.chave, nome: fonte.nome, campo: campo, rotulo: esc ? esc.rotulo : campo });
+  }
+
+  /** Aplica uma lista de efeitos passivos de uma fonte ao resumo r. */
+  function aplicarPassivos(ficha, fonte, lista, r, sufixo, forma) {
+    (Array.isArray(lista) ? lista : []).forEach(function (ef) {
+      if (!ef || typeof ef !== 'object' || !condicaoDeEfeito(ficha, ef.se, fonte, ef.k === 'treino', forma)) return;
+      const v = valorDeEfeito(ficha, ef.v, fonte);
+      let texto = '';
+      switch (ef.k) {
+        case 'pv': case 'pe': case 'san':
+          r[ef.k] += v;
+          texto = ef.k.toUpperCase() + ' ' + sinalNum(v);
+          break;
+        case 'def': r.def += v; texto = 'Defesa ' + sinalNum(v); break;
+        case 'desl': r.desl += v; texto = 'deslocamento ' + sinalNum(v) + ' m'; break;
+        case 'dt': r.dt += v; texto = 'DT dos rituais ' + sinalNum(v); break;
+        case 'limitePE': r.limitePE += v; texto = 'limite de PE por turno ' + sinalNum(v); break;
+        case 'carga': r.carga += v; texto = 'carga ' + sinalNum(v) + ' espaços'; break;
+        case 'cura': r.cura += v; texto = 'PV curados ' + sinalNum(v); break;
+        case 'danoRitual': r.danoRitual += v; texto = 'dano dos rituais ' + sinalNum(v); break;
+        case 'curaRitual': r.curaRitual += v; texto = 'cura dos rituais ' + sinalNum(v); break;
+        case 'per': {
+          const ids = periciasDoAlvo(ficha, fonte, ef.id);
+          if (ids === null) { pendenciaDeEscolha(r, fonte, ef.id.escolha); return; }
+          ids.forEach(function (id) { somarMapa(r.per, id, v); });
+          texto = (ef.id === 'todas' ? 'todas as perícias' : ids.map(nomePericiaEf).join(', ')) + ' ' + sinalNum(v);
+          break;
+        }
+        case 'treino': {
+          const ids = periciasDoAlvo(ficha, fonte, ef.id);
+          if (ids === null) { pendenciaDeEscolha(r, fonte, ef.id.escolha); return; }
+          texto = 'treinamento em ' + ids.map(nomePericiaEf).join(', ') + ' (ou +2 se já treinada)';
+          break;
+        }
+        case 'rd': somarMapa(r.rd, ef.tipo, v); texto = 'RD ' + (ef.tipo === 'todos' ? 'a todo dano' : ef.tipo) + ' ' + sinalNum(v); break;
+        case 'dados': {
+          if (ef.alvo === 'pericia') {
+            if (ef.id === 'todas' || ef.id === undefined) r.dadosTodasPericias += v;
+            else {
+              const ids = periciasDoAlvo(ficha, fonte, ef.id);
+              if (ids === null) { pendenciaDeEscolha(r, fonte, ef.id.escolha); return; }
+              ids.forEach(function (id) { somarMapa(r.dadosPericia, id, v); });
+            }
+          } else if (ef.alvo === 'atributo') somarMapa(r.dadosAtributo, ef.id, v);
+          else if (ef.alvo === 'ataque') {
+            if (ef.tipo !== 'distancia') r.dadosAtaque.corpo += v;
+            if (ef.tipo !== 'corpo') r.dadosAtaque.distancia += v;
+          }
+          texto = sinalNum(v) + 'd20 em ' + (ef.alvo === 'ataque' ? 'ataques' : ef.alvo === 'atributo' ? 'testes de ' + ef.id : ef.id === 'todas' || ef.id === undefined ? 'perícias' : (ef.id && ef.id.escolha ? periciasDoAlvo(ficha, fonte, ef.id) : [].concat(ef.id)).map(nomePericiaEf).join(', '));
+          break;
+        }
+        case 'ataque': case 'dano': case 'margem': {
+          const m = r[ef.k];
+          if (ef.tipo !== 'distancia') m.corpo += v;
+          if (ef.tipo !== 'corpo') m.distancia += v;
+          texto = { ataque: 'testes de ataque ', dano: 'dano ', margem: 'margem de ameaça ' }[ef.k] + sinalNum(v) + (ef.tipo === 'corpo' ? ' (corpo a corpo)' : ef.tipo === 'distancia' ? ' (à distância)' : '');
+          break;
+        }
+        case 'custoRitual': r.custoRitual.push({ v: v, circulo: ef.circulo, elemento: ef.elemento }); texto = 'custo dos rituais ' + sinalNum(v) + ' PE'; break;
+        default: return;
+      }
+      if (texto) r.origens.push({ chave: fonte.chave, nome: fonte.nome, texto: texto + (sufixo || '') });
+    });
+  }
+
+  /** Tudo o que os efeitos passivos e os efeitos ativos ligados fazem nesta ficha (ver efeitosNeutrosDaFicha). */
+  function efeitosDaFicha(ficha) {
+    const r = efeitosNeutrosDaFicha();
+    const fontes = fontesEfeitos(ficha);
+    if (!fontes.length) return r;
+    r.ativo = true;
+    fontes.forEach(function (fonte) { aplicarPassivos(ficha, fonte, fonte.def.passivos, r); });
+    listaDeEfeitos(ficha, 'ativos').forEach(function (ativo) {
+      const fonte = fontes.find(function (f) { return f.chave === ativo.chave; });
+      const a = fonte && fonte.def.ativavel;
+      if (!a) return;
+      if (!condicaoDeEfeito(ficha, a.se, fonte, false)) return;
+      aplicarPassivos(ficha, fonte, a.passivos, r, ' (ativo)', ativo.forma);
+    });
+    return r;
+  }
+
+  /** Bônus fixo de efeitos numa perícia (inclui o +2 de "treino" quando já era treinada). */
+  function bonusEfeitosPericia(ficha, idPericia) {
+    const r = efeitosDaFicha(ficha);
+    if (!r.ativo) return 0;
+    let total = numero(r.per[idPericia]);
+    if (treinosDeEfeitos(ficha).bonus.indexOf(idPericia) !== -1) total += 2;
+    return total;
+  }
+
+  /**
+   * Perícias de efeitos "treino", sem passar por efeitosDaFicha (grauEfetivo depende daqui, e uma condição
+   * "treinado" de outro efeito depende de grauEfetivo: assim não há laço).
+   */
+  function idsDeTreino(ficha) {
+    const ids = [];
+    function coletar(fonte, lista, forma) {
+      (Array.isArray(lista) ? lista : []).forEach(function (ef) {
+        if (!ef || ef.k !== 'treino' || !condicaoDeEfeito(ficha, ef.se, fonte, true, forma)) return;
+        const alvo = periciasDoAlvo(ficha, fonte, ef.id);
+        if (alvo) alvo.forEach(function (id) { ids.push(id); });
+      });
+    }
+    const fontes = fontesEfeitos(ficha);
+    fontes.forEach(function (fonte) { coletar(fonte, fonte.def.passivos); });
+    listaDeEfeitos(ficha, 'ativos').forEach(function (ativo) {
+      const fonte = fontes.find(function (f) { return f.chave === ativo.chave; });
+      if (fonte && fonte.def.ativavel && condicaoDeEfeito(ficha, fonte.def.ativavel.se, fonte, true)) coletar(fonte, fonte.def.ativavel.passivos, ativo.forma);
+    });
+    return ids;
+  }
+
+  /** Perícias trazidas por efeitos "treino": { concede: [ids novos], bonus: [ids que já eram treinadas] }. */
+  function treinosDeEfeitos(ficha) {
+    const resultado = { concede: [], bonus: [] };
+    const brutos = idsDeTreino(ficha);
+    if (!brutos.length) return resultado;
+    const base = periciasConcedidasBase(ficha);
+    brutos.forEach(function (id) {
+      if (grauDaPericia(ficha, id) >= 1 || base.indexOf(id) !== -1) {
+        if (resultado.bonus.indexOf(id) === -1) resultado.bonus.push(id);
+      } else if (resultado.concede.indexOf(id) === -1) {
+        resultado.concede.push(id);
+      }
+    });
+    return resultado;
+  }
+
+  /** Resistência a um tipo de dano vinda de efeitos (soma o que vale para todos e para o grupo físico). */
+  function resistenciaEfeitos(ficha, idTipo) {
+    const r = efeitosDaFicha(ficha);
+    if (!r.ativo) return 0;
+    return numero(r.rd[idTipo]) + numero(r.rd.todos) + (GRUPO_FISICO.indexOf(idTipo) !== -1 ? numero(r.rd.fisico) : 0);
+  }
+
+  function dadosEfeitosPericia(ficha, idPericia) {
+    const r = efeitosDaFicha(ficha);
+    if (!r.ativo) return 0;
+    return numero(r.dadosTodasPericias) + numero(r.dadosPericia[idPericia]) + numero(r.dadosAtributo[atributoDaPericia(ficha, idPericia)]);
+  }
+
+  function dadosEfeitosAtributo(ficha, idAtributo) {
+    const r = efeitosDaFicha(ficha);
+    return r.ativo ? numero(r.dadosAtributo[idAtributo]) : 0;
+  }
+
+  function tipoDeAtaque(ataque) {
+    return ataque && ataque.pericia === 'luta' ? 'corpo' : 'distancia';
+  }
+
+  /** Dados de efeitos num ataque: os da perícia do ataque e os de ataque. */
+  function dadosEfeitosAtaque(ficha, ataque) {
+    const r = efeitosDaFicha(ficha);
+    if (!r.ativo) return 0;
+    return dadosEfeitosPericia(ficha, ataque && ataque.pericia) + numero(r.dadosAtaque[tipoDeAtaque(ataque)]);
+  }
+
+  /** Bônus fixos de efeitos num ataque: { teste, dano, margem }. */
+  function bonusEfeitosAtaque(ficha, ataque) {
+    const r = efeitosDaFicha(ficha);
+    const t = tipoDeAtaque(ataque);
+    return r.ativo ? { teste: numero(r.ataque[t]), dano: numero(r.dano[t]), margem: numero(r.margem[t]) } : { teste: 0, dano: 0, margem: 0 };
+  }
+
+  /* ---------- Gastos opcionais (preparados antes do teste) ---------- */
+
+  function idDoGasto(chave, gasto) {
+    return chave + '__' + gasto;
+  }
+
+  /** Quantas unidades o gasto permite (V da definição; mínimo 1). */
+  function unidadesMaximas(ficha, fonte, g) {
+    return g.unidades === undefined ? 1 : Math.max(1, valorDeEfeito(ficha, g.unidades, fonte));
+  }
+
+  /** Custo em PE de n unidades de um gasto. */
+  function custoDoGasto(ficha, fonte, g, unidades) {
+    const base = Math.max(0, valorDeEfeito(ficha, g.custo, fonte));
+    const extra = g.custoExtra === undefined ? base : Math.max(0, valorDeEfeito(ficha, g.custoExtra, fonte));
+    return base + Math.max(0, unidades - 1) * extra;
+  }
+
+  /** Todos os gastos opcionais da ficha, com a preparação atual: [{ id, chave, fonte, gasto, nome, ... }]. */
+  function gastosDaFicha(ficha) {
+    const preparados = listaDeEfeitos(ficha, 'preparados');
+    const lista = [];
+    fontesEfeitos(ficha).forEach(function (fonte) {
+      (Array.isArray(fonte.def.gastos) ? fonte.def.gastos : []).forEach(function (g) {
+        if (!g || typeof g !== 'object' || !condicaoDeEfeito(ficha, g.se, fonte, false)) return;
+        const id = idDoGasto(fonte.chave, g.id);
+        const prep = preparados.find(function (p) { return p.id === id; });
+        const max = unidadesMaximas(ficha, fonte, g);
+        const unidades = prep ? limitarEntre(Math.trunc(numero(prep.unidades)) || 1, 1, max) : 0;
+        lista.push({
+          id: id, chave: fonte.chave, fonte: fonte.nome, gasto: g.id, nome: g.nome || fonte.nome, quando: g.quando || {},
+          custo: custoDoGasto(ficha, fonte, g, 1), custoExtra: g.custoExtra === undefined ? custoDoGasto(ficha, fonte, g, 1) : valorDeEfeito(ficha, g.custoExtra, fonte),
+          unidadesMax: max, preparado: unidades,
+          bonus: g.bonus === undefined ? 0 : valorDeEfeito(ficha, g.bonus, fonte),
+          dados: g.dados === undefined ? 0 : numero(g.dados),
+          dano: g.dano === undefined ? 0 : valorDeEfeito(ficha, g.dano, fonte),
+          def: g, fonteObj: fonte
+        });
+      });
+    });
+    return lista;
+  }
+
+  /**
+   * O gasto vale neste teste? contexto: { tipo: 'pericia' | 'atributo' | 'ataque' | 'dano',
+   * idPericia, atributo, ataque: 'corpo'|'distancia' }. Um ataque também é um teste da perícia dele.
+   */
+  function gastoVale(ficha, gasto, contexto) {
+    const q = gasto.quando || {};
+    const c = contexto || {};
+    const chaves = Object.keys(q);
+    if (!chaves.length) return false;
+    const ehTeste = c.tipo === 'pericia' || c.tipo === 'ataque';
+    const idPericia = c.idPericia;
+    const atributo = c.atributo || (idPericia ? atributoDaPericia(ficha, idPericia) : null);
+    if (q.dano !== undefined) {
+      if (c.tipo !== 'dano') return false;
+      if (q.dano !== 'todos' && q.dano !== c.ataque) return false;
+    } else if (q.ataque !== undefined) {
+      if (c.tipo !== 'ataque') return false;
+      if (q.ataque !== 'todos' && q.ataque !== c.ataque) return false;
+    } else if (!(ehTeste || c.tipo === 'atributo')) {
+      return false;
+    }
+    if (q.pericia !== undefined) {
+      if (!ehTeste || !idPericia) return false;
+      if (q.pericia !== 'todas' && q.pericia.indexOf(idPericia) === -1) return false;
+    }
+    if (q.atr !== undefined && (!atributo || q.atr.indexOf(atributo) === -1)) return false;
+    if (q.exceto !== undefined && idPericia && q.exceto.indexOf(idPericia) !== -1) return false;
+    if (q.resistencia === true && PERICIAS_RESISTENCIA.indexOf(idPericia) === -1) return false;
+    return true;
+  }
+
+  /** Gastos da ficha que valem neste teste (prontos para mostrar), com a preparação atual. */
+  function gastosParaTeste(ficha, contexto) {
+    return gastosDaFicha(ficha).filter(function (g) { return gastoVale(ficha, g, contexto); });
+  }
+
+  /**
+   * O que os gastos PREPARADOS que valem neste teste fazem: { bonus, dados, dano, custo, itens, ids }.
+   * Não gasta nada nem altera a ficha: quem rola paga (OP.rolagens) e limpa a preparação.
+   */
+  function efeitoDosPreparados(ficha, contexto) {
+    const r = { bonus: 0, dados: 0, dano: 0, custo: 0, itens: [], ids: [] };
+    gastosParaTeste(ficha, contexto).forEach(function (g) {
+      if (!g.preparado) return;
+      const n = g.preparado;
+      r.bonus += g.bonus * n;
+      r.dados += g.dados * n;
+      r.dano += g.dano * n;
+      r.custo += custoDoGasto(ficha, g.fonteObj, g.def, n);
+      r.itens.push({ id: g.id, nome: g.nome, unidades: n });
+      r.ids.push(g.id);
+    });
+    return r;
+  }
+
+  /** Lista de preparados depois de preparar (unidades ≥ 1) ou desfazer (0) um gasto. Não altera a ficha. */
+  function preparadosAposAlterar(ficha, idGasto, unidades) {
+    const g = gastosDaFicha(ficha).find(function (x) { return x.id === idGasto; });
+    const resto = listaDeEfeitos(ficha, 'preparados').filter(function (p) { return p.id !== idGasto; });
+    if (!g || unidades < 1) return resto;
+    resto.push({ id: g.id, chave: g.chave, gasto: g.gasto, unidades: limitarEntre(Math.trunc(unidades), 1, g.unidadesMax) });
+    return resto;
+  }
+
+  /* ---------- Efeitos ativáveis (cena, rodadas, manual) ---------- */
+
+  /** Fonte (com definição) pela chave, ou null. */
+  function fonteDeEfeito(ficha, chave) {
+    return fontesEfeitos(ficha).find(function (f) { return f.chave === chave; }) || null;
+  }
+
+  /** Efeitos ativáveis da ficha: [{ chave, nome, custo, duracao, rodadas, ativo, passivos }]. */
+  function ativaveisDaFicha(ficha) {
+    const ativos = listaDeEfeitos(ficha, 'ativos');
+    const lista = [];
+    fontesEfeitos(ficha).forEach(function (fonte) {
+      const a = fonte.def.ativavel;
+      if (!a || typeof a !== 'object' || !condicaoDeEfeito(ficha, a.se, fonte, false)) return;
+      const ligado = ativos.find(function (x) { return x.chave === fonte.chave; });
+      lista.push({
+        chave: fonte.chave, nome: fonte.nome, tipo: fonte.tipo, custo: Math.max(0, valorDeEfeito(ficha, a.custo, fonte)),
+        duracao: a.duracao || 'manual', rodadas: a.rodadas || null, ligado: Boolean(ligado), ativo: ligado || null
+      });
+    });
+    return lista;
+  }
+
+  /** Entrada de efeito ativo nova para uma fonte (o id e a contagem seguem a duração). */
+  function novoEfeitoAtivo(ficha, chave, id, forma) {
+    const a = ativaveisDaFicha(ficha).find(function (x) { return x.chave === chave; });
+    if (!a) return null;
+    return {
+      id: id, chave: chave, forma: forma === 'discente' || forma === 'verdadeira' ? forma : '',
+      rodadas: a.duracao === 'rodadas' && a.rodadas ? limitarEntre(Math.trunc(numero(a.rodadas)), 1, 99) : null,
+      ateFimCena: a.duracao === 'cena'
+    };
+  }
+
+  /** Passa uma rodada nos efeitos ativos: { ativos, removidos }. Não altera a ficha. */
+  function passarRodadaEfeitos(ficha) {
+    const ativos = [];
+    const removidos = [];
+    listaDeEfeitos(ficha, 'ativos').forEach(function (item) {
+      if (item.rodadas === null || item.rodadas === undefined) { ativos.push(item); return; }
+      const restantes = Math.trunc(numero(item.rodadas)) - 1;
+      if (restantes <= 0) removidos.push(item);
+      else ativos.push(Object.assign({}, item, { rodadas: restantes }));
+    });
+    return { ativos: ativos, removidos: removidos };
+  }
+
+  /** Fim da cena nos efeitos ativos: saem os "até o fim da cena". Não altera a ficha. */
+  function fimDaCenaEfeitos(ficha) {
+    const ativos = [];
+    const removidos = [];
+    listaDeEfeitos(ficha, 'ativos').forEach(function (item) {
+      if (item.ateFimCena === true) removidos.push(item);
+      else ativos.push(item);
+    });
+    return { ativos: ativos, removidos: removidos };
+  }
+
+  /* ---------- Usos (botões que rolam e aplicam) ---------- */
+
+  /** Usos da ficha: [{ id, chave, fonte, nome, custo, rolar, tipo, recupera, perde, elemento }]. */
+  function usosDaFicha(ficha) {
+    const lista = [];
+    fontesEfeitos(ficha).forEach(function (fonte) {
+      (Array.isArray(fonte.def.usos) ? fonte.def.usos : []).forEach(function (u) {
+        if (!u || typeof u !== 'object' || !condicaoDeEfeito(ficha, u.se, fonte, false)) return;
+        lista.push({
+          id: idDoGasto(fonte.chave, u.id), chave: fonte.chave, uso: u.id, fonte: fonte.nome, nome: u.nome || fonte.nome,
+          custo: Math.max(0, valorDeEfeito(ficha, u.custo, fonte)), rolar: u.rolar || '', tipo: u.tipo || 'rolagem',
+          recupera: u.recupera || '', perde: u.perde || null, elemento: u.elemento || ''
+        });
+      });
+    });
+    return lista;
+  }
+
+  /** Bônus de PV curados pelos poderes desta ficha. */
+  function bonusDeCura(ficha) {
+    return efeitosDaFicha(ficha).cura;
+  }
+
+  /** Redução (ou acréscimo) de efeitos no custo de PE de um ritual. */
+  function ajusteCustoRitualEfeitos(ficha, ritual) {
+    const r = efeitosDaFicha(ficha);
+    if (!r.ativo || !ritual) return 0;
+    const circulo = numero(ritual.circulo);
+    return r.custoRitual.reduce(function (soma, c) {
+      const okCirculo = c.circulo === undefined || [].concat(c.circulo).indexOf(circulo) !== -1;
+      const okElemento = c.elemento === undefined || c.elemento === ritual.elemento;
+      return okCirculo && okElemento ? soma + c.v : soma;
+    }, 0);
+  }
+
+  /** Pendências: escolhas que faltam (para avisar na tela). */
+  function pendenciasDeEfeitos(ficha) {
+    const vistas = Object.create(null);
+    return efeitosDaFicha(ficha).pendencias.filter(function (p) {
+      const k = p.chave + ':' + p.campo;
+      if (vistas[k]) return false;
+      vistas[k] = true;
+      return true;
+    });
+  }
+
+  /* ---------- Validação das definições (usada ao carregar e nos testes) ---------- */
+
+  const REGEX_DADOS = /^\s*(\d*d\d+|\d+)(\s*[+-]\s*(\d*d\d+|\d+))*\s*$/i;
+  const KINDS_VALOR = ['pv', 'pe', 'san', 'def', 'desl', 'dt', 'limitePE', 'carga', 'cura', 'danoRitual', 'curaRitual', 'per', 'treino', 'rd', 'dados', 'ataque', 'dano', 'margem', 'custoRitual'];
+
+  function problemaValor(v, onde) {
+    if (typeof v === 'number') return Number.isFinite(v) ? '' : onde + ': número inválido';
+    if (v === null || typeof v !== 'object' || Array.isArray(v)) return onde + ': valor inválido';
+    const chaves = Object.keys(v).filter(function (k) { return k !== 'x'; });
+    if (chaves.length !== 1) return onde + ': valor precisa de exatamente uma forma (nivel, atr, tabela, soma ou metade)';
+    const k = chaves[0];
+    if (k === 'nivel') return typeof v.nivel === 'number' ? '' : onde + ': nivel precisa ser número';
+    if (k === 'atr') return ehAtributoValido(v.atr) ? '' : onde + ': atributo desconhecido "' + v.atr + '"';
+    if (k === 'tabela') {
+      return Array.isArray(v.tabela) && v.tabela.length && v.tabela.every(function (p) { return Array.isArray(p) && p.length === 2 && typeof p[0] === 'number' && typeof p[1] === 'number'; })
+        ? '' : onde + ': tabela precisa de pares [nex, valor]';
+    }
+    if (k === 'soma') {
+      if (!Array.isArray(v.soma) || !v.soma.length) return onde + ': soma precisa de uma lista';
+      for (let i = 0; i < v.soma.length; i++) { const p = problemaValor(v.soma[i], onde); if (p) return p; }
+      return '';
+    }
+    if (k === 'metade') return problemaValor(v.metade, onde);
+    return onde + ': forma de valor desconhecida "' + k + '"';
+  }
+
+  function problemaCondicao(se, onde) {
+    if (se === undefined) return '';
+    if (se === null || typeof se !== 'object' || Array.isArray(se)) return onde + ': "se" inválido';
+    const ok = ['nex', 'afinidade', 'semAfinidade', 'treinado', 'classe', 'forma'];
+    const estranha = Object.keys(se).find(function (k) { return ok.indexOf(k) === -1; });
+    if (estranha) return onde + ': condição desconhecida "' + estranha + '"';
+    if (se.nex !== undefined && typeof se.nex !== 'number') return onde + ': nex precisa ser número';
+    if (se.afinidade !== undefined && se.afinidade !== true && se.afinidade !== 'qualquer' && !elementoValido(se.afinidade)) return onde + ': elemento desconhecido';
+    if (se.semAfinidade !== undefined && se.semAfinidade !== true && se.semAfinidade !== 'qualquer' && !elementoValido(se.semAfinidade)) return onde + ': elemento desconhecido';
+    if (se.treinado !== undefined && !idPericiaValido(se.treinado)) return onde + ': perícia desconhecida "' + se.treinado + '"';
+    if (se.classe !== undefined && !classeDados(se.classe)) return onde + ': classe desconhecida "' + se.classe + '"';
+    if (se.forma !== undefined && ![].concat(se.forma).every(function (f) { return f === 'padrao' || f === 'discente' || f === 'verdadeira'; })) return onde + ': forma inválida';
+    return '';
+  }
+
+  function problemaAlvoPericia(id, onde, escolhas) {
+    if (id === 'todas') return '';
+    if (typeof id === 'string') return idPericiaValido(id) ? '' : onde + ': perícia desconhecida "' + id + '"';
+    if (Array.isArray(id)) {
+      const ruim = id.find(function (x) { return !idPericiaValido(x); });
+      return id.length && ruim === undefined ? '' : onde + ': lista de perícias inválida' + (ruim !== undefined ? ' ("' + ruim + '")' : '');
+    }
+    if (id && typeof id === 'object' && id.atr) return ehAtributoValido(id.atr) ? '' : onde + ': atributo desconhecido';
+    if (id && typeof id === 'object' && id.escolha) return escolhas.indexOf(id.escolha) !== -1 ? '' : onde + ': escolha "' + id.escolha + '" não existe em "escolhas"';
+    return onde + ': alvo de perícia inválido';
+  }
+
+  function problemaPassivo(ef, onde, escolhas) {
+    if (ef === null || typeof ef !== 'object') return onde + ': efeito inválido';
+    if (KINDS_VALOR.indexOf(ef.k) === -1) return onde + ': tipo de efeito desconhecido "' + ef.k + '"';
+    const c = problemaCondicao(ef.se, onde);
+    if (c) return c;
+    if (ef.k !== 'treino') {
+      const pv = problemaValor(ef.v, onde);
+      if (pv) return pv;
+    }
+    if (ef.k === 'per') return problemaAlvoPericia(ef.id, onde, escolhas);
+    if (ef.k === 'treino') return ef.id === undefined ? onde + ': treino precisa de id' : problemaAlvoPericia(ef.id, onde, escolhas);
+    if (ef.k === 'rd') return ef.tipo === 'todos' || ef.tipo === 'fisico' || tipoDanoValido(ef.tipo) ? '' : onde + ': tipo de dano desconhecido "' + ef.tipo + '"';
+    if (ef.k === 'dados') {
+      if (ef.alvo === 'pericia') return ef.id === undefined || ef.id === 'todas' ? '' : problemaAlvoPericia(ef.id, onde, escolhas);
+      if (ef.alvo === 'atributo') return ehAtributoValido(ef.id) ? '' : onde + ': atributo desconhecido';
+      if (ef.alvo === 'ataque') return ef.tipo === undefined || ef.tipo === 'todos' || ef.tipo === 'corpo' || ef.tipo === 'distancia' ? '' : onde + ': tipo de ataque inválido';
+      return onde + ': alvo de dados inválido';
+    }
+    if ((ef.k === 'ataque' || ef.k === 'dano' || ef.k === 'margem') && ef.tipo !== undefined && ef.tipo !== 'todos' && ef.tipo !== 'corpo' && ef.tipo !== 'distancia') return onde + ': tipo inválido';
+    if (ef.k === 'custoRitual') {
+      if (ef.elemento !== undefined && !elementoValido(ef.elemento)) return onde + ': elemento desconhecido';
+      if (ef.circulo !== undefined && ![].concat(ef.circulo).every(function (x) { return typeof x === 'number' && x >= 1 && x <= 4; })) return onde + ': círculo inválido';
+    }
+    return '';
+  }
+
+  function problemaQuando(q, onde) {
+    if (q === null || typeof q !== 'object' || Array.isArray(q) || !Object.keys(q).length) return onde + ': "quando" inválido';
+    const ok = ['pericia', 'atr', 'exceto', 'ataque', 'dano', 'resistencia'];
+    const estranha = Object.keys(q).find(function (k) { return ok.indexOf(k) === -1; });
+    if (estranha) return onde + ': "quando" desconhecido "' + estranha + '"';
+    if (q.pericia !== undefined && q.pericia !== 'todas' && !(Array.isArray(q.pericia) && q.pericia.length && q.pericia.every(idPericiaValido))) return onde + ': perícias inválidas';
+    if (q.atr !== undefined && !(Array.isArray(q.atr) && q.atr.length && q.atr.every(ehAtributoValido))) return onde + ': atributos inválidos';
+    if (q.exceto !== undefined && !(Array.isArray(q.exceto) && q.exceto.every(idPericiaValido))) return onde + ': exceções inválidas';
+    if (q.ataque !== undefined && ['corpo', 'distancia', 'todos'].indexOf(q.ataque) === -1) return onde + ': ataque inválido';
+    if (q.dano !== undefined && ['corpo', 'distancia', 'todos'].indexOf(q.dano) === -1) return onde + ': dano inválido';
+    return '';
+  }
+
+  /** Problemas de uma definição de efeitos (lista de frases; vazia = tudo certo). */
+  function validarEfeitos(chave, def) {
+    const p = [];
+    const nome = String(chave);
+    if (def === null || typeof def !== 'object' || Array.isArray(def)) return [nome + ': definição inválida'];
+    const permitidas = ['passivos', 'gastos', 'ativavel', 'usos', 'escolhas', 'formas'];
+    Object.keys(def).forEach(function (k) { if (permitidas.indexOf(k) === -1) p.push(nome + ': campo desconhecido "' + k + '"'); });
+    const escolhas = Array.isArray(def.escolhas) ? def.escolhas : [];
+    const idsEscolha = escolhas.map(function (e) { return e && e.id; });
+    if (def.escolhas !== undefined) {
+      if (!Array.isArray(def.escolhas)) p.push(nome + ': escolhas precisa ser lista');
+      else escolhas.forEach(function (e, i) {
+        const onde = nome + ' escolhas[' + i + ']';
+        if (!e || typeof e.id !== 'string' || !e.id || typeof e.rotulo !== 'string' || (e.tipo !== 'pericia' && e.tipo !== 'atributo') || !Array.isArray(e.opcoes) || !e.opcoes.length) p.push(onde + ': precisa de id, rotulo, tipo (pericia|atributo) e opcoes');
+        else if (!e.opcoes.every(e.tipo === 'pericia' ? idPericiaValido : ehAtributoValido)) p.push(onde + ': opção desconhecida');
+      });
+    }
+    function lista(campo, fn) {
+      if (def[campo] === undefined) return;
+      if (!Array.isArray(def[campo])) { p.push(nome + ': ' + campo + ' precisa ser lista'); return; }
+      def[campo].forEach(function (item, i) { const m = fn(item, nome + ' ' + campo + '[' + i + ']'); if (m) p.push(m); });
+    }
+    lista('passivos', function (ef, onde) { return problemaPassivo(ef, onde, idsEscolha); });
+    lista('gastos', function (g, onde) {
+      if (!g || typeof g !== 'object' || typeof g.id !== 'string' || !g.id) return onde + ': gasto precisa de id';
+      const q = problemaQuando(g.quando, onde); if (q) return q;
+      const c = problemaCondicao(g.se, onde); if (c) return c;
+      const vc = problemaValor(g.custo, onde + ' custo'); if (vc) return vc;
+      if (g.custoExtra !== undefined) { const ve = problemaValor(g.custoExtra, onde + ' custoExtra'); if (ve) return ve; }
+      if (g.unidades !== undefined) { const vu = problemaValor(g.unidades, onde + ' unidades'); if (vu) return vu; }
+      if (g.bonus === undefined && g.dados === undefined && g.dano === undefined) return onde + ': gasto sem bonus, dados nem dano';
+      if (g.bonus !== undefined) { const vb = problemaValor(g.bonus, onde + ' bonus'); if (vb) return vb; }
+      if (g.dano !== undefined) { const vd = problemaValor(g.dano, onde + ' dano'); if (vd) return vd; }
+      if (g.dados !== undefined && typeof g.dados !== 'number') return onde + ': dados precisa ser número';
+      return '';
+    });
+    if (def.ativavel !== undefined) {
+      const a = def.ativavel;
+      const onde = nome + ' ativavel';
+      if (a === null || typeof a !== 'object' || Array.isArray(a)) p.push(onde + ': inválido');
+      else {
+        const vc = problemaValor(a.custo, onde + ' custo'); if (vc) p.push(vc);
+        if (['cena', 'rodadas', 'manual'].indexOf(a.duracao) === -1) p.push(onde + ': duracao precisa ser cena, rodadas ou manual');
+        if (a.duracao === 'rodadas' && !(typeof a.rodadas === 'number' && a.rodadas >= 1)) p.push(onde + ': duracao "rodadas" precisa de rodadas');
+        const cs = problemaCondicao(a.se, onde); if (cs) p.push(cs);
+        if (!Array.isArray(a.passivos) || !a.passivos.length) p.push(onde + ': passivos precisa de uma lista');
+        else a.passivos.forEach(function (ef, i) { const m = problemaPassivo(ef, onde + ' passivos[' + i + ']', idsEscolha); if (m) p.push(m); });
+      }
+    }
+    lista('usos', function (u, onde) {
+      if (!u || typeof u !== 'object' || typeof u.id !== 'string' || !u.id) return onde + ': uso precisa de id';
+      if (['cura', 'dano', 'rolagem'].indexOf(u.tipo) === -1) return onde + ': tipo precisa ser cura, dano ou rolagem';
+      const vc = problemaValor(u.custo, onde + ' custo'); if (vc) return vc;
+      if (typeof u.rolar !== 'string' || !REGEX_DADOS.test(u.rolar)) return onde + ': "rolar" precisa ser uma fórmula de dados (ex.: 2d8+2)';
+      if (u.recupera !== undefined && ['pv', 'pe', 'san'].indexOf(u.recupera) === -1) return onde + ': recupera inválido';
+      if (u.perde !== undefined) {
+        if (u.perde === null || typeof u.perde !== 'object') return onde + ': perde inválido';
+        const ruim = Object.keys(u.perde).find(function (k) { return ['pv', 'pe', 'san'].indexOf(k) === -1 || typeof u.perde[k] !== 'string' || !REGEX_DADOS.test(u.perde[k]); });
+        if (ruim) return onde + ': perde.' + ruim + ' inválido';
+      }
+      if (u.elemento !== undefined && !elementoValido(u.elemento)) return onde + ': elemento desconhecido';
+      return '';
+    });
+    if (def.formas !== undefined) {
+      if (def.formas === null || typeof def.formas !== 'object' || Array.isArray(def.formas)) p.push(nome + ': formas inválido');
+      else Object.keys(def.formas).forEach(function (id) {
+        const f = def.formas[id];
+        if (['padrao', 'discente', 'verdadeira'].indexOf(id) === -1 || f === null || typeof f !== 'object') { p.push(nome + ' formas.' + id + ': inválida'); return; }
+        ['dano', 'cura'].forEach(function (c) {
+          if (f[c] !== undefined && (typeof f[c] !== 'string' || !REGEX_DADOS.test(f[c]))) p.push(nome + ' formas.' + id + '.' + c + ': fórmula de dados inválida');
+        });
+        Object.keys(f).forEach(function (c) { if (c !== 'dano' && c !== 'cura') p.push(nome + ' formas.' + id + ': campo desconhecido "' + c + '"'); });
+      });
+    }
+    return p;
+  }
+
+  /** Resumo dos efeitos para a tela: o que está valendo, o que dá para preparar, ativar ou usar e o que falta escolher. */
+  function estadoEfeitos(ficha) {
+    const r = efeitosDaFicha(ficha);
+    return {
+      carregado: temEfeitosCarregados(),
+      ativo: r.ativo,
+      origens: r.origens,
+      gastos: gastosDaFicha(ficha),
+      ativaveis: ativaveisDaFicha(ficha),
+      usos: usosDaFicha(ficha),
+      pendencias: pendenciasDeEfeitos(ficha),
+      fontes: fontesEfeitos(ficha).map(function (f) {
+        return { chave: f.chave, nome: f.nome, tipo: f.tipo, escolhas: escolhasDaFonte(f.def).map(function (e) {
+          return { id: e.id, rotulo: e.rotulo, tipo: e.tipo, opcoes: e.opcoes, valor: escolhaDeEfeito(ficha, f.chave, e.id) };
+        }) };
+      }),
+      rd: r.rd
+    };
+  }
+
+  /** Correções dos efeitos salvos na ficha: preparados, ativos e escolhas que não existem mais saem. */
+  function correcoesEfeitos(ficha) {
+    const lista = [];
+    if (!temEfeitosCarregados()) return lista; // sem o conteúdo carregado, nada é apagado
+    const fontes = fontesEfeitos(ficha);
+    const ativaveis = ativaveisDaFicha(ficha).map(function (a) { return a.chave; });
+    const gastos = gastosDaFicha(ficha);
+    const ativos = listaDeEfeitos(ficha, 'ativos');
+    const bons = ativos.filter(function (a) { return ativaveis.indexOf(a.chave) !== -1; });
+    if (bons.length !== ativos.length) lista.push({ caminho: 'efeitos.ativos', valor: bons });
+    const prep = listaDeEfeitos(ficha, 'preparados');
+    const prepBons = prep.filter(function (p) { return gastos.some(function (g) { return g.id === p.id; }); });
+    if (prepBons.length !== prep.length) lista.push({ caminho: 'efeitos.preparados', valor: prepBons });
+    const esc = listaDeEfeitos(ficha, 'escolhas');
+    const escBons = esc.filter(function (e) {
+      const f = fontes.find(function (x) { return x.chave === e.chave; });
+      const d = f && escolhasDaFonte(f.def).find(function (x) { return x.id === e.campo; });
+      return d && d.opcoes.indexOf(e.valor) !== -1;
+    });
+    if (escBons.length !== esc.length) lista.push({ caminho: 'efeitos.escolhas', valor: escBons });
+    return lista;
+  }
+
+  /* ------------------------------------------------------------------------
      Tudo de uma vez
      ------------------------------------------------------------------------ */
 
@@ -2872,7 +3657,8 @@ window.OP = window.OP || {};
       correcoesAtaques(ficha),
       correcoesConjuracao(ficha),
       correcoesCondicoes(ficha),
-      correcoesAlteracoesNex(ficha)
+      correcoesAlteracoesNex(ficha),
+      correcoesEfeitos(ficha)
     );
   }
 
@@ -2923,7 +3709,8 @@ window.OP = window.OP || {};
       habilidades: estadoHabilidades(ficha),
       conjuracao: estadoConjuracao(ficha),
       rituais: estadoRituais(ficha),
-      condicoes: estadoCondicoes(ficha)
+      condicoes: estadoCondicoes(ficha),
+      efeitos: estadoEfeitos(ficha)
     };
   }
 
@@ -3080,6 +3867,30 @@ window.OP = window.OP || {};
     contrasteWCAG: contrasteWCAG,
     retratoValido: retratoValido,
     correcoes: correcoes,
-    calcularTudo: calcularTudo
+    calcularTudo: calcularTudo,
+    // Efeitos automáticos de habilidades, poderes e rituais
+    validarEfeitos: validarEfeitos,
+    fontesEfeitos: fontesEfeitos,
+    efeitosDaFicha: efeitosDaFicha,
+    valorDeEfeito: valorDeEfeito,
+    gastosDaFicha: gastosDaFicha,
+    gastosParaTeste: gastosParaTeste,
+    efeitoDosPreparados: efeitoDosPreparados,
+    preparadosAposAlterar: preparadosAposAlterar,
+    custoDoGasto: custoDoGasto,
+    ativaveisDaFicha: ativaveisDaFicha,
+    novoEfeitoAtivo: novoEfeitoAtivo,
+    passarRodadaEfeitos: passarRodadaEfeitos,
+    fimDaCenaEfeitos: fimDaCenaEfeitos,
+    usosDaFicha: usosDaFicha,
+    bonusDeCura: bonusDeCura,
+    bonusEfeitosAtaque: bonusEfeitosAtaque,
+    resistenciaEfeitos: resistenciaEfeitos,
+    pendenciasDeEfeitos: pendenciasDeEfeitos,
+    ajusteCustoRitualEfeitos: ajusteCustoRitualEfeitos,
+    escolhasDaFonte: escolhasDaFonte,
+    escolhaDeEfeito: escolhaDeEfeito,
+    fonteDeEfeito: fonteDeEfeito,
+    temEfeitosCarregados: temEfeitosCarregados
   };
 })(window.OP);

@@ -582,6 +582,54 @@ window.OP = window.OP || {};
     return criarComMolde(habilidadePadrao, 'hab', dados);
   }
 
+  function semAcentoMinusculo(texto) {
+    return String(texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  }
+
+  /**
+   * Mantém na lista de habilidades a da origem e as da trilha (ids "auto-…", ver OP.calc.habilidadesAutomaticas):
+   * entram sozinhas ao escolher a origem ou alcançar o NEX da trilha e saem quando a origem/trilha muda
+   * ou o NEX cai abaixo do marco. Uma habilidade que a pessoa já tinha com a mesma fonte e nome é adotada
+   * (vira automática, mantendo o que ela escreveu). Devolve true se a lista mudou.
+   */
+  function sincronizarHabilidadesAutomaticas(ficha) {
+    const alvo = ficha || api.ficha;
+    if (!alvo || !Array.isArray(alvo.habilidades)) return false;
+    const desejadas = OP.calc.habilidadesAutomaticas(alvo);
+    const ids = Object.create(null);
+    desejadas.forEach(function (d) { ids[d.id] = d; });
+    let mudou = false;
+    const lista = [];
+    alvo.habilidades.forEach(function (h) {
+      if (h && typeof h.id === 'string' && h.id.indexOf('auto-') === 0 && !ids[h.id]) { mudou = true; return; } // saiu
+      lista.push(h);
+    });
+    desejadas.forEach(function (d) {
+      const existente = lista.find(function (h) { return h && h.id === d.id; });
+      if (existente) {
+        if (d.catalogo && existente.catalogo !== d.catalogo) {
+          lista[lista.indexOf(existente)] = Object.assign({}, existente, { catalogo: d.catalogo });
+          mudou = true;
+        }
+        return;
+      }
+      const alvoNome = semAcentoMinusculo(d.nome);
+      const adotada = lista.find(function (h) {
+        return h && h.fonte === d.fonte && !(typeof h.id === 'string' && h.id.indexOf('auto-') === 0) && semAcentoMinusculo(h.nome) === alvoNome;
+      });
+      if (adotada) {
+        lista[lista.indexOf(adotada)] = Object.assign({}, adotada, { id: d.id, catalogo: d.catalogo || adotada.catalogo });
+      } else {
+        const nova = novaHabilidade({ id: d.id, nome: d.nome, fonte: d.fonte, catalogo: d.catalogo });
+        if (d.fonte === 'origem') lista.unshift(nova); // a da origem fica sempre na frente
+        else lista.push(nova);
+      }
+      mudou = true;
+    });
+    if (mudou) gravarEm(alvo, 'habilidades', lista, true);
+    return mudou;
+  }
+
   /** Condição ativa nova (id do catálogo ou "personalizada"); o uid é sempre novo. */
   function novaCondicao(dados) {
     const condicao = mesclarComPadrao(condicaoAtivaPadrao(), dados);
@@ -1365,6 +1413,7 @@ window.OP = window.OP || {};
     novoItem: novoItem,
     novoAtaque: novoAtaque,
     novaHabilidade: novaHabilidade,
+    sincronizarHabilidadesAutomaticas: sincronizarHabilidadesAutomaticas,
     novoRitual: novoRitual,
     novaCondicao: novaCondicao,
     novaPessoa: novaPessoa,

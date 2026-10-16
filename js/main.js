@@ -16,11 +16,13 @@ window.OP = window.OP || {};
    * o ciclo de novo. Devolve true se algo mudou.
    */
   function aplicarCorrecoes(ficha) {
+    // Habilidade da origem e da trilha entram e saem sozinhas (antes das correções, que olham a lista final)
+    const sincronizou = OP.state.sincronizarHabilidadesAutomaticas(ficha);
     const correcoes = OP.calc.correcoes(ficha);
     correcoes.forEach(function (correcao) {
       OP.state.atualizar(correcao.caminho, correcao.valor, { silencioso: true });
     });
-    return correcoes.length > 0;
+    return sincronizou || correcoes.length > 0;
   }
 
   /** Corrige limites, recalcula os valores derivados e redesenha a tela. */

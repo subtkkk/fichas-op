@@ -4088,9 +4088,7 @@ body {
 .trilha__habilidade {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  grid-template-areas:
-    "marco nome  situacao"
-    "botao botao botao";
+  grid-template-areas: "marco nome situacao";
   align-items: center;
   gap: 4px 10px;
   padding: 8px 10px;
@@ -4129,11 +4127,6 @@ body {
 .trilha__habilidade--bloqueada .trilha__nome,
 .trilha__habilidade--bloqueada .trilha__situacao {
   color: var(--cor-texto-fraco);
-}
-
-.trilha__habilidade .identidade__adicionar {
-  grid-area: botao;
-  justify-self: start;
 }
 
 .trilha__versatilidade {

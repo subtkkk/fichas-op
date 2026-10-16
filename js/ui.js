@@ -2730,6 +2730,7 @@ window.OP = window.OP || {};
           '</div>' +
           '<div class="habilidade__rodape">' +
             '<button type="button" class="botao-texto habilidade__editar" data-editar-habilidade aria-expanded="false">Editar</button>' +
+            '<span class="habilidade__auto" data-hab-auto hidden></span>' +
             '<button type="button" class="botao-texto" data-remover-habilidade>Remover habilidade</button>' +
           '</div>' +
         '</div>' +
@@ -2776,6 +2777,8 @@ window.OP = window.OP || {};
         detalhes: artigo.querySelector('.habilidade__detalhes'),
         leitura: artigo.querySelector('[data-hab-leitura]'),
         editar: artigo.querySelector('[data-editar-habilidade]'),
+        remover: artigo.querySelector('[data-remover-habilidade]'),
+        auto: artigo.querySelector('[data-hab-auto]'),
         leituraAssinatura: null,
         campoNome: artigo.querySelector('[data-hab-campo-nome]'),
         dt: artigo.querySelector('[data-hab-dt]')
@@ -2806,7 +2809,14 @@ window.OP = window.OP || {};
       p.textContent = texto;
       return p;
     }
-    if (t && OP.uiLivro && OP.uiLivro.criarTextoLivro) filhos.push(OP.uiLivro.criarTextoLivro(habilidade.catalogo));
+    if (t && OP.uiLivro && OP.uiLivro.criarTextoLivro) {
+      // Origem: o texto do livro é da origem toda; aqui só o efeito do poder
+      const efeito = habilidade.fonte === 'origem' && OP.uiLivro.blocosDoTexto
+        ? OP.uiLivro.blocosDoTexto(t.corpo).blocos.find(function (b) { return b.rotulo === 'Efeito do poder'; })
+        : null;
+      if (efeito) filhos.push(paragrafo('habilidade__leitura-linha', efeito.texto));
+      else filhos.push(OP.uiLivro.criarTextoLivro(habilidade.catalogo));
+    }
     if (prerequisito) {
       const p = paragrafo('habilidade__leitura-linha', '');
       const rotulo = document.createElement('strong');
@@ -2862,6 +2872,11 @@ window.OP = window.OP || {};
       const textoEditar = editando ? 'Concluir edição' : 'Editar';
       if (el.editar.textContent !== textoEditar) el.editar.textContent = textoEditar;
       if (el.editar.getAttribute('aria-expanded') !== String(editando)) el.editar.setAttribute('aria-expanded', String(editando));
+      // Habilidade que veio sozinha da origem ou da trilha: some o "Remover" (ela segue a ficha)
+      const automatica = String(habilidade.id).indexOf('auto-') === 0;
+      if (el.remover.hidden !== automatica) el.remover.hidden = automatica;
+      if (el.auto.hidden === automatica) el.auto.hidden = !automatica;
+      definirTexto(el.auto, automatica ? 'Vem sozinha ' + (habilidade.fonte === 'origem' ? 'da origem' : 'da trilha') : '');
       desenharLeituraHabilidade(el, habilidade);
 
       const casaFonte = filtrosHabilidades.fonte === 'todas' || habilidade.fonte === filtrosHabilidades.fonte;

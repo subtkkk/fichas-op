@@ -284,7 +284,50 @@ window.OP = window.OP || {};
         const h = OP.state.novaHabilidade({ nome: 'X', catalogo: 'chave-x' });
         const rt = OP.state.novoRitual({ nome: 'Y', catalogo: 'chave-y' });
         return [h.catalogo, rt.catalogo, h.descricao === '', rt.formas.padrao.cura === ''].join('|');
-      }, esperado: 'chave-x|chave-y|true|true' }
+      }, esperado: 'chave-x|chave-y|true|true' },
+      { nome: 'E12 · Origem e trilha: as habilidades entram sozinhas (origem + marcos da trilha já liberados)', obtido: function () {
+        const f = OP.state.criarFichaVazia();
+        Object.assign(f.identificacao, { classe: 'combatente', origem: 'academico', trilha: 'combatente-aniquilador', nex: 40 });
+        OP.state.sincronizarHabilidadesAutomaticas(f);
+        return f.habilidades.map(function (h) { return h.fonte + ':' + h.nome; }).join('|');
+      }, esperado: 'origem:Saber é Poder|trilha:A Favorita|trilha:Técnica Secreta' },
+      { nome: 'E12 · Habilidades automáticas: repetir não muda nada; NEX menor tira o marco; trocar a origem troca a habilidade', obtido: function () {
+        const f = OP.state.criarFichaVazia();
+        Object.assign(f.identificacao, { classe: 'combatente', origem: 'academico', trilha: 'combatente-aniquilador', nex: 40 });
+        OP.state.sincronizarHabilidadesAutomaticas(f);
+        const repetiu = OP.state.sincronizarHabilidadesAutomaticas(f);
+        f.identificacao.nex = 10;
+        OP.state.sincronizarHabilidadesAutomaticas(f);
+        const nexBaixo = f.habilidades.length;
+        f.identificacao.origem = 'amigo-dos-animais';
+        OP.state.sincronizarHabilidadesAutomaticas(f);
+        const origem = f.habilidades.filter(function (h) { return h.fonte === 'origem'; });
+        return [repetiu, nexBaixo, origem.length, origem[0].nome !== 'Saber é Poder', f.habilidades.length].join('|');
+      }, esperado: 'false|2|1|true|2' },
+      { nome: 'E12 · Habilidade que a pessoa já tinha (mesma fonte e nome) é adotada com a descrição; poderes comuns não são tocados', obtido: function () {
+        const f = OP.state.criarFichaVazia();
+        Object.assign(f.identificacao, { classe: 'combatente', origem: 'academico', nex: 5 });
+        f.habilidades.push(OP.state.novaHabilidade({ nome: 'saber e poder', fonte: 'origem', descricao: 'minha nota' }));
+        f.habilidades.push(OP.state.novaHabilidade({ nome: 'Ataque Especial', fonte: 'poder' }));
+        OP.state.sincronizarHabilidadesAutomaticas(f);
+        const o = f.habilidades.find(function (h) { return h.fonte === 'origem'; });
+        return [f.habilidades.length, o.id.indexOf('auto-origem-') === 0, o.descricao, f.habilidades.some(function (h) { return h.nome === 'Ataque Especial'; })].join('|');
+      }, esperado: '2|true|minha nota|true' },
+      { nome: 'E12 · Habilidades automáticas: a chave do livro é ligada quando o conteúdo chega e não some quando ele sai', obtido: function () {
+        const f = OP.state.criarFichaVazia();
+        Object.assign(f.identificacao, { classe: 'combatente', origem: 'academico', nex: 5 });
+        OP.state.sincronizarHabilidadesAutomaticas(f);
+        const antes = f.habilidades[0].catalogo;
+        const cat = OP.data.catalogo;
+        OP.data.catalogo = { origens: { academico: 'academico-livro' }, trilhas: {}, classe: {}, poderes: [], rituais: [] };
+        try {
+          OP.state.sincronizarHabilidadesAutomaticas(f);
+          const durante = f.habilidades[0].catalogo;
+          OP.data.catalogo = { origens: {}, trilhas: {}, classe: {}, poderes: [], rituais: [] };
+          OP.state.sincronizarHabilidadesAutomaticas(f);
+          return [antes === '', durante, f.habilidades[0].catalogo].join('|');
+        } finally { OP.data.catalogo = cat; }
+      }, esperado: 'true|academico-livro|academico-livro' }
     ];
   }
 

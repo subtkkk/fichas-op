@@ -4426,9 +4426,7 @@ body.arrastando-arquivo::after {
 .trilha__habilidade {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  grid-template-areas:
-    "marco nome  situacao"
-    "botao botao botao";
+  grid-template-areas: "marco nome situacao";
   align-items: center;
   gap: 6px 10px;
   padding: 9px 10px 9px 12px;
@@ -4465,11 +4463,6 @@ body.arrastando-arquivo::after {
 .trilha__habilidade--bloqueada .trilha__nome,
 .trilha__habilidade--bloqueada .trilha__situacao {
   color: var(--papel-4);
-}
-
-.trilha__habilidade .identidade__adicionar {
-  grid-area: botao;
-  justify-self: start;
 }
 
 .trilha__versatilidade {
@@ -6608,6 +6601,16 @@ body.arrastando-arquivo::after {
 
 .habilidade__editar {
   color: var(--papel-3);
+}
+
+.habilidade__auto {
+  font: 500 0.6875rem/1.4 var(--fonte-mono);
+  letter-spacing: 0.06em;
+  color: var(--papel-3);
+}
+
+.habilidade__auto[hidden] {
+  display: none;
 }
 
 .habilidade__editar:hover,

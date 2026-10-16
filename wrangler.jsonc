@@ -19,7 +19,7 @@
   ],
   "vars": {
     // Não são segredos: o ID público do aplicativo do Discord e o SEU ID de usuário (admin)
-    "1560477841404071998": "",
-    "722951622900187248": ""
+    "DISCORD_CLIENT_ID": "1560477841404071998",
+    "ADMIN_DISCORD_ID": "722951622900187248"
   }
 }

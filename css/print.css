@@ -1053,7 +1053,8 @@ input[type="checkbox"] {
   flex: 0 1 auto;
 }
 
-.forma .forma__dano {
+.forma .forma__dano,
+.forma .forma__cura {
   width: 6em !important;
 }
 

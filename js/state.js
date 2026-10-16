@@ -31,7 +31,9 @@ window.OP = window.OP || {};
   // v10: condicoes (ativas, turnos morrendo, bônus do limite, insano, aplicar efeitos),
   //     descanso e biografia (retrato, textos, aliados, rivais e diário);
   //     "descricao" virou "biografia" (anotacoes → notas)
-  const VERSAO_MODELO = 10;
+  // v11: habilidades e rituais com "catalogo" (chave do livro, para os efeitos automáticos),
+  //     forma de ritual com "cura" e a seção "efeitos" (ativos, preparados e escolhas)
+  const VERSAO_MODELO = 11;
   // Segmentos de caminho e chaves recusados, para nunca mexer em protótipos.
   const CHAVES_PROIBIDAS = ['__proto__', 'prototype', 'constructor'];
   // Ids de fichas e de itens de lista: letras, números, "_" e "-" (até 64).
@@ -50,6 +52,9 @@ window.OP = window.OP || {};
   const MAX_PESSOAS = 100; // aliados e rivais
   const LIMITES_LISTA = {
     'condicoes.ativas': MAX_CONDICOES,
+    'efeitos.ativos': 100,
+    'efeitos.preparados': 100,
+    'efeitos.escolhas': 300,
     'biografia.diario': MAX_DIARIO,
     'biografia.aliados': MAX_PESSOAS,
     'biografia.rivais': MAX_PESSOAS
@@ -300,6 +305,7 @@ window.OP = window.OP || {};
       pagina: '',
       atributoDT: null,
       dtBonus: 0,
+      catalogo: '',               // chave do livro (data/catalogo.js); liga a habilidade aos efeitos automáticos
       descricao: ''
     };
   }
@@ -313,8 +319,8 @@ window.OP = window.OP || {};
    * efeito: texto do usuário; dano: fórmula opcional ("2d6+3").
    */
   function formaPadrao(opcional) {
-    if (!opcional) return { efeito: '', dano: '' };
-    return { ativa: false, custoAdicional: 0, requerCirculo: null, requerAfinidade: false, efeito: '', dano: '' };
+    if (!opcional) return { efeito: '', dano: '', cura: '' };
+    return { ativa: false, custoAdicional: 0, requerCirculo: null, requerAfinidade: false, efeito: '', dano: '', cura: '' };
   }
 
   /**
@@ -342,6 +348,7 @@ window.OP = window.OP || {};
       resistenciaNotas: '',
       pagina: '',
       notas: '',
+      catalogo: '',               // chave do livro (data/catalogo.js); liga o ritual aos efeitos automáticos
       formas: {
         padrao: formaPadrao(false),
         discente: formaPadrao(true),
@@ -414,6 +421,21 @@ window.OP = window.OP || {};
     };
   }
 
+  /** Efeito de habilidade, poder ou ritual ligado (data/efeitos*.js). rodadas: null (sem contagem) ou 1 a 99. */
+  function efeitoAtivoPadrao() {
+    return { id: '', chave: '', forma: '', rodadas: null, ateFimCena: false };
+  }
+
+  /** Gasto opcional preparado para o próximo teste que combinar com ele. */
+  function efeitoPreparadoPadrao() {
+    return { id: '', chave: '', gasto: '', unidades: 1 };
+  }
+
+  /** Escolha da pessoa usada por um efeito (perícia ou atributo). */
+  function efeitoEscolhaPadrao() {
+    return { id: '', chave: '', campo: '', valor: '' };
+  }
+
   /** Aliado ou rival da biografia. */
   function pessoaPadrao() {
     return { id: '', nome: '', nota: '' };
@@ -482,6 +504,11 @@ window.OP = window.OP || {};
       rituais: [],                // lista de rituais (ver ritualPadrao)
       conjuracao: novaConjuracao(),
 
+      // Efeitos automáticos de habilidades, poderes e rituais (data/efeitos*.js; js/calc.js).
+      // ativos: efeitos ligados { id, chave, rodadas, ateFimCena }; preparados: gastos opcionais
+      // para o próximo teste { id, chave, gasto, unidades }; escolhas: { id, chave, campo, valor }.
+      efeitos: { ativos: [], preparados: [], escolhas: [] },
+
       // Etapa 10: condições e estados. turnosMorrendo conta os turnos já iniciados
       // com PV 0; bonusLimiteMorrendo soma ao limite do config (características).
       condicoes: {
@@ -518,6 +545,9 @@ window.OP = window.OP || {};
     habilidades: habilidadePadrao,
     rituais: ritualPadrao,
     'condicoes.ativas': condicaoAtivaPadrao,
+    'efeitos.ativos': efeitoAtivoPadrao,
+    'efeitos.preparados': efeitoPreparadoPadrao,
+    'efeitos.escolhas': efeitoEscolhaPadrao,
     'biografia.aliados': pessoaPadrao,
     'biografia.rivais': pessoaPadrao,
     'biografia.diario': entradaDiarioPadrao

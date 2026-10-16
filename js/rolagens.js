@@ -87,14 +87,50 @@ window.OP = window.OP || {};
       (dano.ok ? dano.total : '1d6') + ' pontos de dano de Energia.';
   }
 
+  /* ---------- Gastos opcionais preparados (efeitos automáticos de poderes) ---------- */
+
+  /**
+   * Cobra os gastos preparados que valem neste teste e tira a preparação deles.
+   * Devolve { ok, prep, peAtual } ou { ok: false, erro } (PE insuficiente: nada muda e o teste não rola).
+   */
+  function cobrarPreparados(ficha, contexto) {
+    const prep = OP.calc.efeitoDosPreparados(ficha, contexto);
+    if (!prep.itens.length) return { ok: true, prep: prep, peAtual: null };
+    let peAtual = null;
+    if (prep.custo > 0) {
+      const gasto = OP.state.gastarPE(prep.custo, ficha);
+      if (!gasto.ok) {
+        return { ok: false, erro: 'PE insuficiente para ' + prep.itens.map(function (i) { return i.nome; }).join(' e ') + ' (' + prep.custo + ' PE).' };
+      }
+      peAtual = gasto.peAtual;
+    }
+    const resto = ((ficha.efeitos && ficha.efeitos.preparados) || []).filter(function (p) { return prep.ids.indexOf(p.id) === -1; });
+    if (ficha === OP.state.ficha) OP.state.atualizar('efeitos.preparados', resto);
+    else if (ficha.efeitos) ficha.efeitos.preparados = resto;
+    return { ok: true, prep: prep, peAtual: peAtual };
+  }
+
+  /** Marca no resultado o que os poderes preparados fizeram (para a tela e o histórico). */
+  function marcarPreparados(resultado, cobro) {
+    if (!cobro.prep.itens.length) return;
+    resultado.poderes = cobro.prep.itens.map(function (i) { return i.nome + (i.unidades > 1 ? ' ×' + i.unidades : ''); });
+    resultado.poderesCusto = cobro.prep.custo;
+    resultado.poderesDados = cobro.prep.dados;
+  }
+
   /** Teste de perícia: { titulo, resultados, escolhido, modo, bonus, total, ... }. */
   function rolarPericia(ficha, idPericia, opcoes) {
     const o = normalizarOpcoes(opcoes);
-    const teste = OP.calc.testePericia(ficha, idPericia, o.modDados);
     const nome = nomePericia(idPericia);
+    const cobro = cobrarPreparados(ficha, { tipo: 'pericia', idPericia: idPericia });
+    if (!cobro.ok) return { ok: false, tipo: 'teste', titulo: nome, erro: cobro.erro };
+    o.modDados += cobro.prep.dados;
+    const teste = OP.calc.testePericia(ficha, idPericia, o.modDados);
     const partes = [{ rotulo: nome, valor: teste.bonus }];
+    if (cobro.prep.bonus) partes.push({ rotulo: 'poderes', valor: cobro.prep.bonus });
     if (o.bonusExtra) partes.push({ rotulo: 'extra', valor: o.bonusExtra });
     const resultado = montarTeste(nome, teste.dados, partes, o);
+    marcarPreparados(resultado, cobro);
     resultado.subtipo = 'pericia';
     resultado.condicoesDados = OP.calc.dadosCondicoesPericia(ficha, idPericia); // −1 = "condições: −1d20"
     marcarAlteracoes(ficha, resultado, OP.calc.dadosAlteracoesPericia(ficha, idPericia));
@@ -106,10 +142,15 @@ window.OP = window.OP || {};
     const atributo = OP.data.atributos.find(function (a) { return a.id === idAtributo; });
     if (!atributo) return { ok: false, tipo: 'teste', titulo: 'Atributo', erro: 'Atributo desconhecido.' };
     const o = normalizarOpcoes(opcoes);
+    const cobro = cobrarPreparados(ficha, { tipo: 'atributo', atributo: idAtributo });
+    if (!cobro.ok) return { ok: false, tipo: 'teste', titulo: 'Teste de ' + atributo.nome, erro: cobro.erro };
+    o.modDados += cobro.prep.dados;
     const teste = OP.calc.testeAtributo(ficha, idAtributo, o.modDados);
     const partes = [];
+    if (cobro.prep.bonus) partes.push({ rotulo: 'poderes', valor: cobro.prep.bonus });
     if (o.bonusExtra) partes.push({ rotulo: 'extra', valor: o.bonusExtra });
     const resultado = montarTeste('Teste de ' + atributo.nome, teste.dados, partes, o);
+    marcarPreparados(resultado, cobro);
     resultado.subtipo = 'atributo';
     marcarAlteracoes(ficha, resultado, OP.calc.dadosAlteracoesAtributo(ficha, idAtributo));
     return resultado;
@@ -132,20 +173,27 @@ window.OP = window.OP || {};
       return { ok: false, bloqueado: true, tipo: 'teste', titulo: titulo, erro: 'Sem munição. Recarregue ou ajuste o contador.' };
     }
 
+    const tipoAtaque = ataque.pericia === 'luta' ? 'corpo' : 'distancia';
+    const cobro = cobrarPreparados(ficha, { tipo: 'ataque', idPericia: ataque.pericia, ataque: tipoAtaque });
+    if (!cobro.ok) return { ok: false, tipo: 'teste', titulo: titulo, erro: cobro.erro };
+    o.modDados += cobro.prep.dados;
     const teste = OP.calc.ataqueTeste(ficha, ataque, o.modDados);
     const bonusPericia = OP.calc.periciaBonus(ficha, ataque.pericia);
     const partes = [{ rotulo: nomePericia(ataque.pericia), valor: bonusPericia }];
     const outros = teste.bonus - bonusPericia;
     if (outros) partes.push({ rotulo: 'outros', valor: outros });
+    if (cobro.prep.bonus) partes.push({ rotulo: 'poderes', valor: cobro.prep.bonus });
     if (o.bonusExtra) partes.push({ rotulo: 'extra', valor: o.bonusExtra });
 
     const resultado = montarTeste(titulo, teste.dados, partes, o);
+    marcarPreparados(resultado, cobro);
     resultado.subtipo = 'ataque';
     resultado.condicoesDados = OP.calc.dadosCondicoesAtaque(ficha, ataque);
     marcarAlteracoes(ficha, resultado, OP.calc.dadosAlteracoesPericia(ficha, ataque.pericia));
     resultado.idAtaque = ataque.id;
-    resultado.critMargem = inteiro(ataque.critMargem);
-    resultado.critico = OP.calc.ehCritico(resultado.escolhido, ataque.critMargem);
+    const margemEfeitos = OP.calc.bonusEfeitosAtaque(ficha, ataque).margem;
+    resultado.critMargem = inteiro(ataque.critMargem) - margemEfeitos;
+    resultado.critico = OP.calc.ehCritico(resultado.escolhido, resultado.critMargem);
     resultado.municaoRestante = ataque.usaMunicao === true ? municao - 1 : null;
     return resultado;
   }
@@ -158,6 +206,9 @@ window.OP = window.OP || {};
     const o = normalizarOpcoes(opcoes);
     const mult = o.critico ? Math.max(2, inteiro(ataque.critMult)) : 1;
     const titulo = 'Dano: ' + (String(ataque.nome || '').trim() || 'sem nome');
+    const tipoAtaque = ataque.pericia === 'luta' ? 'corpo' : 'distancia';
+    const cobro = cobrarPreparados(ficha, { tipo: 'dano', ataque: tipoAtaque });
+    if (!cobro.ok) return { ok: false, tipo: 'dano', titulo: titulo, erro: cobro.erro };
     const formula = OP.dados.rolarFormula(ataque.dano, { multDados: mult });
     if (!formula.ok) {
       return { ok: false, tipo: 'dano', titulo: titulo, erro: 'Fórmula de dano inválida: ' + formula.erro };
@@ -169,7 +220,12 @@ window.OP = window.OP || {};
       termos.push({ tipo: 'fixo', rotulo: 'bônus de dano', sinal: danoBonus < 0 ? -1 : 1, qtd: null, faces: null, resultados: [], valor: danoBonus });
       total += danoBonus;
     }
-    return {
+    const danoEfeitos = OP.calc.bonusEfeitosAtaque(ficha, ataque).dano + cobro.prep.dano;
+    if (danoEfeitos) {
+      termos.push({ tipo: 'fixo', rotulo: 'poderes', sinal: danoEfeitos < 0 ? -1 : 1, qtd: null, faces: null, resultados: [], valor: danoEfeitos });
+      total += danoEfeitos;
+    }
+    const resultadoDano = {
       ok: true,
       tipo: 'dano',
       titulo: titulo,
@@ -180,6 +236,8 @@ window.OP = window.OP || {};
       multDados: mult,
       tipoDano: ataque.tipoDano || ''
     };
+    marcarPreparados(resultadoDano, cobro);
+    return resultadoDano;
   }
 
   /** Fórmula digitada pelo usuário ("2d6+3"). */
@@ -283,7 +341,11 @@ window.OP = window.OP || {};
     }
     const gasto = OP.state.aplicarCustos({ pe: plano.pe, san: plano.san, permanente: plano.permanente }, ficha);
     const resultado = Object.assign({ titulo: titulo, forma: idForma, dt: dt, medo: plano.medo }, gasto);
-    if (gasto.ok) resultado.evento = eventoDaFicha(ficha, titulo, detalheGasto(gasto) + ' · DT ' + dt);
+    if (gasto.ok) {
+      const ligado = ligarEfeitoDoRitual(ficha, ritual, idForma);
+      resultado.evento = eventoDaFicha(ficha, titulo, detalheGasto(gasto) + ' · DT ' + dt + (ligado ? ' · efeito ligado' : ''));
+      resultado.efeitoLigado = ligado;
+    }
     return resultado;
   }
 
@@ -300,13 +362,20 @@ window.OP = window.OP || {};
       if (texto === '') return { ok: false, tipo: 'dano', titulo: titulo, erro: 'Esta forma não tem dano. Preencha o campo "Dano", como 2d6+3.' };
       const formula = OP.dados.rolarFormula(texto);
       if (!formula.ok) return { ok: false, tipo: 'dano', titulo: titulo, erro: 'Dano inválido: ' + formula.erro };
+      const termos = formula.termos.slice();
+      let total = formula.total;
+      const extra = OP.calc.efeitosDaFicha(ficha).danoRitual;
+      if (extra) {
+        termos.push({ tipo: 'fixo', rotulo: 'poderes', sinal: extra < 0 ? -1 : 1, qtd: null, faces: null, resultados: [], valor: extra });
+        total += extra;
+      }
       return {
         ok: true,
         tipo: 'dano',
         titulo: titulo,
         formula: texto,
-        termos: formula.termos,
-        total: formula.total,
+        termos: termos,
+        total: total,
         critico: false,
         multDados: 1,
         tipoDano: ritual.elemento || ''
@@ -314,6 +383,147 @@ window.OP = window.OP || {};
     } catch (erro) {
       return { ok: false, tipo: 'dano', titulo: titulo, erro: 'Não foi possível rolar este dano.' };
     }
+  }
+
+  /** Rola a cura de uma forma do ritual (soma os bônus de cura dos poderes). Não aplica: o alvo pode ser outro ser. */
+  function rolarCuraRitual(ficha, ritual, idForma) {
+    const titulo = 'Cura: ' + nomeOuPadrao(ritual && ritual.nome, 'ritual sem nome') + ' (' + nomeForma(idForma) + ')';
+    try {
+      const forma = OP.calc.formaDoRitual(ritual, idForma);
+      if (!forma) return { ok: false, tipo: 'cura', titulo: titulo, erro: 'Esta forma não está ativa neste ritual.' };
+      const texto = String(forma.cura || '').trim();
+      if (texto === '') return { ok: false, tipo: 'cura', titulo: titulo, erro: 'Esta forma não tem cura.' };
+      const formula = OP.dados.rolarFormula(texto);
+      if (!formula.ok) return { ok: false, tipo: 'cura', titulo: titulo, erro: 'Fórmula inválida: ' + formula.erro };
+      const termos = formula.termos.slice();
+      let total = formula.total;
+      const e = OP.calc.efeitosDaFicha(ficha);
+      const extra = e.cura + e.curaRitual;
+      if (extra) {
+        termos.push({ tipo: 'fixo', rotulo: 'poderes', sinal: extra < 0 ? -1 : 1, qtd: null, faces: null, resultados: [], valor: extra });
+        total += extra;
+      }
+      return { ok: true, tipo: 'dano', titulo: titulo, formula: texto, termos: termos, total: total, critico: false, multDados: 1, tipoDano: '', cura: true };
+    } catch (erro) {
+      return { ok: false, tipo: 'cura', titulo: titulo, erro: 'Não foi possível rolar esta cura.' };
+    }
+  }
+
+  /* ---------- Efeitos ativáveis e usos (poderes com efeito automático) ---------- */
+
+  let contadorEfeitos = 0;
+  function idDeEfeito() {
+    contadorEfeitos += 1;
+    return 'ef-' + Date.now().toString(36) + '-' + contadorEfeitos;
+  }
+
+  function gravarLista(ficha, caminho, valor) {
+    if (ficha === OP.state.ficha) OP.state.atualizar(caminho, valor);
+    else {
+      const chave = caminho.split('.')[1];
+      ficha.efeitos[chave] = valor;
+    }
+  }
+
+  /** Liga o efeito de um ritual conjurado (se ele tem `ativavel`); troca o que já estiver ligado. */
+  function ligarEfeitoDoRitual(ficha, ritual, idForma) {
+    const chave = ritual && ritual.catalogo;
+    if (!chave || !OP.calc.ativaveisDaFicha(ficha).some(function (a) { return a.chave === chave; })) return false;
+    const entrada = OP.calc.novoEfeitoAtivo(ficha, chave, idDeEfeito(), idForma);
+    if (!entrada) return false;
+    const resto = ((ficha.efeitos && ficha.efeitos.ativos) || []).filter(function (a) { return a.chave !== chave; });
+    gravarLista(ficha, 'efeitos.ativos', resto.concat([entrada]));
+    return true;
+  }
+
+  /** Liga um efeito ativável (gasta o PE dele). Devolve { ok, titulo, motivo?, evento? }. */
+  function ativarEfeito(ficha, chave) {
+    const a = OP.calc.ativaveisDaFicha(ficha).find(function (x) { return x.chave === chave; });
+    if (!a) return { ok: false, titulo: 'Efeito', motivo: 'Este efeito não está disponível nesta ficha.' };
+    const titulo = 'Ativar: ' + a.nome;
+    if (a.ligado) return { ok: false, titulo: titulo, motivo: 'Já está ativo.' };
+    const gasto = a.custo > 0 ? OP.state.gastarPE(OP.calc.custoComCondicoes(ficha, a.custo), ficha) : { ok: true, gasto: 0, peAtual: null };
+    if (!gasto.ok) return Object.assign({ titulo: titulo }, gasto);
+    const entrada = OP.calc.novoEfeitoAtivo(ficha, chave, idDeEfeito());
+    gravarLista(ficha, 'efeitos.ativos', ((ficha.efeitos && ficha.efeitos.ativos) || []).concat([entrada]));
+    const resultado = Object.assign({ titulo: titulo }, gasto);
+    resultado.evento = eventoDaFicha(ficha, titulo, a.custo > 0 ? detalheGasto(gasto) : 'sem custo de PE');
+    return resultado;
+  }
+
+  /** Desliga um efeito ativo (sem devolver PE). */
+  function desativarEfeito(ficha, chave) {
+    const lista = ((ficha.efeitos && ficha.efeitos.ativos) || []);
+    const resto = lista.filter(function (a) { return a.chave !== chave; });
+    if (resto.length === lista.length) return false;
+    gravarLista(ficha, 'efeitos.ativos', resto);
+    eventoDaFicha(ficha, 'Efeito encerrado: ' + nomeOuPadrao(OP.calc.ativaveisDaFicha(ficha).concat(OP.calc.usosDaFicha(ficha)).filter(function (x) { return x.chave === chave; }).map(function (x) { return x.nome; })[0], 'efeito'), '');
+    return true;
+  }
+
+  function mudarRecurso(ficha, id, delta) {
+    const est = OP.calc.estadoRecurso(ficha, id);
+    if (est.atual === null || est.max === null) return null;
+    const novo = Math.max(0, Math.min(est.max, est.atual + delta));
+    if (ficha === OP.state.ficha) OP.state.atualizar('recursos.' + id + '.atual', novo);
+    else ficha.recursos[id].atual = novo;
+    return novo;
+  }
+
+  /**
+   * Usa um "uso" de poder (cura, dano ou rolagem com dados fixos): gasta o PE, rola, soma os bônus de cura
+   * e aplica o que o uso diz (recupera PV/PE/SAN; perde PV/PE/SAN). Devolve um resultado de fórmula.
+   */
+  function usarEfeito(ficha, idUso) {
+    const uso = OP.calc.usosDaFicha(ficha).find(function (u) { return u.id === idUso; });
+    if (!uso) return { ok: false, tipo: 'formula', titulo: 'Poder', erro: 'Este poder não está disponível nesta ficha.' };
+    const titulo = uso.fonte + (uso.nome !== uso.fonte ? ': ' + uso.nome : '');
+    const formula = OP.dados.rolarFormula(uso.rolar);
+    if (!formula.ok) return { ok: false, tipo: 'formula', titulo: titulo, erro: 'Fórmula inválida: ' + formula.erro };
+    const termos = formula.termos.slice();
+    let total = formula.total;
+    if (uso.tipo === 'cura') {
+      const extra = OP.calc.bonusDeCura(ficha);
+      if (extra) {
+        termos.push({ tipo: 'fixo', rotulo: 'poderes', sinal: extra < 0 ? -1 : 1, qtd: null, faces: null, resultados: [], valor: extra });
+        total += extra;
+      }
+    }
+    const perdas = {};
+    const perdidas = [];
+    Object.keys(uso.perde || {}).forEach(function (id) {
+      const r = OP.dados.rolarFormula(uso.perde[id]);
+      perdas[id] = r.ok ? r.total : 0;
+      if (perdas[id]) perdidas.push('−' + perdas[id] + ' ' + id.toUpperCase());
+    });
+    const custo = OP.calc.custoComCondicoes(ficha, uso.custo);
+    const gasto = OP.state.aplicarCustos({ pe: custo + (perdas.pe || 0), san: perdas.san || 0 }, ficha);
+    if (!gasto.ok) return { ok: false, tipo: 'formula', titulo: titulo, erro: gasto.motivo || 'PE insuficiente.' };
+    const aplicado = [];
+    if (custo) aplicado.push('−' + custo + ' PE');
+    if (perdas.san) aplicado.push('−' + perdas.san + ' SAN');
+    if (perdas.pe) aplicado.push('−' + perdas.pe + ' PE');
+    if (perdas.pv) {
+      mudarRecurso(ficha, 'pv', -perdas.pv);
+      aplicado.push('−' + perdas.pv + ' PV');
+    }
+    if (uso.recupera) {
+      const antes = OP.calc.estadoRecurso(ficha, uso.recupera).atual;
+      const depois = mudarRecurso(ficha, uso.recupera, total);
+      if (depois !== null) aplicado.push('+' + Math.max(0, depois - antes) + ' ' + uso.recupera.toUpperCase());
+    }
+    const resultado = {
+      ok: true, tipo: 'dano', titulo: titulo, formula: uso.rolar, termos: termos, total: total, critico: false, multDados: 1,
+      tipoDano: uso.tipo === 'dano' ? uso.elemento : '', cura: uso.tipo === 'cura', aplicado: aplicado.join(' · ')
+    };
+    eventoDaFicha(ficha, titulo, total + (aplicado.length ? ' · ' + aplicado.join(' · ') : ''));
+    return resultado;
+  }
+
+  /** Prepara (unidades ≥ 1) ou desfaz (0) um gasto opcional para o próximo teste que combinar. */
+  function prepararGasto(ficha, idGasto, unidades) {
+    const lista = OP.calc.preparadosAposAlterar(ficha, idGasto, unidades);
+    gravarLista(ficha, 'efeitos.preparados', lista);
   }
 
   OP.rolagens = {
@@ -326,6 +536,11 @@ window.OP = window.OP || {};
     registrarEvento: registrarEvento,
     usarHabilidade: usarHabilidade,
     conjurarRitual: conjurarRitual,
-    rolarDanoRitual: rolarDanoRitual
+    rolarDanoRitual: rolarDanoRitual,
+    rolarCuraRitual: rolarCuraRitual,
+    ativarEfeito: ativarEfeito,
+    desativarEfeito: desativarEfeito,
+    usarEfeito: usarEfeito,
+    prepararGasto: prepararGasto
   };
 })(window.OP);

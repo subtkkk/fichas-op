@@ -284,6 +284,11 @@ window.OP = window.OP || {};
   }
 
   function abrir(item) {
+    // A origem usa um painel grande, com título e setinha para ler descrição, poder e perícias (js/ui-livro.js)
+    if (item.select.dataset.seletorGrande === 'origem' && OP.uiLivro && OP.uiLivro.abrirOrigem) {
+      OP.uiLivro.abrirOrigem(item.select, item.botao);
+      return;
+    }
     if (item.select.disabled) return;
     if (aberto) fechar(false);
     construirPainel();

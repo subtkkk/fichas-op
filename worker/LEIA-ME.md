@@ -34,9 +34,13 @@ Em `admin.html` → *Conteúdo protegido*, envie um `.json`:
 
 Até 500 itens de 100 mil caracteres. Enviar de novo para o mesmo nome **substitui tudo**. Esse arquivo fica só no seu computador: não o coloque no repositório.
 
+## Origens, habilidades e rituais do livro
+
+Os nomes de conteúdo usados pela ficha são `origens`, `habilidades` e `rituais` (um código pode liberar os três). Cada item do arquivo é o texto do livro mais, no fim, uma linha `§AUTO§{...}` que o site separa ao carregar (ela leva a classificação e os efeitos automáticos). Para gerar os arquivos a partir do txt, veja o README (`tools/gerar-conteudo.mjs`). Limites do Worker: até 500 itens por nome e 100 mil caracteres por item; `habilidades` tem 461.
+
 ## Usar no site
 
-`OP.conta.conteudo("nome")` devolve uma promessa com a lista de itens (ou rejeita com a mensagem do servidor). A tela que mostra cada conteúdo ainda não existe: ela depende de quais textos serão liberados.
+`OP.conta.conteudo("nome")` devolve uma promessa com a lista de itens (ou rejeita com a mensagem do servidor). Quem usa os três conteúdos do livro é `js/livro.js` (`OP.livro`), que monta o catálogo e os efeitos na memória da página; sem acesso, tudo fica vazio e a ficha funciona manualmente.
 
 ## Testar
 

@@ -1,0 +1,876 @@
+/* ==========================================================================
+   js/ui-livro.js — o livro na ficha (OP.uiLivro)
+   --------------------------------------------------------------------------
+   Só aparece com o conteúdo do livro liberado por código (js/livro.js):
+   - seletor grande de origem (título e setinha: descrição, poder e perícias);
+   - "Escolher do livro" para poderes e rituais, com texto e efeitos;
+   - Efeitos automáticos (página Habilidades): o que cada fonte faz sozinha e os
+     botões de preparar gasto, ativar e usar;
+   - Poderes para o próximo teste (página Rolagens) e Efeitos ativos (Combate).
+   Os números vêm do OP.calc (estadoEfeitos); o texto do livro vem do servidor e
+   só entra por textContent. Nada é guardado no navegador além do que a ficha
+   já guarda (chaves e escolhas).
+   ========================================================================== */
+window.OP = window.OP || {};
+
+(function (OP) {
+  'use strict';
+
+  const refs = {};
+  const abertos = Object.create(null);   // chave → texto aberto (só da tela)
+  let assinatura = '';
+  let derivadosAtuais = null;
+
+  /* ------------------------------------------------------------------------
+     Utilidades
+     ------------------------------------------------------------------------ */
+
+  function el(tag, classe, texto) {
+    const e = document.createElement(tag);
+    if (classe) e.className = classe;
+    if (texto !== undefined && texto !== null && texto !== '') e.textContent = texto;
+    return e;
+  }
+
+  function botao(texto, classe, atributos) {
+    const b = el('button', classe || 'botao botao--pequeno', texto);
+    b.type = 'button';
+    Object.keys(atributos || {}).forEach(function (k) { b.setAttribute(k, atributos[k]); });
+    return b;
+  }
+
+  function normalizar(texto) {
+    return String(texto || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  }
+
+  function ficha() {
+    return OP.state.ficha;
+  }
+
+  function aviso(tipo, texto) {
+    if (OP.uiApp && OP.uiApp.aviso) OP.uiApp.aviso(tipo, texto);
+  }
+
+  function nomePericia(id) {
+    const p = OP.data.pericias.find(function (x) { return x.id === id; });
+    return p ? p.nome : String(id);
+  }
+
+  function siglaAtributo(id) {
+    const a = OP.data.atributos.find(function (x) { return x.id === id; });
+    return a ? a.sigla : String(id).toUpperCase();
+  }
+
+  function nomeElemento(id) {
+    const e = OP.data.elementos.find(function (x) { return x.id === id; });
+    return e ? e.nome : String(id || '');
+  }
+
+  function nomeFonte(id) {
+    return (OP.data.fontes && OP.data.fontes[id]) || id || '';
+  }
+
+  function sinal(n) {
+    return (n < 0 ? '−' : '+') + Math.abs(n);
+  }
+
+  const NOMES_TIPO = { origem: 'Origem', classe: 'Classe', trilha: 'Trilha', poder: 'Poder', ritual: 'Ritual' };
+
+  /* ------------------------------------------------------------------------
+     Texto do efeito, escrito a partir dos números (sem o texto do livro)
+     ------------------------------------------------------------------------ */
+
+  function textoValor(v) {
+    if (typeof v === 'number') return sinal(v);
+    if (!v || typeof v !== 'object') return '';
+    if (v.nivel !== undefined) return sinal(v.nivel) + ' a cada 5% de NEX';
+    if (v.atr !== undefined) return (v.x !== undefined && v.x !== 1 ? sinal(v.x) + '× ' : '+') + siglaAtributo(v.atr);
+    if (Array.isArray(v.tabela)) return v.tabela.map(function (p) { return 'NEX ' + p[0] + '%: ' + sinal(p[1]); }).join(', ');
+    if (Array.isArray(v.soma)) return v.soma.map(textoValor).join(' ');
+    if (v.metade !== undefined) return 'metade de ' + textoValor(v.metade).replace(/^\+/, '');
+    return '';
+  }
+
+  function textoAlvoPericia(id) {
+    if (id === 'todas' || id === undefined) return 'todas as perícias';
+    if (typeof id === 'string') return nomePericia(id);
+    if (Array.isArray(id)) return id.map(nomePericia).join(', ');
+    if (id && id.atr) return 'perícias de ' + siglaAtributo(id.atr);
+    if (id && id.escolha) return 'a perícia escolhida';
+    return '';
+  }
+
+  function textoCondicao(se) {
+    if (!se) return '';
+    const p = [];
+    if (se.nex !== undefined) p.push('NEX ' + se.nex + '%+');
+    if (se.afinidade !== undefined) p.push('com afinidade' + (typeof se.afinidade === 'string' && se.afinidade !== 'qualquer' ? ' de ' + nomeElemento(se.afinidade) : ''));
+    if (se.semAfinidade !== undefined) p.push('sem afinidade' + (typeof se.semAfinidade === 'string' && se.semAfinidade !== 'qualquer' ? ' de ' + nomeElemento(se.semAfinidade) : ''));
+    if (se.treinado !== undefined) p.push('treinado em ' + nomePericia(se.treinado));
+    if (se.classe !== undefined) p.push('classe ' + se.classe);
+    if (se.forma !== undefined) p.push('forma ' + [].concat(se.forma).join('/'));
+    return p.length ? ' (' + p.join(', ') + ')' : '';
+  }
+
+  function textoEfeito(ef) {
+    const v = textoValor(ef.v);
+    let t = '';
+    switch (ef.k) {
+      case 'pv': case 'pe': case 'san': t = ef.k.toUpperCase() + ' máximo ' + v; break;
+      case 'def': t = 'Defesa ' + v; break;
+      case 'desl': t = 'deslocamento ' + v + ' m'; break;
+      case 'dt': t = 'DT dos rituais ' + v; break;
+      case 'limitePE': t = 'limite de PE por turno ' + v; break;
+      case 'carga': t = 'carga ' + v + ' espaços'; break;
+      case 'cura': t = 'PV curados ' + v; break;
+      case 'danoRitual': t = 'dano dos rituais ' + v; break;
+      case 'curaRitual': t = 'cura dos rituais ' + v; break;
+      case 'per': t = textoAlvoPericia(ef.id) + ' ' + v; break;
+      case 'treino': t = 'treinamento em ' + textoAlvoPericia(ef.id) + ' (ou +2 se já treinado)'; break;
+      case 'rd': t = 'RD ' + (ef.tipo === 'todos' ? 'a todo dano' : ef.tipo === 'fisico' ? 'física' : ef.tipo) + ' ' + v; break;
+      case 'dados': t = v + 'd20 em ' + (ef.alvo === 'ataque' ? 'ataques' : ef.alvo === 'atributo' ? 'testes de ' + siglaAtributo(ef.id) : textoAlvoPericia(ef.id)); break;
+      case 'ataque': t = 'testes de ataque ' + v; break;
+      case 'dano': t = 'dano dos ataques ' + v; break;
+      case 'margem': t = 'margem de ameaça ' + v; break;
+      case 'custoRitual': t = 'custo dos rituais ' + v + ' PE'; break;
+      default: return '';
+    }
+    return t + textoCondicao(ef.se);
+  }
+
+  function textoQuando(q) {
+    const p = [];
+    if (q.dano !== undefined) p.push('no dano ' + (q.dano === 'corpo' ? 'corpo a corpo' : q.dano === 'distancia' ? 'à distância' : 'dos ataques'));
+    else if (q.ataque !== undefined) p.push('nos ataques' + (q.ataque === 'corpo' ? ' corpo a corpo' : q.ataque === 'distancia' ? ' à distância' : ''));
+    if (q.pericia !== undefined) p.push('em ' + (q.pericia === 'todas' ? 'qualquer perícia' : q.pericia.map(nomePericia).join(', ')));
+    if (q.atr !== undefined) p.push('em perícias de ' + q.atr.map(siglaAtributo).join(' ou '));
+    if (q.resistencia) p.push('em testes de resistência');
+    if (q.exceto !== undefined && q.exceto.length) p.push('exceto ' + q.exceto.map(nomePericia).join(', '));
+    return p.join(' ');
+  }
+
+  function textoGasto(g) {
+    const efeito = [];
+    if (g.bonus !== undefined) efeito.push(textoValor(g.bonus));
+    if (g.dados !== undefined) efeito.push(sinal(g.dados) + 'd20');
+    if (g.dano !== undefined) efeito.push(textoValor(g.dano) + ' de dano');
+    const custo = typeof g.custo === 'number' ? (g.custo ? g.custo + ' PE' : 'sem custo') : 'custo por NEX';
+    return custo + ': ' + efeito.join(' e ') + ' ' + textoQuando(g.quando || {}) + textoCondicao(g.se);
+  }
+
+  function textoDuracao(a) {
+    if (a.duracao === 'cena') return 'até o fim da cena';
+    if (a.duracao === 'rodadas') return a.rodadas + (a.rodadas === 1 ? ' rodada' : ' rodadas');
+    return 'até desligar';
+  }
+
+  /** Frases sobre o que a ficha faz sozinha numa definição (sem ficha): [{ tipo, texto }]. */
+  function descreverDefinicao(def) {
+    const linhas = [];
+    if (!def) return linhas;
+    (def.passivos || []).forEach(function (ef) { const t = textoEfeito(ef); if (t) linhas.push({ tipo: 'Sempre', texto: t }); });
+    (def.gastos || []).forEach(function (g) { linhas.push({ tipo: 'Gasto opcional', texto: (g.nome ? g.nome + ' — ' : '') + textoGasto(g) }); });
+    if (def.ativavel) {
+      const a = def.ativavel;
+      const efs = (a.passivos || []).map(textoEfeito).filter(Boolean).join('; ');
+      linhas.push({ tipo: 'Ativável', texto: (typeof a.custo === 'number' ? (a.custo ? a.custo + ' PE' : 'sem custo') : 'custo por NEX') + ', ' + textoDuracao(a) + ': ' + efs + textoCondicao(a.se) });
+    }
+    (def.usos || []).forEach(function (u) {
+      const acao = u.tipo === 'cura' ? 'cura' : u.tipo === 'dano' ? 'dano' : 'rolagem';
+      linhas.push({ tipo: 'Botão', texto: u.nome + ' — ' + (u.custo ? u.custo + ' PE: ' : '') + acao + ' ' + u.rolar + (u.perde ? ' (perde ' + Object.keys(u.perde).map(function (k) { return u.perde[k] + ' ' + k.toUpperCase(); }).join(', ') + ')' : '') + textoCondicao(u.se) });
+    });
+    if (def.formas) {
+      Object.keys(def.formas).forEach(function (f) {
+        const x = def.formas[f];
+        if (x.dano) linhas.push({ tipo: 'Ritual (' + f + ')', texto: 'dano ' + x.dano });
+        if (x.cura) linhas.push({ tipo: 'Ritual (' + f + ')', texto: 'cura ' + x.cura });
+      });
+    }
+    return linhas;
+  }
+
+  /* ------------------------------------------------------------------------
+     Texto do livro (do servidor)
+     ------------------------------------------------------------------------ */
+
+  /** Linhas "Rótulo: texto" viram { rotulo, texto }; o resto é parágrafo. A 1ª linha (cabeçalho) vai à parte. */
+  function blocosDoTexto(corpo) {
+    const linhas = String(corpo || '').split('\n').filter(function (l) { return l.trim() !== ''; });
+    const cabecalho = linhas.length ? linhas.shift() : '';
+    const blocos = linhas.map(function (l) {
+      const m = /^([A-ZÁÉÍÓÚÂÊÔÃÕÇ][^:]{0,45}?): (.*)$/.exec(l);
+      return m ? { rotulo: m[1], texto: m[2] } : { rotulo: '', texto: l };
+    });
+    return { cabecalho: cabecalho, blocos: blocos };
+  }
+
+  function acessoDisponivel() {
+    return Boolean(OP.conta && OP.conta.estado && OP.conta.estado.disponivel);
+  }
+
+  /** Elemento com o texto do livro de uma chave, ou um aviso de que ele não está liberado. */
+  function criarTextoLivro(chave, ignorar) {
+    const caixa = el('div', 'livro-texto');
+    const t = OP.livro && OP.livro.texto(chave);
+    if (!t) {
+      caixa.appendChild(el('p', 'livro-texto__nota', acessoDisponivel()
+        ? 'O texto do livro não está liberado nesta conta. Entre em Conta e resgate um código.'
+        : 'O texto do livro só aparece com a conta e um código de acesso.'));
+      return caixa;
+    }
+    const partes = blocosDoTexto(t.corpo);
+    if (partes.cabecalho) caixa.appendChild(el('p', 'livro-texto__cabecalho', partes.cabecalho));
+    partes.blocos.forEach(function (b) {
+      if (ignorar && ignorar.indexOf(b.rotulo) !== -1) return;
+      const p = el('p', 'livro-texto__bloco');
+      if (b.rotulo) p.appendChild(el('strong', '', b.rotulo + '. '));
+      p.appendChild(document.createTextNode(b.texto));
+      caixa.appendChild(p);
+    });
+    return caixa;
+  }
+
+  function criarListaEfeitos(def) {
+    const linhas = descreverDefinicao(def);
+    if (!linhas.length) return null;
+    const caixa = el('div', 'livro-auto');
+    caixa.appendChild(el('p', 'livro-auto__titulo', 'O que a ficha faz sozinha'));
+    const ul = el('ul', 'livro-auto__lista');
+    linhas.forEach(function (l) {
+      const li = el('li');
+      li.appendChild(el('span', 'livro-auto__tipo', l.tipo));
+      li.appendChild(document.createTextNode(' ' + l.texto));
+      ul.appendChild(li);
+    });
+    caixa.appendChild(ul);
+    return caixa;
+  }
+
+  /* ------------------------------------------------------------------------
+     Diálogo de escolha (origem, poderes, rituais)
+     ------------------------------------------------------------------------ */
+
+  const lista = { config: null, itens: [], aba: 'todos', busca: '', expandidos: Object.create(null), gatilho: null };
+
+  function itemCasa(item) {
+    if (lista.aba !== 'todos' && item.abas && item.abas.indexOf(lista.aba) === -1) return false;
+    const termo = normalizar(lista.busca);
+    return !termo || normalizar(item.busca || item.titulo).indexOf(termo) !== -1;
+  }
+
+  function desenharLista() {
+    const filtrados = lista.itens.filter(itemCasa);
+    const raiz = refs.lista;
+    raiz.textContent = '';
+    let grupoAtual = null;
+    filtrados.forEach(function (item) {
+      if (item.grupo && item.grupo !== grupoAtual) {
+        grupoAtual = item.grupo;
+        raiz.appendChild(el('h3', 'livro-lista__grupo', item.grupo));
+      }
+      raiz.appendChild(criarLinha(item));
+    });
+    refs.vazio.hidden = filtrados.length > 0;
+  }
+
+  function criarLinha(item) {
+    const aberta = lista.expandidos[item.id] === true;
+    const linha = el('div', 'livro-item' + (aberta ? ' livro-item--aberto' : ''));
+    const topo = el('div', 'livro-item__linha');
+    const idDetalhes = 'livro-det-' + item.id;
+    const alternar = el('button', 'livro-item__alternar');
+    alternar.type = 'button';
+    alternar.setAttribute('aria-expanded', String(aberta));
+    alternar.setAttribute('aria-controls', idDetalhes);
+    alternar.appendChild(el('span', 'livro-item__seta'));
+    alternar.lastChild.setAttribute('aria-hidden', 'true');
+    const textos = el('span', 'livro-item__textos');
+    textos.appendChild(el('span', 'livro-item__titulo', item.titulo));
+    if (item.meta) textos.appendChild(el('span', 'livro-item__meta', item.meta));
+    alternar.appendChild(textos);
+    alternar.addEventListener('click', function () {
+      lista.expandidos[item.id] = !(lista.expandidos[item.id] === true);
+      desenharLista();
+      const novo = refs.lista.querySelector('[aria-controls="' + idDetalhes + '"]');
+      if (novo) novo.focus();
+    });
+    topo.appendChild(alternar);
+    if (item.marcado) topo.appendChild(el('span', 'selo selo--livro', item.marcado));
+    if (item.acao) {
+      const a = botao(item.acao.rotulo, 'botao botao--pequeno livro-item__acao' + (item.acao.primaria ? ' botao--primario' : ''));
+      a.disabled = item.acao.desativada === true;
+      a.setAttribute('aria-label', item.acao.rotulo + ': ' + item.titulo);
+      a.addEventListener('click', function () { item.acao.aoClicar(item); });
+      topo.appendChild(a);
+    }
+    linha.appendChild(topo);
+    const detalhes = el('div', 'livro-item__detalhes');
+    detalhes.id = idDetalhes;
+    detalhes.hidden = !aberta;
+    if (aberta && item.detalhes) item.detalhes(detalhes);
+    linha.appendChild(detalhes);
+    return linha;
+  }
+
+  function mensagemDialogo(texto) {
+    refs.mensagem.hidden = !texto;
+    refs.mensagem.textContent = texto || '';
+  }
+
+  /**
+   * Abre o diálogo de escolha. config: { titulo, dica, busca, abas: [{id,nome}], itens, gatilho }.
+   * item: { id, titulo, meta, grupo, abas, busca, marcado, detalhes(corpo), acao: { rotulo, aoClicar, desativada, primaria } }.
+   */
+  function abrirLista(config) {
+    lista.config = config;
+    lista.itens = config.itens;
+    lista.aba = 'todos';
+    lista.busca = '';
+    lista.expandidos = Object.create(null);
+    lista.gatilho = config.gatilho || null;
+    refs.titulo.textContent = config.titulo;
+    refs.dica.textContent = config.dica || '';
+    refs.dica.hidden = !config.dica;
+    refs.busca.value = '';
+    refs.busca.placeholder = config.busca || 'Buscar…';
+    mensagemDialogo('');
+    refs.abas.textContent = '';
+    refs.abas.hidden = !config.abas || !config.abas.length;
+    (config.abas || []).forEach(function (aba) {
+      const b = botao(aba.nome, 'aba', { 'data-livro-aba': aba.id, 'aria-pressed': String(aba.id === 'todos') });
+      b.addEventListener('click', function () {
+        lista.aba = aba.id;
+        Array.prototype.forEach.call(refs.abas.children, function (c) { c.setAttribute('aria-pressed', String(c.getAttribute('data-livro-aba') === aba.id)); });
+        desenharLista();
+      });
+      refs.abas.appendChild(b);
+    });
+    desenharLista();
+    if (!refs.dialogo.open) refs.dialogo.showModal();
+    refs.lista.scrollTop = 0;
+  }
+
+  function fecharLista() {
+    if (refs.dialogo.open) refs.dialogo.close();
+  }
+
+  /* ------------------------------------------------------------------------
+     Origem
+     ------------------------------------------------------------------------ */
+
+  function detalhesDeOrigem(origem, chave) {
+    return function (corpo) {
+      const pericias = origem.pericias.length
+        ? origem.pericias.map(nomePericia).join(', ')
+        : (origem.escolha && origem.escolha.nota ? origem.escolha.nota : 'conforme a escolha');
+      const t = OP.livro && chave ? OP.livro.texto(chave) : null;
+      let descricao = '';
+      let efeito = '';
+      if (t) {
+        blocosDoTexto(t.corpo).blocos.forEach(function (b) {
+          if (b.rotulo === 'Descrição') descricao = b.texto;
+          else if (b.rotulo === 'Efeito do poder') efeito = b.texto;
+        });
+      }
+      if (descricao) corpo.appendChild(el('p', 'livro-item__descricao', descricao));
+      const poder = el('div', 'livro-item__poder');
+      poder.appendChild(el('p', 'livro-item__rotulo', 'Poder da origem'));
+      poder.appendChild(el('p', 'livro-item__valor', origem.habilidade || '—'));
+      if (efeito) poder.appendChild(el('p', 'livro-item__descricao', efeito));
+      corpo.appendChild(poder);
+      const per = el('div', 'livro-item__poder');
+      per.appendChild(el('p', 'livro-item__rotulo', 'Perícias treinadas'));
+      per.appendChild(el('p', 'livro-item__valor', pericias + (origem.profissao ? ' (' + origem.profissao + ')' : '')));
+      corpo.appendChild(per);
+      if (!t) {
+        corpo.appendChild(el('p', 'livro-texto__nota', acessoDisponivel()
+          ? 'A descrição e o efeito do poder aparecem aqui quando o conteúdo do livro estiver liberado nesta conta (botão Conta).'
+          : 'A descrição e o efeito do poder aparecem aqui com a conta e um código de acesso.'));
+      }
+      const auto = chave ? criarListaEfeitos(OP.data.efeitos[chave]) : null;
+      if (auto) corpo.appendChild(auto);
+    };
+  }
+
+  /** Abre o seletor grande de origem no lugar da lista nativa. select é o <select> da origem. */
+  function abrirOrigem(select, gatilho) {
+    const catalogo = OP.data.catalogo || {};
+    const itens = [];
+    Array.prototype.forEach.call(select.querySelectorAll('option'), function (opcao) {
+      if (opcao.disabled && opcao.value === '') return;
+      const grupo = opcao.parentElement && opcao.parentElement.tagName === 'OPTGROUP' ? opcao.parentElement.label : '';
+      const atual = select.value === opcao.value;
+      const origem = OP.data.origens.find(function (o) { return o.id === opcao.value; });
+      const item = {
+        id: 'origem-' + (opcao.value || 'nenhuma'),
+        titulo: opcao.value === '' ? 'Nenhuma' : opcao.textContent.replace(/\s+/g, ' ').trim(),
+        grupo: opcao.value === '' || opcao.value === 'outra' ? '' : grupo,
+        marcado: atual ? 'Atual' : '',
+        busca: opcao.textContent + ' ' + (origem ? origem.pericias.map(nomePericia).join(' ') + ' ' + origem.habilidade : ''),
+        meta: origem ? (origem.pericias.length ? origem.pericias.map(nomePericia).join(', ') : 'duas perícias à escolha') : '',
+        acao: {
+          rotulo: atual ? 'Escolhida' : 'Escolher',
+          desativada: atual,
+          primaria: !atual,
+          aoClicar: function () {
+            select.value = opcao.value;
+            select.dispatchEvent(new Event('input', { bubbles: true }));
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+            fecharLista();
+            if (gatilho) gatilho.focus();
+          }
+        }
+      };
+      if (origem) item.detalhes = detalhesDeOrigem(origem, catalogo.origens ? catalogo.origens[origem.id] : '');
+      else if (opcao.value === 'outra') {
+        item.detalhes = function (corpo) { corpo.appendChild(el('p', 'livro-texto__nota', 'Digite o nome da origem no campo que aparece ao lado. A ficha não calcula o poder dessa origem.')); };
+      }
+      itens.push(item);
+    });
+    abrirLista({
+      titulo: 'Escolher a origem',
+      dica: 'Toque na seta para ver a descrição, o poder e as perícias de cada origem.',
+      busca: 'Buscar origem, perícia ou poder…',
+      itens: itens,
+      gatilho: gatilho
+    });
+  }
+
+  /* ------------------------------------------------------------------------
+     Poderes e rituais do livro
+     ------------------------------------------------------------------------ */
+
+  function chaveNaFicha(tipo, chave) {
+    const f = ficha();
+    return (tipo === 'ritual' ? f.rituais : f.habilidades).some(function (x) { return x.catalogo === chave; });
+  }
+
+  function adicionarPoder(p) {
+    const e = OP.data.efeitos[p.id] || {};
+    const nova = OP.state.novaHabilidade({ nome: p.nome, fonte: p.tipo === 'classe' ? 'classe' : 'poder', catalogo: p.id });
+    if (e.ativavel && typeof e.ativavel.custo === 'number') nova.custoPE = 0;
+    OP.state.atualizar('habilidades', OP.state.obter('habilidades').concat([nova]));
+    mensagemDialogo(p.nome + ' foi para a lista de habilidades.');
+  }
+
+  function formaDoCatalogo(r, id) {
+    const f = r[id];
+    if (!f) return null;
+    const forma = { ativa: true, custoAdicional: f.custoAdicional || 0 };
+    if (f.requerCirculo) forma.requerCirculo = f.requerCirculo;
+    if (f.requerAfinidade) forma.requerAfinidade = true;
+    return forma;
+  }
+
+  /** Ritual novo preenchido com o que o catálogo e os efeitos sabem. */
+  function criarRitualDoCatalogo(r) {
+    const e = OP.data.efeitos[r.id] || {};
+    const formas = { padrao: {} };
+    const discente = formaDoCatalogo(r, 'discente');
+    const verdadeira = formaDoCatalogo(r, 'verdadeira');
+    if (discente) formas.discente = discente;
+    if (verdadeira) formas.verdadeira = verdadeira;
+    ['padrao', 'discente', 'verdadeira'].forEach(function (id) {
+      const x = e.formas && e.formas[id];
+      if (!x) return;
+      if (id !== 'padrao' && !formas[id]) return;
+      formas[id] = formas[id] || {};
+      if (x.dano) formas[id].dano = x.dano;
+      if (x.cura) formas[id].cura = x.cura;
+    });
+    const dados = {
+      nome: r.nome, circulo: r.circulo, elemento: r.elemento || '', execucao: r.execucao || '', alcance: r.alcance || '',
+      alvo: r.alvo || '', area: r.area || '', duracao: r.duracao || '', catalogo: r.id, formas: formas
+    };
+    if (r.resistencia) dados.resistencia = { teste: r.resistencia.teste || '', efeito: r.resistencia.efeito || '' };
+    return OP.state.novoRitual(dados);
+  }
+
+  function adicionarRitual(r) {
+    OP.state.atualizar('rituais', OP.state.obter('rituais').concat([criarRitualDoCatalogo(r)]));
+    mensagemDialogo(r.nome + ' foi para a lista de rituais.');
+  }
+
+  function metaDoRitual(r) {
+    const partes = [nomeElemento(r.elemento) || 'vários elementos', r.circulo + 'º círculo'];
+    if (r.execucao) partes.push(r.execucao);
+    if (r.alcance) partes.push(r.alcance);
+    return partes.join(' · ');
+  }
+
+  function detalhesDoCatalogo(chave, extra) {
+    return function (corpo) {
+      if (extra) {
+        const m = el('p', 'livro-item__descricao');
+        m.textContent = extra;
+        corpo.appendChild(m);
+      }
+      corpo.appendChild(criarTextoLivro(chave));
+      const auto = criarListaEfeitos(OP.data.efeitos[chave]);
+      if (auto) corpo.appendChild(auto);
+    };
+  }
+
+  function abrirPoderes(gatilho) {
+    const catalogo = OP.data.catalogo || {};
+    const classeFicha = (ficha().identificacao || {}).classe;
+    const NOMES_CATEGORIA = { combate: 'Combate', utilidade: 'Utilidade', ambos: 'Combate e utilidade', varios: 'Vários elementos' };
+    const ordemTipo = { classe: 0, geral: 1, paranormal: 2 };
+    const poderes = (catalogo.poderes || []).slice().sort(function (a, b) {
+      return (ordemTipo[a.tipo] - ordemTipo[b.tipo]) || (a.classe || '').localeCompare(b.classe || '') || a.nome.localeCompare(b.nome, 'pt-BR');
+    });
+    const itens = poderes.map(function (p) {
+      const classe = p.classe ? OP.calc.classeDados(p.classe) : null;
+      const grupo = p.tipo === 'classe' ? 'Poderes de ' + (classe ? classe.nome : p.classe) : p.tipo === 'geral' ? 'Poderes gerais' : 'Poderes paranormais';
+      const cat = NOMES_CATEGORIA[p.categoria] || (OP.data.elementos.some(function (x) { return x.id === p.categoria; }) ? nomeElemento(p.categoria) : (p.categoria || ''));
+      const abas = ['todos', p.tipo];
+      if (p.tipo === 'classe' && p.classe === classeFicha) abas.push('minha');
+      const naFicha = chaveNaFicha('poder', p.id);
+      return {
+        id: 'poder-' + p.id,
+        titulo: p.nome,
+        meta: [cat, p.fonte && p.fonte !== 'livro' ? nomeFonte(p.fonte) : ''].filter(Boolean).join(' · '),
+        grupo: grupo,
+        abas: abas,
+        busca: p.nome + ' ' + cat + ' ' + grupo,
+        marcado: naFicha ? 'Na ficha' : '',
+        detalhes: detalhesDoCatalogo(p.id),
+        acao: {
+          rotulo: naFicha ? 'Na ficha' : 'Adicionar', desativada: naFicha, primaria: !naFicha,
+          aoClicar: function () { adicionarPoder(p); desenharLista(); }
+        }
+      };
+    });
+    const abas = [{ id: 'todos', nome: 'Todos' }];
+    if (classeFicha) abas.push({ id: 'minha', nome: 'Da minha classe' });
+    abas.push({ id: 'classe', nome: 'De classe' }, { id: 'geral', nome: 'Gerais' }, { id: 'paranormal', nome: 'Paranormais' });
+    abrirLista({
+      titulo: 'Poderes do livro', dica: 'Toque na seta para ler o poder e ver o que a ficha faz sozinha. Adicionar põe o poder na lista de habilidades.',
+      busca: 'Buscar poder…', abas: abas, itens: itens, gatilho: gatilho
+    });
+  }
+
+  function abrirRituais(gatilho) {
+    const catalogo = OP.data.catalogo || {};
+    const rituais = (catalogo.rituais || []).slice().sort(function (a, b) {
+      return (a.circulo - b.circulo) || a.nome.localeCompare(b.nome, 'pt-BR');
+    });
+    const itens = rituais.map(function (r) {
+      const naFicha = chaveNaFicha('ritual', r.id);
+      return {
+        id: 'ritual-' + r.id,
+        titulo: r.nome,
+        meta: metaDoRitual(r),
+        grupo: r.circulo + 'º círculo',
+        abas: ['todos', String(r.circulo), r.elemento || 'varios'],
+        busca: r.nome + ' ' + nomeElemento(r.elemento) + ' ' + r.circulo + 'º círculo',
+        marcado: naFicha ? 'Na ficha' : '',
+        detalhes: detalhesDoCatalogo(r.id),
+        acao: {
+          rotulo: naFicha ? 'Na ficha' : 'Adicionar', desativada: naFicha, primaria: !naFicha,
+          aoClicar: function () { adicionarRitual(r); desenharLista(); }
+        }
+      };
+    });
+    const abas = [{ id: 'todos', nome: 'Todos' }, { id: '1', nome: '1º círculo' }, { id: '2', nome: '2º' }, { id: '3', nome: '3º' }, { id: '4', nome: '4º' }];
+    OP.data.elementos.forEach(function (e) { abas.push({ id: e.id, nome: e.nome }); });
+    abrirLista({
+      titulo: 'Rituais do livro', dica: 'Adicionar já preenche círculo, elemento, alcance, duração, resistência, custos e dano do ritual.',
+      busca: 'Buscar ritual…', abas: abas, itens: itens, gatilho: gatilho
+    });
+  }
+
+  /* ------------------------------------------------------------------------
+     Ações sobre a ficha (preparar, ativar, usar, escolher)
+     ------------------------------------------------------------------------ */
+
+  function aoPreparar(idGasto, unidades) {
+    OP.rolagens.prepararGasto(ficha(), idGasto, unidades);
+  }
+
+  function aoAtivar(chave) {
+    const r = OP.rolagens.ativarEfeito(ficha(), chave);
+    if (!r.ok) aviso('aviso', r.motivo || 'Não foi possível ativar.');
+  }
+
+  function aoDesligar(chave) {
+    OP.rolagens.desativarEfeito(ficha(), chave);
+  }
+
+  function aoUsar(idUso) {
+    const r = OP.rolagens.usarEfeito(ficha(), idUso);
+    OP.ui.mostrarResultado(r);
+  }
+
+  function aoEscolher(chave, campo, valor) {
+    const id = (chave + '__' + campo).slice(0, 64);
+    const resto = (ficha().efeitos.escolhas || []).filter(function (e) { return e.id !== id; });
+    if (valor) resto.push({ id: id, chave: chave, campo: campo, valor: valor });
+    OP.state.atualizar('efeitos.escolhas', resto);
+  }
+
+  /* ------------------------------------------------------------------------
+     Blocos da ficha
+     ------------------------------------------------------------------------ */
+
+  function rotuloGasto(g) {
+    const custo = g.custo ? g.custo + ' PE' : 'sem custo';
+    const efeito = [];
+    if (g.bonus) efeito.push(sinal(g.bonus * Math.max(1, g.preparado || 1)));
+    if (g.dados) efeito.push(sinal(g.dados) + 'd20');
+    if (g.dano) efeito.push(sinal(g.dano * Math.max(1, g.preparado || 1)) + (g.quando && g.quando.dano ? '' : ' dano'));
+    return g.nome + ' · ' + custo + ' · ' + efeito.join(' ') + ' ' + textoQuando(g.quando);
+  }
+
+  function criarControleGasto(g) {
+    const caixa = el('div', 'livro-gasto');
+    const b = botao(rotuloGasto(g), 'botao botao--pequeno livro-gasto__botao' + (g.preparado ? ' botao--ligado' : ''), {
+      'data-livro-preparar': g.id, 'aria-pressed': String(g.preparado > 0)
+    });
+    caixa.appendChild(b);
+    if (g.unidadesMax > 1) {
+      const rotulo = el('label', 'livro-gasto__unidades');
+      rotulo.appendChild(el('span', '', 'Unidades'));
+      const sel = el('select', 'controle');
+      sel.setAttribute('data-livro-unidades', g.id);
+      for (let i = 1; i <= g.unidadesMax; i++) {
+        const o = el('option', '', i + (i > 1 ? ' (' + (g.custo + (i - 1) * g.custoExtra) + ' PE)' : ''));
+        o.value = String(i);
+        if (g.preparado === i || (!g.preparado && i === 1)) o.selected = true;
+        sel.appendChild(o);
+      }
+      rotulo.appendChild(sel);
+      caixa.appendChild(rotulo);
+    }
+    return caixa;
+  }
+
+  function criarCartaoFonte(info, estado) {
+    const cartao = el('article', 'livro-fonte');
+    const topo = el('div', 'livro-fonte__topo');
+    const titulo = el('div', 'livro-fonte__titulo');
+    titulo.appendChild(el('strong', 'livro-fonte__nome', info.nome));
+    titulo.appendChild(el('span', 'selo-fonte', NOMES_TIPO[info.tipo] || info.tipo));
+    topo.appendChild(titulo);
+    const ler = botao(abertos[info.chave] ? 'Fechar texto' : 'Ler texto', 'botao-texto', { 'data-livro-texto': info.chave, 'aria-expanded': String(abertos[info.chave] === true) });
+    topo.appendChild(ler);
+    cartao.appendChild(topo);
+
+    const linhas = estado.origens.filter(function (o) { return o.chave === info.chave; });
+    if (linhas.length) {
+      const ul = el('ul', 'livro-fonte__efeitos');
+      linhas.forEach(function (l) { ul.appendChild(el('li', '', l.texto)); });
+      cartao.appendChild(ul);
+    }
+
+    info.escolhas.forEach(function (esc) {
+      const rotulo = el('label', 'livro-fonte__escolha');
+      rotulo.appendChild(el('span', '', esc.rotulo));
+      const sel = el('select', 'controle');
+      sel.setAttribute('data-livro-escolha', info.chave);
+      sel.setAttribute('data-campo-escolha', esc.id);
+      const vazio = el('option', '', 'Escolher…');
+      vazio.value = '';
+      sel.appendChild(vazio);
+      esc.opcoes.forEach(function (id) {
+        const o = el('option', '', esc.tipo === 'pericia' ? nomePericia(id) : siglaAtributo(id));
+        o.value = id;
+        if (esc.valor === id) o.selected = true;
+        sel.appendChild(o);
+      });
+      rotulo.appendChild(sel);
+      cartao.appendChild(rotulo);
+    });
+
+    const acoes = el('div', 'livro-fonte__acoes');
+    estado.gastos.filter(function (g) { return g.chave === info.chave; }).forEach(function (g) { acoes.appendChild(criarControleGasto(g)); });
+    estado.ativaveis.filter(function (a) { return a.chave === info.chave; }).forEach(function (a) {
+      const duracao = a.duracao === 'cena' ? 'até o fim da cena' : a.duracao === 'rodadas' ? a.rodadas + (a.rodadas === 1 ? ' rodada' : ' rodadas') : 'até desligar';
+      if (a.ligado) acoes.appendChild(botao('Desligar ' + a.nome, 'botao botao--pequeno botao--ligado', { 'data-livro-desligar': a.chave }));
+      else acoes.appendChild(botao('Ativar ' + a.nome + ' · ' + (a.custo ? a.custo + ' PE' : 'sem custo') + ' · ' + duracao, 'botao botao--pequeno', { 'data-livro-ativar': a.chave }));
+    });
+    estado.usos.filter(function (u) { return u.chave === info.chave; }).forEach(function (u) {
+      const verbo = u.tipo === 'cura' ? 'Curar' : u.tipo === 'dano' ? 'Rolar dano' : 'Rolar';
+      acoes.appendChild(botao(verbo + ': ' + u.nome + ' · ' + (u.custo ? u.custo + ' PE · ' : '') + u.rolar, 'botao botao--pequeno', { 'data-livro-usar': u.id }));
+    });
+    if (acoes.children.length) cartao.appendChild(acoes);
+
+    if (abertos[info.chave]) cartao.appendChild(criarTextoLivro(info.chave));
+    return cartao;
+  }
+
+  function assinaturaDe(estado, f) {
+    return JSON.stringify([
+      estado.carregado, estado.origens, estado.pendencias,
+      estado.fontes.map(function (x) { return [x.chave, x.nome, x.escolhas.map(function (e) { return e.valor; })]; }),
+      estado.gastos.map(function (g) { return [g.id, g.preparado, g.custo, g.bonus, g.dados, g.dano, g.unidadesMax]; }),
+      estado.ativaveis.map(function (a) { return [a.chave, a.ligado, a.custo]; }),
+      estado.usos.map(function (u) { return [u.id, u.custo]; }),
+      (f.efeitos.ativos || []).map(function (a) { return [a.chave, a.rodadas, a.ateFimCena]; }),
+      OP.livro ? OP.livro.escopos() : [], Object.keys(abertos).filter(function (k) { return abertos[k]; }),
+      acessoDisponivel()
+    ]);
+  }
+
+  function desenharFontes(estado) {
+    const mostrar = estado.carregado || (acessoDisponivel() && !estado.carregado);
+    refs.secao.hidden = !mostrar;
+    if (!mostrar) return;
+    refs.fontes.textContent = '';
+    if (!estado.carregado) {
+      refs.nota.textContent = 'O conteúdo do livro ainda não foi liberado nesta conta. Em Conta, resgate um código para ver o texto e ligar os efeitos automáticos.';
+      return;
+    }
+    const pend = estado.pendencias;
+    refs.nota.textContent = estado.fontes.length
+      ? 'A ficha soma sozinha o que está listado em cada fonte. Botões: prepare um gasto para o próximo teste, ative um efeito ou use um poder.' +
+        (pend.length ? ' Falta escolher: ' + pend.map(function (p) { return p.nome + ' (' + p.rotulo + ')'; }).join('; ') + '.' : '')
+      : 'Nenhuma origem, classe, trilha ou poder desta ficha tem efeito automático ainda.';
+    estado.fontes.forEach(function (info) { refs.fontes.appendChild(criarCartaoFonte(info, estado)); });
+  }
+
+  /** RD vinda de poderes: aparece junto das resistências (os campos manuais continuam valendo). */
+  function desenharResistencias(estado) {
+    if (!refs.resistencias) return;
+    const rd = estado.origens.filter(function (o) { return /^RD /.test(o.texto); });
+    refs.resistencias.hidden = !rd.length;
+    refs.resistencias.textContent = rd.length
+      ? 'Dos poderes (somam às que você marcar abaixo): ' + rd.map(function (o) { return o.texto.replace(/ \(ativo\)$/, '') + ' — ' + o.nome; }).join('; ') + '.'
+      : '';
+  }
+
+  function desenharPreparados(estado) {
+    const gastos = estado.gastos;
+    refs.preparados.hidden = !gastos.length;
+    refs.preparadosLista.textContent = '';
+    gastos.forEach(function (g) { refs.preparadosLista.appendChild(criarControleGasto(g)); });
+  }
+
+  function desenharAtivos(estado, f) {
+    const ativos = (f.efeitos.ativos || []);
+    refs.ativos.hidden = !ativos.length;
+    refs.ativosLista.textContent = '';
+    ativos.forEach(function (a) {
+      const info = estado.ativaveis.find(function (x) { return x.chave === a.chave; });
+      const nome = info ? info.nome : a.chave;
+      const li = el('li', 'cond-cartao');
+      const topo = el('div', 'cond-cartao__topo');
+      const titulo = el('div', 'cond-cartao__titulo');
+      titulo.appendChild(el('strong', 'cond-cartao__nome', nome));
+      titulo.appendChild(el('span', 'cond-cartao__categoria', a.ateFimCena ? 'até o fim da cena' : a.rodadas ? a.rodadas + (a.rodadas === 1 ? ' rodada' : ' rodadas') : 'até desligar'));
+      topo.appendChild(titulo);
+      const fechar = botao('Desligar', 'botao botao--pequeno', { 'data-livro-desligar': a.chave });
+      topo.appendChild(fechar);
+      li.appendChild(topo);
+      const linhas = estado.origens.filter(function (o) { return o.chave === a.chave && /\(ativo\)$/.test(o.texto); });
+      if (linhas.length) li.appendChild(el('p', 'cond-cartao__resumo', linhas.map(function (l) { return l.texto.replace(/ \(ativo\)$/, ''); }).join('; ')));
+      refs.ativosLista.appendChild(li);
+    });
+  }
+
+  function desenhar(f, derivados) {
+    derivadosAtuais = derivados;
+    const estado = derivados.efeitos;
+    if (!estado || !refs.secao) return;
+    const temCatalogo = Boolean(OP.data.catalogo && ((OP.data.catalogo.poderes || []).length || (OP.data.catalogo.rituais || []).length));
+    refs.addPoder.hidden = !temCatalogo;
+    refs.addRitual.hidden = !temCatalogo;
+    const assin = assinaturaDe(estado, f);
+    if (assin === assinatura) return;
+    assinatura = assin;
+    desenharResistencias(estado);
+    desenharFontes(estado);
+    desenharPreparados(estado);
+    desenharAtivos(estado, f);
+  }
+
+  /* ------------------------------------------------------------------------
+     Eventos
+     ------------------------------------------------------------------------ */
+
+  function tratarClique(evento) {
+    const alvo = evento.target.closest('[data-livro-preparar], [data-livro-ativar], [data-livro-desligar], [data-livro-usar], [data-livro-texto]');
+    if (!alvo) return;
+    if (alvo.hasAttribute('data-livro-preparar')) {
+      const id = alvo.getAttribute('data-livro-preparar');
+      const g = derivadosAtuais.efeitos.gastos.find(function (x) { return x.id === id; });
+      if (!g) return;
+      let unidades = 1;
+      const sel = alvo.parentElement.querySelector('[data-livro-unidades]');
+      if (sel) unidades = Number(sel.value) || 1;
+      aoPreparar(id, g.preparado ? 0 : unidades);
+    } else if (alvo.hasAttribute('data-livro-ativar')) aoAtivar(alvo.getAttribute('data-livro-ativar'));
+    else if (alvo.hasAttribute('data-livro-desligar')) aoDesligar(alvo.getAttribute('data-livro-desligar'));
+    else if (alvo.hasAttribute('data-livro-usar')) aoUsar(alvo.getAttribute('data-livro-usar'));
+    else if (alvo.hasAttribute('data-livro-texto')) {
+      const chave = alvo.getAttribute('data-livro-texto');
+      abertos[chave] = !abertos[chave];
+      assinatura = '';
+      desenhar(ficha(), derivadosAtuais);
+    }
+  }
+
+  function tratarMudanca(evento) {
+    const un = evento.target.closest('[data-livro-unidades]');
+    if (un) {
+      const id = un.getAttribute('data-livro-unidades');
+      const g = derivadosAtuais.efeitos.gastos.find(function (x) { return x.id === id; });
+      if (g && g.preparado) aoPreparar(id, Number(un.value) || 1);
+      return;
+    }
+    const esc = evento.target.closest('[data-livro-escolha]');
+    if (esc) aoEscolher(esc.getAttribute('data-livro-escolha'), esc.getAttribute('data-campo-escolha'), esc.value);
+  }
+
+  function montar() {
+    refs.dialogo = document.getElementById('dialogo-livro');
+    if (!refs.dialogo) return;
+    refs.titulo = document.getElementById('livro-titulo-dialogo');
+    refs.dica = document.getElementById('livro-dialogo-dica');
+    refs.busca = document.getElementById('livro-busca');
+    refs.abas = document.getElementById('livro-abas');
+    refs.lista = document.getElementById('livro-lista');
+    refs.vazio = document.getElementById('livro-vazio');
+    refs.mensagem = document.getElementById('livro-mensagem');
+    refs.secao = document.getElementById('secao-livro');
+    refs.nota = document.getElementById('livro-nota');
+    refs.fontes = document.getElementById('livro-fontes');
+    refs.preparados = document.getElementById('livro-preparados');
+    refs.preparadosLista = document.getElementById('livro-preparados-lista');
+    refs.ativos = document.getElementById('livro-ativos');
+    refs.ativosLista = document.getElementById('livro-ativos-lista');
+    refs.resistencias = document.getElementById('resistencia-poderes');
+    refs.addPoder = document.getElementById('livro-add-poder');
+    refs.addRitual = document.getElementById('livro-add-ritual');
+
+    refs.busca.addEventListener('input', function () { lista.busca = refs.busca.value; desenharLista(); });
+    refs.dialogo.addEventListener('click', function (evento) {
+      if (evento.target.closest('[data-fechar-dialogo]')) fecharLista();
+    });
+    refs.dialogo.addEventListener('close', function () {
+      if (lista.gatilho && document.contains(lista.gatilho)) lista.gatilho.focus();
+    });
+    refs.addPoder.addEventListener('click', function () { abrirPoderes(refs.addPoder); });
+    refs.addRitual.addEventListener('click', function () { abrirRituais(refs.addRitual); });
+    document.addEventListener('click', tratarClique);
+    document.addEventListener('change', tratarMudanca);
+
+    // Quando o conteúdo do livro chega (ou some), a tela refaz as contas
+    if (OP.livro) {
+      OP.livro.aoMudar(function () {
+        assinatura = '';
+        if (OP.app && OP.app.redesenhar) OP.app.redesenhar(OP.state.ficha);
+      });
+    }
+    OP.ui.registrarExtensao({ desenhar: desenhar });
+  }
+
+  OP.uiLivro = {
+    montar: montar,
+    abrirOrigem: abrirOrigem,
+    abrirPoderes: abrirPoderes,
+    abrirRituais: abrirRituais,
+    descreverDefinicao: descreverDefinicao,
+    criarRitualDoCatalogo: criarRitualDoCatalogo
+  };
+})(window.OP);

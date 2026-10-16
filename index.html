@@ -345,7 +345,7 @@
               <div class="campo campo--origem">
                 <label for="campo-origem">Origem</label>
                 <!-- Opções (agrupadas por fonte) geradas por js/ui-classe.js a partir de OP.data.origens -->
-                <select id="campo-origem" data-campo="identificacao.origem" data-tipo="texto"></select>
+                <select id="campo-origem" data-campo="identificacao.origem" data-tipo="texto" data-seletor-grande="origem"></select>
                 <input id="campo-origem-texto" class="campo__texto-livre" type="text" autocomplete="off" hidden
                        placeholder="Nome da origem" aria-label="Origem (texto livre)" data-campo="identificacao.origemTexto" data-tipo="texto">
               </div>
@@ -722,6 +722,12 @@
             <p class="secao__nota" id="cond-vazio">Nenhuma condição ativa.</p>
             <ul class="cond-lista" id="cond-lista" aria-labelledby="cond-ativas-titulo"></ul>
 
+            <!-- Efeitos ligados de poderes e rituais (js/ui-livro.js) -->
+            <div class="livro-ativos" id="livro-ativos" hidden>
+              <h3 class="subtitulo" id="livro-ativos-titulo">Efeitos ativos</h3>
+              <ul class="cond-lista" id="livro-ativos-lista" aria-labelledby="livro-ativos-titulo"></ul>
+            </div>
+
             <label class="caixa cond-aplicar">
               <input type="checkbox" id="cond-aplicar" data-campo="condicoes.aplicarEfeitos" data-tipo="booleano">
               <span>Aplicar efeitos das condições</span>
@@ -866,6 +872,7 @@
               </summary>
               <div class="resistencias__corpo">
                 <p class="secao__nota" id="resistencia-condicoes" hidden></p>
+                <p class="secao__nota" id="resistencia-poderes" hidden></p>
                 <p class="secao__nota">Redução de dano por tipo. Deixe 0 nos tipos sem resistência.</p>
                 <!-- Campos gerados a partir de OP.data.tiposDano -->
                 <div class="resistencias__grupos" id="grade-resistencias"></div>
@@ -898,7 +905,19 @@
             <div class="habilidades__lista" id="lista-habilidades" role="list" aria-label="Habilidades e poderes"></div>
             <p class="itens__vazio" id="habilidades-vazio">Nenhuma habilidade. Use "Adicionar habilidade" para cadastrar as suas.</p>
             <p class="pericias__vazio" id="habilidades-nenhuma" hidden>Nenhuma habilidade com este filtro.</p>
-            <button type="button" class="botao botao--adicionar" data-acao="adicionar-habilidade">+ Adicionar habilidade</button>
+            <div class="adicionar-linha">
+              <button type="button" class="botao botao--adicionar" data-acao="adicionar-habilidade">+ Adicionar habilidade</button>
+              <button type="button" class="botao botao--pequeno" id="livro-add-poder" hidden>Escolher do livro…</button>
+            </div>
+          </section>
+
+          <!-- Efeitos automáticos de origem, classe, trilha e poderes (só com o conteúdo do livro liberado; js/ui-livro.js) -->
+          <section class="secao secao--livro" id="secao-livro" aria-labelledby="titulo-livro" hidden>
+            <div class="secao__cabecalho">
+              <h2 class="secao__titulo" id="titulo-livro">Efeitos automáticos</h2>
+            </div>
+            <p class="secao__nota" id="livro-nota"></p>
+            <div class="livro-fontes" id="livro-fontes"></div>
           </section>
           </div>
 
@@ -933,7 +952,10 @@
             <!-- <datalist> de execução, alcance e duração (data/rituais-campos.js), gerados pelo ui.js -->
             <div id="sugestoes-ritual"></div>
             <p class="itens__vazio" id="rituais-vazio">Nenhum ritual. Use "Adicionar ritual" para cadastrar os seus.</p>
-            <button type="button" class="botao botao--adicionar" data-acao="adicionar-ritual">+ Adicionar ritual</button>
+            <div class="adicionar-linha">
+              <button type="button" class="botao botao--adicionar" data-acao="adicionar-ritual">+ Adicionar ritual</button>
+              <button type="button" class="botao botao--pequeno" id="livro-add-ritual" hidden>Escolher do livro…</button>
+            </div>
             <div class="rituais__topo">
               <!-- DT de rituais -->
               <article class="painel painel--dt">
@@ -1407,6 +1429,12 @@
       </div>
       <p class="rolagens__dica" id="rolagens-dica"></p>
 
+      <!-- Gastos opcionais de poderes para o próximo teste (js/ui-livro.js) -->
+      <div class="livro-preparados" id="livro-preparados" hidden>
+        <h2 class="rolagens__subtitulo">Poderes para o próximo teste</h2>
+        <div class="livro-preparados__lista" id="livro-preparados-lista"></div>
+      </div>
+
       <!-- Dados rápidos: um toque rola 1dN -->
       <div class="rolagens__rapidos" role="group" aria-label="Dados rápidos">
         <button type="button" class="botao botao--pequeno" data-dado-rapido="1d4">d4</button>
@@ -1654,6 +1682,29 @@
     </div>
   </dialog>
 
+  <!-- ================= ESCOLHER DO LIVRO (origens, poderes e rituais; js/ui-livro.js) ================= -->
+  <dialog class="dialogo dialogo--livro" id="dialogo-livro" aria-labelledby="livro-titulo-dialogo">
+    <div class="dialogo__corpo">
+      <div class="dialogo__topo">
+        <h2 class="dialogo__titulo" id="livro-titulo-dialogo">Escolher</h2>
+        <button type="button" class="botao-icone" data-fechar-dialogo aria-label="Fechar">
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>
+        </button>
+      </div>
+      <p class="dialogo__dica" id="livro-dialogo-dica"></p>
+      <div class="livro-ferramentas">
+        <label class="busca">
+          <span class="visualmente-oculto">Buscar</span>
+          <input type="search" id="livro-busca" placeholder="Buscar…" autocomplete="off">
+        </label>
+        <div class="abas" id="livro-abas" role="group" aria-label="Filtrar"></div>
+      </div>
+      <div class="livro-lista" id="livro-lista"></div>
+      <p class="itens__vazio" id="livro-vazio" hidden>Nada encontrado.</p>
+      <p class="mensagem-acao" id="livro-mensagem" role="status" aria-live="polite" hidden></p>
+    </div>
+  </dialog>
+
   <!-- ================= REGRAS OPCIONAIS (por ficha; js/ui-regras.js) ================= -->
   <dialog class="dialogo dialogo--regras" id="dialogo-regras" aria-labelledby="regras-titulo">
     <div class="dialogo__corpo">
@@ -1814,6 +1865,7 @@
   <script src="data/temas-ficha.js"></script>
   <script src="data/condicoes.js"></script>
   <script src="data/alteracoes-nex.js"></script>
+  <script src="data/efeitos.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/prefs.js"></script>
   <script src="js/state.js"></script>
@@ -1834,6 +1886,8 @@
   <script src="js/ui-verificacoes.js"></script>
   <script src="js/ui-aparencia.js"></script>
   <script src="js/conta.js"></script>
+  <script src="js/livro.js"></script>
+  <script src="js/ui-livro.js"></script>
   <script src="js/ui-regras.js"></script>
   <script src="js/ui-nex.js"></script>
   <script src="js/ui-auditoria.js"></script>
@@ -1841,5 +1895,6 @@
   <!-- Testes: não rodam sozinhos. Digite OP.runTests() no console. -->
   <script src="js/tests.js"></script>
   <script src="js/tests-etapa10.js"></script>
+  <script src="js/tests-etapa11.js"></script>
 </body>
 </html>

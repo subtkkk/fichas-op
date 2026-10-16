@@ -1415,6 +1415,7 @@ window.OP = window.OP || {};
     const resumo = c.inicial + ' inicial' + termoComSinal(c.ganhoNex, porPasso) +
       termoComSinal(c.bonus, 'bônus') +
       (c.bonusAlteracoes ? termoComSinal(c.bonusAlteracoes, 'alteração de NEX (' + siglaAtributo(c.atributoAlteracoes) + ')') : '') +
+      (c.bonusEfeitos ? termoComSinal(c.bonusEfeitos, 'poderes') : '') +
       (c.perdaPermanente ? ' − ' + c.perdaPermanente + ' perda permanente' : '') + ' = ' + c.max;
 
     const parteAtributo = c.atributo ? siglaAtributo(c.atributo) + ' ' + c.valorAtributo : '';
@@ -1918,7 +1919,8 @@ window.OP = window.OP || {};
       parteComSinal('manual', defesa.protecao) +
       parteComSinal('outros', defesa.outros) +
       (defesa.sobrecarga ? ' − sobrecarga ' + defesa.sobrecarga : '') +
-      (defesa.condicoes ? parteComSinal('condições', defesa.condicoes) : ''));
+      (defesa.condicoes ? parteComSinal('condições', defesa.condicoes) : '') +
+      (defesa.efeitos ? parteComSinal('poderes', defesa.efeitos) : ''));
 
     const nomes = derivados.inventario.nomesProtecoes.map(function (nome) { return nome || 'sem nome'; });
     definirTexto(refs.nomesProtecoes, nomes.length ? '(' + nomes.join(', ') + ')' : '');
@@ -2313,6 +2315,11 @@ window.OP = window.OP || {};
     caixa.appendChild(criarElemento('p', 'resultado__regra', regra));
     if (resultado.aviso) caixa.appendChild(criarElemento('p', 'resultado__aviso', resultado.aviso));
     if (resultado.avisoEnergia) caixa.appendChild(criarElemento('p', 'resultado__aviso', resultado.avisoEnergia));
+    if (resultado.poderes) {
+      caixa.appendChild(criarElemento('p', 'resultado__aviso', 'Poderes usados: ' + resultado.poderes.join(', ') +
+        (resultado.poderesCusto ? ' (−' + resultado.poderesCusto + ' PE)' : '') +
+        (resultado.poderesDados ? ' · ' + formatarComSinal(resultado.poderesDados) + 'd20' : '') + '.'));
+    }
     caixa.appendChild(criarFimResultado(conta, resultado.total));
     if (alvo) caixa.appendChild(criarElemento('p', 'resultado__alvo resultado__alvo--' + (resultado.acertou ? 'sim' : 'nao'), alvo));
     const acoes = criarAcoesResultado(resultado);
@@ -2357,7 +2364,9 @@ window.OP = window.OP || {};
     const termos = criarElemento('div', 'resultado__termos');
     resultado.termos.forEach(function (termo, indice) { termos.appendChild(criarTermo(termo, indice)); });
     caixa.appendChild(termos);
-    caixa.appendChild(criarFimResultado((resultado.formula || '') + (tipo ? ' · ' + tipo.nome : ''), resultado.total));
+    caixa.appendChild(criarFimResultado((resultado.formula || '') + (tipo ? ' · ' + tipo.nome : '') + (resultado.cura ? ' · cura' : ''), resultado.total));
+    if (resultado.aplicado) caixa.appendChild(criarElemento('p', 'resultado__aviso', 'Aplicado na ficha: ' + resultado.aplicado + '.'));
+    if (resultado.poderes) caixa.appendChild(criarElemento('p', 'resultado__aviso', 'Poderes usados: ' + resultado.poderes.join(', ') + (resultado.poderesCusto ? ' (−' + resultado.poderesCusto + ' PE)' : '') + '.'));
     return caixa;
   }
 
@@ -2633,6 +2642,7 @@ window.OP = window.OP || {};
       ['[data-acao="adicionar-habilidade"]', function () { adicionarHabilidade(); }],
       ['[data-conjurar]', function (b) { conjurarNaTela(b.dataset.conjurar, b.dataset.forma); }],
       ['[data-rolar-dano-ritual]', function (b) { rolarDanoRitualNaTela(b.dataset.rolarDanoRitual, b.dataset.forma); }],
+      ['[data-rolar-cura-ritual]', function (b) { rolarCuraRitualNaTela(b.dataset.rolarCuraRitual, b.dataset.forma); }],
       ['[data-remover-ritual]', function (b) { removerDaLista('rituais', b.dataset.removerRitual); }],
       ['[data-acao="adicionar-ritual"]', function () { adicionarRitual(); }],
       ['[data-acao="novo-turno"]', function () { OP.state.novoTurno(); }]
@@ -2855,7 +2865,7 @@ window.OP = window.OP || {};
     ['duracao', 'Duração', 'duracao'], ['pagina', 'Página']
   ];
   // Atributos que recebem o id do ritual (por setAttribute, em criarComIds).
-  const IDS_RITUAL = ['data-ritual', 'data-conjurar', 'data-rolar-dano-ritual', 'data-remover-ritual', 'data-alternar-edicao'];
+  const IDS_RITUAL = ['data-ritual', 'data-conjurar', 'data-rolar-dano-ritual', 'data-rolar-cura-ritual', 'data-remover-ritual', 'data-alternar-edicao'];
 
   function ordinal(numero) {
     return numero + 'º';
@@ -2918,6 +2928,10 @@ window.OP = window.OP || {};
               '<input type="text" class="controle forma__dano" placeholder="ex.: 2d6+3" spellcheck="false" autocomplete="off"' +
                 ' data-campo="' + c + '.dano" data-tipo="texto">' +
               '<span class="ataque__erro" data-erro-dano hidden></span>') +
+            htmlCampoAtaque('cura', 'Cura',
+              '<input type="text" class="controle forma__cura" placeholder="ex.: 2d8+2" spellcheck="false" autocomplete="off"' +
+                ' data-campo="' + c + '.cura" data-tipo="texto">' +
+              '<span class="ataque__erro" data-erro-cura hidden></span>') +
           '</div>' +
           htmlCampoAtaque('efeito', 'Efeito',
             '<textarea class="controle" rows="2" placeholder="O que esta forma faz" data-campo="' + c + '.efeito" data-tipo="texto"></textarea>') +
@@ -2926,6 +2940,8 @@ window.OP = window.OP || {};
               '<span data-texto-conjurar>Conjurar</span></button>' +
             '<button type="button" class="botao-rolagem botao-rolagem--dano" data-rolar-dano-ritual data-forma="' + definicao.id + '" hidden>' +
               ICONE_DADO + '<span>Rolar dano</span></button>' +
+            '<button type="button" class="botao-rolagem botao-rolagem--dano" data-rolar-cura-ritual data-forma="' + definicao.id + '" hidden>' +
+              ICONE_DADO + '<span>Rolar cura</span></button>' +
           '</div>' +
           '<p class="mensagem-acao" data-mensagem-forma role="status" aria-live="polite" hidden></p>' +
         '</div>' +
@@ -3080,6 +3096,9 @@ window.OP = window.OP || {};
           avisos: bloco.querySelector('[data-avisos-forma]'),
           textoConjurar: bloco.querySelector('[data-texto-conjurar]'),
           botaoDano: bloco.querySelector('[data-rolar-dano-ritual]'),
+          cura: bloco.querySelector('.forma__cura'),
+          erroCura: bloco.querySelector('[data-erro-cura]'),
+          botaoCura: bloco.querySelector('[data-rolar-cura-ritual]'),
           mensagem: bloco.querySelector('[data-mensagem-forma]')
         };
       });
@@ -3109,7 +3128,8 @@ window.OP = window.OP || {};
     definirTexto(refs.composicaoDt, p.base +
       (conj.dt.somaLimitePE ? parteComSinal('limite de PE', p.limitePE) : '') +
       parteComSinal(siglaAtributo(conj.dt.idAtributo), p.atributo) +
-      parteComSinal('bônus', p.bonus));
+      parteComSinal('bônus', p.bonus) +
+      (p.efeitos ? parteComSinal('poderes', p.efeitos) : ''));
     definirTexto(refs.textoCirculos, conj.circulosLiberados ? 'até o ' + ordinal(conj.circulosLiberados) : 'nenhum');
 
     // Elemento conectado (NEX 50%) e afinidade (só depois de transcender, com elemento conectado)
@@ -3204,6 +3224,12 @@ window.OP = window.OP || {};
         if (forma.erro.hidden === invalido) forma.erro.hidden = !invalido;
         definirTexto(forma.erro, info.danoErro);
         if (forma.botaoDano.hidden === info.danoValido) forma.botaoDano.hidden = !info.danoValido;
+        const curaInvalida = info.temCura && !info.curaValida;
+        forma.cura.classList.toggle('controle--invalido', curaInvalida);
+        forma.cura.setAttribute('aria-invalid', String(curaInvalida));
+        if (forma.erroCura.hidden === curaInvalida) forma.erroCura.hidden = !curaInvalida;
+        definirTexto(forma.erroCura, info.curaErro);
+        if (forma.botaoCura.hidden === info.curaValida) forma.botaoCura.hidden = !info.curaValida;
         // Medo: a Sanidade aparece no botão; a perda permanente fica no lembrete do cartão.
         definirTexto(forma.textoConjurar, 'Conjurar · ' + (info.custoComCondicoes > 0 ? info.custoComCondicoes + ' PE' : 'sem custo') +
           (info.san ? ' · ' + info.san + ' SAN' : ''));
@@ -3517,6 +3543,12 @@ window.OP = window.OP || {};
       else anterior.campo.setAttribute('size', anterior.size);
     });
     redesenharListas();
+  }
+
+  function rolarCuraRitualNaTela(idRitual, idForma) {
+    const ritual = acharRitual(idRitual);
+    if (!ritual) return;
+    mostrarResultado(OP.rolagens.rolarCuraRitual(OP.state.ficha, ritual, idForma));
   }
 
   function rolarDanoRitualNaTela(idRitual, idForma) {

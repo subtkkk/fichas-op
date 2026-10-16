@@ -14031,3 +14031,10 @@ body[data-nex-nivel="sim"] .campo--nex .campo__exposicao {
     padding-left: 12px;
   }
 }
+
+.conta__livro {
+  margin: -6px 0 14px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--papel-2);
+}

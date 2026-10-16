@@ -14,12 +14,12 @@
       "binding": "DB",
       "database_name": "fichas-op",
       // Troque pelo ID que o painel do Cloudflare mostra para o banco (Storage → D1)
-      "database_id": "TROQUE-PELO-ID-DO-BANCO"
+      "database_id": "d9012042-6063-4d31-aa10-a4f897a7c2ab"
     }
   ],
   "vars": {
     // Não são segredos: o ID público do aplicativo do Discord e o SEU ID de usuário (admin)
-    "DISCORD_CLIENT_ID": "",
-    "ADMIN_DISCORD_ID": ""
+    "1560477841404071998": "",
+    "722951622900187248": ""
   }
 }

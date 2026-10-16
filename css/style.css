@@ -6930,7 +6930,8 @@ body.arrastando-arquivo::after {
   flex: 1 1 140px;
 }
 
-.forma__dano {
+.forma__dano,
+.forma__cura {
   font-family: var(--fonte-mono);
 }
 
@@ -13688,4 +13689,345 @@ body[data-nex-nivel="sim"] .campo--nex .campo__exposicao {
 
 .aviso-neutro--erro {
   color: var(--cor-perigo);
+}
+
+/* ==========================================================================
+   33. O livro na ficha (js/ui-livro.js): escolher origem, poderes e rituais,
+   efeitos automáticos, poderes para o próximo teste e efeitos ativos
+   ========================================================================== */
+.dialogo--livro {
+  width: min(920px, calc(100vw - 24px));
+  max-height: calc(100dvh - 32px);
+  overflow: hidden;
+}
+
+.dialogo--livro[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.dialogo--livro .dialogo__corpo {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.livro-ferramentas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin: 4px 0 10px;
+}
+
+.livro-ferramentas .busca {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.livro-ferramentas .abas {
+  flex: 1 1 auto;
+}
+
+.livro-lista {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+}
+
+.livro-lista__grupo {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 14px 0 4px;
+  padding: 6px 2px;
+  font: 600 0.6875rem/1.4 var(--fonte-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+  background: color-mix(in srgb, var(--tinta-2) 96%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--cor-texto) 14%, transparent);
+}
+
+.livro-item {
+  border-bottom: 1px solid color-mix(in srgb, var(--cor-texto) 10%, transparent);
+}
+
+.livro-item__linha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.livro-item__alternar {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  min-height: 48px;
+  padding: 6px 4px;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.livro-item__seta {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin: 0 3px;
+  border-right: 1.5px solid var(--papel-3);
+  border-bottom: 1.5px solid var(--papel-3);
+  transform: rotate(-45deg);
+  transition: transform var(--dur-2) var(--curva), border-color var(--dur-1) var(--curva);
+}
+
+.livro-item--aberto .livro-item__seta {
+  transform: rotate(45deg);
+}
+
+.livro-item__alternar:hover .livro-item__titulo {
+  color: var(--acento);
+}
+
+.livro-item__alternar:hover .livro-item__seta {
+  border-color: var(--acento);
+}
+
+.livro-item__textos {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.livro-item__titulo {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.livro-item__meta {
+  font: 500 0.7188rem/1.4 var(--fonte-mono);
+  color: var(--papel-3);
+  overflow-wrap: anywhere;
+}
+
+.livro-item__acao {
+  flex: none;
+  min-width: 96px;
+}
+
+.selo--livro {
+  color: var(--acento);
+}
+
+.livro-item__detalhes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 2px 6px 16px 31px;
+}
+
+.livro-item__detalhes[hidden] {
+  display: none;
+}
+
+.livro-item__descricao,
+.livro-texto__bloco {
+  margin: 0;
+  color: var(--papel-2);
+  line-height: 1.55;
+  max-width: 68ch;
+}
+
+.livro-texto__bloco strong {
+  color: var(--cor-texto);
+}
+
+.livro-item__poder {
+  padding: 8px 12px;
+  background: color-mix(in srgb, var(--cor-texto) 5%, transparent);
+  border-left: 2px solid var(--acento);
+  border-radius: var(--raio-1);
+}
+
+.livro-item__rotulo,
+.livro-texto__cabecalho,
+.livro-auto__titulo {
+  margin: 0 0 2px;
+  font: 500 0.6875rem/1.4 var(--fonte-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+}
+
+.livro-item__valor {
+  margin: 0;
+  font-weight: 600;
+}
+
+.livro-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.livro-texto__nota {
+  margin: 0;
+  color: var(--papel-3);
+  font-size: 0.875rem;
+}
+
+.livro-auto {
+  padding: 8px 12px;
+  border: 1px dashed color-mix(in srgb, var(--cor-texto) 22%, transparent);
+  border-radius: var(--raio-1);
+}
+
+.livro-auto__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+  color: var(--papel-2);
+}
+
+.livro-auto__tipo {
+  display: inline-block;
+  margin-right: 4px;
+  font: 600 0.625rem/1.4 var(--fonte-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--acento);
+}
+
+/* Botões ao lado de "+ Adicionar ..." */
+.adicionar-linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+/* Efeitos automáticos (página Habilidades) */
+.livro-fontes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.livro-fonte {
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--cor-texto) 4%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cor-texto) 12%, transparent);
+  border-radius: var(--raio-2);
+}
+
+.livro-fonte__topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+}
+
+.livro-fonte__titulo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  min-width: 0;
+}
+
+.livro-fonte__nome {
+  overflow-wrap: anywhere;
+}
+
+.livro-fonte__efeitos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  font: 500 0.8125rem/1.4 var(--fonte-mono);
+  color: var(--papel-2);
+}
+
+.livro-fonte__acoes,
+.livro-preparados__lista {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.livro-fonte__escolha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 0.875rem;
+  color: var(--papel-2);
+}
+
+.livro-gasto {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.livro-gasto__botao,
+.livro-fonte__acoes .botao {
+  height: auto;
+  min-height: 40px;
+  text-align: left;
+  white-space: normal;
+}
+
+.livro-gasto__unidades {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  color: var(--papel-3);
+}
+
+.botao--ligado {
+  color: var(--cor-texto);
+  background: color-mix(in srgb, var(--acento) 22%, transparent);
+  border-color: var(--acento);
+}
+
+.livro-preparados {
+  margin: 10px 0 6px;
+}
+
+.livro-ativos {
+  margin-top: 12px;
+}
+
+@media (max-width: 719px) {
+  .dialogo--livro {
+    width: 100vw;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+
+  .livro-item__acao {
+    min-width: 80px;
+  }
+
+  .livro-item__detalhes {
+    padding-left: 12px;
+  }
 }

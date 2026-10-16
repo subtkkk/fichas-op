@@ -276,7 +276,6 @@ window.OP = window.OP || {};
   function criarLinha(item) {
     const aberta = lista.expandidos[item.id] === true;
     const linha = el('div', 'livro-item' + (aberta ? ' livro-item--aberto' : ''));
-    linha.setAttribute('role', 'listitem');
     const topo = el('div', 'livro-item__linha');
     const idDetalhes = 'livro-det-' + item.id;
     const alternar = el('button', 'livro-item__alternar');
@@ -558,7 +557,6 @@ window.OP = window.OP || {};
     });
     const itens = rituais.map(function (r) {
       const naFicha = chaveNaFicha('ritual', r.id);
-      const extra = [r.alvo ? 'Alvo: ' + r.alvo : '', r.area ? 'Área/efeito: ' + r.area : '', r.duracao ? 'Duração: ' + r.duracao : ''].filter(Boolean).join(' · ');
       return {
         id: 'ritual-' + r.id,
         titulo: r.nome,
@@ -567,7 +565,7 @@ window.OP = window.OP || {};
         abas: ['todos', String(r.circulo), r.elemento || 'varios'],
         busca: r.nome + ' ' + nomeElemento(r.elemento) + ' ' + r.circulo + 'º círculo',
         marcado: naFicha ? 'Na ficha' : '',
-        detalhes: detalhesDoCatalogo(r.id, extra),
+        detalhes: detalhesDoCatalogo(r.id),
         acao: {
           rotulo: naFicha ? 'Na ficha' : 'Adicionar', desativada: naFicha, primaria: !naFicha,
           aoClicar: function () { adicionarRitual(r); desenharLista(); }
@@ -620,7 +618,7 @@ window.OP = window.OP || {};
     const efeito = [];
     if (g.bonus) efeito.push(sinal(g.bonus * Math.max(1, g.preparado || 1)));
     if (g.dados) efeito.push(sinal(g.dados) + 'd20');
-    if (g.dano) efeito.push(sinal(g.dano * Math.max(1, g.preparado || 1)) + ' dano');
+    if (g.dano) efeito.push(sinal(g.dano * Math.max(1, g.preparado || 1)) + (g.quando && g.quando.dano ? '' : ' dano'));
     return g.nome + ' · ' + custo + ' · ' + efeito.join(' ') + ' ' + textoQuando(g.quando);
   }
 
@@ -649,7 +647,6 @@ window.OP = window.OP || {};
 
   function criarCartaoFonte(info, estado) {
     const cartao = el('article', 'livro-fonte');
-    cartao.setAttribute('role', 'listitem');
     const topo = el('div', 'livro-fonte__topo');
     const titulo = el('div', 'livro-fonte__titulo');
     titulo.appendChild(el('strong', 'livro-fonte__nome', info.nome));
@@ -732,6 +729,16 @@ window.OP = window.OP || {};
     estado.fontes.forEach(function (info) { refs.fontes.appendChild(criarCartaoFonte(info, estado)); });
   }
 
+  /** RD vinda de poderes: aparece junto das resistências (os campos manuais continuam valendo). */
+  function desenharResistencias(estado) {
+    if (!refs.resistencias) return;
+    const rd = estado.origens.filter(function (o) { return /^RD /.test(o.texto); });
+    refs.resistencias.hidden = !rd.length;
+    refs.resistencias.textContent = rd.length
+      ? 'Dos poderes (somam às que você marcar abaixo): ' + rd.map(function (o) { return o.texto.replace(/ \(ativo\)$/, '') + ' — ' + o.nome; }).join('; ') + '.'
+      : '';
+  }
+
   function desenharPreparados(estado) {
     const gastos = estado.gastos;
     refs.preparados.hidden = !gastos.length;
@@ -771,6 +778,7 @@ window.OP = window.OP || {};
     const assin = assinaturaDe(estado, f);
     if (assin === assinatura) return;
     assinatura = assin;
+    desenharResistencias(estado);
     desenharFontes(estado);
     desenharPreparados(estado);
     desenharAtivos(estado, f);
@@ -831,6 +839,7 @@ window.OP = window.OP || {};
     refs.preparadosLista = document.getElementById('livro-preparados-lista');
     refs.ativos = document.getElementById('livro-ativos');
     refs.ativosLista = document.getElementById('livro-ativos-lista');
+    refs.resistencias = document.getElementById('resistencia-poderes');
     refs.addPoder = document.getElementById('livro-add-poder');
     refs.addRitual = document.getElementById('livro-add-ritual');
 

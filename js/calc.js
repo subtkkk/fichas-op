@@ -1832,6 +1832,8 @@ window.OP = window.OP || {};
         const forma = (ritual.formas && ritual.formas[definicao.id]) || {};
         const texto = String(forma.dano || '').trim();
         const analise = texto ? OP.dados.analisarFormula(texto) : { ok: false, erro: '' };
+        const textoCura = String(forma.cura || '').trim();
+        const analiseCura = textoCura ? OP.dados.analisarFormula(textoCura) : { ok: false, erro: '' };
         const custo = custoForma(ritual, definicao.id);
         formas[definicao.id] = {
           ativa: definicao.id === 'padrao' || forma.ativa === true,
@@ -1846,7 +1848,10 @@ window.OP = window.OP || {};
           permanente: medo ? inteiroNaoNegativo(regraMedo.perdaPermanente[definicao.id]) : 0,
           temDano: texto !== '',
           danoValido: texto !== '' && analise.ok,
-          danoErro: texto !== '' && !analise.ok ? analise.erro : ''
+          danoErro: texto !== '' && !analise.ok ? analise.erro : '',
+          temCura: textoCura !== '',
+          curaValida: textoCura !== '' && analiseCura.ok,
+          curaErro: textoCura !== '' && !analiseCura.ok ? analiseCura.erro : ''
         };
       });
       return {
@@ -2780,6 +2785,11 @@ window.OP = window.OP || {};
     // NEX e Experiência: alteração sem a escolha feita (a perícia ou o atributo ainda não foram marcados)
     efeitosAlteracoes(ficha).pendencias.forEach(function (p) {
       aviso('alteracao-sem-escolha-' + p.campo, 'alteracoes', 'alt-' + p.campo, 'Alteração de ' + p.alteracao + ' sem escolha: ' + p.rotulo.toLowerCase() + '.');
+    });
+
+    // Efeitos automáticos de poderes: escolha que ainda falta (ex.: a perícia de um treinamento)
+    pendenciasDeEfeitos(ficha).forEach(function (p) {
+      aviso('efeito-sem-escolha-' + p.chave + '-' + p.campo, 'livro', null, p.nome + ': falta escolher ' + String(p.rotulo).toLowerCase() + '.');
     });
 
     // Atributos

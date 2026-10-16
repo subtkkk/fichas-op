@@ -3393,7 +3393,8 @@ body {
   flex: 1 1 140px;
 }
 
-.forma__dano {
+.forma__dano,
+.forma__cura {
   font-family: var(--fonte-mono);
 }
 
@@ -4509,4 +4510,14 @@ body {
   *::after {
     transition: none !important;
   }
+}
+
+/* O livro na ficha (efeitos automáticos, botões de escolher e efeitos ativos) é só da tela */
+.secao--livro,
+.livro-preparados,
+.livro-ativos,
+#livro-add-poder,
+#livro-add-ritual,
+#dialogo-livro {
+  display: none !important;
 }

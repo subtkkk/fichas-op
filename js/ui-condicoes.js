@@ -458,13 +458,24 @@ window.OP = window.OP || {};
     }
   }
 
+  /** Nome de um efeito de poder ou ritual (o texto do livro dá o título; sem ele, a chave). */
+  function nomeDoEfeito(item) {
+    const t = OP.livro && OP.livro.texto ? OP.livro.texto(item.chave) : null;
+    return t ? t.titulo : item.chave;
+  }
+
   function aoPassarRodada() {
     const resultado = OP.calc.passarRodada(ficha());
+    const efeitos = OP.calc.passarRodadaEfeitos(ficha());
+    if (efeitos.removidos.length || efeitos.ativos.some(function (a) { return a.rodadas !== null && a.rodadas !== undefined; })) {
+      OP.state.atualizar('efeitos.ativos', efeitos.ativos, { silencioso: true });
+    }
     OP.state.atualizar('condicoes.ativas', resultado.ativas);
-    if (resultado.removidas.length) {
-      mensagem('Rodada passada. Expirou: ' + lista(resultado.removidas.map(nomeDaCondicao)) + '.');
+    const expirou = resultado.removidas.map(nomeDaCondicao).concat(efeitos.removidos.map(nomeDoEfeito));
+    if (expirou.length) {
+      mensagem('Rodada passada. Expirou: ' + lista(expirou) + '.');
     } else {
-      mensagem('Rodada passada. Nenhuma condição expirou.');
+      mensagem('Rodada passada. Nada expirou.');
     }
   }
 
@@ -477,11 +488,14 @@ window.OP = window.OP || {};
 
   function aoFimDaCena() {
     const resultado = OP.calc.fimDaCena(ficha());
+    const efeitos = OP.calc.fimDaCenaEfeitos(ficha());
     OP.state.atualizar('condicoes.ativas', resultado.ativas, { silencioso: true });
+    if (efeitos.removidos.length) OP.state.atualizar('efeitos.ativos', efeitos.ativos, { silencioso: true });
     encerrarEfeitoEnergia(true);
     OP.state.atualizar('condicoes.turnosMorrendo', resultado.turnosMorrendo);
     const partes = [];
-    if (resultado.removidas.length) partes.push('saíram ' + lista(resultado.removidas.map(nomeDaCondicao)));
+    const saiu = resultado.removidas.map(nomeDaCondicao).concat(efeitos.removidos.map(nomeDoEfeito));
+    if (saiu.length) partes.push('saíram ' + lista(saiu));
     else partes.push('nenhuma condição saiu');
     partes.push('turnos morrendo zerados');
     mensagem('Fim da cena: ' + partes.join('; ') + '.');
@@ -611,6 +625,8 @@ window.OP = window.OP || {};
       const fim = OP.calc.fimDaCena(f);
       removidas = fim.removidas;
       mudancas.push(['condicoes.ativas', fim.ativas]);
+      const fimEfeitos = OP.calc.fimDaCenaEfeitos(f);
+      if (fimEfeitos.removidos.length) mudancas.push(['efeitos.ativos', fimEfeitos.ativos]);
       mudancas.push(['condicoes.turnosMorrendo', 0]);
       if (f.alteracoesNex && f.alteracoesNex.energia && f.alteracoesNex.energia.d6) mudancas.push(['alteracoesNex.energia', { d6: 0, valores: [], intensidade: 0 }]);
     }

@@ -63,7 +63,7 @@ linhas.forEach(function (l) {
 });
 
 const ROTULOS = /^(Tag|Tipo|Classe|Trilha|NEX|Estágio|Categoria|Página|Descrição|Execução|Alcance|Alvo|Alvos|Área|Duração|Resistência|Pré-requisito|Afinidade|Perícias treinadas|Poder da origem|Efeito do poder|Gatilho|Efeito|Especial|Regra opcional): (.*)$/;
-const usados = { origens: new Set(), habilidades: new Set(), rituais: new Set() };
+const usados = new Set(); // as chaves são únicas entre TODOS os conteúdos (um ritual e uma habilidade podem ter o mesmo nome)
 const entradas = [];
 blocos.forEach(function (bloco) {
   const campos = {};
@@ -85,11 +85,11 @@ blocos.forEach(function (bloco) {
   const nome = titulo(bloco.nome);
   const contexto = [tipo, campos.Classe, campos.Trilha, campos.NEX || campos['Estágio']].filter(Boolean).join(' ');
   let chave = slug(nome);
-  if (usados[escopo].has(chave)) chave = slug(nome + ' ' + contexto);
+  if (usados.has(chave)) chave = slug(nome + ' ' + contexto);
   let n = 2;
   const base = chave;
-  while (usados[escopo].has(chave)) chave = base + '-' + n++;
-  usados[escopo].add(chave);
+  while (usados.has(chave)) chave = base + '-' + n++;
+  usados.add(chave);
   const cab = [tipo];
   if (campos.Classe) cab.push(campos.Classe);
   if (campos.Trilha) cab.push('Trilha ' + titulo(campos.Trilha));

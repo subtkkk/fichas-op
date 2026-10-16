@@ -149,3 +149,23 @@ As fontes Cormorant Garamond e IBM Plex são distribuídas sob a SIL Open Font L
 ## Conta e conteúdo protegido (opcional)
 
 Além do site estático, o repositório tem um Worker do Cloudflare (`worker/`, `wrangler.jsonc`): login com o Discord, códigos de acesso de uso único e um conteúdo que só aparece para quem o administrador liberou por alguns dias. O conteúdo fica no banco D1, nunca nos arquivos do site. Sem o Worker (arquivo aberto direto, outro servidor) o botão "Conta" some e a ficha funciona igual. Passo a passo e como testar: `worker/LEIA-ME.md`.
+
+### O livro na ficha: textos, poderes, rituais e efeitos automáticos
+
+Com o conteúdo liberado (origens, habilidades e rituais, três conteúdos separados), a ficha ganha:
+
+- **Origem:** o seletor abre um painel grande; cada origem é um título com uma setinha que expande a descrição, o poder e as perícias.
+- **Habilidades e rituais do livro:** "Escolher do livro…" lista poderes (de classe, gerais, paranormais) e rituais, com o texto e o que a ficha faz sozinha. Adicionar um ritual já preenche círculo, elemento, execução, alcance, duração, resistência, custos das formas Discente e Verdadeira, dano e cura.
+- **Efeitos automáticos** (página Habilidades): a ficha soma sozinha o que é fixo (por exemplo, PV por NEX de Sangue de Ferro, Defesa, perícias, treinamento, DT, carga, RD) e dá botões para o que é opcional: **preparar** um gasto para o próximo teste (Saber é Poder: −2 PE e +5), **ativar** um efeito (cena, rodadas ou manual) e **usar** um poder (cura, dano, perda de SAN). "Passar rodada" e "Fim da cena" encerram os efeitos ativos. Rituais conjurados ligam o efeito na forma usada.
+- O que não é calculado (ações extras, efeitos em outros seres, escolhas do mestre, trocas de regra) fica só no texto do livro.
+
+**Onde isso fica.** Nada do livro está no repositório nem no site público: nem texto, nem lista de poderes e rituais, nem os efeitos (números). O Worker entrega tudo isso só depois do login e do código, e o navegador guarda só em memória. O repositório tem apenas o motor (`js/calc.js`, `js/livro.js`, `js/ui-livro.js`), o formato dos efeitos (`data/efeitos.js`) e as ferramentas abaixo. A ficha guarda só a *chave* do item (por exemplo, `sangue-de-ferro`) e as escolhas.
+
+**Gerar os arquivos para importar** (o txt do livro e a pasta de saída ficam fora do repositório):
+
+```
+node tools/gerar-conteudo.mjs livro.txt saida/ efeitos/
+node tools/validar-efeitos.mjs efeitos/ saida/bruto.json
+```
+
+Isso cria `origens.json`, `habilidades.json` e `rituais.json` (cada texto traz, no fim, uma linha `§AUTO§` com a classificação e os efeitos). Importe os três em `admin.html` → *Conteúdo protegido*, com os nomes `origens`, `habilidades` e `rituais`, e inclua esses três nomes ao gerar os códigos de acesso. Os efeitos ficam em `efeitos/*.json` (formato em `data/efeitos.js`); corrigir um efeito é editar o JSON, gerar de novo e reimportar.

@@ -250,10 +250,11 @@ window.OP = window.OP || {};
      Diálogo de escolha (origem, poderes, rituais)
      ------------------------------------------------------------------------ */
 
-  const lista = { config: null, itens: [], aba: 'todos', busca: '', expandidos: Object.create(null), gatilho: null };
+  const lista = { config: null, itens: [], aba: 'todos', aba2: 'todos', busca: '', expandidos: Object.create(null), gatilho: null };
 
   function itemCasa(item) {
     if (lista.aba !== 'todos' && item.abas && item.abas.indexOf(lista.aba) === -1) return false;
+    if (lista.aba2 !== 'todos' && (!item.abas2 || item.abas2.indexOf(lista.aba2) === -1)) return false;
     const termo = normalizar(lista.busca);
     return !termo || normalizar(item.busca || item.titulo).indexOf(termo) !== -1;
   }
@@ -263,12 +264,19 @@ window.OP = window.OP || {};
     const raiz = refs.lista;
     raiz.textContent = '';
     let grupoAtual = null;
+    let bloco = null;
     filtrados.forEach(function (item) {
       if (item.grupo && item.grupo !== grupoAtual) {
         grupoAtual = item.grupo;
-        raiz.appendChild(el('h3', 'livro-lista__grupo', item.grupo));
+        // Cada grupo é um bloquinho; os de elemento levam a cor dele (data-elemento)
+        bloco = el('div', 'livro-bloco');
+        bloco.setAttribute('role', 'group');
+        bloco.setAttribute('aria-label', item.grupo);
+        if (item.elemento) bloco.setAttribute('data-elemento-livro', item.elemento);
+        bloco.appendChild(el('h3', 'livro-lista__grupo', item.grupo));
+        raiz.appendChild(bloco);
       }
-      raiz.appendChild(criarLinha(item));
+      (bloco && item.grupo ? bloco : raiz).appendChild(criarLinha(item));
     });
     refs.vazio.hidden = filtrados.length > 0;
   }
@@ -325,6 +333,7 @@ window.OP = window.OP || {};
     lista.config = config;
     lista.itens = config.itens;
     lista.aba = 'todos';
+    lista.aba2 = 'todos';
     lista.busca = '';
     lista.expandidos = Object.create(null);
     lista.gatilho = config.gatilho || null;
@@ -341,10 +350,30 @@ window.OP = window.OP || {};
       b.addEventListener('click', function () {
         lista.aba = aba.id;
         Array.prototype.forEach.call(refs.abas.children, function (c) { c.setAttribute('aria-pressed', String(c.getAttribute('data-livro-aba') === aba.id)); });
+        // O segundo filtro (combate, utilidade, ambos) não vale para quem não o tem (paranormais)
+        if (config.abas2 && config.abas2.escondeEm && config.abas2.escondeEm.indexOf(aba.id) !== -1) {
+          lista.aba2 = 'todos';
+          Array.prototype.forEach.call(refs.abas2.children, function (c) { c.setAttribute('aria-pressed', String(c.getAttribute('data-livro-aba2') === 'todos')); });
+        }
+        refs.abas2.hidden = Boolean(config.abas2 && config.abas2.escondeEm && config.abas2.escondeEm.indexOf(aba.id) !== -1);
         desenharLista();
       });
       refs.abas.appendChild(b);
     });
+    refs.abas2.textContent = '';
+    refs.abas2.hidden = !config.abas2;
+    if (config.abas2) {
+      refs.abas2.setAttribute('aria-label', config.abas2.rotulo || 'Filtrar');
+      config.abas2.itens.forEach(function (aba) {
+        const b = botao(aba.nome, 'aba', { 'data-livro-aba2': aba.id, 'aria-pressed': String(aba.id === 'todos') });
+        b.addEventListener('click', function () {
+          lista.aba2 = aba.id;
+          Array.prototype.forEach.call(refs.abas2.children, function (c) { c.setAttribute('aria-pressed', String(c.getAttribute('data-livro-aba2') === aba.id)); });
+          desenharLista();
+        });
+        refs.abas2.appendChild(b);
+      });
+    }
     desenharLista();
     if (!refs.dialogo.open) refs.dialogo.showModal();
     refs.lista.scrollTop = 0;
@@ -511,27 +540,48 @@ window.OP = window.OP || {};
     };
   }
 
+  // Poderes paranormais: os quatro elementos primeiro, depois Transmissão e Intenção, e por fim os de vários elementos
+  const GRUPOS_PARANORMAIS = [
+    { id: 'conhecimento', nome: 'Conhecimento' },
+    { id: 'sangue', nome: 'Sangue' },
+    { id: 'energia', nome: 'Energia' },
+    { id: 'morte', nome: 'Morte' },
+    { id: 'transmissao', nome: 'Transmissão' },
+    { id: 'intencao', nome: 'Intenção' },
+    { id: 'varios', nome: 'Vários elementos' }
+  ];
+
   function abrirPoderes(gatilho) {
     const catalogo = OP.data.catalogo || {};
     const classeFicha = (ficha().identificacao || {}).classe;
-    const NOMES_CATEGORIA = { combate: 'Combate', utilidade: 'Utilidade', ambos: 'Combate e utilidade', varios: 'Vários elementos' };
+    const NOMES_CATEGORIA = { combate: 'Combate', utilidade: 'Utilidade', ambos: 'Combate e utilidade' };
     const ordemTipo = { classe: 0, geral: 1, paranormal: 2 };
+    const ordemGrupo = function (p) {
+      const k = GRUPOS_PARANORMAIS.findIndex(function (g) { return g.id === p.categoria; });
+      return k === -1 ? GRUPOS_PARANORMAIS.length : k;
+    };
     const poderes = (catalogo.poderes || []).slice().sort(function (a, b) {
-      return (ordemTipo[a.tipo] - ordemTipo[b.tipo]) || (a.classe || '').localeCompare(b.classe || '') || a.nome.localeCompare(b.nome, 'pt-BR');
+      return (ordemTipo[a.tipo] - ordemTipo[b.tipo]) || (a.tipo === 'paranormal' ? ordemGrupo(a) - ordemGrupo(b) : 0) ||
+        (a.classe || '').localeCompare(b.classe || '') || a.nome.localeCompare(b.nome, 'pt-BR');
     });
     const itens = poderes.map(function (p) {
       const classe = p.classe ? OP.calc.classeDados(p.classe) : null;
-      const grupo = p.tipo === 'classe' ? 'Poderes de ' + (classe ? classe.nome : p.classe) : p.tipo === 'geral' ? 'Poderes gerais' : 'Poderes paranormais';
-      const cat = NOMES_CATEGORIA[p.categoria] || (OP.data.elementos.some(function (x) { return x.id === p.categoria; }) ? nomeElemento(p.categoria) : (p.categoria || ''));
+      const grupoPar = p.tipo === 'paranormal' ? GRUPOS_PARANORMAIS.find(function (g) { return g.id === p.categoria; }) : null;
+      const grupo = p.tipo === 'classe' ? 'Poderes de ' + (classe ? classe.nome : p.classe)
+        : p.tipo === 'geral' ? 'Poderes gerais'
+        : 'Paranormais · ' + (grupoPar ? grupoPar.nome : 'outros');
+      const cat = p.tipo === 'paranormal' ? '' : (NOMES_CATEGORIA[p.categoria] || p.categoria || '');
       const abas = ['todos', p.tipo];
       if (p.tipo === 'classe' && p.classe === classeFicha) abas.push('minha');
       const naFicha = chaveNaFicha('poder', p.id);
-      return {
+      const item = {
         id: 'poder-' + p.id,
         titulo: p.nome,
         meta: [cat, p.fonte && p.fonte !== 'livro' ? nomeFonte(p.fonte) : ''].filter(Boolean).join(' · '),
         grupo: grupo,
+        elemento: grupoPar ? grupoPar.id : '',
         abas: abas,
+        abas2: p.tipo === 'paranormal' ? null : [p.categoria],
         busca: p.nome + ' ' + cat + ' ' + grupo,
         marcado: naFicha ? 'Na ficha' : '',
         detalhes: detalhesDoCatalogo(p.id),
@@ -540,13 +590,18 @@ window.OP = window.OP || {};
           aoClicar: function () { adicionarPoder(p); desenharLista(); }
         }
       };
+      return item;
     });
     const abas = [{ id: 'todos', nome: 'Todos' }];
     if (classeFicha) abas.push({ id: 'minha', nome: 'Da minha classe' });
     abas.push({ id: 'classe', nome: 'De classe' }, { id: 'geral', nome: 'Gerais' }, { id: 'paranormal', nome: 'Paranormais' });
     abrirLista({
       titulo: 'Poderes do livro', dica: 'Toque na seta para ler o poder e ver o que a ficha faz sozinha. Adicionar põe o poder na lista de habilidades.',
-      busca: 'Buscar poder…', abas: abas, itens: itens, gatilho: gatilho
+      busca: 'Buscar poder…', abas: abas, itens: itens, gatilho: gatilho,
+      abas2: {
+        rotulo: 'Filtrar por uso', escondeEm: ['paranormal'],
+        itens: [{ id: 'todos', nome: 'Qualquer uso' }, { id: 'combate', nome: 'Combate' }, { id: 'utilidade', nome: 'Utilidade' }, { id: 'ambos', nome: 'Ambos' }]
+      }
     });
   }
 
@@ -829,6 +884,7 @@ window.OP = window.OP || {};
     refs.dica = document.getElementById('livro-dialogo-dica');
     refs.busca = document.getElementById('livro-busca');
     refs.abas = document.getElementById('livro-abas');
+    refs.abas2 = document.getElementById('livro-abas2');
     refs.lista = document.getElementById('livro-lista');
     refs.vazio = document.getElementById('livro-vazio');
     refs.mensagem = document.getElementById('livro-mensagem');

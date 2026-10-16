@@ -155,7 +155,7 @@ Além do site estático, o repositório tem um Worker do Cloudflare (`worker/`, 
 Com o conteúdo liberado (origens, habilidades e rituais, três conteúdos separados), a ficha ganha:
 
 - **Origem:** o seletor abre um painel grande; cada origem é um título com uma setinha que expande a descrição, o poder e as perícias.
-- **Habilidades e rituais do livro:** "Escolher do livro…" lista poderes (de classe, gerais, paranormais) e rituais, com o texto e o que a ficha faz sozinha. Adicionar um ritual já preenche círculo, elemento, execução, alcance, duração, resistência, custos das formas Discente e Verdadeira, dano e cura.
+- **Habilidades e rituais do livro:** "Escolher do livro…" lista poderes (de classe, gerais, paranormais; filtros por classe, por uso — Combate, Utilidade ou Ambos — e por tipo, com os paranormais em blocos coloridos: Conhecimento, Sangue, Energia, Morte, Transmissão e Intenção) e rituais, com o texto e o que a ficha faz sozinha. Adicionar um ritual já preenche círculo, elemento, execução, alcance, duração, resistência, custos das formas Discente e Verdadeira, dano e cura.
 - **Efeitos automáticos** (página Habilidades): a ficha soma sozinha o que é fixo (por exemplo, PV por NEX de Sangue de Ferro, Defesa, perícias, treinamento, DT, carga, RD) e dá botões para o que é opcional: **preparar** um gasto para o próximo teste (Saber é Poder: −2 PE e +5), **ativar** um efeito (cena, rodadas ou manual) e **usar** um poder (cura, dano, perda de SAN). "Passar rodada" e "Fim da cena" encerram os efeitos ativos. Rituais conjurados ligam o efeito na forma usada.
 - O que não é calculado (ações extras, efeitos em outros seres, escolhas do mestre, trocas de regra) fica só no texto do livro.
 

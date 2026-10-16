@@ -144,6 +144,8 @@
   --cor-morte: #a594c8;
   --cor-conhecimento: #d9b35a;
   --cor-energia: #b06bff;
+  --cor-transmissao: #5cc18a;
+  --cor-intencao: #c4795a;
   --cor-medo: #e9e6df;
   /* Degraus de superfície, do mais fundo ao mais alto */
   --tinta-0: #050607;
@@ -196,6 +198,8 @@
   --cor-morte: #5d4a96;
   --cor-conhecimento: #7a5a14;
   --cor-energia: #6a2fb8;
+  --cor-transmissao: #2b7a50;
+  --cor-intencao: #8f4426;
   --cor-medo: #3b3b3b;
   --tinta-0: #ebe5d6;
   --tinta-1: #f4efe4;
@@ -246,6 +250,8 @@
     --cor-morte: #5d4a96;
     --cor-conhecimento: #7a5a14;
     --cor-energia: #6a2fb8;
+    --cor-transmissao: #2b7a50;
+    --cor-intencao: #8f4426;
     --cor-medo: #3b3b3b;
     --tinta-0: #ebe5d6;
     --tinta-1: #f4efe4;
@@ -296,6 +302,8 @@
   --cor-morte: #d2c4ff;
   --cor-conhecimento: #ffd84d;
   --cor-energia: #d8b0ff;
+  --cor-transmissao: #8af0b4;
+  --cor-intencao: #f0a47e;
   --cor-medo: #ffffff;
   --tinta-0: #000000;
   --tinta-1: #000000;
@@ -345,6 +353,8 @@
   --el-conhecimento: var(--cor-conhecimento);
   --el-energia: var(--cor-energia);
   --el-medo: var(--cor-medo);
+  --el-transmissao: var(--cor-transmissao);
+  --el-intencao: var(--cor-intencao);
 
   /* ---- Tema elemental da ficha (o neutro é a identidade institucional) ---- */
   --acento: var(--cor-destaque);
@@ -14037,4 +14047,49 @@ body[data-nex-nivel="sim"] .campo--nex .campo__exposicao {
   font-size: 0.875rem;
   line-height: 1.5;
   color: var(--papel-2);
+}
+
+/* Poderes do livro em bloquinhos: cada grupo tem a cor do seu elemento */
+.livro-bloco {
+  --cor-grupo: var(--papel-3);
+  --cor-grupo-2: var(--cor-grupo);
+  position: relative;
+  margin: 12px 0;
+  padding: 0 0 4px 16px;
+  border-radius: var(--raio-2);
+  background: color-mix(in srgb, var(--cor-grupo) 7%, transparent);
+}
+
+.livro-bloco::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  border-radius: var(--raio-2) 0 0 var(--raio-2);
+  background: linear-gradient(var(--cor-grupo), var(--cor-grupo-2));
+}
+
+.livro-bloco[data-elemento-livro="sangue"] { --cor-grupo: var(--el-sangue); }
+.livro-bloco[data-elemento-livro="morte"] { --cor-grupo: var(--el-morte); }
+.livro-bloco[data-elemento-livro="conhecimento"] { --cor-grupo: var(--el-conhecimento); }
+.livro-bloco[data-elemento-livro="energia"] { --cor-grupo: var(--el-energia); }
+.livro-bloco[data-elemento-livro="transmissao"] {
+  --cor-grupo: var(--el-transmissao);
+  --cor-grupo-2: color-mix(in srgb, var(--el-transmissao) 45%, var(--papel));
+}
+.livro-bloco[data-elemento-livro="intencao"] {
+  --cor-grupo: var(--el-intencao);
+  --cor-grupo-2: color-mix(in srgb, var(--el-intencao) 55%, var(--el-sangue));
+}
+
+.livro-bloco .livro-lista__grupo {
+  margin: 0;
+  padding: 8px 4px 6px;
+  color: var(--cor-grupo);
+  background: color-mix(in srgb, var(--cor-grupo) 8%, color-mix(in srgb, var(--tinta-2) 96%, transparent));
+  border-bottom-color: color-mix(in srgb, var(--cor-grupo) 45%, transparent);
+}
+
+.livro-bloco .livro-item:last-child {
+  border-bottom: 0;
 }

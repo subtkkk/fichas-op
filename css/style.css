@@ -144,6 +144,8 @@
   --cor-morte: #a594c8;
   --cor-conhecimento: #d9b35a;
   --cor-energia: #b06bff;
+  --cor-transmissao: #5cc18a;
+  --cor-intencao: #c4795a;
   --cor-medo: #e9e6df;
   /* Degraus de superfície, do mais fundo ao mais alto */
   --tinta-0: #050607;
@@ -196,6 +198,8 @@
   --cor-morte: #5d4a96;
   --cor-conhecimento: #7a5a14;
   --cor-energia: #6a2fb8;
+  --cor-transmissao: #2b7a50;
+  --cor-intencao: #8f4426;
   --cor-medo: #3b3b3b;
   --tinta-0: #ebe5d6;
   --tinta-1: #f4efe4;
@@ -246,6 +250,8 @@
     --cor-morte: #5d4a96;
     --cor-conhecimento: #7a5a14;
     --cor-energia: #6a2fb8;
+    --cor-transmissao: #2b7a50;
+    --cor-intencao: #8f4426;
     --cor-medo: #3b3b3b;
     --tinta-0: #ebe5d6;
     --tinta-1: #f4efe4;
@@ -296,6 +302,8 @@
   --cor-morte: #d2c4ff;
   --cor-conhecimento: #ffd84d;
   --cor-energia: #d8b0ff;
+  --cor-transmissao: #8af0b4;
+  --cor-intencao: #f0a47e;
   --cor-medo: #ffffff;
   --tinta-0: #000000;
   --tinta-1: #000000;
@@ -345,6 +353,8 @@
   --el-conhecimento: var(--cor-conhecimento);
   --el-energia: var(--cor-energia);
   --el-medo: var(--cor-medo);
+  --el-transmissao: var(--cor-transmissao);
+  --el-intencao: var(--cor-intencao);
 
   /* ---- Tema elemental da ficha (o neutro é a identidade institucional) ---- */
   --acento: var(--cor-destaque);
@@ -3471,7 +3481,13 @@ body.arrastando-arquivo::after {
 }
 
 .vital--pv { --cor-vital: var(--pv); }
-.vital--pe { --cor-vital: var(--pe); }
+.vital--pe {
+  --cor-vital: var(--pe);
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "topo  turno  botoes"
+    "barra barra  barra";
+}
 .vital--san { --cor-vital: var(--san); }
 
 /* Sigla e valor: um botão que abre o ajuste do vital (−5…+5, dano/cura) */
@@ -3652,10 +3668,6 @@ body.arrastando-arquivo::after {
 
 .hud__barra-fina {
   color: var(--papel-4);
-}
-
-.hud__derivado--alerta dd {
-  color: var(--erro);
 }
 
 .hud__aviso {
@@ -13815,15 +13827,6 @@ body[data-nex-nivel="sim"] .campo--nex .campo__exposicao {
   overflow-wrap: anywhere;
 }
 
-.livro-item__acao {
-  flex: none;
-  min-width: 96px;
-}
-
-.selo--livro {
-  color: var(--acento);
-}
-
 .livro-item__detalhes {
   display: flex;
   flex-direction: column;
@@ -14023,11 +14026,358 @@ body[data-nex-nivel="sim"] .campo--nex .campo__exposicao {
     border-radius: 0;
   }
 
-  .livro-item__acao {
-    min-width: 80px;
-  }
-
   .livro-item__detalhes {
     padding-left: 12px;
+  }
+}
+
+.conta__livro {
+  margin: -6px 0 14px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--papel-2);
+}
+
+/* Poderes do livro em bloquinhos: cada grupo tem a cor do seu elemento */
+.livro-bloco {
+  --cor-grupo: var(--papel-3);
+  --cor-grupo-2: var(--cor-grupo);
+  position: relative;
+  margin: 12px 0;
+  padding: 0 0 4px 16px;
+  border-radius: var(--raio-2);
+  background: color-mix(in srgb, var(--cor-grupo) 7%, transparent);
+}
+
+.livro-bloco::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  border-radius: var(--raio-2) 0 0 var(--raio-2);
+  background: linear-gradient(var(--cor-grupo), var(--cor-grupo-2));
+}
+
+.livro-bloco[data-elemento-livro="sangue"] { --cor-grupo: var(--el-sangue); }
+.livro-bloco[data-elemento-livro="morte"] { --cor-grupo: var(--el-morte); }
+.livro-bloco[data-elemento-livro="conhecimento"] { --cor-grupo: var(--el-conhecimento); }
+.livro-bloco[data-elemento-livro="energia"] { --cor-grupo: var(--el-energia); }
+.livro-bloco[data-elemento-livro="transmissao"] {
+  --cor-grupo: var(--el-transmissao);
+  --cor-grupo-2: color-mix(in srgb, var(--el-transmissao) 45%, var(--papel));
+}
+.livro-bloco[data-elemento-livro="intencao"] {
+  --cor-grupo: var(--el-intencao);
+  --cor-grupo-2: color-mix(in srgb, var(--el-intencao) 55%, var(--el-sangue));
+}
+
+.livro-bloco .livro-lista__grupo {
+  margin: 0;
+  padding: 8px 4px 6px;
+  color: var(--cor-grupo);
+  background: color-mix(in srgb, var(--cor-grupo) 8%, color-mix(in srgb, var(--tinta-2) 96%, transparent));
+  border-bottom-color: color-mix(in srgb, var(--cor-grupo) 45%, transparent);
+}
+
+.livro-bloco .livro-item:last-child {
+  border-bottom: 0;
+}
+
+/* Escolher do livro: abas em pílulas, filtros de uso e botão de ação (substitui os estilos genéricos .abas/.botao aqui) */
+.livro-ferramentas {
+  gap: 12px;
+}
+
+.livro-ferramentas .busca {
+  flex: 1 1 100%;
+}
+
+.livro-abas,
+.livro-filtros {
+  display: flex;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.livro-abas[hidden],
+.livro-filtros[hidden] {
+  display: none;
+}
+
+.livro-aba {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 6px 16px;
+  font: 600 0.875rem/1.2 var(--fonte-ui);
+  color: var(--papel-2);
+  background: color-mix(in srgb, var(--cor-texto) 5%, transparent);
+  border: 1px solid var(--linha-2);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color var(--dur-1) var(--curva), background-color var(--dur-1) var(--curva), border-color var(--dur-1) var(--curva), box-shadow var(--dur-1) var(--curva);
+}
+
+.livro-aba:hover {
+  color: var(--papel);
+  border-color: var(--acento);
+}
+
+.livro-aba[aria-pressed="true"] {
+  color: var(--acento-texto);
+  background: var(--acento);
+  border-color: var(--acento);
+  box-shadow: 0 6px 18px -10px var(--brilho);
+}
+
+.livro-aba__n {
+  min-width: 1.7em;
+  padding: 1px 7px;
+  font: 600 0.6875rem/1.5 var(--fonte-mono);
+  text-align: center;
+  color: var(--papel-3);
+  background: color-mix(in srgb, var(--cor-texto) 8%, transparent);
+  border-radius: 999px;
+}
+
+.livro-aba[aria-pressed="true"] .livro-aba__n {
+  color: var(--acento);
+  background: var(--acento-texto);
+}
+
+.livro-filtros__rotulo {
+  margin-right: 2px;
+  font: 500 0.6875rem/1.4 var(--fonte-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+}
+
+.livro-filtro {
+  --cor-filtro: var(--acento);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 4px 14px 4px 10px;
+  font: 600 0.8125rem/1.2 var(--fonte-ui);
+  color: var(--papel-2);
+  background: transparent;
+  border: 1px solid var(--linha-2);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color var(--dur-1) var(--curva), background-color var(--dur-1) var(--curva), border-color var(--dur-1) var(--curva);
+}
+
+.livro-filtro[data-livro-filtro="combate"] { --cor-filtro: var(--pv); }
+.livro-filtro[data-livro-filtro="utilidade"] { --cor-filtro: var(--san); }
+
+.livro-filtro__ponto {
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--cor-filtro);
+  border-radius: 50%;
+  transition: background-color var(--dur-1) var(--curva);
+}
+
+.livro-filtro:hover {
+  color: var(--papel);
+  border-color: var(--cor-filtro);
+}
+
+.livro-filtro[aria-pressed="true"] {
+  color: var(--papel);
+  background: color-mix(in srgb, var(--cor-filtro) 16%, transparent);
+  border-color: var(--cor-filtro);
+}
+
+.livro-filtro[aria-pressed="true"] .livro-filtro__ponto {
+  background: var(--cor-filtro);
+}
+
+.livro-filtro__n {
+  font: 600 0.6875rem/1.4 var(--fonte-mono);
+  color: var(--papel-3);
+}
+
+/* Botão de ação de cada linha: contorno leve com ícone; cheio ao passar o mouse */
+.livro-acao {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 112px;
+  min-height: 38px;
+  padding: 4px 14px;
+  font: 600 0.8125rem/1.2 var(--fonte-ui);
+  color: var(--papel-2);
+  background: transparent;
+  border: 1px solid var(--linha-2);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color var(--dur-1) var(--curva), background-color var(--dur-1) var(--curva), border-color var(--dur-1) var(--curva);
+}
+
+.livro-acao--primaria {
+  color: var(--cor-texto);
+  border-color: color-mix(in srgb, var(--acento) 70%, transparent);
+  background: color-mix(in srgb, var(--acento) 12%, transparent);
+}
+
+.livro-acao--primaria:hover:not(:disabled) {
+  color: var(--acento-texto);
+  background: var(--acento);
+  border-color: var(--acento);
+}
+
+.livro-acao:disabled {
+  cursor: default;
+  color: var(--papel-3);
+  border-style: dashed;
+}
+
+.livro-acao__icone {
+  position: relative;
+  width: 12px;
+  height: 12px;
+  flex: none;
+}
+
+.livro-acao__icone--mais::before,
+.livro-acao__icone--mais::after {
+  content: "";
+  position: absolute;
+  background: currentColor;
+  border-radius: 1px;
+}
+
+.livro-acao__icone--mais::before {
+  inset: 5px 0 auto 0;
+  height: 2px;
+}
+
+.livro-acao__icone--mais::after {
+  inset: 0 auto 0 5px;
+  width: 2px;
+}
+
+.livro-acao__icone--ok::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 0;
+  width: 4px;
+  height: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(40deg);
+}
+
+/* Blocos por uso (combate, ambos, utilidade) */
+.livro-bloco[data-elemento-livro="uso-combate"] { --cor-grupo: var(--pv); }
+.livro-bloco[data-elemento-livro="uso-utilidade"] { --cor-grupo: var(--san); }
+.livro-bloco[data-elemento-livro="uso-ambos"] { --cor-grupo: var(--acento); --cor-grupo-2: var(--san); }
+
+@media (max-width: 719px) {
+  /* No celular as abas e os filtros viram uma fileira que rola para o lado (ocupam pouco da tela) */
+  .livro-abas,
+  .livro-filtros {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+
+  .livro-abas::-webkit-scrollbar,
+  .livro-filtros::-webkit-scrollbar {
+    display: none;
+  }
+
+  .livro-aba,
+  .livro-filtro,
+  .livro-filtros__rotulo {
+    flex: none;
+  }
+
+  .livro-aba {
+    min-height: 40px;
+    padding: 6px 12px;
+  }
+
+  .livro-acao {
+    min-width: 96px;
+    padding: 4px 10px;
+  }
+
+/* Limite de PE (PD) por turno: ao lado do indicador de PE, e o deslocamento no cabeçalho de "Defesa e testes" */
+.vital__turno {
+  grid-area: turno;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  margin: 0;
+  cursor: help;
+}
+
+.vital__turno-rotulo {
+  font: 500 0.625rem/1 var(--fonte-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+}
+
+.vital__turno-valor {
+  font: 600 0.8125rem/1 var(--fonte-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--papel-2);
+}
+
+.vital__turno--alerta .vital__turno-valor {
+  color: var(--erro);
+}
+
+.secao__cabecalho--testes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+.testes__desloc {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+  font: 500 0.75rem/1.2 var(--fonte-mono);
+  color: var(--papel-2);
+  white-space: nowrap;
+}
+
+.testes__desloc-rotulo {
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+}
+
+@media (max-width: 719px) {
+  .vital__turno {
+    display: none;
+  }
+
+  .resumo-derivados {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .resumo-derivados dt {
+    letter-spacing: 0.04em;
   }
 }

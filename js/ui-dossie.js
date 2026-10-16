@@ -186,7 +186,31 @@ window.OP = window.OP || {};
       }
     });
     refs.hudSemClasse.hidden = !semClasse;
-    refs.hudTurno.classList.toggle('hud__derivado--alerta', Boolean(derivados.conjuracao && derivados.conjuracao.passouLimite));
+    refs.hudTurno.classList.toggle('vital__turno--alerta', Boolean(derivados.conjuracao && derivados.conjuracao.passouLimite));
+    desenharReacoes(derivados.defesa);
+  }
+
+  /** Esquiva e Bloqueio ao lado da Defesa: o número da reação e uma dica com a conta (ou "—" sem o treino). */
+  function desenharReacoes(defesa) {
+    if (!defesa) return;
+    const esquiva = defesa.esquiva;
+    const bloqueio = defesa.bloqueio;
+    document.querySelectorAll('[data-esquiva]').forEach(function (saida) {
+      definirTexto(saida, esquiva.disponivel ? String(esquiva.defesaComEsquiva) : '—');
+      const celula = saida.closest('div');
+      const dica = esquiva.disponivel
+        ? 'Esquiva (reação): a Defesa vira ' + esquiva.defesaComEsquiva + ' contra um ataque (Defesa ' + defesa.total + ' ' + (esquiva.bonus < 0 ? '−' : '+') + ' ' + Math.abs(esquiva.bonus) + ' de Reflexos)'
+        : 'Esquiva: exige treinamento em Reflexos';
+      if (celula && celula.title !== dica) celula.title = dica;
+    });
+    document.querySelectorAll('[data-bloqueio]').forEach(function (saida) {
+      definirTexto(saida, bloqueio.disponivel ? '−' + bloqueio.reducao : '—');
+      const celula = saida.closest('div');
+      const dica = bloqueio.disponivel
+        ? 'Bloqueio (reação): reduz ' + bloqueio.reducao + ' de dano de um ataque (bônus de Fortitude)'
+        : 'Bloqueio: exige treinamento em Fortitude';
+      if (celula && celula.title !== dica) celula.title = dica;
+    });
   }
 
   function desenhar(ficha, derivados) {

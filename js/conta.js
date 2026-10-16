@@ -52,6 +52,7 @@ window.OP = window.OP || {};
     if (!estado.conectado) return;
     refs.nome.textContent = estado.usuario ? estado.usuario.nome : '';
     refs.admin.hidden = !estado.admin;
+    desenharLivro();
     refs.lista.textContent = '';
     if (!estado.acessos.length) {
       const vazio = document.createElement('li');
@@ -68,6 +69,14 @@ window.OP = window.OP || {};
       item.append(nome, ate);
       refs.lista.appendChild(item);
     });
+  }
+
+  /** Diz o que chegou do conteúdo do livro (ou por que nada apareceu). */
+  function desenharLivro() {
+    if (!refs.livro) return;
+    const texto = OP.livro && OP.livro.resumo ? OP.livro.resumo() : '';
+    refs.livro.hidden = !texto;
+    refs.livro.textContent = texto;
   }
 
   async function carregar() {
@@ -165,6 +174,8 @@ window.OP = window.OP || {};
     refs.resgatar = document.getElementById('conta-resgatar');
     refs.aviso = document.getElementById('conta-aviso');
     refs.admin = document.getElementById('conta-admin');
+    refs.livro = document.getElementById('conta-livro');
+    if (OP.livro && OP.livro.aoMudar) OP.livro.aoMudar(desenharLivro);
 
     refs.botao.addEventListener('click', abrir);
     refs.form.addEventListener('submit', resgatar);

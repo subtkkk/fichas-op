@@ -250,10 +250,12 @@ window.OP = window.OP || {};
      Diálogo de escolha (origem, poderes, rituais)
      ------------------------------------------------------------------------ */
 
-  const lista = { config: null, itens: [], aba: 'todos', busca: '', expandidos: Object.create(null), gatilho: null };
+  const lista = { config: null, itens: [], aba: 'todos', usos: [], busca: '', expandidos: Object.create(null), gatilho: null };
 
   function itemCasa(item) {
     if (lista.aba !== 'todos' && item.abas && item.abas.indexOf(lista.aba) === -1) return false;
+    // Filtros de uso (Combate, Ambos, Utilidade): sem nenhum marcado, mostra tudo; marcados, só quem combina com algum
+    if (lista.usos.length && (!item.abas2 || !item.abas2.some(function (u) { return lista.usos.indexOf(u) !== -1; }))) return false;
     const termo = normalizar(lista.busca);
     return !termo || normalizar(item.busca || item.titulo).indexOf(termo) !== -1;
   }
@@ -263,12 +265,19 @@ window.OP = window.OP || {};
     const raiz = refs.lista;
     raiz.textContent = '';
     let grupoAtual = null;
+    let bloco = null;
     filtrados.forEach(function (item) {
       if (item.grupo && item.grupo !== grupoAtual) {
         grupoAtual = item.grupo;
-        raiz.appendChild(el('h3', 'livro-lista__grupo', item.grupo));
+        // Cada grupo é um bloquinho; os de elemento levam a cor dele (data-elemento)
+        bloco = el('div', 'livro-bloco');
+        bloco.setAttribute('role', 'group');
+        bloco.setAttribute('aria-label', item.grupo);
+        if (item.elemento) bloco.setAttribute('data-elemento-livro', item.elemento);
+        bloco.appendChild(el('h3', 'livro-lista__grupo', item.grupo));
+        raiz.appendChild(bloco);
       }
-      raiz.appendChild(criarLinha(item));
+      (bloco && item.grupo ? bloco : raiz).appendChild(criarLinha(item));
     });
     refs.vazio.hidden = filtrados.length > 0;
   }
@@ -295,9 +304,15 @@ window.OP = window.OP || {};
       if (novo) novo.focus();
     });
     topo.appendChild(alternar);
-    if (item.marcado) topo.appendChild(el('span', 'selo selo--livro', item.marcado));
     if (item.acao) {
-      const a = botao(item.acao.rotulo, 'botao botao--pequeno livro-item__acao' + (item.acao.primaria ? ' botao--primario' : ''));
+      const a = el('button', 'livro-acao' + (item.acao.primaria ? ' livro-acao--primaria' : ''));
+      a.type = 'button';
+      if (item.acao.icone) {
+        const icone = el('span', 'livro-acao__icone livro-acao__icone--' + item.acao.icone);
+        icone.setAttribute('aria-hidden', 'true');
+        a.appendChild(icone);
+      }
+      a.appendChild(el('span', 'livro-acao__texto', item.acao.rotulo));
       a.disabled = item.acao.desativada === true;
       a.setAttribute('aria-label', item.acao.rotulo + ': ' + item.titulo);
       a.addEventListener('click', function () { item.acao.aoClicar(item); });
@@ -317,6 +332,69 @@ window.OP = window.OP || {};
     refs.mensagem.textContent = texto || '';
   }
 
+  function contarAba(id) {
+    return id === 'todos' ? lista.itens.length : lista.itens.filter(function (i) { return i.abas && i.abas.indexOf(id) !== -1; }).length;
+  }
+
+  function filtrosVisiveis() {
+    const f = lista.config && lista.config.filtros;
+    return Boolean(f) && !(f.escondeEm && f.escondeEm.indexOf(lista.aba) !== -1);
+  }
+
+  /** Abas (uma só vale) e filtros de uso (marcam-se e desmarcam-se), com a contagem de cada um. */
+  function desenharControles() {
+    const c = lista.config;
+    refs.abas.textContent = '';
+    refs.abas.hidden = !c.abas || !c.abas.length;
+    (c.abas || []).forEach(function (aba) {
+      const b = el('button', 'livro-aba');
+      b.type = 'button';
+      b.setAttribute('data-livro-aba', aba.id);
+      b.setAttribute('aria-pressed', String(aba.id === lista.aba));
+      b.appendChild(el('span', 'livro-aba__nome', aba.nome));
+      b.appendChild(el('span', 'livro-aba__n', String(contarAba(aba.id))));
+      b.addEventListener('click', function () {
+        lista.aba = aba.id;
+        if (!filtrosVisiveis()) lista.usos = [];
+        desenharControles();
+        desenharLista();
+        refs.lista.scrollTop = 0;
+        const novo = refs.abas.querySelector('[data-livro-aba="' + aba.id + '"]');
+        if (novo) novo.focus();
+      });
+      refs.abas.appendChild(b);
+    });
+    refs.abas2.textContent = '';
+    const mostrarFiltros = filtrosVisiveis();
+    refs.abas2.hidden = !mostrarFiltros;
+    if (!mostrarFiltros) return;
+    refs.abas2.setAttribute('aria-label', c.filtros.rotulo || 'Filtrar');
+    refs.abas2.appendChild(el('span', 'livro-filtros__rotulo', c.filtros.rotulo || 'Filtrar'));
+    c.filtros.itens.forEach(function (filtro) {
+      const n = lista.itens.filter(function (i) {
+        return (lista.aba === 'todos' || (i.abas && i.abas.indexOf(lista.aba) !== -1)) && i.abas2 && i.abas2.indexOf(filtro.id) !== -1;
+      }).length;
+      const marcado = lista.usos.indexOf(filtro.id) !== -1;
+      const b = el('button', 'livro-filtro');
+      b.type = 'button';
+      b.setAttribute('data-livro-filtro', filtro.id);
+      b.setAttribute('aria-pressed', String(marcado));
+      b.appendChild(el('span', 'livro-filtro__ponto'));
+      b.lastChild.setAttribute('aria-hidden', 'true');
+      b.appendChild(el('span', 'livro-filtro__nome', filtro.nome));
+      b.appendChild(el('span', 'livro-filtro__n', String(n)));
+      b.addEventListener('click', function () {
+        lista.usos = marcado ? lista.usos.filter(function (u) { return u !== filtro.id; }) : lista.usos.concat([filtro.id]);
+        desenharControles();
+        desenharLista();
+        refs.lista.scrollTop = 0;
+        const novo = refs.abas2.querySelector('[data-livro-filtro="' + filtro.id + '"]');
+        if (novo) novo.focus();
+      });
+      refs.abas2.appendChild(b);
+    });
+  }
+
   /**
    * Abre o diálogo de escolha. config: { titulo, dica, busca, abas: [{id,nome}], itens, gatilho }.
    * item: { id, titulo, meta, grupo, abas, busca, marcado, detalhes(corpo), acao: { rotulo, aoClicar, desativada, primaria } }.
@@ -324,7 +402,8 @@ window.OP = window.OP || {};
   function abrirLista(config) {
     lista.config = config;
     lista.itens = config.itens;
-    lista.aba = 'todos';
+    lista.aba = config.abaInicial || 'todos';
+    lista.usos = [];
     lista.busca = '';
     lista.expandidos = Object.create(null);
     lista.gatilho = config.gatilho || null;
@@ -334,17 +413,7 @@ window.OP = window.OP || {};
     refs.busca.value = '';
     refs.busca.placeholder = config.busca || 'Buscar…';
     mensagemDialogo('');
-    refs.abas.textContent = '';
-    refs.abas.hidden = !config.abas || !config.abas.length;
-    (config.abas || []).forEach(function (aba) {
-      const b = botao(aba.nome, 'aba', { 'data-livro-aba': aba.id, 'aria-pressed': String(aba.id === 'todos') });
-      b.addEventListener('click', function () {
-        lista.aba = aba.id;
-        Array.prototype.forEach.call(refs.abas.children, function (c) { c.setAttribute('aria-pressed', String(c.getAttribute('data-livro-aba') === aba.id)); });
-        desenharLista();
-      });
-      refs.abas.appendChild(b);
-    });
+    desenharControles();
     desenharLista();
     if (!refs.dialogo.open) refs.dialogo.showModal();
     refs.lista.scrollTop = 0;
@@ -412,6 +481,7 @@ window.OP = window.OP || {};
           rotulo: atual ? 'Escolhida' : 'Escolher',
           desativada: atual,
           primaria: !atual,
+          icone: atual ? 'ok' : '',
           aoClicar: function () {
             select.value = opcao.value;
             select.dispatchEvent(new Event('input', { bubbles: true }));
@@ -511,42 +581,67 @@ window.OP = window.OP || {};
     };
   }
 
+  // Poderes paranormais: os quatro elementos primeiro, depois Transmissão e Intenção, e por fim os de vários elementos
+  const GRUPOS_PARANORMAIS = [
+    { id: 'conhecimento', nome: 'Conhecimento' },
+    { id: 'sangue', nome: 'Sangue' },
+    { id: 'energia', nome: 'Energia' },
+    { id: 'morte', nome: 'Morte' },
+    { id: 'transmissao', nome: 'Transmissão' },
+    { id: 'intencao', nome: 'Intenção' },
+    { id: 'varios', nome: 'Vários elementos' }
+  ];
+
+  const CLASSES_COM_PODERES = ['combatente', 'especialista', 'ocultista'];
+  const USOS_PODER = [
+    { id: 'combate', nome: 'Combate', titulo: 'Combate' },
+    { id: 'ambos', nome: 'Ambos', titulo: 'Combate e utilidade' },
+    { id: 'utilidade', nome: 'Utilidade', titulo: 'Utilidade' }
+  ];
+
   function abrirPoderes(gatilho) {
     const catalogo = OP.data.catalogo || {};
     const classeFicha = (ficha().identificacao || {}).classe;
-    const NOMES_CATEGORIA = { combate: 'Combate', utilidade: 'Utilidade', ambos: 'Combate e utilidade', varios: 'Vários elementos' };
-    const ordemTipo = { classe: 0, geral: 1, paranormal: 2 };
+    const ordemUso = function (p) { const k = USOS_PODER.findIndex(function (u) { return u.id === p.categoria; }); return k === -1 ? USOS_PODER.length : k; };
+    const ordemGrupo = function (p) {
+      const k = GRUPOS_PARANORMAIS.findIndex(function (g) { return g.id === p.categoria; });
+      return k === -1 ? GRUPOS_PARANORMAIS.length : k;
+    };
+    const idAba = function (p) { return p.tipo === 'classe' ? p.classe : p.tipo; };
     const poderes = (catalogo.poderes || []).slice().sort(function (a, b) {
-      return (ordemTipo[a.tipo] - ordemTipo[b.tipo]) || (a.classe || '').localeCompare(b.classe || '') || a.nome.localeCompare(b.nome, 'pt-BR');
+      if (a.tipo === 'paranormal' && b.tipo === 'paranormal') return (ordemGrupo(a) - ordemGrupo(b)) || a.nome.localeCompare(b.nome, 'pt-BR');
+      return (ordemUso(a) - ordemUso(b)) || a.nome.localeCompare(b.nome, 'pt-BR');
     });
     const itens = poderes.map(function (p) {
-      const classe = p.classe ? OP.calc.classeDados(p.classe) : null;
-      const grupo = p.tipo === 'classe' ? 'Poderes de ' + (classe ? classe.nome : p.classe) : p.tipo === 'geral' ? 'Poderes gerais' : 'Poderes paranormais';
-      const cat = NOMES_CATEGORIA[p.categoria] || (OP.data.elementos.some(function (x) { return x.id === p.categoria; }) ? nomeElemento(p.categoria) : (p.categoria || ''));
-      const abas = ['todos', p.tipo];
-      if (p.tipo === 'classe' && p.classe === classeFicha) abas.push('minha');
+      const grupoPar = p.tipo === 'paranormal' ? GRUPOS_PARANORMAIS.find(function (g) { return g.id === p.categoria; }) : null;
+      const uso = USOS_PODER.find(function (u) { return u.id === p.categoria; });
       const naFicha = chaveNaFicha('poder', p.id);
       return {
         id: 'poder-' + p.id,
         titulo: p.nome,
-        meta: [cat, p.fonte && p.fonte !== 'livro' ? nomeFonte(p.fonte) : ''].filter(Boolean).join(' · '),
-        grupo: grupo,
-        abas: abas,
-        busca: p.nome + ' ' + cat + ' ' + grupo,
+        meta: p.fonte && p.fonte !== 'livro' ? nomeFonte(p.fonte) : '',
+        // Paranormais: um bloco por elemento. Os demais: um bloco por uso (combate, ambos, utilidade)
+        grupo: grupoPar ? grupoPar.nome : (uso ? uso.titulo : ''),
+        elemento: grupoPar ? grupoPar.id : (uso ? 'uso-' + uso.id : ''),
+        abas: [idAba(p)],
+        abas2: p.tipo === 'paranormal' ? null : [p.categoria],
+        busca: p.nome + ' ' + (grupoPar ? grupoPar.nome : (uso ? uso.titulo : '')),
         marcado: naFicha ? 'Na ficha' : '',
         detalhes: detalhesDoCatalogo(p.id),
         acao: {
-          rotulo: naFicha ? 'Na ficha' : 'Adicionar', desativada: naFicha, primaria: !naFicha,
+          rotulo: naFicha ? 'Na ficha' : 'Adicionar', desativada: naFicha, primaria: !naFicha, icone: naFicha ? 'ok' : 'mais',
           aoClicar: function () { adicionarPoder(p); desenharLista(); }
         }
       };
     });
-    const abas = [{ id: 'todos', nome: 'Todos' }];
-    if (classeFicha) abas.push({ id: 'minha', nome: 'Da minha classe' });
-    abas.push({ id: 'classe', nome: 'De classe' }, { id: 'geral', nome: 'Gerais' }, { id: 'paranormal', nome: 'Paranormais' });
+    const nomeClasse = function (id) { const c = OP.calc.classeDados(id); return c ? c.nome : id; };
+    const abas = CLASSES_COM_PODERES.map(function (id) { return { id: id, nome: nomeClasse(id) }; })
+      .concat([{ id: 'geral', nome: 'Gerais' }, { id: 'paranormal', nome: 'Paranormais' }]);
     abrirLista({
-      titulo: 'Poderes do livro', dica: 'Toque na seta para ler o poder e ver o que a ficha faz sozinha. Adicionar põe o poder na lista de habilidades.',
-      busca: 'Buscar poder…', abas: abas, itens: itens, gatilho: gatilho
+      titulo: 'Poderes do livro', dica: 'Abre na sua classe. Toque na seta para ler o poder e ver o que a ficha faz sozinha; Adicionar põe o poder na lista de habilidades.',
+      busca: 'Buscar poder…', abas: abas, itens: itens, gatilho: gatilho,
+      abaInicial: CLASSES_COM_PODERES.indexOf(classeFicha) !== -1 ? classeFicha : (classeFicha ? 'geral' : CLASSES_COM_PODERES[0]),
+      filtros: { rotulo: 'Uso', escondeEm: ['paranormal'], itens: USOS_PODER }
     });
   }
 
@@ -567,7 +662,7 @@ window.OP = window.OP || {};
         marcado: naFicha ? 'Na ficha' : '',
         detalhes: detalhesDoCatalogo(r.id),
         acao: {
-          rotulo: naFicha ? 'Na ficha' : 'Adicionar', desativada: naFicha, primaria: !naFicha,
+          rotulo: naFicha ? 'Na ficha' : 'Adicionar', desativada: naFicha, primaria: !naFicha, icone: naFicha ? 'ok' : 'mais',
           aoClicar: function () { adicionarRitual(r); desenharLista(); }
         }
       };
@@ -829,6 +924,7 @@ window.OP = window.OP || {};
     refs.dica = document.getElementById('livro-dialogo-dica');
     refs.busca = document.getElementById('livro-busca');
     refs.abas = document.getElementById('livro-abas');
+    refs.abas2 = document.getElementById('livro-abas2');
     refs.lista = document.getElementById('livro-lista');
     refs.vazio = document.getElementById('livro-vazio');
     refs.mensagem = document.getElementById('livro-mensagem');

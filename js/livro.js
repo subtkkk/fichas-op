@@ -25,6 +25,7 @@ window.OP = window.OP || {};
   const textos = Object.create(null); // chave → { titulo, corpo, escopo }
   const ouvintes = [];
   let carregando = null;
+  let carga = { carregando: false, escopos: {} }; // o que chegou de cada conteúdo (para a tela da Conta explicar)
 
   function catalogoVazio() {
     return { origens: {}, trilhas: {}, classe: {}, poderes: [], rituais: [] };
@@ -45,6 +46,9 @@ window.OP = window.OP || {};
   /** Coloca um item no catálogo. */
   function registrar(catalogo, efeitos, escopo, item) {
     const partes = separar(item.texto);
+    const c = carga.escopos[escopo] = carga.escopos[escopo] || { itens: 0, comDados: 0, erro: '' };
+    c.itens += 1;
+    if (partes.meta && typeof partes.meta.t === 'string') c.comDados += 1;
     textos[item.chave] = { titulo: item.titulo, corpo: partes.corpo, escopo: escopo };
     const m = partes.meta;
     if (!m || typeof m.t !== 'string') return;
@@ -90,6 +94,9 @@ window.OP = window.OP || {};
   /** (Re)carrega o conteúdo liberado. Sem acesso, esvazia tudo. Resolve quando termina. */
   function carregar() {
     const lista = escopos();
+    carga = { carregando: lista.length > 0, escopos: {} };
+    const cargaDaRodada = carga;
+    avisar();
     const rodada = (carregando = (async function () {
       const catalogo = catalogoVazio();
       const efeitos = {};
@@ -97,11 +104,16 @@ window.OP = window.OP || {};
       for (let i = 0; i < lista.length; i++) {
         try {
           const itens = await OP.conta.conteudo(lista[i]);
+          cargaDaRodada.escopos[lista[i]] = { itens: 0, comDados: 0, erro: '' };
           itens.forEach(function (item) { registrar(catalogo, efeitos, lista[i], item); });
           lidos[lista[i]] = true;
-        } catch (erro) { /* sem acesso a este: segue com os outros */ }
+        } catch (erro) {
+          // sem acesso a este: segue com os outros, e a Conta mostra o motivo
+          cargaDaRodada.escopos[lista[i]] = { itens: 0, comDados: 0, erro: erro && erro.message ? erro.message : 'erro' };
+        }
       }
       if (carregando !== rodada) return; // chegou uma carga mais nova
+      cargaDaRodada.carregando = false;
       Object.keys(textos).forEach(function (k) { if (!lidos[textos[k].escopo]) delete textos[k]; });
       OP.data.catalogo = catalogo;
       OP.data.efeitos = efeitos;
@@ -113,6 +125,29 @@ window.OP = window.OP || {};
   /** O texto do livro de um item (ou null se não estiver liberado). */
   function texto(chave) {
     return textos[chave] || null;
+  }
+
+  /** Frase para a tela da Conta sobre o que chegou do servidor ('' se não há acesso a conteúdo do livro). */
+  function resumo() {
+    const nomes = escopos();
+    if (!nomes.length) return '';
+    if (carga.carregando) return 'Carregando o conteúdo do livro…';
+    const partes = [];
+    let semDados = false;
+    nomes.forEach(function (n) {
+      const c = carga.escopos[n];
+      if (!c) return;
+      if (c.erro) partes.push('Não foi possível carregar «' + n + '»: ' + c.erro);
+      else if (!c.itens) partes.push('«' + n + '» está vazio no servidor.');
+      else if (!c.comDados) semDados = true;
+    });
+    if (semDados) partes.push('O conteúdo publicado é de uma versão antiga (só texto, sem os dados de automação). Publique de novo os arquivos mais recentes no painel do administrador.');
+    const cat = OP.data.catalogo || {};
+    const poderes = (cat.poderes || []).length;
+    const rituais = (cat.rituais || []).length;
+    const efeitos = Object.keys(OP.data.efeitos || {}).length;
+    if (poderes || rituais) partes.unshift('Livro carregado: ' + poderes + ' poderes, ' + rituais + ' rituais e ' + efeitos + ' fontes com efeito automático.');
+    return partes.join(' ');
   }
 
   function disponivel(escopo) {
@@ -131,6 +166,7 @@ window.OP = window.OP || {};
     limpar: limpar,
     texto: texto,
     disponivel: disponivel,
+    resumo: resumo,
     aoMudar: aoMudar,
     escopos: escopos,
     _registrar: function (escopo, item) { // para testes

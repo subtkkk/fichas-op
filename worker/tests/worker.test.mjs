@@ -221,6 +221,23 @@ test('publicar conteúdo valida itens e escopo', async () => {
   assert.deepEqual(lido.itens.map((i) => i.chave), ['b']);
 });
 
+test('apagar conteúdo: só o administrador, só aquele nome, e o acesso concedido continua', async () => {
+  const env = ambiente();
+  const admin = await entrar(env, ADMIN, 'Dono');
+  const jogador = await entrar(env, JOGADOR, 'Rita');
+  const p = (escopo, chave) => chamar(env, 'PUT', '/api/admin/conteudo/' + escopo, { cookie: admin, json: { itens: [{ chave, titulo: 'T', texto: 'x' }] } });
+  await p('um', 'a');
+  await p('dois', 'b');
+  assert.equal((await chamar(env, 'DELETE', '/api/admin/conteudo/um', { cookie: jogador })).status, 403);
+  assert.equal((await chamar(env, 'DELETE', '/api/admin/conteudo/Maiúsculo', { cookie: admin })).status, 400);
+  const r = await chamar(env, 'DELETE', '/api/admin/conteudo/um', { cookie: admin });
+  assert.equal(r.status, 200);
+  assert.equal((await r.json()).apagados, 1);
+  const lista = await (await chamar(env, 'GET', '/api/admin/conteudo', { cookie: admin })).json();
+  assert.deepEqual(lista.escopos.map((e) => e.escopo), ['dois']);
+  assert.equal((await (await chamar(env, 'GET', '/api/conteudo/um', { cookie: admin })).json()).itens.length, 0);
+});
+
 test('sem configuração, a API avisa em vez de quebrar; fora de /api vão os arquivos estáticos', async () => {
   const semId = ambiente({ DISCORD_CLIENT_ID: '' });
   assert.equal((await chamar(semId, 'GET', '/api/auth/discord')).status, 503);

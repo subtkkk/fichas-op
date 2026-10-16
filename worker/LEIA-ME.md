@@ -32,7 +32,7 @@ Em `admin.html` → *Conteúdo protegido*, envie um `.json`:
 { "itens": [ { "chave": "id-unico", "titulo": "Nome", "texto": "Texto integral", "ordem": 0 } ] }
 ```
 
-Até 500 itens de 100 mil caracteres. Enviar de novo para o mesmo nome **substitui tudo**. Esse arquivo fica só no seu computador: não o coloque no repositório.
+Até 500 itens de 100 mil caracteres (chave de até 80 caracteres). Enviar de novo para o mesmo nome **substitui tudo**. Dá para escolher **vários arquivos de uma vez**: o nome de cada conteúdo vem do nome do arquivo (`rituais.json` → `rituais`). Cada linha da tabela de conteúdos tem **Apagar** (dois toques) para remover um conteúdo; os acessos já concedidos continuam e voltam a valer quando o nome for publicado de novo. Esse arquivo fica só no seu computador: não o coloque no repositório.
 
 ## Origens, habilidades e rituais do livro
 

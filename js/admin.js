@@ -106,10 +106,13 @@
     const dados = await api('/api/admin/conteudo');
     const corpo = $('admin-conteudos').tBodies[0];
     corpo.textContent = '';
-    if (!dados.escopos.length) linhaVazia(corpo, 3, 'Nenhum conteúdo publicado ainda.');
+    if (!dados.escopos.length) linhaVazia(corpo, 4, 'Nenhum conteúdo publicado ainda.');
     dados.escopos.forEach(function (e) {
       const tr = document.createElement('tr');
       tr.append(celula(e.escopo), celula(String(e.itens)), celula(data(e.atualizado_em)));
+      const acao = document.createElement('td');
+      acao.appendChild(botaoRevogar('Apagar', async function () { await api('/api/admin/conteudo/' + encodeURIComponent(e.escopo), 'DELETE'); await carregarConteudos(); }));
+      tr.appendChild(acao);
       corpo.appendChild(tr);
     });
   }
@@ -155,25 +158,60 @@
     }
   }
 
+  /** "Rituais (1).json" → "rituais-1": minúsculas, sem acento, só letras, números e hífen (até 40). */
+  function nomeDoArquivo(arquivo) {
+    return arquivo.name.replace(/\.json$/i, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+  }
+
+  /** Um arquivo usa o nome digitado (sugerido pelo nome do arquivo); vários usam o nome de cada arquivo. */
+  function aoEscolherArquivos() {
+    const arquivos = Array.prototype.slice.call($('ct-arquivo').files);
+    const nomes = $('ct-nomes');
+    $('ct-escopo').disabled = arquivos.length > 1;
+    $('ct-escopo').required = arquivos.length <= 1;
+    if (arquivos.length === 1) $('ct-escopo').value = nomeDoArquivo(arquivos[0]) || $('ct-escopo').value;
+    nomes.hidden = arquivos.length < 2;
+    nomes.textContent = arquivos.length > 1 ? 'Serão publicados: ' + arquivos.map(nomeDoArquivo).join(', ') + '.' : '';
+  }
+
   async function publicar(evento) {
     evento.preventDefault();
     const aviso = $('admin-conteudo-aviso');
     aviso.hidden = false;
     aviso.classList.remove('aviso-neutro--erro');
-    try {
-      const arquivo = $('ct-arquivo').files[0];
-      if (!arquivo) throw new Error('Escolha o arquivo .json.');
-      let json;
-      try { json = JSON.parse(await arquivo.text()); } catch (e) { throw new Error('O arquivo não é um JSON válido.'); }
-      const r = await api('/api/admin/conteudo/' + encodeURIComponent($('ct-escopo').value.trim()), 'PUT', json);
-      aviso.textContent = 'Publicado: ' + r.itens + ' itens.';
-      $('admin-form-conteudo').reset();
-      $('ct-escopo').value = 'habilidades';
-      await carregarConteudos();
-    } catch (erro) {
+    const arquivos = Array.prototype.slice.call($('ct-arquivo').files);
+    if (!arquivos.length) {
       aviso.classList.add('aviso-neutro--erro');
-      aviso.textContent = erro.message;
+      aviso.textContent = 'Escolha o arquivo .json.';
+      return;
     }
+    const resultados = [];
+    let falhou = false;
+    for (let i = 0; i < arquivos.length; i++) {
+      const arquivo = arquivos[i];
+      const nome = arquivos.length > 1 ? nomeDoArquivo(arquivo) : $('ct-escopo').value.trim();
+      aviso.textContent = 'Publicando ' + nome + ' (' + (i + 1) + ' de ' + arquivos.length + ')…';
+      try {
+        if (!nome) throw new Error('o nome do arquivo não dá um nome de conteúdo válido');
+        let json;
+        try { json = JSON.parse(await arquivo.text()); } catch (e) { throw new Error('o arquivo não é um JSON válido'); }
+        const r = await api('/api/admin/conteudo/' + encodeURIComponent(nome), 'PUT', json);
+        resultados.push(nome + ': ' + r.itens + ' itens');
+      } catch (erro) {
+        falhou = true;
+        resultados.push(nome + ': ' + erro.message);
+      }
+    }
+    aviso.classList.toggle('aviso-neutro--erro', falhou);
+    aviso.textContent = (falhou ? 'Terminou com problemas. ' : 'Publicado. ') + resultados.join(' · ');
+    if (!falhou) {
+      $('admin-form-conteudo').reset();
+      $('ct-escopo').disabled = false;
+      $('ct-escopo').value = 'habilidades';
+      $('ct-nomes').hidden = true;
+    }
+    await carregarConteudos();
   }
 
   async function iniciar() {
@@ -197,6 +235,7 @@
       $('admin-form-codigo').addEventListener('submit', gerarCodigo);
       $('admin-copiar').addEventListener('click', copiar);
       $('admin-form-conteudo').addEventListener('submit', publicar);
+      $('ct-arquivo').addEventListener('change', aoEscolherArquivos);
       await carregarTudo();
     } catch (erro) {
       estado.textContent = 'Não foi possível falar com o servidor (' + erro.message + '). Esta página só funciona no endereço publicado.';

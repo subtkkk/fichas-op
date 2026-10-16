@@ -3481,7 +3481,13 @@ body.arrastando-arquivo::after {
 }
 
 .vital--pv { --cor-vital: var(--pv); }
-.vital--pe { --cor-vital: var(--pe); }
+.vital--pe {
+  --cor-vital: var(--pe);
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "topo  turno  botoes"
+    "barra barra  barra";
+}
 .vital--san { --cor-vital: var(--san); }
 
 /* Sigla e valor: um botão que abre o ajuste do vital (−5…+5, dano/cura) */
@@ -3662,10 +3668,6 @@ body.arrastando-arquivo::after {
 
 .hud__barra-fina {
   color: var(--papel-4);
-}
-
-.hud__derivado--alerta dd {
-  color: var(--erro);
 }
 
 .hud__aviso {
@@ -14310,3 +14312,72 @@ body[data-nex-nivel="sim"] .campo--nex .campo__exposicao {
     min-width: 96px;
     padding: 4px 10px;
   }
+
+/* Limite de PE (PD) por turno: ao lado do indicador de PE, e o deslocamento no cabeçalho de "Defesa e testes" */
+.vital__turno {
+  grid-area: turno;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  margin: 0;
+  cursor: help;
+}
+
+.vital__turno-rotulo {
+  font: 500 0.625rem/1 var(--fonte-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+}
+
+.vital__turno-valor {
+  font: 600 0.8125rem/1 var(--fonte-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--papel-2);
+}
+
+.vital__turno--alerta .vital__turno-valor {
+  color: var(--erro);
+}
+
+.secao__cabecalho--testes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+.testes__desloc {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+  font: 500 0.75rem/1.2 var(--fonte-mono);
+  color: var(--papel-2);
+  white-space: nowrap;
+}
+
+.testes__desloc-rotulo {
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+}
+
+@media (max-width: 719px) {
+  .vital__turno {
+    display: none;
+  }
+
+  .resumo-derivados {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .resumo-derivados dt {
+    letter-spacing: 0.04em;
+  }
+}

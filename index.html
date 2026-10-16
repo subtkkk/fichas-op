@@ -469,6 +469,10 @@
                     <span class="vital__sigla" aria-hidden="true">PE</span>
                     <span class="vital__valor" aria-hidden="true"><output data-saida="recursos.pe.atual">—</output><span class="vital__max">/<output data-saida="recursos.pe.max">—</output></span></span>
                   </button>
+                  <p class="vital__turno" id="hud-turno" title="PE gastos neste turno / limite por turno">
+                    <span class="vital__turno-rotulo">Turno</span>
+                    <span class="vital__turno-valor"><output data-saida="conjuracao.peGastoTurno">0</output>/<output data-saida="conjuracao.limitePE">1</output></span>
+                  </p>
                   <div class="vital__barra" aria-hidden="true"><div class="barra__preenchimento" data-largura="recursos.pe.percentual"></div></div>
                   <div class="vital__botoes">
                     <button type="button" class="vital__botao" data-passo="-1" data-alvo="rec-pe-atual" aria-label="Diminuir 1 PE">−</button>
@@ -491,11 +495,11 @@
                 <div class="hud__derivado" title="Defesa total">
                   <dt>Defesa</dt><dd><output data-saida="defesa.total">10</output></dd>
                 </div>
-                <div class="hud__derivado" title="Deslocamento">
-                  <dt>Desloc.</dt><dd><output data-saida="deslocamento" data-formato="deslocamento">9 m (6 q)</output></dd>
+                <div class="hud__derivado" title="Esquiva: reação que muda a sua Defesa contra um ataque">
+                  <dt>Esquiva</dt><dd><output data-esquiva>—</output></dd>
                 </div>
-                <div class="hud__derivado" id="hud-turno" title="PE gastos neste turno / limite por turno">
-                  <dt>PE/turno</dt><dd><output data-saida="conjuracao.peGastoTurno">0</output><span class="hud__barra-fina">/</span><output data-saida="conjuracao.limitePE">1</output></dd>
+                <div class="hud__derivado" title="Bloqueio: reação que reduz o dano de um ataque">
+                  <dt>Bloqueio</dt><dd><output data-bloqueio>—</output></dd>
                 </div>
               </dl>
               <p class="hud__aviso" id="hud-sem-classe" hidden>Escolha uma classe para calcular os vitais.</p>
@@ -504,12 +508,19 @@
         </aside>
 
           <section class="secao secao--testes" id="secao-testes" aria-labelledby="titulo-testes" data-pagina="resumo" data-fixa>
-            <h2 class="secao__titulo" id="titulo-testes">Defesa e testes</h2>
+            <div class="secao__cabecalho secao__cabecalho--testes">
+              <h2 class="secao__titulo" id="titulo-testes">Defesa e testes</h2>
+              <p class="testes__desloc" title="Deslocamento (1 quadrado = 1,5 m)">
+                <span class="testes__desloc-rotulo">Desloc.</span>
+                <output data-saida="deslocamento" data-formato="deslocamento">9 m (6 q)</output>
+              </p>
+            </div>
             <!-- Só no celular (no computador e no tablet os mesmos números estão nos vitais) -->
             <dl class="resumo-derivados">
               <div><dt>Defesa</dt><dd><output data-saida="defesa.total">10</output></dd></div>
-              <div><dt>Desloc.</dt><dd><output data-saida="deslocamento" data-formato="deslocamento">9 m (6 q)</output></dd></div>
-              <div><dt>PE/turno</dt><dd><output data-saida="conjuracao.peGastoTurno">0</output> / <output data-saida="conjuracao.limitePE">1</output></dd></div>
+              <div title="Esquiva: reação que muda a sua Defesa contra um ataque"><dt>Esquiva</dt><dd><output data-esquiva>—</output></dd></div>
+              <div title="Bloqueio: reação que reduz o dano de um ataque"><dt>Bloqueio</dt><dd><output data-bloqueio>—</output></dd></div>
+              <div title="PE gastos neste turno / limite por turno"><dt>PE/turno</dt><dd><output data-saida="conjuracao.peGastoTurno">0</output> / <output data-saida="conjuracao.limitePE">1</output></dd></div>
             </dl>
             <!-- Botões gerados a partir de OP.data.periciasDerivadas; clicar leva à linha da perícia -->
             <div class="grade-testes" id="grade-testes"></div>

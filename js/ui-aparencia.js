@@ -5,8 +5,9 @@
    - OP.ui.aplicarAparencia(prefs) põe data-tema, data-fonte e data-movimento
      no <html> (a mesma lógica do script mínimo do <head>, que roda antes da
      primeira pintura). prefs: { tema, tamanhoFonte, movimento }.
-   - Diálogo "Aparência": tema, tamanho do texto e animações. Guarda em
-     OP.prefs (op_prefs) — NUNCA na ficha — e vale na hora.
+   - Diálogo "Aparência": tema do site, tema da ficha aberta (o seletor é
+     montado por js/ui-dossie.js), tamanho do texto, animações e som. Guarda
+     em OP.prefs (op_prefs) — NUNCA na ficha — e vale na hora.
    - Diálogo "Sobre": projeto de fã, versões e atalho para o backup.
    - Tecla "?" (fora de campos de texto) abre a "Ajuda de teclado".
    - Diálogos: showModal(), título por aria-labelledby, Esc fecha e o foco
@@ -108,14 +109,23 @@ window.OP = window.OP || {};
     document.querySelectorAll('input[name="' + nome + '"]').forEach(function (r) { r.checked = r.value === valor; });
   }
 
-  function abrirAparencia() {
+  /**
+   * quemAbriu: quem recebe o foco ao fechar (padrão: o botão da barra).
+   * grupoFoco: id do grupo que recebe o foco ao abrir (padrão: tema do site);
+   * "seletor-tema" é o tema da ficha, usado pelo botão "Tema" do dossiê.
+   */
+  function abrirAparencia(quemAbriu, grupoFoco) {
     const p = OP.prefs.aparencia();
     marcarGrupo('aparencia-tema', p.tema);
     marcarGrupo('aparencia-fonte', p.tamanhoFonte);
     marcarGrupo('aparencia-movimento', p.movimento);
     marcarGrupo('aparencia-som', p.som);
-    abrirDialogo(refs.aparencia, refs.botaoAparencia);
-    const marcado = refs.aparencia.querySelector('input[name="aparencia-tema"]:checked');
+    if (OP.uiDossie) OP.uiDossie.sincronizarSeletor();
+    abrirDialogo(refs.aparencia, quemAbriu || refs.botaoAparencia);
+    const grupo = grupoFoco === 'seletor-tema' && !document.getElementById('seletor-tema').disabled
+      ? 'tema-ficha'
+      : 'aparencia-tema';
+    const marcado = refs.aparencia.querySelector('input[name="' + grupo + '"]:checked');
     if (marcado) marcado.focus();
   }
 
@@ -193,7 +203,7 @@ window.OP = window.OP || {};
     montarGrupo('aparencia-movimento-opcoes', 'aparencia-movimento', MOVIMENTOS, p.movimento);
     montarGrupo('aparencia-som-opcoes', 'aparencia-som', SONS, p.som);
 
-    refs.botaoAparencia.addEventListener('click', abrirAparencia);
+    refs.botaoAparencia.addEventListener('click', function () { abrirAparencia(); });
     refs.botaoSobre.addEventListener('click', abrirSobre);
     refs.aparencia.addEventListener('change', aoMudarAparencia);
     document.getElementById('sobre-backup').addEventListener('click', function () {
@@ -222,6 +232,7 @@ window.OP = window.OP || {};
   OP.ui.abrirDialogo = abrirDialogo;
   OP.uiAparencia = {
     montar: montar,
+    abrirAparencia: abrirAparencia,
     abrirAjuda: abrirAjuda,
     abrirDialogo: abrirDialogo
   };

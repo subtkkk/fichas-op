@@ -1213,12 +1213,12 @@
                 <span class="dossie__registro">Registro <span id="dossie-codigo">—</span></span>
               </p>
               <div class="dossie__ferramentas">
-                <!-- Tema visual (só aparência). Opções geradas por js/ui-dossie.js a partir de data/temas.js -->
-                <fieldset class="seletor-tema" id="seletor-tema">
-                  <legend class="seletor-tema__legenda">Tema</legend>
-                  <div class="seletor-tema__opcoes" id="seletor-tema-opcoes"></div>
-                  <span class="seletor-tema__atual" id="seletor-tema-atual" aria-hidden="true"></span>
-                </fieldset>
+                <!-- Indica o tema da ficha (só aparência); a escolha fica no diálogo Aparência. js/ui-dossie.js preenche -->
+                <button type="button" class="dossie__tema" id="dossie-tema" aria-haspopup="dialog">
+                  <svg class="dossie__tema-icone" aria-hidden="true" focusable="false"><use id="dossie-tema-icone" href="#ic-neutro"/></svg>
+                  <span class="dossie__tema-rotulo">Tema</span>
+                  <span class="dossie__tema-nome" id="dossie-tema-nome">Neutro</span>
+                </button>
                 <div class="dossie__acoes">
                   <button type="button" class="botao botao--pequeno botao--fantasma" id="botao-exportar-ficha">
                     <svg class="icone-ui" aria-hidden="true"><use href="#ic-exportar"/></svg>Exportar
@@ -1599,10 +1599,16 @@
           <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>
         </button>
       </div>
-      <p class="dialogo__dica">Vale para todas as fichas deste navegador e não entra na ficha exportada. Cada escolha vale na hora.</p>
+      <p class="dialogo__dica">Vale para este navegador e não entra na ficha exportada. O tema da ficha vale só para a ficha aberta; o resto vale para todas. Cada escolha vale na hora.</p>
       <fieldset class="aparencia__grupo" id="aparencia-tema">
-        <legend>Tema</legend>
+        <legend>Tema do site</legend>
         <div class="aparencia__opcoes" id="aparencia-tema-opcoes"></div>
+      </fieldset>
+      <!-- Tema elemental da ficha aberta (só aparência). Opções geradas por js/ui-dossie.js a partir de data/temas-ficha.js -->
+      <fieldset class="aparencia__grupo" id="seletor-tema">
+        <legend>Tema da ficha</legend>
+        <div class="seletor-tema__opcoes" id="seletor-tema-opcoes"></div>
+        <p class="dialogo__dica" id="seletor-tema-atual"></p>
       </fieldset>
       <fieldset class="aparencia__grupo" id="aparencia-fonte">
         <legend>Tamanho do texto</legend>

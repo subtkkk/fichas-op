@@ -60,7 +60,7 @@ Precisa de um navegador atual (Chrome, Edge, Safari ou Firefox recentes).
 - Tudo funciona só com o teclado (a tecla **?** abre a ajuda), com foco sempre visível. Leitores de tela anunciam rolagens, descanso, rodadas e alertas.
 
 **Temas por ficha e impressão**
-- Seis temas elementais por ficha: Neutro, Sangue, Morte, Conhecimento, Energia e Medo. Eles mudam só a aparência e nunca as regras.
+- Seis temas elementais por ficha: Neutro, Sangue, Morte, Conhecimento, Energia e Medo. Eles mudam só a aparência e nunca as regras. A escolha fica em **Aparência** (botão no cabeçalho), junto do tema do site, e vale para a ficha aberta. Na aba Agente, o botão "Tema" mostra o tema da ficha e abre essa janela.
 - **Imprimir / PDF** gera a ficha completa num layout próprio para papel.
 
 ## Onde ficam os dados
@@ -118,7 +118,7 @@ js/
   ui-condicoes.js   Condições, estados, Morrendo e diálogo Descansar
   ui-biografia.js   Retrato, aliados, rivais e diário
   ui-verificacoes.js  Painel de verificações
-  ui-aparencia.js   Tema, tamanho do texto, animações, Sobre e ajuda de teclado
+  ui-aparencia.js   Temas (do site e da ficha), tamanho do texto, animações, Sobre e ajuda de teclado
   ui-auditoria.js   Auditorias de layout, contraste e acessibilidade (para os testes)
   tests.js          Verificações das fórmulas
   tests-etapa10.js  Verificações da Etapa 10

@@ -61,7 +61,7 @@ Precisa de um navegador atual (Chrome, Edge, Safari ou Firefox recentes).
 
 **Temas por ficha e impressão**
 - Seis temas elementais por ficha: Neutro, Sangue, Morte, Conhecimento, Energia e Medo. Eles mudam só a aparência e nunca as regras. A escolha fica em **Aparência** (botão no cabeçalho), junto do tema do site, e vale para a ficha aberta. Na aba Agente, o botão "Tema" mostra o tema da ficha e abre essa janela.
-- Cada tema pode ter um fundo animado próprio. O de **Conhecimento** é uma tela de sigilos (só as letras da fonte "Sigilos de Conhecimento") que sobem, mudam, surgem e somem: dourado com brilho no tema escuro, tinta marrom no claro. Só roda com a ficha na tela; fica parado com "Animações: Não" (ou movimento reduzido do sistema) e some no alto contraste e na impressão.
+- Cada tema pode ter um fundo animado próprio (por enquanto Conhecimento e Morte). O de **Morte** é feito de espirais pretas que nascem de um ponto e crescem para fora em linhas sinuosas e orgânicas: umas crescem pouco, outras muito, e depois somem de dentro para fora; quando uma chega perto de outra, ela desvia e cresce para o lado livre. No escuro o preto ganha uma névoa violeta e um fio de luz para aparecer. O de **Conhecimento** é uma tela de sigilos (só as letras da fonte "Sigilos de Conhecimento") que sobem, mudam, surgem e somem: dourado com brilho no tema escuro, tinta marrom no claro. Só roda com a ficha na tela; fica parado com "Animações: Não" (ou movimento reduzido do sistema) e some no alto contraste e na impressão.
 - **Imprimir / PDF** gera a ficha completa num layout próprio para papel.
 
 ## Onde ficam os dados
@@ -122,9 +122,11 @@ js/
   ui-aparencia.js   Temas (do site e da ficha), tamanho do texto, animações, Sobre e ajuda de teclado
   ui-auditoria.js   Auditorias de layout, contraste e acessibilidade (para os testes)
   tests.js          Verificações das fórmulas
-  atmosfera.js      Fundos animados por tema (por enquanto só o de Conhecimento)
+  atmosfera.js      Controlador dos fundos animados por tema (visibilidade, movimento reduzido, pausa)
+  atmosfera-conhecimento.js  Fundo de Conhecimento: sigilos subindo
+  atmosfera-morte.js  Fundo de Morte: espirais pretas crescendo e se desviando
   tests-etapa10.js  Verificações da Etapa 10
-  tests-atmosfera.js  Verificações da simulação do fundo animado
+  tests-atmosfera.js  Verificações da simulação dos fundos animados
 data/               Dados de jogo (classes, origens, trilhas, perícias, rituais, condições…) e temas
                     (temas.js = aparência do site; temas-ficha.js = temas elementais por ficha)
 fonts/              Fontes locais (Cormorant Garamond e IBM Plex, licença OFL; Sigilos de Conhecimento, fonte do projeto)
@@ -134,7 +136,7 @@ fonts/              Fontes locais (Cormorant Garamond e IBM Plex, licença OFL; 
 
 - HTML, CSS e JavaScript puro, sem dependências e sem etapa de build: edite e recarregue.
 - Os scripts compartilham o objeto global `OP`. O fluxo é `OP.state.atualizar` → `OP.calc` → `OP.ui.desenhar`. As telas ligam os campos por atributos (`data-campo`, `data-saida`, `data-passo`…).
-- **Testes das fórmulas:** abra o site e rode `OP.runTests()` no console do navegador. O esperado é `{ total: 583, aprovados: 583, falhas: 0 }`. Em janela estreita (até 480 px) o teste de layout também confere a rolagem horizontal. As auditorias ficam em `OP.ui.auditarLayout()`, `auditarContraste(tema)`, `auditarAcessibilidade()`, `auditarTitulos()` e `auditarAlvosToque()`.
+- **Testes das fórmulas:** abra o site e rode `OP.runTests()` no console do navegador. O esperado é `{ total: 587, aprovados: 587, falhas: 0 }`. Em janela estreita (até 480 px) o teste de layout também confere a rolagem horizontal. As auditorias ficam em `OP.ui.auditarLayout()`, `auditarContraste(tema)`, `auditarAcessibilidade()`, `auditarTitulos()` e `auditarAlvosToque()`.
 - **Cores:** o CSS da tela não tem cor fixa fora de variáveis. As paletas (`--cor-*`, em `#rrggbb`) ficam no começo do `css/style.css`: escuro em `:root`, claro em `[data-tema="claro"]` (e no `@media (prefers-color-scheme: light)` do modo Automático) e alto contraste em `[data-tema="contraste"]`. O `css/print.css` mantém fundo branco e texto preto, qualquer que seja o tema.
 - **Compatibilidade:** fichas salvas e arquivos exportados de versões anteriores precisam continuar abrindo. Mudanças no modelo passam pela migração em `js/state.js`.
 

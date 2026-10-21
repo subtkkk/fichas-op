@@ -34,8 +34,9 @@
     <div class="atmosfera__base"></div>
     <div class="atmosfera__tema"></div>
     <div class="atmosfera__detalhe"></div>
-    <!-- Conhecimento: sigilos subindo (js/atmosfera.js). Só pinta com a ficha na tela e esse tema. -->
-    <canvas class="atmosfera__sigilos" id="atmosfera-sigilos"></canvas>
+    <!-- Fundos animados por tema (js/atmosfera.js). Cada um só pinta com a ficha na tela e o tema dele. -->
+    <canvas class="atmosfera__fundo atmosfera__sigilos" id="atmosfera-sigilos"></canvas>
+    <canvas class="atmosfera__fundo atmosfera__espirais" id="atmosfera-espirais"></canvas>
     <div class="atmosfera__grao"></div>
   </div>
 
@@ -1910,6 +1911,8 @@
   <script src="js/ui-verificacoes.js"></script>
   <script src="js/ui-aparencia.js"></script>
   <script src="js/atmosfera.js"></script>
+  <script src="js/atmosfera-conhecimento.js"></script>
+  <script src="js/atmosfera-morte.js"></script>
   <script src="js/conta.js"></script>
   <script src="js/livro.js"></script>
   <script src="js/ui-livro.js"></script>

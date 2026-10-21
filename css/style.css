@@ -806,8 +806,8 @@ body[data-vista="ficha"] .atmosfera__detalhe {
   opacity: 1;
 }
 
-/* Fundo animado do tema (canvas pintado por js/atmosfera.js). Fica apagado até o tema que o usa estar na ficha. */
-.atmosfera__sigilos {
+/* Fundos animados dos temas (canvas pintados por js/atmosfera.js). Ficam apagados até o tema que os usa estar na ficha. */
+.atmosfera__fundo {
   position: absolute;
   top: 0;
   left: 0;
@@ -819,6 +819,11 @@ body[data-vista="ficha"] .atmosfera__detalhe {
 /* Conhecimento: sigilos subindo. No escuro brilham em dourado; no claro viram tinta, mais discretos. */
 body[data-vista="ficha"] .atmosfera[data-elemento="conhecimento"] .atmosfera__sigilos {
   opacity: calc(0.8 - 0.18 * var(--claro));
+}
+
+/* Morte: espirais pretas crescendo de dentro para fora. No escuro ganham um fio de luz; no claro são tinta. */
+body[data-vista="ficha"] .atmosfera[data-elemento="morte"] .atmosfera__espirais {
+  opacity: calc(0.95 - 0.08 * var(--claro));
 }
 
 body[data-vista="ficha"] .atmosfera__base {

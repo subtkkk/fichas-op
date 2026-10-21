@@ -315,7 +315,7 @@ A identificação do agente: faixa com carimbo, código de registro, indicador d
 
 ### Don't:
 - **Don't** pôr `backdrop-filter` em cartões de conteúdo; vidro é só estrutura.
-- **Don't** animar a atmosfera continuamente; luz e grão são estáticos.
+- **Don't** animar a atmosfera continuamente; luz e grão são estáticos. A única exceção é o fundo animado de um tema elemental (hoje só o de Conhecimento, sigilos subindo em canvas): só com a ficha na tela, parado com movimento reduzido e escondido no alto contraste.
 - **Don't** deixar o tema elemental alcançar a barra global, a Central ou o Arquivo.
 - **Don't** usar raio maior que 10px em cartões nem a pílula fora de medidores, contadores e interruptores.
 - **Don't** usar branco puro para texto; o tom mais claro é `papel`.

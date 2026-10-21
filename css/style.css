@@ -84,6 +84,15 @@
   font-display: swap;
 }
 
+/* Sigilos de Conhecimento: só as letras (A–Z, a–z), usados no fundo animado do tema (js/atmosfera.js) */
+@font-face {
+  font-family: "Sigilos de Conhecimento";
+  src: url("../fonts/sigilos-conhecimento.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
 /* ==========================================================================
    2. TOKENS
    ========================================================================== */
@@ -743,7 +752,8 @@ textarea {
 
 /* ==========================================================================
    5. ATMOSFERA — luz ambiente, textura do tema e grão (camada fixa, atrás)
-      Estática: nenhuma animação contínua.
+      Estática, salvo o fundo animado de cada tema (canvas de js/atmosfera.js),
+      que só roda com a ficha na tela e para com movimento reduzido.
    ========================================================================== */
 .atmosfera {
   position: fixed;
@@ -794,6 +804,21 @@ textarea {
 body[data-vista="ficha"] .atmosfera__tema,
 body[data-vista="ficha"] .atmosfera__detalhe {
   opacity: 1;
+}
+
+/* Fundo animado do tema (canvas pintado por js/atmosfera.js). Fica apagado até o tema que o usa estar na ficha. */
+.atmosfera__sigilos {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  color: var(--acento);
+  transition: opacity var(--dur-4) var(--curva);
+}
+
+/* Conhecimento: sigilos subindo. No escuro brilham em dourado; no claro viram tinta, mais discretos. */
+body[data-vista="ficha"] .atmosfera[data-elemento="conhecimento"] .atmosfera__sigilos {
+  opacity: calc(0.8 - 0.18 * var(--claro));
 }
 
 body[data-vista="ficha"] .atmosfera__base {

@@ -8,6 +8,10 @@ Site estático para criar e usar fichas de Ordem Paranormal RPG. Leia o `README.
 - O código, os comentários e a interface são em português.
 - Não reproduza texto do livro de regras. O projeto é uma ferramenta de fã, não oficial.
 
+## Leitura de arquivos
+- Antes de ler um arquivo inteiro, procure o trecho com busca (Grep) e leia só as linhas necessárias.
+- `index.html` (cerca de 124 KB) e `DESIGN.md` (cerca de 20 KB) são grandes: leia por partes, com `offset` e `limit`, ou pesquise a seção que precisa.
+
 ## Escolha de modelo nos subagentes (ferramenta Agent)
 O modelo principal da sessão é escolhido pelo usuário com `/model`. Não tente trocá-lo. Ao abrir um subagente, escolha o parâmetro `model` pela tarefa:
 

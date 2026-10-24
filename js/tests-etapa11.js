@@ -479,7 +479,19 @@ window.OP = window.OP || {};
         f.inventario.itens.push(OP.state.novoItem({ nome: 'A | B' }));
         const md = OP.exportarMd.gerar(f);
         return [md.indexOf('> Nota minha') !== -1, md.indexOf('#### Minha | habilidade') !== -1, md.indexOf('| A \\| B |') !== -1].join('|');
-      }, esperado: 'true|true|true' }
+      }, esperado: 'true|true|true' },
+      { nome: 'Atributo do cálculo de PV, PE e SAN: padrão, troca por config e valor inválido volta ao padrão', obtido: function () {
+        const f = OP.state.criarFichaVazia();
+        Object.assign(f.identificacao, { classe: 'combatente', nex: 5 });
+        f.atributos.vig.base = 2; f.atributos.pre.base = 3; f.atributos.int.base = 1;
+        const padrao = [OP.calc.pvMax(f), OP.calc.peMax(f), OP.calc.sanMax(f)];
+        f.config.atributoPE = 'int';
+        const trocaPE = OP.calc.peMax(f) - padrao[1];
+        f.config.atributoPE = 'xxx';
+        const invalido = OP.calc.peMax(f) === padrao[1];
+        f.config.atributoPE = null; f.config.atributoPV = 'pre'; f.config.atributoSAN = 'vig';
+        return [trocaPE, invalido, OP.calc.pvMax(f) - padrao[0], OP.calc.sanMax(f) - padrao[2]].join('|');
+      }, esperado: '-2|true|1|2' }
     ];
   }
 

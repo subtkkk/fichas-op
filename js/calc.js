@@ -330,6 +330,22 @@ window.OP = window.OP || {};
     return Boolean(ficha && ficha.config && ficha.config.semSanidade === true);
   }
 
+  /** Campo de config.* que troca o atributo de cada recurso (null = o padrão da regra). */
+  const CAMPO_ATRIBUTO_RECURSO = { pv: 'atributoPV', pe: 'atributoPE', san: 'atributoSAN' };
+
+  /**
+   * Atributo que entra na conta do máximo do recurso: o escolhido em config
+   * (algumas habilidades calculam PV, PE/PD ou SAN com outro atributo) ou, sem
+   * escolha válida, o padrão da regra (PV = VIG, PE/PD = PRE, SAN = nenhum).
+   */
+  function atributoDoRecurso(ficha, idRecurso) {
+    const definicao = definicaoRecurso(idRecurso);
+    const campo = CAMPO_ATRIBUTO_RECURSO[idRecurso];
+    const escolhido = ficha && ficha.config && campo ? ficha.config[campo] : null;
+    if (ehAtributoValido(escolhido)) return escolhido;
+    return definicao ? definicao.atributo : null;
+  }
+
   /** Inteiro ≥ 0 (vazio, texto, NaN e negativos viram 0). */
   function inteiroNaoNegativo(valor) {
     return Math.max(0, Math.trunc(numero(valor)));
@@ -351,7 +367,7 @@ window.OP = window.OP || {};
     const definicao = definicaoRecurso(idRecurso);
     const classe = classeDaFicha(ficha);
     const salvo = (ficha.recursos && ficha.recursos[idRecurso]) || {};
-    const atributo = definicao ? definicao.atributo : null;
+    const atributo = atributoDoRecurso(ficha, idRecurso);
     const unidade = unidadeProgressao(ficha);
     const somaConfig = OP.data.config.progressaoSomaAtributo || {};
 
@@ -3827,6 +3843,7 @@ window.OP = window.OP || {};
     composicaoRecurso: composicaoRecurso,
     pvMax: pvMax,
     peMax: peMax,
+    atributoDoRecurso: atributoDoRecurso,
     semSanidade: semSanidade,
     regraNexNivel: regraNexNivel,
     nexDoNivel: nexDoNivel,

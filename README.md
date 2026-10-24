@@ -31,7 +31,7 @@ Precisa de um navegador atual (Chrome, Edge, Safari ou Firefox recentes).
 - O backup baixa todas as fichas de uma vez.
 
 **A ficha**
-- Identificação, origem, classe e trilha com progressão por NEX (ou estágio, no Sobrevivente). As fontes de origens e trilhas podem ser escolhidas por livro.
+- Identificação, origem, classe e trilha com progressão por NEX (ou estágio, no Sobrevivente). As fontes de origens e trilhas podem ser escolhidas por livro. Na trilha, cada habilidade é um tópico que abre a descrição do livro daquele NEX (com acesso; sem ele, abre o aviso de que o texto não está liberado).
 - Atributos num mostrador com um d20 para cada um. Base, bônus e a distribuição de pontos (com "modo livre") ficam atrás de "Editar atributos". Na mesa, tocar no d20 rola o teste puro daquele atributo (com as condições que o afetam).
 - Recursos (PV, PE, SAN) com o cálculo do máximo à vista e perda permanente de Sanidade.
 - Defesa, reações, deslocamento e resistências a dano.

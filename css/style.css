@@ -4482,15 +4482,46 @@ body.arrastando-arquivo::after {
 }
 
 .trilha__habilidade {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  grid-template-areas: "marco nome situacao";
-  align-items: center;
-  gap: 6px 10px;
-  padding: 9px 10px 9px 12px;
   background: color-mix(in srgb, var(--cor-poco) 20%, transparent);
   border: 1px solid var(--linha-1);
   border-radius: 4px;
+}
+
+/* Tópico remissivo: o resumo é a linha (marco, nome, situação); aberto, mostra a descrição do livro */
+.trilha__resumo {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: "marco nome seta" ". situacao seta";
+  align-items: center;
+  gap: 3px 10px;
+  padding: 9px 10px 9px 12px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.trilha__resumo::-webkit-details-marker {
+  display: none;
+}
+
+.trilha__resumo::after {
+  content: "▸";
+  grid-area: seta;
+  color: var(--papel-4);
+  transition: transform 0.15s;
+}
+
+.trilha__detalhe[open] > .trilha__resumo::after {
+  transform: rotate(90deg);
+}
+
+.trilha__resumo:focus-visible {
+  outline: 2px solid var(--cor-foco, currentColor);
+  outline-offset: 2px;
+}
+
+.trilha__texto {
+  padding: 2px 12px 12px;
+  border-top: 1px dashed var(--linha-1);
 }
 
 .trilha__habilidade--liberada {

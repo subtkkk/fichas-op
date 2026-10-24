@@ -17,7 +17,7 @@ window.OP = window.OP || {};
 (function (OP) {
   'use strict';
 
-  const refs = {};
+  const refs = { trilhaAbertos: Object.create(null) };
   const assinaturas = {};
 
   /* ------------------------------------------------------------------------
@@ -269,20 +269,55 @@ window.OP = window.OP || {};
     return recriar(refs.conteudoClasse, filhos);
   }
 
-  /** Item da lista de habilidades da trilha: marco, nome, situação e botão. */
-  function itemHabilidade(ficha, habilidade, unidade, rotuloExtra) {
+  /** Chave do livro da habilidade de uma trilha num marco ('' se o conteúdo não chegou). */
+  function chaveDaHabilidade(idTrilha, marco) {
+    const trilhas = (OP.data.catalogo && OP.data.catalogo.trilhas) || {};
+    return (trilhas[idTrilha] && trilhas[idTrilha][String(marco)]) || '';
+  }
+
+  /**
+   * Item da lista de habilidades da trilha: um tópico que abre a descrição do livro daquele marco
+   * (NEX ou estágio). Sem acesso ao livro, o tópico abre com o aviso de que o texto não está liberado.
+   * O tópico aberto continua aberto quando a lista é refeita (refs.trilhaAbertos).
+   */
+  function itemHabilidade(ficha, idTrilha, habilidade, unidade, rotuloExtra) {
     const item = criar('li', 'trilha__habilidade ' + (habilidade.liberada ? 'trilha__habilidade--liberada' : 'trilha__habilidade--bloqueada'));
-    item.appendChild(criar('span', 'trilha__marco', textoNivel(habilidade.marco, unidade, OP.calc.regraNexNivel(ficha))));
-    item.appendChild(criar('span', 'trilha__nome', habilidade.nome + (rotuloExtra ? ' (' + rotuloExtra + ')' : '')));
-    item.appendChild(criar('span', 'trilha__situacao', habilidade.liberada ? 'liberada · já nas habilidades' : 'bloqueada'));
+    const detalhe = criar('details', 'trilha__detalhe');
+    const resumo = criar('summary', 'trilha__resumo');
+    resumo.appendChild(criar('span', 'trilha__marco', textoNivel(habilidade.marco, unidade, OP.calc.regraNexNivel(ficha))));
+    resumo.appendChild(criar('span', 'trilha__nome', habilidade.nome + (rotuloExtra ? ' (' + rotuloExtra + ')' : '')));
+    resumo.appendChild(criar('span', 'trilha__situacao', habilidade.liberada ? 'liberada · já nas habilidades' : 'bloqueada'));
+    detalhe.appendChild(resumo);
+    const corpo = criar('div', 'trilha__texto');
+    corpo.appendChild(OP.uiLivro.criarTextoLivro(chaveDaHabilidade(idTrilha, habilidade.marco)));
+    detalhe.appendChild(corpo);
+    const id = idTrilha + '|' + habilidade.marco;
+    detalhe.open = refs.trilhaAbertos[id] === true;
+    detalhe.addEventListener('toggle', function () {
+      if (detalhe.open) refs.trilhaAbertos[id] = true;
+      else delete refs.trilhaAbertos[id];
+    });
+    item.appendChild(detalhe);
     return item;
+  }
+
+  /** Muda quando o texto do livro de alguma habilidade da trilha (ou da versatilidade) chega ou some. */
+  function assinaturaTextosTrilha(ficha, identidade) {
+    const partes = [];
+    function marcar(idTrilha, marco) {
+      const chave = chaveDaHabilidade(idTrilha, marco);
+      partes.push(chave + (chave && OP.livro && OP.livro.texto(chave) ? '+' : '-'));
+    }
+    if (identidade.trilha) identidade.habilidadesTrilha.forEach(function (h) { marcar(identidade.trilha.id, h.marco); });
+    if (identidade.versatilidade) marcar(identidade.versatilidade.trilha, identidade.versatilidade.marco);
+    return partes.join(',');
   }
 
   function sincronizarTrilha(ficha, identidade) {
     const ident = ficha.identificacao;
     const ativas = OP.prefs.fontesAtivas();
     const chave = [ident.classe, ident.trilha, identidade.nivel, ident.versatilidade, identidade.versatilidadeLiberada,
-      JSON.stringify(ativas)].join('|');
+      JSON.stringify(ativas), assinaturaTextosTrilha(ficha, identidade)].join('|');
     if (chave === assinaturas.trilha) return false;
     assinaturas.trilha = chave;
 
@@ -300,7 +335,7 @@ window.OP = window.OP || {};
       filhos.push(linhaInfo('Fonte', nomeFonte(trilha.fonte)));
       if (trilha.especial) filhos.push(criar('p', 'aviso-neutro identidade__especial', trilha.especial));
       const lista = criar('ul', 'trilha__habilidades');
-      identidade.habilidadesTrilha.forEach(function (h) { lista.appendChild(itemHabilidade(ficha, h, identidade.unidade)); });
+      identidade.habilidadesTrilha.forEach(function (h) { lista.appendChild(itemHabilidade(ficha, trilha.id, h, identidade.unidade)); });
       filhos.push(lista);
     }
 
@@ -321,7 +356,7 @@ window.OP = window.OP || {};
       if (identidade.versatilidade) {
         const lista = criar('ul', 'trilha__habilidades');
         const v = identidade.versatilidade;
-        lista.appendChild(itemHabilidade(ficha, { marco: v.marco, nome: v.nome, liberada: v.liberada }, 'nex', v.nomeTrilha));
+        lista.appendChild(itemHabilidade(ficha, v.trilha, { marco: v.marco, nome: v.nome, liberada: v.liberada }, 'nex', v.nomeTrilha));
         bloco.appendChild(lista);
       } else if (!identidade.versatilidadeLiberada) {
         bloco.appendChild(criar('p', 'identidade__nota', 'Liberada no NEX 50%: escolha outra trilha da classe e ganhe a 1ª habilidade dela.'));

@@ -4086,16 +4086,29 @@ body {
 }
 
 .trilha__habilidade {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  grid-template-areas: "marco nome situacao";
-  align-items: center;
-  gap: 4px 10px;
-  padding: 8px 10px;
   background: var(--cor-fundo-elevado);
   border: 1px solid var(--cor-borda);
   border-left: 3px solid var(--cor-borda-forte);
   border-radius: var(--raio-pequeno);
+}
+
+.trilha__resumo {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas: "marco nome" ". situacao";
+  align-items: center;
+  gap: 3px 10px;
+  padding: 8px 10px;
+  list-style: none;
+}
+
+.trilha__resumo::-webkit-details-marker {
+  display: none;
+}
+
+/* O texto do livro não é impresso */
+.trilha__texto {
+  display: none;
 }
 
 .trilha__habilidade--liberada {

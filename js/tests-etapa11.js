@@ -339,6 +339,22 @@ window.OP = window.OP || {};
           md.indexOf('| Luta | FOR | 1d20 maior | Veterano | +10 | +3 | +13 |') !== -1,
           md.indexOf('| NEX 40% | Técnica Secreta | liberada |') !== -1, md.indexOf('exportada em 2026-01-05') !== -1].join('|');
       }, esperado: 'true|true|true|true|true' },
+      { nome: 'E13 · Resumo em Markdown: bloqueio, esquiva e contra-ataque sempre aparecem (indisponíveis sem treino, com valor com treino)', obtido: function () {
+        const f = OP.state.criarFichaVazia();
+        Object.assign(f.identificacao, { classe: 'combatente', nex: 5 });
+        const sem = OP.exportarMd.gerar(f);
+        f.pericias.fortitude.grau = 1;
+        f.pericias.reflexos.grau = 1;
+        f.pericias.luta.grau = 1;
+        f.pericias.reflexos.outros = 2;
+        const com = OP.exportarMd.gerar(f);
+        return [sem.indexOf('| Bloqueio | indisponível | requer Fortitude treinado |') !== -1,
+          sem.indexOf('| Esquiva | indisponível | requer Reflexos treinado |') !== -1,
+          sem.indexOf('| Contra-ataque | indisponível | requer Luta treinado |') !== -1,
+          com.indexOf('| Bloqueio | disponível | reduz 5 de dano |') !== -1,
+          /\| Esquiva \| disponível \| \+7 na Defesa \(Defesa \d+\) \|/.test(com),
+          com.indexOf('| Contra-ataque | disponível | disponível |') !== -1].join('|');
+      }, esperado: 'true|true|true|true|true|true' },
       { nome: 'E13 · Resumo em Markdown: com "Jogando sem Sanidade" usa PD e não lista SAN', obtido: function () {
         const f = OP.state.criarFichaVazia();
         Object.assign(f.identificacao, { classe: 'combatente', nex: 5 });

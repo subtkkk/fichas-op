@@ -134,10 +134,24 @@ window.OP = window.OP || {};
       item('Defesa', d.total + ' (' + partes.join(', ') + ')'),
       d.totalCorpoACorpo !== d.total || d.totalDistancia !== d.total
         ? item('Defesa corpo a corpo / à distância', d.totalCorpoACorpo + ' / ' + d.totalDistancia) : null,
-      d.bloqueio && d.bloqueio.disponivel ? item('Bloqueio', 'reduz ' + d.bloqueio.reducao + ' de dano') : null,
-      d.esquiva && d.esquiva.disponivel ? item('Esquiva', 'Defesa ' + d.esquiva.defesaComEsquiva) : null,
       item('Deslocamento', desl.metros + ' m (' + desl.quadrados + ' quadrados)')
-    ]), testes.length ? tabela(['Teste', 'Dados', 'Bônus'], testes) : '']);
+    ]), testes.length ? tabela(['Teste', 'Dados', 'Bônus'], testes) : '', tabelaReacoes(d)]);
+  }
+
+  /** Bloqueio, Esquiva e Contra-ataque: sempre aparecem, dizendo se já estão disponíveis e o que valem. */
+  function tabelaReacoes(d) {
+    const linhas = (OP.data.reacoes || []).map(function (reacao) {
+      const estado = d[reacao.id] || {};
+      const pericia = achar(OP.data.pericias, reacao.pericia);
+      const grau = OP.data.grausTreinamento[reacao.grauMinimo] || OP.data.grausTreinamento[1];
+      const requisito = (pericia ? pericia.nome : reacao.pericia) + ' ' + grau.nome.toLowerCase();
+      if (!estado.disponivel) return [reacao.nome, 'indisponível', 'requer ' + requisito];
+      let valor = 'disponível';
+      if (reacao.id === 'bloqueio') valor = 'reduz ' + estado.reducao + ' de dano';
+      else if (reacao.id === 'esquiva') valor = sinal(estado.bonus) + ' na Defesa (Defesa ' + estado.defesaComEsquiva + ')';
+      return [reacao.nome, 'disponível', valor];
+    });
+    return linhas.length ? tabela(['Reação', 'Situação', 'Valor / requisito'], linhas) : '';
   }
 
   function secaoPericias(ficha, calc) {

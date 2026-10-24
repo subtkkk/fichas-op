@@ -457,7 +457,10 @@ window.OP = window.OP || {};
         modoLivre: false,         // desliga os avisos de criação dos atributos
         modoLivrePericias: false, // desliga o aviso de pontos de treinamento excedidos
         semSanidade: false,       // regra opcional "Jogando sem Sanidade": PD no lugar de PE e SAN
-        nexENivel: false          // regra opcional "NEX e Experiência": o nível (1 a 20) vira a progressão e o NEX, a exposição
+        nexENivel: false,         // regra opcional "NEX e Experiência": o nível (1 a 20) vira a progressão e o NEX, a exposição
+        atributoPV: null,         // atributo do cálculo do PV (null = VIG); algumas habilidades usam outro
+        atributoPE: null,         // atributo do cálculo do PE ou PD (null = PRE)
+        atributoSAN: null         // atributo do cálculo da SAN (null = nenhum)
       },
 
       // Regra opcional NEX e Experiência: escolhas e estado das alterações de NEX (js/calc.js, js/ui-nex.js)

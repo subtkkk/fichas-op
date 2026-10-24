@@ -314,6 +314,24 @@ window.OP = window.OP || {};
       '</div>';
   }
 
+  /**
+   * "Atributo do cálculo": algumas habilidades calculam PV, PE (PD) ou SAN com
+   * outro atributo. A opção vazia grava null (o padrão: PV = VIG, PE = PRE, SAN = nenhum).
+   */
+  function htmlAtributoRecurso(recurso) {
+    const id = 'rec-' + escaparHtml(recurso.id) + '-atributo';
+    const padrao = recurso.atributo ? 'Padrão (' + siglaAtributo(recurso.atributo) + ')' : 'Nenhum (padrão)';
+    return '' +
+      '<div class="recurso__bonus">' +
+        '<label for="' + id + '">Atributo do cálculo</label>' +
+        '<select id="' + id + '" class="controle" data-campo="config.atributo' + escaparHtml(recurso.sigla) + '" data-tipo="texto" data-padrao=""' +
+          ' title="Atributo somado ao máximo de ' + escaparHtml(recurso.nome) + ' (algumas habilidades trocam o padrão)">' +
+          '<option value="">' + escaparHtml(padrao) + '</option>' +
+          htmlOpcoesAtributo() +
+        '</select>' +
+      '</div>';
+  }
+
   /** HTML do cartão de um recurso (PV, PE ou SAN). */
   function htmlCartaoRecurso(recurso) {
     const id = escaparHtml(recurso.id);
@@ -360,6 +378,7 @@ window.OP = window.OP || {};
                 '<label for="' + idBonus + '">Bônus de máximo</label>' +
                 htmlPasso({ id: idBonus, caminho: 'recursos.' + recurso.id + '.bonusMax', descricao: 'bônus de máximo de ' + recurso.nome }) +
               '</div>' +
+              htmlAtributoRecurso(recurso) +
               '<p class="recurso__composicao">' +
                 '<span class="recurso__resumo" data-composicao-resumo></span>' +
                 '<span class="recurso__detalhe" data-composicao-detalhe></span>' +

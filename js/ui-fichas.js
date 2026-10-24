@@ -8,7 +8,7 @@
      atualizadas recentemente e a situação do arquivo neste navegador.
    - Arquivo: busca, filtro por classe, ordenação e cartões com Abrir,
      Duplicar, Exportar e Excluir (com confirmação).
-   - Importar (botão ou arrastar e soltar), exportar, backup e impressão.
+   - Importar (botão ou arrastar e soltar), exportar (JSON e resumo em Markdown), backup e impressão.
    Tudo o que aparece vem das fichas salvas (OP.fichas) e dos cálculos
    (OP.calc): nada é inventado. Dados das fichas só entram na página por
    textContent, .value ou setAttribute — nunca por innerHTML: arquivos
@@ -143,9 +143,9 @@ window.OP = window.OP || {};
   }
 
   /** Baixa um texto como arquivo (Blob + <a download>; funciona em file://). */
-  function baixar(nomeArquivo, texto) {
+  function baixar(nomeArquivo, texto, tipo) {
     try {
-      const blob = new Blob([texto], { type: 'application/json' });
+      const blob = new Blob([texto], { type: tipo || 'application/json' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -681,6 +681,25 @@ window.OP = window.OP || {};
     else aviso('erro', 'O navegador não deixou baixar o arquivo.');
   }
 
+  /** Baixa um resumo legível da ficha em Markdown (só leitura: não serve para importar de volta). */
+  function exportarMarkdown(id) {
+    const ficha = id === OP.fichas.idAtual() ? OP.state.ficha : OP.fichas.ler(id);
+    if (!ficha) {
+      aviso('erro', 'Não foi possível ler esta ficha para exportar.');
+      return;
+    }
+    let texto;
+    try {
+      texto = OP.exportarMd.gerar(OP.state.completarPadroes(ficha));
+    } catch (erro) {
+      aviso('erro', 'Não foi possível montar o resumo desta ficha.');
+      return;
+    }
+    const nomeArquivo = OP.exportarMd.nomeArquivo(ficha);
+    if (baixar(nomeArquivo, texto, 'text/markdown;charset=utf-8')) aviso('ok', 'Resumo baixado: ' + nomeArquivo + '.');
+    else aviso('erro', 'O navegador não deixou baixar o arquivo.');
+  }
+
   function excluirFicha(id) {
     const linha = OP.fichas.listar().find(function (l) { return l.id === id; });
     const nome = nomeExibido(linha && linha.nome);
@@ -1056,6 +1075,10 @@ window.OP = window.OP || {};
       const id = OP.fichas.idAtual();
       if (id) exportarFicha(id);
     });
+    document.getElementById('botao-exportar-md').addEventListener('click', function () {
+      const id = OP.fichas.idAtual();
+      if (id) exportarMarkdown(id);
+    });
     document.getElementById('botao-backup-agora').addEventListener('click', baixarBackup);
     document.getElementById('botao-recarregar-ficha').addEventListener('click', recarregar);
     document.getElementById('arquivo-limpar-filtros').addEventListener('click', limparFiltros);
@@ -1104,6 +1127,7 @@ window.OP = window.OP || {};
     montar: montar,
     novaFicha: novaFicha,
     exportarFicha: exportarFicha,
+    exportarMarkdown: exportarMarkdown,
     escolherArquivo: escolherArquivo,
     baixarBackup: baixarBackup,
     atualizarListas: atualizarListas,

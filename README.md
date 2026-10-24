@@ -27,11 +27,12 @@ Precisa de um navegador atual (Chrome, Edge, Safari ou Firefox recentes).
 - A Central mostra a última ficha usada, as atualizadas recentemente e a situação do arquivo neste navegador.
 - O Arquivo lista todas as fichas, com busca, filtro por classe e ordenação.
 - Cada ficha pode ser duplicada, exportada e excluída. A exclusão pede confirmação e ainda oferece **Desfazer**.
+- **Baixar .md:** na página Agente, o botão "Baixar .md" gera um resumo legível da ficha em Markdown (identificação, atributos, PV/PE ou PD/SAN, defesa, perícias com treinamento em texto e em número, "outros" e bônus total, origem, classe e trilha, habilidades, rituais, ataques, inventário, condições e biografia). É só para leitura (não se importa de volta; para isso use Exportar) e **não leva o texto do livro**, só nomes, números e o que você escreveu.
 - Importar é por botão ou arrastando o `.json` para a página. Se a ficha já existir no navegador, dá para **Substituir** (com Desfazer) ou **Importar como nova**.
 - O backup baixa todas as fichas de uma vez.
 
 **A ficha**
-- Identificação, origem, classe e trilha com progressão por NEX (ou estágio, no Sobrevivente). As fontes de origens e trilhas podem ser escolhidas por livro.
+- Identificação, origem, classe e trilha com progressão por NEX (ou estágio, no Sobrevivente). As fontes de origens e trilhas podem ser escolhidas por livro. Na trilha, cada habilidade é um tópico que abre a descrição do livro daquele NEX (com acesso; sem ele, abre o aviso de que o texto não está liberado). O bloco "Consultar outras trilhas" deixa ler as habilidades e as descrições por NEX de qualquer trilha de qualquer classe, sem escolhê-la (nada é salvo na ficha e nada entra na impressão).
 - Atributos num mostrador com um d20 para cada um. Base, bônus e a distribuição de pontos (com "modo livre") ficam atrás de "Editar atributos". Na mesa, tocar no d20 rola o teste puro daquele atributo (com as condições que o afetam).
 - Recursos (PV, PE, SAN) com o cálculo do máximo à vista e perda permanente de Sanidade.
 - Defesa, reações, deslocamento e resistências a dano.
@@ -113,6 +114,7 @@ js/
   ui-classe.js      Origem, classe, trilha e progressão
   ui-dossie.js      Capa do dossiê, vitais, ajuste de vital e tema
   ui-paginas.js     A ficha em páginas: abas (computador), índice e setas (celular), gesto de deslizar
+  exportar-md.js   Resumo da ficha em Markdown
   ui-fichas.js      Central, Arquivo e operações com fichas
   ui-app.js         Navegação entre telas e avisos
   ui-seletor.js     Painel próprio das listas de escolha (no lugar do menu nativo)

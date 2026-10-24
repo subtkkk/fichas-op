@@ -327,7 +327,49 @@ window.OP = window.OP || {};
           OP.state.sincronizarHabilidadesAutomaticas(f);
           return [antes === '', durante, f.habilidades[0].catalogo].join('|');
         } finally { OP.data.catalogo = cat; }
-      }, esperado: 'true|academico-livro|academico-livro' }
+      }, esperado: 'true|academico-livro|academico-livro' },
+      { nome: 'E13 · Resumo em Markdown: nome, atributos, perícia com grau em texto e em número, "outros" e trilha', obtido: function () {
+        const f = OP.state.criarFichaVazia();
+        Object.assign(f.identificacao, { nome: 'Ana | Teste', classe: 'combatente', trilha: 'combatente-aniquilador', nex: 40 });
+        f.atributos.int.base = 3;
+        f.pericias.luta.grau = 2;
+        f.pericias.luta.outros = 3;
+        const md = OP.exportarMd.gerar(f, new Date(2026, 0, 5));
+        return [md.indexOf('# Ana | Teste') === 0, md.indexOf('| Intelecto (INT) | 3 | +0 | 3 |') !== -1,
+          md.indexOf('| Luta | FOR | 1d20 maior | Veterano | +10 | +3 | +13 |') !== -1,
+          md.indexOf('| NEX 40% | Técnica Secreta | liberada |') !== -1, md.indexOf('exportada em 2026-01-05') !== -1].join('|');
+      }, esperado: 'true|true|true|true|true' },
+      { nome: 'E13 · Resumo em Markdown: bloqueio e esquiva sempre aparecem (indisponíveis sem treino, com valor com treino); contra-ataque não', obtido: function () {
+        const f = OP.state.criarFichaVazia();
+        Object.assign(f.identificacao, { classe: 'combatente', nex: 5 });
+        const sem = OP.exportarMd.gerar(f);
+        f.pericias.fortitude.grau = 1;
+        f.pericias.reflexos.grau = 1;
+        f.pericias.luta.grau = 1;
+        f.pericias.reflexos.outros = 2;
+        const com = OP.exportarMd.gerar(f);
+        return [sem.indexOf('| Bloqueio | indisponível | requer Fortitude treinado |') !== -1,
+          sem.indexOf('| Esquiva | indisponível | requer Reflexos treinado |') !== -1,
+          sem.indexOf('Contra-ataque') === -1,
+          com.indexOf('| Bloqueio | disponível | reduz 5 de dano |') !== -1,
+          /\| Esquiva \| disponível \| \+7 na Defesa \(Defesa \d+\) \|/.test(com),
+          com.indexOf('Contra-ataque') === -1].join('|');
+      }, esperado: 'true|true|true|true|true|true' },
+      { nome: 'E13 · Resumo em Markdown: com "Jogando sem Sanidade" usa PD e não lista SAN', obtido: function () {
+        const f = OP.state.criarFichaVazia();
+        Object.assign(f.identificacao, { classe: 'combatente', nex: 5 });
+        f.config.semSanidade = true;
+        const md = OP.exportarMd.gerar(f);
+        return [md.indexOf('Pontos de Determinação (PD)') !== -1, md.indexOf('Sanidade (SAN)') === -1, md.indexOf('Pontos de Esforço') === -1].join('|');
+      }, esperado: 'true|true|true' },
+      { nome: 'E13 · Resumo em Markdown: texto da pessoa entra, o texto do livro não, e "|" não quebra a tabela', obtido: function () {
+        const f = OP.state.criarFichaVazia();
+        Object.assign(f.identificacao, { classe: 'combatente', nex: 5 });
+        f.habilidades.push(OP.state.novaHabilidade({ nome: 'Minha | habilidade', fonte: 'poder', descricao: 'Nota minha', catalogo: 'chave-inexistente' }));
+        f.inventario.itens.push(OP.state.novoItem({ nome: 'A | B' }));
+        const md = OP.exportarMd.gerar(f);
+        return [md.indexOf('> Nota minha') !== -1, md.indexOf('#### Minha | habilidade') !== -1, md.indexOf('| A \\| B |') !== -1].join('|');
+      }, esperado: 'true|true|true' }
     ];
   }
 

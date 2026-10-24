@@ -339,31 +339,30 @@ window.OP = window.OP || {};
           md.indexOf('| Luta | FOR | Veterano (+10) | +3 | +13 |') !== -1,
           md.indexOf('| NEX 40% | Técnica Secreta |') !== -1 && md.indexOf('Técnica Sublime') === -1 && md.indexOf('Máquina de Matar') === -1, md.indexOf('exportada em 2026-01-05') !== -1].join('|');
       }, esperado: 'true|true|true|true|true' },
-      { nome: 'E13 · Resumo em Markdown: bloqueio e esquiva sempre aparecem (indisponíveis sem treino, com valor com treino); contra-ataque não', obtido: function () {
+      { nome: 'E13 · Resumo em Markdown: defesa e esquiva com a conta; bloqueio e esquiva sempre aparecem (indisponíveis sem treino); contra-ataque não', obtido: function () {
         const f = OP.state.criarFichaVazia();
         Object.assign(f.identificacao, { classe: 'combatente', nex: 5 });
         const sem = OP.exportarMd.gerar(f);
         f.pericias.fortitude.grau = 1;
         f.pericias.reflexos.grau = 1;
-        f.pericias.luta.grau = 1;
         f.pericias.reflexos.outros = 2;
         const com = OP.exportarMd.gerar(f);
-        return [sem.indexOf('| Bloqueio | indisponível | requer Fortitude treinado |') !== -1,
-          sem.indexOf('| Esquiva | indisponível | requer Reflexos treinado |') !== -1,
-          sem.indexOf('Contra-ataque') === -1,
-          com.indexOf('| Bloqueio | disponível | reduz 5 de dano |') !== -1,
-          /\| Esquiva \| disponível \| \+7 na Defesa \(Defesa \d+\) \|/.test(com),
+        return [sem.indexOf('| Defesa | 10 base + 1 AGI = 11 | 11 |') !== -1,
+          sem.indexOf('| Esquiva | indisponível (requer Reflexos treinado) | — |') !== -1,
+          sem.indexOf('| Bloqueio | indisponível (requer Fortitude treinado) | — |') !== -1,
+          com.indexOf('| Esquiva | 11 Defesa + 7 Reflexos = 18 | 18 |') !== -1,
+          com.indexOf('| Bloqueio | bônus de Fortitude = 5 de dano reduzido | reduz 5 |') !== -1,
           com.indexOf('Contra-ataque') === -1].join('|');
       }, esperado: 'true|true|true|true|true|true' },
       { nome: 'E13 · Resumo em Markdown: "Vitais" tem só PV, PE e SAN; sem tabela de testes, sem dados, sem poderes de classe nem aumentos', obtido: function () {
         const f = OP.state.criarFichaVazia();
         Object.assign(f.identificacao, { classe: 'combatente', nex: 40 });
         const md = OP.exportarMd.gerar(f);
-        return [md.indexOf('## Vitais') !== -1, md.indexOf('## Recursos') === -1, md.indexOf('| Pontos de Vida (PV) | ') !== -1,
+        return [md.indexOf('## Vitais') !== -1, md.indexOf('## Recursos') === -1, md.indexOf('| Pontos de Vida (PV) | ') !== -1, md.indexOf('| Vital | Máximo |') !== -1, md.indexOf('| Atual |') === -1,
           md.indexOf('Composição') === -1, md.indexOf('| Teste | Dados |') === -1, md.indexOf('d20') === -1,
           md.indexOf('Poderes de classe liberados') === -1, md.indexOf('Aumentos de atributo') === -1,
           md.indexOf('Treino (nº)') === -1].join('|');
-      }, esperado: 'true|true|true|true|true|true|true|true|true' },
+      }, esperado: 'true|true|true|true|true|true|true|true|true|true|true' },
       { nome: 'E13 · Resumo em Markdown: a descrição dos marcos da trilha entra só com o texto do livro liberado', obtido: function () {
         const f = OP.state.criarFichaVazia();
         Object.assign(f.identificacao, { classe: 'combatente', trilha: 'combatente-aniquilador', nex: 40 });
@@ -378,6 +377,31 @@ window.OP = window.OP || {};
             com.indexOf('**Descrição.** texto de teste do marco.') !== -1].join('|');
         } finally { OP.livro._esquecerTextos(['teste-marco']); OP.data.catalogo = cat; }
       }, esperado: 'true|true|true' },
+      { nome: 'E13 · Resumo em Markdown: origem com descrição e poder; habilidades e rituais com a descrição do livro e de onde vêm', obtido: function () {
+        const f = OP.state.criarFichaVazia();
+        Object.assign(f.identificacao, { classe: 'combatente', origem: 'academico', nex: 5 });
+        f.habilidades.push(OP.state.novaHabilidade({ nome: 'Poder X', fonte: 'poder', catalogo: 'teste-poder' }));
+        f.habilidades.push(OP.state.novaHabilidade({ nome: 'Coisa solta', fonte: 'outro', descricao: 'minha nota' }));
+        f.rituais.push(OP.state.novoRitual({ nome: 'Ritual Y', circulo: 1, catalogo: 'teste-ritual' }));
+        OP.state.sincronizarHabilidadesAutomaticas(f);
+        const sem = OP.exportarMd.gerar(f);
+        const cat = OP.data.catalogo;
+        OP.data.catalogo = { origens: {}, trilhas: {}, classe: {}, poderes: [], rituais: [] };
+        try {
+          OP.livro._registrar('origens', { chave: 'teste-origem', titulo: 'Acadêmico',
+            texto: 'Origem · p. 3\nPoder da origem: Saber é Poder\nEfeito do poder: efeito de teste.\nDescrição: descrição de teste da origem.\nPerícias treinadas: Ciências\n\n§AUTO§{"t":"origem","origem":"academico"}' });
+          OP.livro._registrar('habilidades', { chave: 'teste-poder', titulo: 'Poder X',
+            texto: 'Poder de classe · Combatente\nDescrição: descrição de teste do poder.\n\n§AUTO§{"t":"poder","tipo":"classe","categoria":"combate","classe":"combatente"}' });
+          OP.livro._registrar('rituais', { chave: 'teste-ritual', titulo: 'Ritual Y',
+            texto: 'Ritual · Sangue · 1º Círculo\nDescrição: descrição de teste do ritual.\nDiscente (+2 PE): forma discente de teste.\n\n§AUTO§{"t":"ritual","circulo":1,"elemento":"sangue"}' });
+          const com = OP.exportarMd.gerar(f);
+          return [sem.indexOf('descrição de teste') === -1, com.indexOf('**Descrição.** descrição de teste da origem.') !== -1,
+            com.indexOf('**Efeito do poder.** efeito de teste.') !== -1, com.indexOf('- **Poder da origem:** Saber é Poder') !== -1,
+            com.indexOf('- **Vem de:** Poder de classe (Combatente), pela progressão') !== -1, com.indexOf('descrição de teste do poder.') !== -1,
+            com.indexOf('- **Vem de:** Outros') !== -1, com.indexOf('descrição de teste do ritual.') !== -1,
+            com.indexOf('**Discente (+2 PE).** forma discente de teste.') !== -1, com.indexOf('### Origem\n') === -1].join('|');
+        } finally { OP.livro._esquecerTextos(['teste-origem', 'teste-poder', 'teste-ritual']); OP.data.catalogo = cat; }
+      }, esperado: 'true|true|true|true|true|true|true|true|true|true' },
       { nome: 'E13 · Resumo em Markdown: com "Jogando sem Sanidade" usa PD e não lista SAN', obtido: function () {
         const f = OP.state.criarFichaVazia();
         Object.assign(f.identificacao, { classe: 'combatente', nex: 5 });

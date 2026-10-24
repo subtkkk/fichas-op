@@ -27,7 +27,7 @@ Precisa de um navegador atual (Chrome, Edge, Safari ou Firefox recentes).
 - A Central mostra a última ficha usada, as atualizadas recentemente e a situação do arquivo neste navegador.
 - O Arquivo lista todas as fichas, com busca, filtro por classe e ordenação.
 - Cada ficha pode ser duplicada, exportada e excluída. A exclusão pede confirmação e ainda oferece **Desfazer**.
-- **Baixar .md:** na página Agente, o botão "Baixar .md" gera um resumo legível da ficha em Markdown (identificação, atributos, PV/PE ou PD/SAN, defesa, perícias com treinamento em texto e em número, "outros" e bônus total, origem, classe e trilha, habilidades, rituais, ataques, inventário, condições e biografia). É só para leitura (não se importa de volta; para isso use Exportar) e **não leva o texto do livro**, só nomes, números e o que você escreveu.
+- **Baixar .md:** na página Agente, o botão "Baixar .md" gera um resumo legível da ficha em Markdown: identificação, atributos (só o valor total), vitais (PV, PE ou PD, SAN), defesa e deslocamento com Bloqueio e Esquiva, perícias (treinamento como "Treinado (+5)", "outros" e total), origem, classe e trilha (com a descrição de cada marco quando o texto do livro está liberado nesta conta), habilidades, rituais, ataques, inventário, condições e biografia. É só para leitura (não se importa de volta; para isso use Exportar). Fora a descrição dos marcos da trilha, **não leva o texto do livro**: só nomes, números e o que você escreveu.
 - Importar é por botão ou arrastando o `.json` para a página. Se a ficha já existir no navegador, dá para **Substituir** (com Desfazer) ou **Importar como nova**.
 - O backup baixa todas as fichas de uma vez.
 

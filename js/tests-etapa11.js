@@ -328,15 +328,15 @@ window.OP = window.OP || {};
           return [antes === '', durante, f.habilidades[0].catalogo].join('|');
         } finally { OP.data.catalogo = cat; }
       }, esperado: 'true|academico-livro|academico-livro' },
-      { nome: 'E13 · Resumo em Markdown: nome, atributos, perícia com grau em texto e em número, "outros" e trilha', obtido: function () {
+      { nome: 'E13 · Resumo em Markdown: nome, atributos só com o total, perícia com treinamento "Veterano (+10)", "outros" e trilha', obtido: function () {
         const f = OP.state.criarFichaVazia();
         Object.assign(f.identificacao, { nome: 'Ana | Teste', classe: 'combatente', trilha: 'combatente-aniquilador', nex: 40 });
         f.atributos.int.base = 3;
         f.pericias.luta.grau = 2;
         f.pericias.luta.outros = 3;
         const md = OP.exportarMd.gerar(f, new Date(2026, 0, 5));
-        return [md.indexOf('# Ana | Teste') === 0, md.indexOf('| Intelecto (INT) | 3 | +0 | 3 |') !== -1,
-          md.indexOf('| Luta | FOR | 1d20 maior | Veterano | +10 | +3 | +13 |') !== -1,
+        return [md.indexOf('# Ana | Teste') === 0, md.indexOf('| Intelecto (INT) | 3 |') !== -1,
+          md.indexOf('| Luta | FOR | Veterano (+10) | +3 | +13 |') !== -1,
           md.indexOf('| NEX 40% | Técnica Secreta | liberada |') !== -1, md.indexOf('exportada em 2026-01-05') !== -1].join('|');
       }, esperado: 'true|true|true|true|true' },
       { nome: 'E13 · Resumo em Markdown: bloqueio e esquiva sempre aparecem (indisponíveis sem treino, com valor com treino); contra-ataque não', obtido: function () {
@@ -355,6 +355,29 @@ window.OP = window.OP || {};
           /\| Esquiva \| disponível \| \+7 na Defesa \(Defesa \d+\) \|/.test(com),
           com.indexOf('Contra-ataque') === -1].join('|');
       }, esperado: 'true|true|true|true|true|true' },
+      { nome: 'E13 · Resumo em Markdown: "Vitais" tem só PV, PE e SAN; sem tabela de testes, sem dados, sem poderes de classe nem aumentos', obtido: function () {
+        const f = OP.state.criarFichaVazia();
+        Object.assign(f.identificacao, { classe: 'combatente', nex: 40 });
+        const md = OP.exportarMd.gerar(f);
+        return [md.indexOf('## Vitais') !== -1, md.indexOf('## Recursos') === -1, md.indexOf('| Pontos de Vida (PV) | ') !== -1,
+          md.indexOf('Composição') === -1, md.indexOf('| Teste | Dados |') === -1, md.indexOf('d20') === -1,
+          md.indexOf('Poderes de classe liberados') === -1, md.indexOf('Aumentos de atributo') === -1,
+          md.indexOf('Treino (nº)') === -1].join('|');
+      }, esperado: 'true|true|true|true|true|true|true|true|true' },
+      { nome: 'E13 · Resumo em Markdown: a descrição dos marcos da trilha entra só com o texto do livro liberado', obtido: function () {
+        const f = OP.state.criarFichaVazia();
+        Object.assign(f.identificacao, { classe: 'combatente', trilha: 'combatente-aniquilador', nex: 40 });
+        const sem = OP.exportarMd.gerar(f);
+        const cat = OP.data.catalogo;
+        OP.data.catalogo = { origens: {}, trilhas: {}, classe: {}, poderes: [], rituais: [] };
+        try {
+          OP.livro._registrar('habilidades', { chave: 'teste-marco', titulo: 'Técnica Secreta',
+            texto: 'HABILIDADE DE TRILHA · TESTE\nDescrição: texto de teste do marco.\n\n§AUTO§{"t":"trilha","trilha":"combatente-aniquilador","marco":40}' });
+          const com = OP.exportarMd.gerar(f);
+          return [sem.indexOf('texto de teste do marco') === -1, com.indexOf('#### NEX 40% · Técnica Secreta') !== -1,
+            com.indexOf('**Descrição.** texto de teste do marco.') !== -1].join('|');
+        } finally { OP.livro._esquecerTextos(['teste-marco']); OP.data.catalogo = cat; }
+      }, esperado: 'true|true|true' },
       { nome: 'E13 · Resumo em Markdown: com "Jogando sem Sanidade" usa PD e não lista SAN', obtido: function () {
         const f = OP.state.criarFichaVazia();
         Object.assign(f.identificacao, { classe: 'combatente', nex: 5 });

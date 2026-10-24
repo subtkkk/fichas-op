@@ -491,7 +491,22 @@ window.OP = window.OP || {};
         const invalido = OP.calc.peMax(f) === padrao[1];
         f.config.atributoPE = null; f.config.atributoPV = 'pre'; f.config.atributoSAN = 'vig';
         return [trocaPE, invalido, OP.calc.pvMax(f) - padrao[0], OP.calc.sanMax(f) - padrao[2]].join('|');
-      }, esperado: '-2|true|1|2' }
+      }, esperado: '-2|true|1|2' },
+      { nome: 'Atributo da DT de rituais: config.atributoDT troca o atributo e a DT chega ao Markdown (geral e por ritual)', obtido: function () {
+        const f = OP.state.criarFichaVazia();
+        Object.assign(f.identificacao, { classe: 'ocultista', nex: 5 });
+        f.atributos.pre.base = 3; f.atributos.int.base = 1;
+        f.rituais.push(OP.state.novoRitual({ nome: 'Ritual X', circulo: 1, resistencia: { teste: 'vontade', efeito: '' } }));
+        const padrao = OP.calc.dtRituais(f).total;
+        const md1 = OP.exportarMd.gerar(f);
+        f.config.atributoDT = 'int';
+        const dt = OP.calc.dtRituais(f);
+        const md2 = OP.exportarMd.gerar(f);
+        f.config.atributoDT = 'xxx';
+        return [padrao, dt.total, dt.idAtributo, OP.calc.dtRituais(f).total === padrao,
+          md1.indexOf('- **DT dos rituais:** ' + padrao) !== -1, md1.indexOf('(DT ' + padrao + ')') !== -1,
+          md2.indexOf('- **DT dos rituais:** ' + dt.total) !== -1, md2.indexOf('(DT ' + dt.total + ')') !== -1].join('|');
+      }, esperado: '14|12|int|true|true|true|true|true' }
     ];
   }
 

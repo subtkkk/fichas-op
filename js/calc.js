@@ -1533,19 +1533,22 @@ window.OP = window.OP || {};
 
   /**
    * DT dos rituais = DT de habilidade com o atributo de config.dtRitual
-   * (Presença) + bônus manual (conjuracao.dtBonus).
+   * (Presença), ou o escolhido em ficha.config.atributoDT (algumas habilidades
+   * trocam o atributo), + bônus manual (conjuracao.dtBonus).
    * Ex.: PRE 3 e NEX 5% → 14; PRE 5 e NEX 99% → 35.
    * Devolve { total, partes: { base, limitePE, atributo, bonus }, idAtributo, somaLimitePE }.
    */
   function dtRituais(ficha) {
     const regra = OP.data.config.dtRitual;
-    const dt = dtHabilidade(ficha, regra.atributo);
+    const escolhido = ficha.config && ficha.config.atributoDT;
+    const idAtributo = ehAtributoValido(escolhido) ? escolhido : regra.atributo;
+    const dt = dtHabilidade(ficha, idAtributo);
     const bonus = numero(ficha.conjuracao && ficha.conjuracao.dtBonus);
     const efeitos = efeitosDaFicha(ficha).dt;
     return {
       total: dt.total + bonus + efeitos,
       partes: Object.assign({}, dt.partes, { bonus: bonus, efeitos: efeitos }),
-      idAtributo: regra.atributo,
+      idAtributo: idAtributo,
       somaLimitePE: regra.somaLimitePE === true
     };
   }

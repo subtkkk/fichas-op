@@ -460,7 +460,8 @@ window.OP = window.OP || {};
         nexENivel: false,         // regra opcional "NEX e Experiência": o nível (1 a 20) vira a progressão e o NEX, a exposição
         atributoPV: null,         // atributo do cálculo do PV (null = VIG); algumas habilidades usam outro
         atributoPE: null,         // atributo do cálculo do PE ou PD (null = PRE)
-        atributoSAN: null         // atributo do cálculo da SAN (null = nenhum)
+        atributoSAN: null,        // atributo do cálculo da SAN (null = nenhum)
+        atributoDT: null          // atributo da DT de rituais (null = PRE)
       },
 
       // Regra opcional NEX e Experiência: escolhas e estado das alterações de NEX (js/calc.js, js/ui-nex.js)

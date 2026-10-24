@@ -3146,6 +3146,9 @@ window.OP = window.OP || {};
     });
 
     refs.composicaoDt = document.getElementById('composicao-dt');
+    // Atributo da DT: a opção vazia grava null (o padrão da regra, config.dtRitual.atributo)
+    const selectAtributoDt = document.getElementById('dt-atributo');
+    selectAtributoDt.innerHTML = '<option value="">Padrão (' + escaparHtml(siglaAtributo(OP.data.config.dtRitual.atributo)) + ')</option>' + htmlOpcoesAtributo();
     refs.dicaAfinidade = document.getElementById('dica-afinidade');
     refs.beneficiosAfinidade = document.getElementById('beneficios-afinidade');
     refs.textoCirculos = document.getElementById('texto-circulos');

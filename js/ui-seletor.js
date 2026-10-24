@@ -289,6 +289,11 @@ window.OP = window.OP || {};
       OP.uiLivro.abrirOrigem(item.select, item.botao);
       return;
     }
+    // A trilha também: cada trilha traz as habilidades por NEX e as descrições (só com a classe escolhida)
+    if (item.select.dataset.seletorGrande === 'trilha' && OP.uiLivro && OP.uiLivro.abrirTrilha) {
+      if (!item.select.disabled) OP.uiLivro.abrirTrilha(item.select, item.botao);
+      return;
+    }
     if (item.select.disabled) return;
     if (aberto) fechar(false);
     construirPainel();

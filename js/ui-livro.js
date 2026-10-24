@@ -2,7 +2,7 @@
    js/ui-livro.js — o livro na ficha (OP.uiLivro)
    --------------------------------------------------------------------------
    Só aparece com o conteúdo do livro liberado por código (js/livro.js):
-   - seletor grande de origem (título e setinha: descrição, poder e perícias);
+   - seletores grandes de origem (título e setinha: descrição, poder e perícias) e de trilha (habilidades por NEX com a descrição);
    - "Escolher do livro" para poderes e rituais, com texto e efeitos;
    - Efeitos automáticos (página Habilidades): o que cada fonte faz sozinha e os
      botões de preparar gasto, ativar e usar;
@@ -552,6 +552,91 @@ window.OP = window.OP || {};
   }
 
   /* ------------------------------------------------------------------------
+     Trilha
+     ------------------------------------------------------------------------ */
+
+  /** Marcos da trilha em ordem: [{ marco, nome, chave }] (chave do texto do livro, '' sem o conteúdo). */
+  function marcosDaTrilha(trilha) {
+    const cat = (OP.data.catalogo && OP.data.catalogo.trilhas && OP.data.catalogo.trilhas[trilha.id]) || {};
+    return Object.keys(trilha.habilidades).map(Number).sort(function (a, b) { return a - b; }).map(function (marco) {
+      return { marco: marco, nome: trilha.habilidades[String(marco)], chave: cat[String(marco)] || '' };
+    });
+  }
+
+  function detalhesDeTrilha(trilha) {
+    return function (corpo) {
+      const classe = OP.calc.classeDados(trilha.classe);
+      const estagio = classe && classe.unidadeProgressao === 'estagio';
+      const marcos = marcosDaTrilha(trilha);
+      let faltouTexto = false;
+      marcos.forEach(function (m) {
+        const bloco = el('div', 'livro-item__poder');
+        bloco.appendChild(el('p', 'livro-item__rotulo', (estagio ? 'Estágio ' + m.marco : 'NEX ' + m.marco + '%') + ' · ' + m.nome));
+        const t = m.chave && OP.livro ? OP.livro.texto(m.chave) : null;
+        if (t) {
+          blocosDoTexto(t.corpo).blocos.forEach(function (b) {
+            const p = el('p', 'livro-item__descricao');
+            if (b.rotulo) p.appendChild(el('strong', '', b.rotulo + '. '));
+            p.appendChild(document.createTextNode(b.texto));
+            bloco.appendChild(p);
+          });
+        } else faltouTexto = true;
+        corpo.appendChild(bloco);
+      });
+      if (faltouTexto) {
+        corpo.appendChild(el('p', 'livro-texto__nota', acessoDisponivel()
+          ? 'As descrições aparecem aqui quando o conteúdo do livro estiver liberado nesta conta (botão Conta).'
+          : 'As descrições aparecem aqui com a conta e um código de acesso.'));
+      }
+    };
+  }
+
+  /** Abre o seletor grande de trilha no lugar da lista nativa: cada trilha mostra as habilidades por NEX e as descrições. */
+  function abrirTrilha(select, gatilho) {
+    const itens = [];
+    Array.prototype.forEach.call(select.querySelectorAll('option'), function (opcao) {
+      if (opcao.disabled && opcao.value === '') return;
+      const grupo = opcao.parentElement && opcao.parentElement.tagName === 'OPTGROUP' ? opcao.parentElement.label : '';
+      const atual = select.value === opcao.value;
+      const trilha = OP.calc.trilhaDados(opcao.value);
+      const nomes = trilha ? marcosDaTrilha(trilha).map(function (m) { return m.nome; }) : [];
+      const item = {
+        id: 'trilha-' + (opcao.value || 'nenhuma'),
+        titulo: opcao.value === '' ? 'Nenhuma' : opcao.textContent.replace(/\s+/g, ' ').trim(),
+        grupo: opcao.value === '' || opcao.value === 'outra' ? '' : grupo,
+        marcado: atual ? 'Atual' : '',
+        busca: opcao.textContent + ' ' + nomes.join(' '),
+        meta: nomes.join(' · '),
+        acao: {
+          rotulo: atual ? 'Escolhida' : 'Escolher',
+          desativada: atual,
+          primaria: !atual,
+          icone: atual ? 'ok' : '',
+          aoClicar: function () {
+            select.value = opcao.value;
+            select.dispatchEvent(new Event('input', { bubbles: true }));
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+            fecharLista();
+            if (gatilho) gatilho.focus();
+          }
+        }
+      };
+      if (trilha) item.detalhes = detalhesDeTrilha(trilha);
+      else if (opcao.value === 'outra') {
+        item.detalhes = function (corpo) { corpo.appendChild(el('p', 'livro-texto__nota', 'Digite o nome da trilha no campo que aparece ao lado e cadastre as habilidades em Habilidades e poderes.')); };
+      }
+      itens.push(item);
+    });
+    abrirLista({
+      titulo: 'Escolher a trilha',
+      dica: 'Toque na seta para ver as habilidades da trilha em cada NEX, com a descrição.',
+      busca: 'Buscar trilha ou habilidade…',
+      itens: itens,
+      gatilho: gatilho
+    });
+  }
+
+  /* ------------------------------------------------------------------------
      Poderes e rituais do livro
      ------------------------------------------------------------------------ */
 
@@ -1023,6 +1108,7 @@ window.OP = window.OP || {};
   OP.uiLivro = {
     montar: montar,
     abrirOrigem: abrirOrigem,
+    abrirTrilha: abrirTrilha,
     abrirPoderes: abrirPoderes,
     abrirRituais: abrirRituais,
     descreverDefinicao: descreverDefinicao,

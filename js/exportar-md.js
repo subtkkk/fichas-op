@@ -1,12 +1,13 @@
 /* ==========================================================================
    js/exportar-md.js — resumo da ficha em Markdown (OP.exportarMd)
    --------------------------------------------------------------------------
-   Gera um texto .md legível com tudo o que a ficha mostra: identificação,
-   atributos, recursos, defesa, perícias (grau em texto e em número, "outros"
-   e bônus total), habilidades, rituais, ataques, inventário, condições e
-   biografia. Os números vêm de OP.calc.calcularTudo (os mesmos da tela).
-   O texto do livro só entra nos marcos da trilha e só com acesso liberado
-   (OP.livro.texto); no resto, só nomes, números e o que a pessoa escreveu.
+   Gera um texto .md legível, pensado como guia para montar a ficha física:
+   identificação, atributos, vitais (com defesa, esquiva e bloqueio), perícias
+   (treinamento, "outros" e total), origem, classe, trilha, habilidades,
+   rituais e inventário. Os números vêm de OP.calc.calcularTudo (os mesmos da tela).
+   O texto do livro (origem, trilha, habilidades, poderes e rituais) só entra com
+   o acesso liberado (OP.livro.texto); sem ele, só nomes, números e o que a
+   pessoa escreveu.
    Não altera a ficha nem toca na página; quem baixa o arquivo é o ui-fichas.js.
    ========================================================================== */
 window.OP = window.OP || {};
@@ -89,13 +90,23 @@ window.OP = window.OP || {};
   }
 
   function secaoAtributos(ficha, calc) {
-    const linhas = OP.data.atributos.map(function (a) {
-      return [a.nome + ' (' + a.sigla + ')', calc.atributos[a.id]];
-    });
-    return secao('Atributos', [tabela(['Atributo', 'Valor'], linhas)]);
+    return secao('Atributos', [lista(OP.data.atributos.map(function (a) {
+      return item(a.nome + ' (' + a.sigla + ')', calc.atributos[a.id]);
+    }))]);
   }
 
-  /** Vitais: só PV, PE (ou PD) e SAN, com o atual e o máximo. */
+  /** Soma escrita: "10 base + 1 AGI − 5 sobrecarga = 13" (os termos zerados ficam de fora). */
+  function conta(termos, total) {
+    let saida = '';
+    termos.forEach(function (t) {
+      const v = Number(t[0]) || 0;
+      if (v === 0 && saida !== '') return;
+      saida += saida === '' ? v + ' ' + t[1] : (v < 0 ? ' − ' : ' + ') + Math.abs(v) + ' ' + t[1];
+    });
+    return saida + ' = ' + total;
+  }
+
+  /** Vitais: PV, PE (ou PD) e SAN (máximo), mais Defesa, Esquiva e Bloqueio com a conta e o deslocamento. */
   function secaoVitais(ficha, calc) {
     const semSan = Boolean(ficha.config && ficha.config.semSanidade);
     const linhas = [];
@@ -103,42 +114,46 @@ window.OP = window.OP || {};
       if (semSan && definicao.id === 'san') return;
       const r = calc.recursos[definicao.id];
       const rotulo = semSan && definicao.id === 'pe' ? 'Pontos de Determinação (PD)' : definicao.nome + ' (' + definicao.sigla + ')';
-      if (!r || r.max === null) linhas.push([rotulo, '—', '—']);
-      else linhas.push([rotulo, r.atual, r.max]);
+      linhas.push([rotulo, !r || r.max === null ? '—' : r.max]);
     });
-    return secao('Vitais', [tabela(['Vital', 'Atual', 'Máximo'], linhas)]);
-  }
-
-  function secaoDefesa(ficha, calc) {
     const d = calc.defesa;
-    const partes = ['base ' + d.base, 'AGI ' + d.valorAtributo, d.protecoesInventario ? 'proteções ' + sinal(d.protecoesInventario) : '',
-      d.protecao ? 'proteção ' + sinal(d.protecao) : '', d.outros ? 'outros ' + sinal(d.outros) : '',
-      d.sobrecarga ? 'sobrecarga −' + d.sobrecarga : '', d.condicoes ? 'condições ' + sinal(d.condicoes) : '',
-      d.efeitos ? 'efeitos ' + sinal(d.efeitos) : ''].filter(Boolean);
+    const atributoDefesa = achar(OP.data.atributos, d.atributo);
+    const defesaConta = conta([[d.base, 'base'], [d.valorAtributo, atributoDefesa ? atributoDefesa.sigla : 'atributo'],
+      [d.protecoesInventario, 'proteções'], [d.protecao, 'proteção'], [d.outros, 'outros'], [-d.sobrecarga, 'sobrecarga'],
+      [d.condicoes, 'condições'], [d.efeitos, 'efeitos']], d.total);
+    const reacoes = {};
+    (OP.data.reacoes || []).forEach(function (reacao) { reacoes[reacao.id] = reacao; });
+    function requisito(reacao) {
+      const pericia = reacao && achar(OP.data.pericias, reacao.pericia);
+      const grau = reacao && (OP.data.grausTreinamento[reacao.grauMinimo] || OP.data.grausTreinamento[1]);
+      return reacao ? 'indisponível (requer ' + (pericia ? pericia.nome : reacao.pericia) + ' ' + grau.nome.toLowerCase() + ')' : 'indisponível';
+    }
+    const esquiva = d.esquiva || {};
+    const bloqueio = d.bloqueio || {};
+    const defesas = [
+      ['Defesa', defesaConta, d.total],
+      ['Esquiva', esquiva.disponivel ? d.total + ' Defesa ' + (esquiva.bonus < 0 ? '− ' : '+ ') + Math.abs(esquiva.bonus) + ' Reflexos = ' + esquiva.defesaComEsquiva : requisito(reacoes.esquiva),
+        esquiva.disponivel ? esquiva.defesaComEsquiva : '—'],
+      ['Bloqueio', bloqueio.disponivel ? 'bônus de Fortitude = ' + bloqueio.reducao + ' de dano reduzido' : requisito(reacoes.bloqueio),
+        bloqueio.disponivel ? 'reduz ' + bloqueio.reducao : '—']
+    ];
     const desl = calc.deslocamento;
-    return secao('Defesa e deslocamento', [lista([
-      item('Defesa', d.total + ' (' + partes.join(', ') + ')'),
+    return secao('Vitais', [
+      tabela(['Vital', 'Máximo'], linhas),
+      lista([item('Limite de ' + (semSan ? 'PD' : 'PE') + ' por turno', calc.nex.limitePE)]),
+      tabela(['Defesa', 'Cálculo', 'Valor'], defesas),
       d.totalCorpoACorpo !== d.total || d.totalDistancia !== d.total
-        ? item('Defesa corpo a corpo / à distância', d.totalCorpoACorpo + ' / ' + d.totalDistancia) : null,
-      item('Deslocamento', desl.metros + ' m (' + desl.quadrados + ' quadrados)')
-    ]), tabelaReacoes(d)]);
+        ? lista([item('Defesa corpo a corpo / à distância', d.totalCorpoACorpo + ' / ' + d.totalDistancia)]) : '',
+      lista([item('Deslocamento', desl.metros + ' m (' + desl.quadrados + ' quadrados)')])
+    ]);
   }
 
-  /** Bloqueio e Esquiva (o contra-ataque fica de fora): sempre aparecem, dizendo se já estão disponíveis e o que valem. */
-  function tabelaReacoes(d) {
-    const linhas = (OP.data.reacoes || []).filter(function (reacao) { return reacao.id !== 'contraAtaque'; }).map(function (reacao) {
-      const estado = d[reacao.id] || {};
-      const pericia = achar(OP.data.pericias, reacao.pericia);
-      const grau = OP.data.grausTreinamento[reacao.grauMinimo] || OP.data.grausTreinamento[1];
-      const requisito = (pericia ? pericia.nome : reacao.pericia) + ' ' + grau.nome.toLowerCase();
-      if (!estado.disponivel) return [reacao.nome, 'indisponível', 'requer ' + requisito];
-      let valor = 'disponível';
-      if (reacao.id === 'bloqueio') valor = 'reduz ' + estado.reducao + ' de dano';
-      else if (reacao.id === 'esquiva') valor = sinal(estado.bonus) + ' na Defesa (Defesa ' + estado.defesaComEsquiva + ')';
-      return [reacao.nome, 'disponível', valor];
-    });
-    return linhas.length ? tabela(['Reação', 'Situação', 'Valor / requisito'], linhas) : '';
-  }
+  /** Marcas das perícias na tabela (a legenda vem logo abaixo dela). */
+  const MARCAS_PERICIA = [
+    ['somenteTreinada', '🎓', 'só pode ser usada com treinamento'],
+    ['penalidadeCarga', '🎒', 'sofre penalidade de carga'],
+    ['kit', '🧰', 'precisa de um kit']
+  ];
 
   function secaoPericias(ficha, calc) {
     const linhas = OP.data.pericias.map(function (definicao) {
@@ -146,37 +161,47 @@ window.OP = window.OP || {};
       const salvo = (ficha.pericias && ficha.pericias[definicao.id]) || {};
       const grau = OP.data.grausTreinamento[e.grau] || OP.data.grausTreinamento[0];
       const atributo = achar(OP.data.atributos, e.atributo);
-      const nome = definicao.nome + (definicao.aberta && texto(salvo.nomeAberto) ? ' (' + texto(salvo.nomeAberto) + ')' : '');
-      const outros = Number(salvo.outros) || 0;
-      const extras = [e.bonusAlteracoes ? 'alterações de NEX ' + sinal(e.bonusAlteracoes) : '', e.penalidadeCarga ? 'carga −' + e.penalidadeCarga : '',
-        e.penalidadeKit ? 'sem kit −' + e.penalidadeKit : ''].filter(Boolean);
-      return [nome, atributo ? atributo.sigla : '—', grau.nome + ' (' + sinal(grau.bonus) + ')', sinal(outros),
-        sinal(e.bonus) + (extras.length ? ' (' + extras.join(', ') + ')' : '')];
+      const marcas = MARCAS_PERICIA.filter(function (m) { return definicao[m[0]] === true; }).map(function (m) { return m[1]; }).join(' ');
+      const nome = definicao.nome + (definicao.aberta && texto(salvo.nomeAberto) ? ' (' + texto(salvo.nomeAberto) + ')' : '') + (marcas ? ' ' + marcas : '');
+      return [nome, atributo ? atributo.sigla : '—', grau.nome + ' (' + sinal(grau.bonus) + ')', sinal(Number(salvo.outros) || 0), sinal(e.bonus)];
     });
-    const t = calc.treinamento;
     return secao('Perícias', [
-      t.classeDefinida ? lista([item('Pontos de treinamento', t.gastos + ' de ' + t.total + ' usados (' + t.restantes + ' restantes)')]) : '',
       tabela(['Perícia', 'Atributo', 'Treinamento', 'Outros', 'Total'], linhas),
-      'Total = treinamento + outros (+ efeitos, alterações de NEX e penalidades que valem hoje).'
+      MARCAS_PERICIA.map(function (m) { return m[1] + ' ' + m[2]; }).join(' · ') +
+        '. Total = treinamento + outros (+ efeitos, alterações de NEX e penalidades que valem hoje).'
     ]);
+  }
+
+  /** Blocos {rotulo, texto} do texto do livro de uma chave; null se o texto não está liberado nesta conta. */
+  function blocosDoLivro(chave) {
+    const t = chave && OP.livro && OP.livro.texto(chave);
+    if (!t) return null;
+    if (OP.uiLivro && OP.uiLivro.blocosDoTexto) return OP.uiLivro.blocosDoTexto(t.corpo).blocos;
+    return [{ rotulo: '', texto: t.corpo.trim() }];
+  }
+
+  /** Parágrafos "**Rótulo.** texto" (sem os rótulos em "ignorar"); '' se não há o que mostrar. */
+  function blocosEmMd(blocos, ignorar) {
+    return (blocos || []).filter(function (b) { return !ignorar || ignorar.indexOf(b.rotulo) === -1; })
+      .map(function (b) { return (b.rotulo ? '**' + b.rotulo + '.** ' : '') + b.texto; }).join('\n\n');
   }
 
   /** Descrição do livro de um marco da trilha (só com o texto liberado nesta conta; '' sem acesso). */
   function descricaoDoMarco(idTrilha, marco) {
     const trilhas = (OP.data.catalogo && OP.data.catalogo.trilhas) || {};
-    const chave = trilhas[idTrilha] && trilhas[idTrilha][String(marco)];
-    const t = chave && OP.livro && OP.livro.texto(chave);
-    if (!t) return '';
-    const partes = OP.uiLivro && OP.uiLivro.blocosDoTexto ? OP.uiLivro.blocosDoTexto(t.corpo) : null;
-    if (!partes) return t.corpo.trim();
-    return partes.blocos.map(function (b) { return (b.rotulo ? '**' + b.rotulo + '.** ' : '') + b.texto; }).join('\n\n');
+    return blocosEmMd(blocosDoLivro(trilhas[idTrilha] && trilhas[idTrilha][String(marco)]));
   }
 
   function secaoClasseOrigemTrilha(ficha, calc) {
     const id = calc.identidade;
     const unidade = id.unidade;
     const partes = [];
-    if (id.origem) partes.push(lista([item('Origem', id.origem.nome), item('Habilidade da origem', id.origem.habilidade)]));
+    if (id.origem) {
+      const origens = (OP.data.catalogo && OP.data.catalogo.origens) || {};
+      // O texto da origem traz a descrição e o efeito do poder; o nome do poder e as perícias já estão listados
+      const descricao = blocosEmMd(blocosDoLivro(origens[id.origem.id]), ['Poder da origem', 'Perícias treinadas']);
+      partes.push(lista([item('Origem', id.origem.nome), item('Poder da origem', id.origem.habilidade)]) + (descricao ? '\n\n' + descricao : ''));
+    }
     if (id.classe) partes.push(lista([item('Classe', id.classe.nome)]));
     function rotuloMarco(marco) {
       return unidade === 'estagio' ? 'Estágio ' + marco : 'NEX ' + marco + '%';
@@ -201,28 +226,62 @@ window.OP = window.OP || {};
     return secao('Origem, classe e trilha', partes);
   }
 
+  /** De onde vem a habilidade: origem, trilha, classe, poder (progressão) ou outros. */
+  function procedencia(h, calc) {
+    const id = calc.identidade;
+    if (h.fonte === 'origem') return 'Origem' + (id.origem ? ' (' + id.origem.nome + ')' : '');
+    if (h.fonte === 'trilha') return 'Trilha' + (id.trilha ? ' (' + id.trilha.nome + ')' : '');
+    if (h.fonte === 'classe' || h.fonte === 'poder') {
+      const entrada = ((OP.data.catalogo && OP.data.catalogo.poderes) || []).find(function (p) { return p.id === h.catalogo; });
+      if (entrada && entrada.tipo === 'classe') {
+        const classe = achar(OP.calc.classesLista(), entrada.classe);
+        return 'Poder de classe' + (classe ? ' (' + classe.nome + ')' : '') + ', pela progressão';
+      }
+      if (entrada && entrada.tipo === 'geral') return 'Poder geral, pela progressão';
+      if (entrada && entrada.tipo === 'paranormal') {
+        const el = achar(OP.data.elementos, entrada.categoria);
+        return 'Poder paranormal' + (el ? ' (' + el.nome + ')' : '') + ', pela progressão';
+      }
+      if (h.fonte === 'classe') return 'Habilidade de classe' + (id.classe ? ' (' + id.classe.nome + ')' : '');
+      return 'Poder, pela progressão';
+    }
+    return 'Outros';
+  }
+
   function secaoHabilidades(ficha, calc) {
     const habilidades = Array.isArray(ficha.habilidades) ? ficha.habilidades : [];
-    const nomesFonte = { classe: 'Classe', origem: 'Origem', trilha: 'Trilha', poder: 'Poderes', outro: 'Outras' };
+    const grupos = [
+      ['Origem', function (h) { return h.fonte === 'origem'; }],
+      ['Trilha', function (h) { return h.fonte === 'trilha'; }],
+      ['Progressão (classe e poderes)', function (h) { return h.fonte === 'classe' || h.fonte === 'poder'; }],
+      ['Outros', function (h) { return ['origem', 'trilha', 'classe', 'poder'].indexOf(h.fonte) === -1; }]
+    ];
     const partes = [];
-    Object.keys(nomesFonte).forEach(function (fonte) {
+    grupos.forEach(function (grupo) {
       const blocos = [];
       habilidades.forEach(function (h, indice) {
-        if ((h.fonte || 'outro') !== fonte) return;
+        if (!grupo[1](h)) return;
+        const livro = blocosDoLivro(h.catalogo);
+        const anotacao = texto(h.descricao);
+        // A da origem e as da trilha que entram sozinhas já estão descritas em "Origem, classe e trilha"
+        if (/^auto-/.test(h.id) && h.fonte !== 'classe' && !anotacao) return;
         const ativacao = achar(OP.data.ativacoes, h.ativacao);
         const dt = calc.habilidades[indice] && calc.habilidades[indice].dt;
+        const temPrerequisito = livro && livro.some(function (b) { return /^Pré-requisito/.test(b.rotulo); });
         const meta = lista([
+          item('Vem de', procedencia(h, calc)),
           item('Ativação', ativacao ? ativacao.nome : ''),
           item('Custo', h.custoPE ? h.custoPE + (ficha.config && ficha.config.semSanidade ? ' PD' : ' PE') : ''),
           item('DT', dt && typeof dt.total === 'number' ? dt.total : (typeof dt === 'number' ? dt : '')),
-          item('Pré-requisito', texto(h.prerequisito)),
-          item('Página', texto(h.pagina))
+          temPrerequisito ? null : item('Pré-requisito', texto(h.prerequisito))
         ]);
-        blocos.push('#### ' + (texto(h.nome) || 'Sem nome') + (meta ? '\n\n' + meta : '') + (texto(h.descricao) ? '\n\n' + citacao(h.descricao) : ''));
+        const descricao = blocosEmMd(livro);
+        blocos.push('#### ' + (texto(h.nome) || 'Sem nome') + '\n\n' + meta + (descricao ? '\n\n' + descricao : '') +
+          (anotacao ? '\n\n' + (livro ? '**Anotações.**\n' : '') + citacao(h.descricao) : ''));
       });
-      if (blocos.length) partes.push('### ' + nomesFonte[fonte] + '\n\n' + blocos.join('\n\n'));
+      if (blocos.length) partes.push('### ' + grupo[0] + '\n\n' + blocos.join('\n\n'));
     });
-    if (partes.length) partes.push('_Aqui entram só os nomes e o que você escreveu; a descrição do livro vai apenas nos marcos da trilha (com acesso)._');
+    if (partes.length) partes.push('_A descrição do livro entra só quando o texto está liberado nesta conta; sem isso, só os nomes e o que você escreveu._');
     return secao('Habilidades e poderes', partes);
   }
 
@@ -242,6 +301,8 @@ window.OP = window.OP || {};
         const detalhe = [ef.custoComCondicoes + ' ' + unidadeCusto, forma.dano ? 'dano ' + forma.dano : '', forma.cura ? 'cura ' + forma.cura : ''].filter(Boolean).join(', ');
         return '- **' + f.nome + '** (' + detalhe + ')' + (texto(forma.efeito) ? '\n' + citacao(forma.efeito) : '');
       });
+      const livro = blocosDoLivro(r.catalogo);
+      const descricao = blocosEmMd((livro || []).filter(function (b) { return b.rotulo === 'Descrição' || /^(Discente|Verdadeir)/.test(b.rotulo); }));
       return '### ' + (texto(r.nome) || 'Sem nome') + '\n\n' + lista([
         item('Círculo', r.circulo + 'º'),
         item('Elemento', el ? el.nome : ''),
@@ -250,9 +311,8 @@ window.OP = window.OP || {};
         item('Alvo', texto(r.alvo)),
         item('Área', texto(r.area)),
         item('Duração', texto(r.duracao)),
-        item('Resistência', res ? res.nomeTeste + (res.nomeEfeito ? ' — ' + res.nomeEfeito : '') + ' (DT ' + res.dt + ')' : ''),
-        item('Página', texto(r.pagina))
-      ]) + (formas.length ? '\n\n' + formas.join('\n') : '') + (texto(r.notas) ? '\n\n' + citacao(r.notas) : '');
+        item('Resistência', res ? res.nomeTeste + (res.nomeEfeito ? ' — ' + res.nomeEfeito : '') + ' (DT ' + res.dt + ')' : '')
+      ]) + (descricao ? '\n\n' + descricao : '') + (formas.length ? '\n\n' + formas.join('\n') : '') + (texto(r.notas) ? '\n\n' + citacao(r.notas) : '');
     });
     const topo = lista([
       item('DT dos rituais', calc.conjuracao.dt.total),
@@ -260,21 +320,6 @@ window.OP = window.OP || {};
       item('Elemento conectado', elemento ? elemento.nome : '')
     ]);
     return secao('Rituais', [topo].concat(blocos));
-  }
-
-  function secaoAtaques(ficha, calc) {
-    const ataques = Array.isArray(ficha.ataques) ? ficha.ataques : [];
-    if (!ataques.length) return '';
-    const linhas = ataques.map(function (a, indice) {
-      const e = calc.ataques[indice];
-      const pericia = achar(OP.data.pericias, a.pericia);
-      const teste = e && e.teste;
-      const bonus = teste ? OP.calc.formatarDados(teste.dados) + ' ' + sinal(teste.bonus) : sinal(a.testeBonus);
-      const dano = texto(a.dano) + (a.danoBonus ? ' ' + sinal(a.danoBonus) : '');
-      return [texto(a.nome) || 'Sem nome', pericia ? pericia.nome : a.pericia, bonus, dano, a.critMargem + '/x' + a.critMult,
-        texto(a.alcance), texto(a.tipoDano), a.usaMunicao ? a.municao : ''];
-    });
-    return secao('Ataques', [tabela(['Ataque', 'Perícia', 'Teste', 'Dano', 'Crítico', 'Alcance', 'Tipo', 'Munição'], linhas)]);
   }
 
   function secaoInventario(ficha, calc) {
@@ -291,38 +336,10 @@ window.OP = window.OP || {};
     const linhas = itens.map(function (i) {
       const tipo = achar(OP.data.tiposItem, i.tipo);
       const cat = achar(OP.data.categoriasItem.map(function (c) { return { id: c.valor, rotulo: c.rotulo }; }), i.categoria);
-      const extra = i.tipo === 'protecao' ? 'Defesa ' + sinal(i.defesa) + (i.penalidade ? ', penalidade −' + i.penalidade : '') : '';
       return [texto(i.nome) || 'Sem nome', tipo ? tipo.nome : i.tipo, cat ? cat.rotulo : i.categoria, i.espacos, i.quantidade,
-        i.equipada ? 'sim' : 'não', [extra, texto(i.descricao)].filter(Boolean).join(' — ')];
+        i.equipada ? 'sim' : 'não'];
     });
-    return secao('Inventário', [resumo, linhas.length ? tabela(['Item', 'Tipo', 'Cat.', 'Espaços', 'Qtd.', 'Equipado', 'Notas'], linhas) : '']);
-  }
-
-  function secaoCondicoes(ficha) {
-    const ativas = (ficha.condicoes && ficha.condicoes.ativas) || [];
-    if (!ativas.length) return '';
-    const nomes = ativas.map(function (c) {
-      const base = achar(OP.data.condicoes, c.id);
-      const nome = (c.personalizada && texto(c.personalizada.nome)) || (base ? base.nome : c.id);
-      return '- ' + nome + (texto(c.nota) ? ' — ' + texto(c.nota) : '');
-    });
-    return secao('Condições ativas', [nomes.join('\n')]);
-  }
-
-  function secaoBiografia(ficha) {
-    const b = ficha.biografia || {};
-    const campos = [['Aparência', b.aparencia], ['Personalidade', b.personalidade], ['Histórico', b.historico],
-      ['Objetivo', b.objetivo], ['Medos', b.medos], ['Notas', b.notas]];
-    const partes = campos.filter(function (c) { return texto(c[1]); }).map(function (c) { return '### ' + c[0] + '\n\n' + citacao(c[1]); });
-    [['Aliados', b.aliados], ['Rivais', b.rivais]].forEach(function (par) {
-      const pessoas = (par[1] || []).filter(function (p) { return p && texto(p.nome); });
-      if (pessoas.length) {
-        partes.push('### ' + par[0] + '\n\n' + pessoas.map(function (p) {
-          return '- ' + texto(p.nome) + (texto(p.nota) ? ' — ' + texto(p.nota) : '');
-        }).join('\n'));
-      }
-    });
-    return secao('Biografia', partes);
+    return secao('Inventário', [resumo, linhas.length ? tabela(['Item', 'Tipo', 'Cat.', 'Espaços', 'Qtd.', 'Equipado'], linhas) : '']);
   }
 
   /* ------------------------------------------------------------------------
@@ -341,15 +358,11 @@ window.OP = window.OP || {};
       secaoIdentificacao(ficha, calc),
       secaoAtributos(ficha, calc),
       secaoVitais(ficha, calc),
-      secaoDefesa(ficha, calc),
       secaoPericias(ficha, calc),
       secaoClasseOrigemTrilha(ficha, calc),
       secaoHabilidades(ficha, calc),
       secaoRituais(ficha, calc),
-      secaoAtaques(ficha, calc),
-      secaoInventario(ficha, calc),
-      secaoCondicoes(ficha),
-      secaoBiografia(ficha)
+      secaoInventario(ficha, calc)
     ].filter(Boolean).join('\n\n') + '\n';
   }
 

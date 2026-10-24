@@ -231,8 +231,7 @@ window.OP = window.OP || {};
     const id = calc.identidade;
     if (h.fonte === 'origem') return 'Origem' + (id.origem ? ' (' + id.origem.nome + ')' : '');
     if (h.fonte === 'trilha') return 'Trilha' + (id.trilha ? ' (' + id.trilha.nome + ')' : '');
-    if (h.fonte === 'classe') return 'Habilidade de classe' + (id.classe ? ' (' + id.classe.nome + ')' : '');
-    if (h.fonte === 'poder') {
+    if (h.fonte === 'classe' || h.fonte === 'poder') {
       const entrada = ((OP.data.catalogo && OP.data.catalogo.poderes) || []).find(function (p) { return p.id === h.catalogo; });
       if (entrada && entrada.tipo === 'classe') {
         const classe = achar(OP.calc.classesLista(), entrada.classe);
@@ -243,6 +242,7 @@ window.OP = window.OP || {};
         const el = achar(OP.data.elementos, entrada.categoria);
         return 'Poder paranormal' + (el ? ' (' + el.nome + ')' : '') + ', pela progressão';
       }
+      if (h.fonte === 'classe') return 'Habilidade de classe' + (id.classe ? ' (' + id.classe.nome + ')' : '');
       return 'Poder, pela progressão';
     }
     return 'Outros';
@@ -264,7 +264,7 @@ window.OP = window.OP || {};
         const livro = blocosDoLivro(h.catalogo);
         const anotacao = texto(h.descricao);
         // A da origem e as da trilha que entram sozinhas já estão descritas em "Origem, classe e trilha"
-        if (/^auto-/.test(h.id) && !anotacao) return;
+        if (/^auto-/.test(h.id) && h.fonte !== 'classe' && !anotacao) return;
         const ativacao = achar(OP.data.ativacoes, h.ativacao);
         const dt = calc.habilidades[indice] && calc.habilidades[indice].dt;
         const temPrerequisito = livro && livro.some(function (b) { return /^Pré-requisito/.test(b.rotulo); });

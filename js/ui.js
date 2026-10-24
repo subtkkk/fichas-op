@@ -2872,11 +2872,11 @@ window.OP = window.OP || {};
       const textoEditar = editando ? 'Concluir edição' : 'Editar';
       if (el.editar.textContent !== textoEditar) el.editar.textContent = textoEditar;
       if (el.editar.getAttribute('aria-expanded') !== String(editando)) el.editar.setAttribute('aria-expanded', String(editando));
-      // Habilidade que veio sozinha da origem ou da trilha: some o "Remover" (ela segue a ficha)
+      // Habilidade que veio sozinha da origem, da classe ou da trilha: some o "Remover" (ela segue a ficha)
       const automatica = String(habilidade.id).indexOf('auto-') === 0;
       if (el.remover.hidden !== automatica) el.remover.hidden = automatica;
       if (el.auto.hidden === automatica) el.auto.hidden = !automatica;
-      definirTexto(el.auto, automatica ? 'Vem sozinha ' + (habilidade.fonte === 'origem' ? 'da origem' : 'da trilha') : '');
+      definirTexto(el.auto, automatica ? 'Vem sozinha ' + (habilidade.fonte === 'origem' ? 'da origem' : habilidade.fonte === 'classe' ? 'da classe' : 'da trilha') : '');
       desenharLeituraHabilidade(el, habilidade);
 
       const casaFonte = filtrosHabilidades.fonte === 'todas' || habilidade.fonte === filtrosHabilidades.fonte;

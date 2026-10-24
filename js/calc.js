@@ -2084,8 +2084,8 @@ window.OP = window.OP || {};
   }
 
   /**
-   * Habilidades que a ficha ganha sozinha: a da origem, as da trilha já liberadas pelo NEX (ou estágio)
-   * e a da versatilidade (a partir do NEX 50%). Devolve [{ id, nome, fonte, catalogo }].
+   * Habilidades que a ficha ganha sozinha: a da origem, as da classe (marcos da progressão), as da trilha já
+   * liberadas pelo NEX (ou estágio) e a da versatilidade (a partir do NEX 50%). Devolve [{ id, nome, fonte, catalogo }].
    * O id leva a origem/trilha/marco: trocar a origem ou a trilha troca as habilidades. Ids "auto-…".
    * catalogo é a chave do livro (só existe com o conteúdo liberado; vazio sem ele).
    */
@@ -2099,6 +2099,27 @@ window.OP = window.OP || {};
     const origem = origemDados(ident.origem);
     if (origem && origem.habilidade) {
       lista.push({ id: id(['origem', origem.id]), nome: origem.habilidade, fonte: 'origem', catalogo: (cat.origens && cat.origens[origem.id]) || '' });
+    }
+    // Habilidades da classe (Ataque especial, Eclético, Perito, Escolhido pelo Outro Lado...): os marcos da tabela de
+    // progressão, uma vez só cada (ex.: Ataque especial vale a partir do NEX 5%), já liberados pelo NEX ou estágio
+    const classe = classeDaFicha(ficha);
+    if (classe && Array.isArray(classe.progressao)) {
+      const nivel = nivelProgressao(ficha);
+      const vistas = Object.create(null);
+      classe.progressao.forEach(function (linha) {
+        if (nivelDaLinha(linha) > nivel) return;
+        (linha.itens || []).forEach(function (marco) {
+          if (!marco || (marco.tipo !== 'marco' && marco.tipo !== 'circulo') || typeof marco.rotulo !== 'string') return;
+          const base = marco.rotulo.replace(/\s*\([^)]*\)\s*$/, '').trim();
+          const chave = normalizarNome(base);
+          if (!chave || vistas[chave]) return;
+          vistas[chave] = true;
+          const livro = (cat.classe && cat.classe[classe.id]) || [];
+          const achada = livro.find(function (h) { return normalizarNome(h.nome) === chave; });
+          lista.push({ id: id(['classe', classe.id, chave]), nome: base.charAt(0).toUpperCase() + base.slice(1), fonte: 'classe',
+            catalogo: (achada && achada.chave) || '' });
+        });
+      });
     }
     const trilha = trilhaDaFicha(ficha);
     if (trilha) {

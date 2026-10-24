@@ -285,12 +285,12 @@ window.OP = window.OP || {};
         const rt = OP.state.novoRitual({ nome: 'Y', catalogo: 'chave-y' });
         return [h.catalogo, rt.catalogo, h.descricao === '', rt.formas.padrao.cura === ''].join('|');
       }, esperado: 'chave-x|chave-y|true|true' },
-      { nome: 'E12 · Origem e trilha: as habilidades entram sozinhas (origem + marcos da trilha já liberados)', obtido: function () {
+      { nome: 'E12 · Origem, classe e trilha: as habilidades entram sozinhas (origem + habilidade da classe + marcos da trilha já liberados)', obtido: function () {
         const f = OP.state.criarFichaVazia();
         Object.assign(f.identificacao, { classe: 'combatente', origem: 'academico', trilha: 'combatente-aniquilador', nex: 40 });
         OP.state.sincronizarHabilidadesAutomaticas(f);
         return f.habilidades.map(function (h) { return h.fonte + ':' + h.nome; }).join('|');
-      }, esperado: 'origem:Saber é Poder|trilha:A Favorita|trilha:Técnica Secreta' },
+      }, esperado: 'origem:Saber é Poder|classe:Ataque especial|trilha:A Favorita|trilha:Técnica Secreta' },
       { nome: 'E12 · Habilidades automáticas: repetir não muda nada; NEX menor tira o marco; trocar a origem troca a habilidade', obtido: function () {
         const f = OP.state.criarFichaVazia();
         Object.assign(f.identificacao, { classe: 'combatente', origem: 'academico', trilha: 'combatente-aniquilador', nex: 40 });
@@ -303,7 +303,39 @@ window.OP = window.OP || {};
         OP.state.sincronizarHabilidadesAutomaticas(f);
         const origem = f.habilidades.filter(function (h) { return h.fonte === 'origem'; });
         return [repetiu, nexBaixo, origem.length, origem[0].nome !== 'Saber é Poder', f.habilidades.length].join('|');
-      }, esperado: 'false|2|1|true|2' },
+      }, esperado: 'false|3|1|true|3' },
+      { nome: 'E12 · Habilidades da classe entram pelos marcos da progressão (uma vez cada) e saem se a classe muda ou o NEX cai', obtido: function () {
+        function nomes(f) { return f.habilidades.filter(function (h) { return h.fonte === 'classe'; }).map(function (h) { return h.nome; }).join(','); }
+        const f = OP.state.criarFichaVazia();
+        Object.assign(f.identificacao, { classe: 'combatente', nex: 55 });
+        OP.state.sincronizarHabilidadesAutomaticas(f);
+        const combatente = nomes(f);
+        f.identificacao.classe = 'especialista';
+        OP.state.sincronizarHabilidadesAutomaticas(f);
+        const especialista = nomes(f);
+        f.identificacao.nex = 40;
+        OP.state.sincronizarHabilidadesAutomaticas(f);
+        const nex40 = nomes(f);
+        f.identificacao.classe = 'ocultista';
+        OP.state.sincronizarHabilidadesAutomaticas(f);
+        const ocultista = nomes(f);
+        f.identificacao.nex = 0;
+        OP.state.sincronizarHabilidadesAutomaticas(f);
+        return [combatente, especialista, nex40, ocultista, nomes(f) === ''].join('|');
+      }, esperado: 'Ataque especial|Eclético,Perito,Engenhosidade|Eclético,Perito,Engenhosidade|Escolhido pelo Outro Lado|true' },
+      { nome: 'E12 · Habilidade da classe liga a chave do livro pelo nome e o Sobrevivente usa o estágio', obtido: function () {
+        const f = OP.state.criarFichaVazia();
+        Object.assign(f.identificacao, { classe: 'sobrevivente', estagio: 1 });
+        const cat = OP.data.catalogo;
+        OP.data.catalogo = { origens: {}, trilhas: {}, classe: { sobrevivente: [{ chave: 'empenho-livro', nome: 'Empenho' }] }, poderes: [], rituais: [] };
+        try {
+          OP.state.sincronizarHabilidadesAutomaticas(f);
+          const estagio1 = f.habilidades.map(function (h) { return h.nome + '=' + h.catalogo; }).join(',');
+          f.identificacao.estagio = 5;
+          OP.state.sincronizarHabilidadesAutomaticas(f);
+          return [estagio1, f.habilidades.map(function (h) { return h.nome; }).join(',')].join('|');
+        } finally { OP.data.catalogo = cat; }
+      }, esperado: 'Empenho=empenho-livro|Empenho,Cicatrizado' },
       { nome: 'E12 · Habilidade que a pessoa já tinha (mesma fonte e nome) é adotada com a descrição; poderes comuns não são tocados', obtido: function () {
         const f = OP.state.criarFichaVazia();
         Object.assign(f.identificacao, { classe: 'combatente', origem: 'academico', nex: 5 });
@@ -312,7 +344,7 @@ window.OP = window.OP || {};
         OP.state.sincronizarHabilidadesAutomaticas(f);
         const o = f.habilidades.find(function (h) { return h.fonte === 'origem'; });
         return [f.habilidades.length, o.id.indexOf('auto-origem-') === 0, o.descricao, f.habilidades.some(function (h) { return h.nome === 'Ataque Especial'; })].join('|');
-      }, esperado: '2|true|minha nota|true' },
+      }, esperado: '3|true|minha nota|true' },
       { nome: 'E12 · Habilidades automáticas: a chave do livro é ligada quando o conteúdo chega e não some quando ele sai', obtido: function () {
         const f = OP.state.criarFichaVazia();
         Object.assign(f.identificacao, { classe: 'combatente', origem: 'academico', nex: 5 });
@@ -424,6 +456,15 @@ window.OP = window.OP || {};
           md.indexOf('Página') === -1, md.indexOf('- **Pré-requisito:** FOR 2') !== -1,
           md.indexOf('Notas') === -1, md.indexOf('nota do item') === -1].join('|');
       }, esperado: 'true|true|true|true|true|true|true|true|true|true' },
+      { nome: 'E13 · Resumo em Markdown: a habilidade da classe que entra sozinha aparece em "Progressão" com "Vem de"', obtido: function () {
+        const f = OP.state.criarFichaVazia();
+        Object.assign(f.identificacao, { classe: 'especialista', origem: 'academico', nex: 40 });
+        OP.state.sincronizarHabilidadesAutomaticas(f);
+        const md = OP.exportarMd.gerar(f);
+        return [md.indexOf('### Progressão (classe e poderes)') !== -1, md.indexOf('#### Perito') !== -1, md.indexOf('#### Eclético') !== -1,
+          md.indexOf('#### Engenhosidade') !== -1, md.indexOf('- **Vem de:** Habilidade de classe (Especialista)') !== -1,
+          md.indexOf('### Origem\n') === -1].join('|');
+      }, esperado: 'true|true|true|true|true|true' },
       { nome: 'E13 · Resumo em Markdown: com "Jogando sem Sanidade" usa PD e não lista SAN', obtido: function () {
         const f = OP.state.criarFichaVazia();
         Object.assign(f.identificacao, { classe: 'combatente', nex: 5 });

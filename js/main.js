@@ -58,6 +58,7 @@ window.OP = window.OP || {};
     OP.uiBiografia.montar();   // retrato, aliados, rivais e diário
     OP.uiVerificacoes.montar(); // painel de verificações
     OP.uiAparencia.montar();   // tema, tamanho do texto, animações, Sobre e ajuda de teclado
+    OP.atmosfera.montar();     // fundos animados dos temas da ficha (Conhecimento e Morte)
     OP.conta.montar();         // conta (login com o Discord e códigos); só aparece se a API existir
     OP.uiLivro.montar();       // origem, poderes e rituais do livro e efeitos automáticos (só com o conteúdo liberado)
     OP.uiRegras.montar();      // regras opcionais (por ficha): Jogando sem Sanidade e NEX e Experiência

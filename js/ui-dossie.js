@@ -11,7 +11,9 @@
    - índice: rola até a seção e marca a seção visível (aria-current);
    - tema: data-elemento na ficha e no painel de rolagens. SÓ APARÊNCIA: não
      muda afinidade, regras nem nenhum valor da ficha. A escolha fica nas
-     preferências do navegador (OP.prefs), por ficha.
+     preferências do navegador (OP.prefs), por ficha. O seletor está no
+     diálogo Aparência (js/ui-aparencia.js); na ficha, o botão "Tema" do
+     dossiê mostra o tema atual e abre esse diálogo.
    ========================================================================== */
 window.OP = window.OP || {};
 
@@ -126,10 +128,24 @@ window.OP = window.OP || {};
     refs.atmosfera.setAttribute('data-elemento', tema.id);
     document.body.setAttribute('data-tema-ficha', tema.id);
     refs.seloIcone.setAttribute('href', '#ic-' + tema.id);
-    definirTexto(refs.temaAtual, tema.nome);
+    refs.temaIcone.setAttribute('href', '#ic-' + tema.id);
+    definirTexto(refs.temaNome, tema.nome);
+    refs.botaoTema.setAttribute('aria-label', 'Tema da ficha: ' + tema.nome + '. Abrir a aparência para trocar');
     refs.opcoesTema.querySelectorAll('input[name="tema-ficha"]').forEach(function (radio) {
       radio.checked = radio.value === tema.id;
     });
+    sincronizarSeletor();
+  }
+
+  /**
+   * O seletor mora no diálogo Aparência, que também abre fora da ficha: sem
+   * ficha na tela ele fica desligado (o tema é guardado por ficha).
+   */
+  function sincronizarSeletor() {
+    const disponivel = document.body.dataset.vista === 'ficha' && Boolean(OP.fichas.idAtual());
+    refs.seletorTema.disabled = !disponivel;
+    const tema = dadosTema(temaAplicado);
+    definirTexto(refs.temaAtual, disponivel ? tema.nome + ' — ' + tema.descricao : 'Abra uma ficha para escolher o tema dela.');
   }
 
   /* ------------------------------------------------------------------------
@@ -491,6 +507,9 @@ window.OP = window.OP || {};
     refs.seletorTema = document.getElementById('seletor-tema');
     refs.opcoesTema = document.getElementById('seletor-tema-opcoes');
     refs.temaAtual = document.getElementById('seletor-tema-atual');
+    refs.botaoTema = document.getElementById('dossie-tema');
+    refs.temaIcone = document.getElementById('dossie-tema-icone');
+    refs.temaNome = document.getElementById('dossie-tema-nome');
     refs.monograma = document.getElementById('dossie-monograma');
     refs.codigo = document.getElementById('dossie-codigo');
     refs.seloIcone = document.getElementById('dossie-selo-icone');
@@ -508,6 +527,11 @@ window.OP = window.OP || {};
     montarSeletorTema();
     montarFolhaVital();
 
+    // O indicador do tema abre o diálogo Aparência, onde o tema da ficha é escolhido
+    refs.botaoTema.addEventListener('click', function () {
+      if (OP.uiAparencia) OP.uiAparencia.abrirAparencia(refs.botaoTema, 'seletor-tema');
+    });
+
     medirTrilho();
 
     // O tema da ficha aberta mudou nas preferências: acompanha
@@ -523,6 +547,7 @@ window.OP = window.OP || {};
   OP.uiDossie = {
     montar: montar,
     aplicarTema: aplicarTema,
+    sincronizarSeletor: sincronizarSeletor,
     irParaSecao: irParaSecao
   };
 })(window.OP);

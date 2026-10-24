@@ -301,7 +301,7 @@ Seção da página Agente (antes dos recursos), só com a regra "NEX e Experiên
 Glossário recolhido logo depois da capa: o título em rótulo mono com uma seta desenhada em CSS, e a lista em duas colunas com o termo em acento e a explicação em `papel-2`.
 
 ### Capa do dossiê (signature)
-A identificação do agente: faixa com carimbo, código de registro, seletor de tema, exportar e imprimir. Depois, o monograma no selo e o nome em serifa grande. É a única tela onde o carimbo aparece.
+A identificação do agente: faixa com carimbo, código de registro, indicador do tema da ficha (botão que abre a Aparência, onde o tema é escolhido), exportar e imprimir. Depois, o monograma no selo e o nome em serifa grande. É a única tela onde o carimbo aparece.
 
 ## Do's and Don'ts
 
@@ -315,7 +315,7 @@ A identificação do agente: faixa com carimbo, código de registro, seletor de 
 
 ### Don't:
 - **Don't** pôr `backdrop-filter` em cartões de conteúdo; vidro é só estrutura.
-- **Don't** animar a atmosfera continuamente; luz e grão são estáticos.
+- **Don't** animar a atmosfera continuamente; luz e grão são estáticos. A única exceção são os fundos animados dos temas elementais (hoje Conhecimento, com sigilos subindo, e Morte, com espirais pretas crescendo, ambos em canvas): só com a ficha na tela, parado com movimento reduzido e escondido no alto contraste.
 - **Don't** deixar o tema elemental alcançar a barra global, a Central ou o Arquivo.
 - **Don't** usar raio maior que 10px em cartões nem a pílula fora de medidores, contadores e interruptores.
 - **Don't** usar branco puro para texto; o tom mais claro é `papel`.

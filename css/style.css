@@ -84,6 +84,15 @@
   font-display: swap;
 }
 
+/* Sigilos de Conhecimento: só as letras (A–Z, a–z), usados no fundo animado do tema (js/atmosfera.js) */
+@font-face {
+  font-family: "Sigilos de Conhecimento";
+  src: url("../fonts/sigilos-conhecimento.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
 /* ==========================================================================
    2. TOKENS
    ========================================================================== */
@@ -743,7 +752,8 @@ textarea {
 
 /* ==========================================================================
    5. ATMOSFERA — luz ambiente, textura do tema e grão (camada fixa, atrás)
-      Estática: nenhuma animação contínua.
+      Estática, salvo o fundo animado de cada tema (canvas de js/atmosfera.js),
+      que só roda com a ficha na tela e para com movimento reduzido.
    ========================================================================== */
 .atmosfera {
   position: fixed;
@@ -794,6 +804,26 @@ textarea {
 body[data-vista="ficha"] .atmosfera__tema,
 body[data-vista="ficha"] .atmosfera__detalhe {
   opacity: 1;
+}
+
+/* Fundos animados dos temas (canvas pintados por js/atmosfera.js). Ficam apagados até o tema que os usa estar na ficha. */
+.atmosfera__fundo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  color: var(--acento);
+  transition: opacity var(--dur-4) var(--curva);
+}
+
+/* Conhecimento: sigilos subindo. No escuro brilham em dourado; no claro viram tinta, mais discretos. */
+body[data-vista="ficha"] .atmosfera[data-elemento="conhecimento"] .atmosfera__sigilos {
+  opacity: calc(0.8 - 0.18 * var(--claro));
+}
+
+/* Morte: espirais pretas crescendo de dentro para fora. No escuro ganham um fio de luz; no claro são tinta. */
+body[data-vista="ficha"] .atmosfera[data-elemento="morte"] .atmosfera__espirais {
+  opacity: calc(0.95 - 0.08 * var(--claro));
 }
 
 body[data-vista="ficha"] .atmosfera__base {
@@ -4046,26 +4076,51 @@ body.arrastando-arquivo::after {
   gap: 6px;
 }
 
-/* Seletor de tema: seis amostras com o símbolo de cada elemento */
-.seletor-tema {
-  display: flex;
+/* Indicador do tema da ficha: mostra o elemento atual e abre o diálogo Aparência */
+.dossie__tema {
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.seletor-tema__legenda {
-  float: left;
-  padding: 0;
+  gap: 8px;
+  min-height: 32px;
+  padding: 4px 12px 4px 8px;
   font: 500 var(--t-micro) / 1 var(--fonte-mono);
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--papel-3);
+  background: color-mix(in srgb, var(--cor-poco) 32%, transparent);
+  border: 1px solid var(--linha-1);
+  border-radius: var(--raio-pilula);
+  cursor: pointer;
+  transition: border-color var(--dur-1) var(--curva), background-color var(--dur-1) var(--curva);
 }
 
+.dossie__tema:hover {
+  border-color: var(--acento);
+  background: var(--acento-suave);
+}
+
+.dossie__tema:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+.dossie__tema-icone {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--acento);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dossie__tema-nome {
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--acento);
+}
+
+/* Seletor de tema (no diálogo Aparência): seis amostras com o símbolo de cada elemento */
 .seletor-tema__opcoes {
   display: flex;
   gap: 2px;
@@ -4141,11 +4196,14 @@ body.arrastando-arquivo::after {
   outline-offset: 2px;
 }
 
-.seletor-tema__atual {
-  min-width: 92px;
-  font: 600 0.75rem/1 var(--fonte-mono);
-  letter-spacing: 0.08em;
-  color: var(--acento);
+/* Sem ficha na tela, o tema dela não pode ser escolhido */
+.aparencia__grupo:disabled .seletor-tema__opcoes {
+  opacity: 0.45;
+}
+
+.aparencia__grupo:disabled .seletor-tema__opcao,
+.aparencia__grupo:disabled .seletor-tema__radio {
+  cursor: not-allowed;
 }
 
 /* Identificação: selo, nome grande e a linha de metadados */
@@ -10505,7 +10563,8 @@ kbd {
   }
 
   .botao--pequeno,
-  .botao-barra--pequeno {
+  .botao-barra--pequeno,
+  .dossie__tema {
     min-height: 44px;
   }
 }
@@ -10856,13 +10915,8 @@ kbd {
     font-size: 2rem;
   }
 
-  .dossie__ferramentas,
-  .seletor-tema {
+  .dossie__ferramentas {
     width: 100%;
-  }
-
-  .seletor-tema__atual {
-    display: none;
   }
 }
 

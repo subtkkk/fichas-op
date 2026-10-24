@@ -138,9 +138,9 @@ window.OP = window.OP || {};
     ]), testes.length ? tabela(['Teste', 'Dados', 'Bônus'], testes) : '', tabelaReacoes(d)]);
   }
 
-  /** Bloqueio, Esquiva e Contra-ataque: sempre aparecem, dizendo se já estão disponíveis e o que valem. */
+  /** Bloqueio e Esquiva (o contra-ataque fica de fora): sempre aparecem, dizendo se já estão disponíveis e o que valem. */
   function tabelaReacoes(d) {
-    const linhas = (OP.data.reacoes || []).map(function (reacao) {
+    const linhas = (OP.data.reacoes || []).filter(function (reacao) { return reacao.id !== 'contraAtaque'; }).map(function (reacao) {
       const estado = d[reacao.id] || {};
       const pericia = achar(OP.data.pericias, reacao.pericia);
       const grau = OP.data.grausTreinamento[reacao.grauMinimo] || OP.data.grausTreinamento[1];

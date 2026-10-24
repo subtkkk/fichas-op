@@ -275,11 +275,11 @@ window.OP = window.OP || {};
           OP.livro._esquecerTextos(['p1', 'p2', 'r1', 'o1']);
         }
       }, esperado: 'true|Poder Um|2|2|p1|Origem' },
-      { nome: 'E11 · Ficha nova e importada trazem a seção efeitos (v11) e ignoram lixo', obtido: function () {
+      { nome: 'E11 · Ficha nova e importada trazem a seção efeitos e ignoram lixo', obtido: function () {
         const f = OP.state.criarFichaVazia();
         const imp = OP.state.sanitizar({ efeitos: { ativos: [{ id: 'a', chave: 'c', rodadas: 2, ateFimCena: true, lixo: 1 }, 5], preparados: 'x', escolhas: [{ id: 'e', chave: 'c', campo: 'p', valor: 'luta' }] } });
         return [OP.state.VERSAO_MODELO, Array.isArray(f.efeitos.ativos), imp.efeitos.ativos.length, imp.efeitos.ativos[0].rodadas, imp.efeitos.preparados.length, imp.efeitos.escolhas[0].valor].join('|');
-      }, esperado: '11|true|1|2|0|luta' },
+      }, esperado: '12|true|1|2|0|luta' },
       { nome: 'E11 · Histórico: habilidade e ritual do catálogo guardam só a chave (nenhum texto)', obtido: function () {
         const h = OP.state.novaHabilidade({ nome: 'X', catalogo: 'chave-x' });
         const rt = OP.state.novoRitual({ nome: 'Y', catalogo: 'chave-y' });
@@ -506,7 +506,52 @@ window.OP = window.OP || {};
         return [padrao, dt.total, dt.idAtributo, OP.calc.dtRituais(f).total === padrao,
           md1.indexOf('- **DT dos rituais:** ' + padrao) !== -1, md1.indexOf('(DT ' + padrao + ')') !== -1,
           md2.indexOf('- **DT dos rituais:** ' + dt.total) !== -1, md2.indexOf('(DT ' + dt.total + ')') !== -1].join('|');
-      }, esperado: '14|12|int|true|true|true|true|true' }
+      }, esperado: '14|12|int|true|true|true|true|true' },
+      { nome: 'RD: os 15 tipos de dano da regra e lista vazia na ficha nova', obtido: function () {
+        const nomes = OP.data.tiposDano.map(function (t) { return t.nome; });
+        const esperados = ['Ácido', 'Balístico', 'Corte', 'Eletricidade', 'Fogo', 'Frio', 'Impacto', 'Mental', 'Conhecimento', 'Energia', 'Medo', 'Morte', 'Sangue', 'Perfuração', 'Químico'];
+        return [nomes.length, esperados.every(function (n) { return nomes.indexOf(n) !== -1; }), OP.state.criarFichaVazia().defesa.rd.length].join('|');
+      }, esperado: '15|true|0' },
+      { nome: 'RD: soma por tipo, ignora valor 0 e RD sem tipo, tipos desconhecidos ficam de fora', obtido: function () {
+        const f = OP.state.criarFichaVazia();
+        f.defesa.rd.push(OP.state.novaRd({ valor: 5, nome: 'Pele', tipos: { fogo: true, frio: true } }));
+        f.defesa.rd.push(OP.state.novaRd({ valor: 3, tipos: { fogo: true, acido: true, inexistente: true } }));
+        f.defesa.rd.push(OP.state.novaRd({ valor: 0, tipos: { mental: true } }));
+        f.defesa.rd.push(OP.state.novaRd({ valor: 4 }));
+        const rd = OP.calc.estadoRd(f);
+        return [rd.ativas, OP.calc.resistenciasAtivas(f), rd.porTipo.fogo, rd.porTipo.frio, rd.porTipo.acido, rd.porTipo.mental || 0, rd.lista[1].tipos.join('+')].join('|');
+      }, esperado: '2|2|8|5|3|0|fogo+acido' },
+      { nome: 'RD: a resistência por tipo de fichas antigas vira RD (mesmo valor num cartão só) e some do modelo', obtido: function () {
+        const f = OP.state.completarPadroes({ versaoModelo: 11, defesa: { outros: 2, resistencias: { fogo: 5, frio: 5, balistico: 10, mental: 0 } } });
+        const rd = OP.calc.estadoRd(f);
+        return [Object.prototype.hasOwnProperty.call(f.defesa, 'resistencias'), f.defesa.outros, rd.lista.length, rd.lista[0].valor + ':' + rd.lista[0].tipos.join('+'),
+          rd.lista[1].valor + ':' + rd.lista[1].tipos.join('+'), rd.porTipo.mental || 0, f.defesa.rd[0].id !== ''].join('|');
+      }, esperado: 'false|2|2|10:balistico|5:fogo+frio|0|true' },
+      { nome: 'RD: importar confere a lista (lixo sai, tipo de dano só true/false, valor numérico)', obtido: function () {
+        const imp = OP.state.sanitizar({ defesa: { rd: [{ id: 'x', nome: 'N', valor: '7', tipos: { fogo: true, lixo: true, frio: 'sim' } }, 5, 'a'] } });
+        const f = OP.state.completarPadroes(imp);
+        return [f.defesa.rd.length, f.defesa.rd[0].valor, f.defesa.rd[0].tipos.fogo, f.defesa.rd[0].tipos.frio, 'lixo' in f.defesa.rd[0].tipos].join('|');
+      }, esperado: '1|7|true|false|false' },
+      { nome: 'RD: o resumo em Markdown lista só as RD que valem, com os tipos e a origem', obtido: function () {
+        const f = OP.state.criarFichaVazia();
+        Object.assign(f.identificacao, { classe: 'combatente', nex: 5 });
+        f.defesa.rd.push(OP.state.novaRd({ valor: 5, nome: 'Pele | pedra', tipos: { fogo: true, acido: true } }));
+        f.defesa.rd.push(OP.state.novaRd({ valor: 0, nome: 'Zerada', tipos: { frio: true } }));
+        const md = OP.exportarMd.gerar(f);
+        const semRd = OP.exportarMd.gerar(OP.state.criarFichaVazia());
+        return [md.indexOf('| RD | Tipos de dano | Origem |') !== -1, md.indexOf('| 5 | Fogo, Ácido | Pele \\| pedra |') !== -1,
+          md.indexOf('Zerada') === -1, semRd.indexOf('Tipos de dano') === -1].join('|');
+      }, esperado: 'true|true|true|true' },
+      { nome: 'Defesa: o campo "Outros" entra na Defesa, na Esquiva e no Markdown', obtido: function () {
+        const f = OP.state.criarFichaVazia();
+        Object.assign(f.identificacao, { classe: 'combatente', nex: 5 });
+        f.pericias.reflexos.grau = 1;
+        const antes = OP.calc.calcularTudo(f).defesa;
+        f.defesa.outros = 3;
+        const depois = OP.calc.calcularTudo(f).defesa;
+        const md = OP.exportarMd.gerar(f);
+        return [depois.total - antes.total, depois.esquiva.defesaComEsquiva - antes.esquiva.defesaComEsquiva, md.indexOf('3 outros') !== -1].join('|');
+      }, esperado: '3|3|true' }
     ];
   }
 

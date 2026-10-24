@@ -609,27 +609,11 @@ window.OP = window.OP || {};
       '</div>';
   }
 
-  /** Campos de resistência, agrupados como em OP.data.gruposDano. */
-  function htmlResistencias() {
-    return OP.data.gruposDano.map(function (grupo) {
-      const campos = OP.data.tiposDano.filter(function (tipo) { return tipo.grupo === grupo.id; }).map(function (tipo) {
-        const id = 'res-' + escaparHtml(tipo.id);
-        return '<label class="resistencia" for="' + id + '">' +
-          '<span>' + escaparHtml(tipo.nome) + '</span>' +
-          '<input id="' + id + '" class="controle controle--numero" type="number" min="0" step="1" inputmode="numeric"' +
-            ' data-campo="defesa.resistencias.' + escaparHtml(tipo.id) + '" data-tipo="inteiro">' +
-        '</label>';
-      }).join('');
-      return '<fieldset class="resistencias__grupo"><legend>' + escaparHtml(grupo.nome) + '</legend>' + campos + '</fieldset>';
-    }).join('');
-  }
-
   function montarDefesa() {
     const gradeReacoes = document.getElementById('grade-reacoes');
     const gradeTestes = document.getElementById('grade-testes');
     gradeReacoes.innerHTML = OP.data.reacoes.map(htmlReacao).join('');
     gradeTestes.innerHTML = OP.data.periciasDerivadas.map(htmlTeste).join('');
-    document.getElementById('grade-resistencias').innerHTML = htmlResistencias();
 
     refs.reacoes = {};
     selecionarTodos('[data-reacao]', gradeReacoes).forEach(function (cartao) {
@@ -1961,15 +1945,12 @@ window.OP = window.OP || {};
     definirTexto(refs.defesaPorTipo, contraTipos.length ? 'Contra ataques ' + contraTipos.join(' · ') + ' (condições)' : '');
     if (refs.defesaPorTipo.hidden !== !contraTipos.length) refs.defesaPorTipo.hidden = !contraTipos.length;
     const resistenciaCond = derivados.condicoes.mod.resistenciaDano;
-    definirTexto(refs.resistenciaCondicoes, resistenciaCond ? 'Condições: resistência a dano ' + resistenciaCond + ' contra todos os tipos (não entra nos campos abaixo).' : '');
+    definirTexto(refs.resistenciaCondicoes, resistenciaCond ? 'Condições: resistência a dano ' + resistenciaCond + ' contra todos os tipos (não entra nas RD da lista).' : '');
     if (refs.resistenciaCondicoes.hidden !== !resistenciaCond) refs.resistenciaCondicoes.hidden = !resistenciaCond;
 
     refs.testes.forEach(function (botao) {
       botao.classList.toggle('teste--treinado', derivados.pericias[botao.dataset.teste].treinada);
     });
-
-    const ativas = derivados.resistenciasAtivas;
-    definirTexto(refs.contagemResistencias, ativas ? ativas + ' ' + plural(ativas, 'ativa', 'ativas') : '');
   }
 
   /**
@@ -3658,7 +3639,7 @@ window.OP = window.OP || {};
     impressao.detalhes = selecionarTodos('details', refs.raiz).filter(function (d) { return !d.open; });
     impressao.detalhes.forEach(function (d) { d.open = true; });
 
-    // Campos vazios somem do papel; resistências 0 também
+    // Campos vazios somem do papel
     impressao.vazios = [];
     function marcarVazio(elemento) {
       if (elemento && !elemento.classList.contains('impressao-vazio')) {
@@ -3666,14 +3647,8 @@ window.OP = window.OP || {};
         impressao.vazios.push(elemento);
       }
     }
-    selecionarTodos('.resistencia', refs.raiz).forEach(function (rotulo) {
-      const campo = rotulo.querySelector('input');
-      if (!campo || OP.calc.numero(campo.value) === 0) marcarVazio(rotulo);
-    });
-    selecionarTodos('.resistencias__grupo', refs.raiz).forEach(function (grupo) {
-      if (!grupo.querySelector('.resistencia:not(.impressao-vazio)')) marcarVazio(grupo);
-    });
-    if (!refs.raiz.querySelector('.resistencias .resistencia:not(.impressao-vazio)')) marcarVazio(refs.raiz.querySelector('.resistencias'));
+    // Sem RD cadastrada, a seção some do papel
+    if (!refs.raiz.querySelector('#rd-resumo-lista li')) marcarVazio(refs.raiz.querySelector('#rd-resumo'));
     // Nos cartões e painéis, campos de texto vazios não vão para o papel
     selecionarTodos('.ataque input[type="text"], .habilidade input[type="text"], .ritual input[type="text"], .painel input[type="text"]', refs.raiz).forEach(function (campo) {
       if (campo.value.trim() === '') marcarVazio(campo.closest('.ataque__campo, .campo-texto'));
@@ -3779,7 +3754,6 @@ window.OP = window.OP || {};
     refs.resistenciaCondicoes = document.getElementById('resistencia-condicoes');
     refs.composicaoDeslocamento = document.getElementById('composicao-deslocamento');
     refs.textoQuadrados = document.getElementById('texto-quadrados');
-    refs.contagemResistencias = document.getElementById('contagem-resistencias');
     refs.infoAumentos = document.getElementById('info-aumentos');
     refs.rotuloPassos = document.getElementById('rotulo-passos');
     refs.contadorGraus = document.getElementById('contador-graus');

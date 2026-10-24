@@ -138,13 +138,23 @@ window.OP = window.OP || {};
         bloqueio.disponivel ? 'reduz ' + bloqueio.reducao : '—']
     ];
     const desl = calc.deslocamento;
+    // RD (redução de dano): só as que valem (valor maior que 0 e ao menos um tipo marcado)
+    const rdValidas = calc.rd.lista.filter(function (rd) { return rd.valor > 0 && rd.tipos.length; });
+    const rdLinhas = rdValidas.map(function (rd) {
+      const todos = rd.tipos.length === OP.data.tiposDano.length;
+      return [rd.valor, todos ? 'todos os tipos' : rd.tipos.map(function (id) {
+        const tipo = achar(OP.data.tiposDano, id);
+        return tipo ? tipo.nome : id;
+      }).join(', '), rd.nome];
+    });
     return secao('Vitais', [
       tabela(['Vital', 'Máximo'], linhas),
       lista([item('Limite de ' + (semSan ? 'PD' : 'PE') + ' por turno', calc.nex.limitePE)]),
       tabela(['Defesa', 'Cálculo', 'Valor'], defesas),
       d.totalCorpoACorpo !== d.total || d.totalDistancia !== d.total
         ? lista([item('Defesa corpo a corpo / à distância', d.totalCorpoACorpo + ' / ' + d.totalDistancia)]) : '',
-      lista([item('Deslocamento', desl.metros + ' m (' + desl.quadrados + ' quadrados)')])
+      lista([item('Deslocamento', desl.metros + ' m (' + desl.quadrados + ' quadrados)')]),
+      rdLinhas.length ? tabela(['RD', 'Tipos de dano', 'Origem'], rdLinhas) : ''
     ]);
   }
 

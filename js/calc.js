@@ -1170,12 +1170,45 @@ window.OP = window.OP || {};
     };
   }
 
-  /** Quantos tipos de dano têm resistência diferente de 0. */
+  /**
+   * RD (redução de dano) cadastrada na ficha, na ordem da lista:
+   * [{ id, nome, valor (inteiro ≥ 0), tipos: [ids de OP.data.tiposDano marcados] }].
+   * Entradas que não são objetos saem; ids de tipo desconhecidos ficam de fora.
+   */
+  function listaRd(ficha) {
+    const bruta = defesaSalva(ficha).rd;
+    return (Array.isArray(bruta) ? bruta : []).filter(function (rd) {
+      return rd !== null && typeof rd === 'object';
+    }).map(function (rd) {
+      const marcados = rd.tipos && typeof rd.tipos === 'object' ? rd.tipos : {};
+      return {
+        id: rd.id,
+        nome: typeof rd.nome === 'string' ? rd.nome.trim() : '',
+        valor: Math.max(0, Math.trunc(numero(rd.valor))),
+        tipos: OP.data.tiposDano.filter(function (tipo) { return marcados[tipo.id] === true; }).map(function (tipo) { return tipo.id; })
+      };
+    });
+  }
+
+  /**
+   * Estado da RD: a lista, quantas valem (valor > 0 e ao menos um tipo marcado)
+   * e o total por tipo (as RD que cobrem o tipo se somam).
+   */
+  function estadoRd(ficha) {
+    const lista = listaRd(ficha);
+    const porTipo = {};
+    let ativas = 0;
+    lista.forEach(function (rd) {
+      if (rd.valor <= 0 || !rd.tipos.length) return;
+      ativas += 1;
+      rd.tipos.forEach(function (idTipo) { porTipo[idTipo] = (porTipo[idTipo] || 0) + rd.valor; });
+    });
+    return { lista: lista, ativas: ativas, porTipo: porTipo };
+  }
+
+  /** Quantas RD valem (valor maior que 0 e ao menos um tipo de dano marcado). */
   function resistenciasAtivas(ficha) {
-    const resistencias = defesaSalva(ficha).resistencias || {};
-    return OP.data.tiposDano.filter(function (tipo) {
-      return numero(resistencias[tipo.id]) !== 0;
-    }).length;
+    return estadoRd(ficha).ativas;
   }
 
   /* ------------------------------------------------------------------------
@@ -3787,6 +3820,7 @@ window.OP = window.OP || {};
       deslocamento: deslocamento(ficha),
       testes: testes,
       resistenciasAtivas: resistenciasAtivas(ficha),
+      rd: estadoRd(ficha),
       inventario: estadoInventario(ficha),
       ataques: estadoAtaques(ficha),
       habilidades: estadoHabilidades(ficha),
@@ -3927,6 +3961,7 @@ window.OP = window.OP || {};
     deslocamento: deslocamento,
     derivadasPericia: derivadasPericia,
     resistenciasAtivas: resistenciasAtivas,
+    estadoRd: estadoRd,
     // Etapa 10
     condicoesEfetivas: condicoesEfetivas,
     modificadoresCondicoes: modificadoresCondicoes,

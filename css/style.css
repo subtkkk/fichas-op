@@ -4353,13 +4353,11 @@ body.arrastando-arquivo::after {
    ========================================================================== */
 
 /* ---- Blocos recolhíveis: seta comum ---- */
-.resistencias > summary::-webkit-details-marker,
 .progressao > summary::-webkit-details-marker,
 .grupo-ritual > summary::-webkit-details-marker {
   display: none;
 }
 
-.resistencias > summary::before,
 .progressao > summary::before,
 .grupo-ritual > summary::before,
 .habilidade__seta {
@@ -4374,14 +4372,12 @@ body.arrastando-arquivo::after {
   transition: transform var(--dur-2) var(--curva), border-color var(--dur-1) var(--curva);
 }
 
-.resistencias[open] > summary::before,
 .progressao[open] > summary::before,
 .grupo-ritual[open] > summary::before,
 .habilidade--aberta .habilidade__seta {
   transform: rotate(45deg);
 }
 
-.resistencias > summary:hover::before,
 .progressao > summary:hover::before,
 .grupo-ritual > summary:hover::before {
   border-color: var(--acento);
@@ -5617,86 +5613,6 @@ body.arrastando-arquivo::after {
   grid-area: bonus;
   font: 600 1.375rem/1 var(--fonte-mono);
   font-variant-numeric: tabular-nums;
-}
-
-/* Resistências (recolhível) */
-.resistencias {
-  margin-top: 24px;
-  background: color-mix(in srgb, var(--cor-texto) 1.5%, transparent);
-  border: 1px solid var(--linha-1);
-  border-radius: var(--raio-3);
-}
-
-.resistencias > summary {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 16px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  list-style: none;
-  cursor: pointer;
-  border-radius: var(--raio-3);
-}
-
-.resistencias > summary:hover {
-  background: color-mix(in srgb, var(--cor-texto) 2%, transparent);
-}
-
-.resistencias__opcional {
-  font-weight: 400;
-  color: var(--papel-3);
-}
-
-.resistencias__contagem {
-  margin-left: auto;
-  font: 600 0.6875rem var(--fonte-mono);
-  color: var(--ok);
-}
-
-.resistencias__corpo {
-  padding: 0 16px 16px;
-}
-
-.resistencias__corpo .secao__nota {
-  margin: 0 0 12px;
-}
-
-.resistencias__grupos {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
-}
-
-.resistencias__grupo {
-  min-width: 0;
-  margin: 0;
-  padding: 8px 12px 10px;
-  border: 1px solid var(--linha-1);
-  border-radius: var(--raio-2);
-}
-
-.resistencias__grupo legend {
-  padding: 0 6px;
-  font: 500 var(--t-micro) / 1 var(--fonte-mono);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--papel-3);
-}
-
-.resistencia {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 4px 0;
-  font-size: 0.8438rem;
-  color: var(--papel-2);
-}
-
-.resistencia .controle {
-  width: 56px;
-  height: 30px;
 }
 
 /* ---- Perícias ---- */
@@ -14545,6 +14461,401 @@ body[data-nex-nivel="sim"] .campo--nex .campo__exposicao {
 .livro-bloco[data-elemento-livro="uso-combate"] { --cor-grupo: var(--pv); }
 .livro-bloco[data-elemento-livro="uso-utilidade"] { --cor-grupo: var(--san); }
 .livro-bloco[data-elemento-livro="uso-ambos"] { --cor-grupo: var(--acento); --cor-grupo-2: var(--san); }
+
+/* ==========================================================================
+   Defesa, Esquiva, Bloqueio e RD (js/ui-defesa.js)
+   ========================================================================== */
+
+/* Os números dos vitais e do Resumo viram botões: o botão cobre a célula inteira (alvo de toque grande) */
+.hud__derivado,
+.resumo-derivados > div {
+  position: relative;
+}
+
+.derivado__abrir {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.derivado__abrir::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  transition: background var(--dur-1) var(--curva);
+}
+
+.derivado__abrir:hover::after {
+  background: color-mix(in srgb, var(--cor-texto) 7%, transparent);
+}
+
+.derivado__abrir:focus-visible {
+  outline: none;
+}
+
+.derivado__abrir:focus-visible::after {
+  outline: 2px solid var(--acento);
+  outline-offset: -2px;
+}
+
+/* Quatro números nos vitais (Defesa, Esquiva, Bloqueio e RD) */
+.hud__derivados {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/* Resumo do celular: três em cima, dois embaixo */
+.ficha-layout .resumo-derivados {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.ficha-layout .resumo-derivados > div {
+  grid-column: span 2;
+}
+
+.ficha-layout .resumo-derivados > div:nth-child(n + 4) {
+  grid-column: span 3;
+}
+
+/* ---- Diálogo da Defesa ---- */
+.dialogo--defesa,
+.dialogo--rd {
+  width: min(560px, calc(100vw - 24px));
+}
+
+.calculo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px 16px;
+  background: color-mix(in srgb, var(--cor-texto) 2.5%, transparent);
+  border: 1px solid var(--linha-1);
+  border-radius: var(--raio-3);
+}
+
+.calculo--foco {
+  border-color: var(--acento-linha);
+  background: var(--acento-suave);
+}
+
+.calculo .subtitulo {
+  margin: 0;
+}
+
+.calculo__linhas {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.calculo__linha {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--linha-1);
+  font-size: 0.9062rem;
+  color: var(--papel-2);
+}
+
+.calculo__rotulo {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.calculo__nota-linha {
+  font-size: 0.75rem;
+  color: var(--papel-3);
+  overflow-wrap: anywhere;
+}
+
+.calculo__valor {
+  flex: none;
+  font: 600 1rem/1.2 var(--fonte-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--papel);
+}
+
+/* Campo "Outros" antes do resultado */
+.calculo__extra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--linha-1);
+  font-size: 0.9062rem;
+  color: var(--papel-2);
+}
+
+.calculo__extra small {
+  color: var(--papel-3);
+}
+
+.calculo__extra .passo {
+  height: 40px;
+}
+
+.calculo__extra .passo__valor {
+  width: 64px;
+}
+
+.calculo__total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding-top: 4px;
+  font: 600 1rem/1.2 var(--fonte-ui);
+  color: var(--papel);
+}
+
+.calculo__total output {
+  font: 700 1.5rem/1 var(--fonte-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.calculo__nota {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--papel-3);
+}
+
+/* ---- Diálogo da RD ---- */
+.rd-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rd-vazio {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--papel-3);
+}
+
+.rd-desfazer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 0.875rem;
+  color: var(--papel-2);
+  background: color-mix(in srgb, var(--cor-texto) 4%, transparent);
+  border: 1px solid var(--linha-2);
+  border-radius: var(--raio-2);
+}
+
+.rd-desfazer[hidden] {
+  display: none;
+}
+
+.rd-cartao {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--cor-texto) 2.5%, transparent);
+  border: 1px solid var(--linha-1);
+  border-radius: var(--raio-3);
+}
+
+.rd-cartao--incompleta {
+  border-style: dashed;
+}
+
+.rd-cartao__linha {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.rd-cartao__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.rd-cartao__campo--valor {
+  flex: none;
+  width: 72px;
+}
+
+.rd-cartao__campo--nome {
+  flex: 1 1 auto;
+}
+
+.rd-cartao__rotulo {
+  font: 500 var(--t-micro) / 1.2 var(--fonte-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+}
+
+.rd-cartao__remover {
+  flex: none;
+}
+
+.rd-cartao__tipos {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: left;
+  color: var(--papel);
+  background: var(--campo-fundo);
+  border: 1px solid var(--linha-2);
+  border-radius: var(--raio-2);
+  cursor: pointer;
+}
+
+.rd-cartao__tipos:hover {
+  border-color: var(--linha-3);
+}
+
+.rd-cartao__tipos::after {
+  content: "";
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin: 0 3px 0 auto;
+  border-right: 1.5px solid var(--papel-3);
+  border-bottom: 1.5px solid var(--papel-3);
+  transform: rotate(45deg);
+  transition: transform var(--dur-2) var(--curva);
+}
+
+.rd-cartao__tipos[aria-expanded="true"]::after {
+  transform: rotate(-135deg);
+}
+
+.rd-cartao__tipos-rotulo {
+  flex: none;
+  font: 500 var(--t-micro) / 1.2 var(--fonte-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+}
+
+.rd-cartao__tipos-resumo {
+  min-width: 0;
+  color: var(--papel-2);
+  overflow-wrap: anywhere;
+}
+
+.rd-cartao__painel[hidden] {
+  display: none;
+}
+
+.rd-cartao__painel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rd-cartao__rapidos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rd-cartao__grupo {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 2px 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 6px 12px 8px;
+  border: 1px solid var(--linha-1);
+  border-radius: var(--raio-2);
+}
+
+.rd-cartao__grupo legend {
+  padding: 0 6px;
+  font: 500 var(--t-micro) / 1 var(--fonte-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+}
+
+.rd-cartao__tipo {
+  min-height: 44px;
+}
+
+/* ---- RD na seção da Defesa ---- */
+.rd-resumo {
+  margin-top: 24px;
+}
+
+.rd-resumo__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.rd-resumo__topo .subtitulo {
+  margin: 0;
+}
+
+.rd-resumo__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rd-resumo__item {
+  padding: 6px 10px;
+  font-size: 0.875rem;
+  color: var(--papel-2);
+  background: color-mix(in srgb, var(--cor-texto) 2.5%, transparent);
+  border: 1px solid var(--linha-1);
+  border-radius: var(--raio-2);
+}
+
+.rd-resumo__lista:empty {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .rd-cartao__linha {
+    flex-wrap: wrap;
+  }
+
+  .rd-cartao__campo--nome {
+    flex-basis: 100%;
+    order: 3;
+  }
+
+  .rd-cartao__remover {
+    margin-left: auto;
+  }
+}
 
 @media (max-width: 719px) {
   /* No celular as abas e os filtros viram uma fileira que rola para o lado (ocupam pouco da tela) */

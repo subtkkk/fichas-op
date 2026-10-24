@@ -181,21 +181,21 @@ window.OP = window.OP || {};
     function rotuloMarco(marco) {
       return unidade === 'estagio' ? 'Estágio ' + marco : 'NEX ' + marco + '%';
     }
+    // Só entram os poderes de trilha já liberados (pelo NEX ou estágio); os bloqueados ficam de fora
     if (id.trilha) {
-      const linhas = id.habilidadesTrilha.map(function (h) {
-        return [rotuloMarco(h.marco), h.nome, h.liberada ? 'liberada' : 'bloqueada'];
-      });
-      const descricoes = id.habilidadesTrilha.map(function (h) {
+      const liberadas = id.habilidadesTrilha.filter(function (h) { return h.liberada; });
+      const linhas = liberadas.map(function (h) { return [rotuloMarco(h.marco), h.nome]; });
+      const descricoes = liberadas.map(function (h) {
         const d = descricaoDoMarco(id.trilha.id, h.marco);
         return d ? '#### ' + rotuloMarco(h.marco) + ' · ' + h.nome + '\n\n' + d : '';
       }).filter(Boolean);
-      partes.push('### Trilha: ' + id.trilha.nome + '\n\n' + tabela(['Marco', 'Habilidade', 'Situação'], linhas) +
+      partes.push('### Trilha: ' + id.trilha.nome + (linhas.length ? '\n\n' + tabela(['Marco', 'Habilidade'], linhas) : '') +
         (descricoes.length ? '\n\n' + descricoes.join('\n\n') : ''));
     }
-    if (id.versatilidade) {
+    if (id.versatilidade && id.versatilidade.liberada) {
       const v = id.versatilidade;
       const d = descricaoDoMarco(v.trilha, v.marco);
-      partes.push(lista([item('Versatilidade', v.nome + ' (trilha ' + v.nomeTrilha + ', ' + (v.liberada ? 'liberada' : 'bloqueada') + ')')]) +
+      partes.push(lista([item('Versatilidade', v.nome + ' (trilha ' + v.nomeTrilha + ')')]) +
         (d ? '\n\n#### ' + v.nome + ' (versatilidade)\n\n' + d : ''));
     }
     return secao('Origem, classe e trilha', partes);

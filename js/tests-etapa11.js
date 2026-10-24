@@ -337,7 +337,7 @@ window.OP = window.OP || {};
         const md = OP.exportarMd.gerar(f, new Date(2026, 0, 5));
         return [md.indexOf('# Ana | Teste') === 0, md.indexOf('| Intelecto (INT) | 3 |') !== -1,
           md.indexOf('| Luta | FOR | Veterano (+10) | +3 | +13 |') !== -1,
-          md.indexOf('| NEX 40% | Técnica Secreta | liberada |') !== -1, md.indexOf('exportada em 2026-01-05') !== -1].join('|');
+          md.indexOf('| NEX 40% | Técnica Secreta |') !== -1 && md.indexOf('Técnica Sublime') === -1 && md.indexOf('Máquina de Matar') === -1, md.indexOf('exportada em 2026-01-05') !== -1].join('|');
       }, esperado: 'true|true|true|true|true' },
       { nome: 'E13 · Resumo em Markdown: bloqueio e esquiva sempre aparecem (indisponíveis sem treino, com valor com treino); contra-ataque não', obtido: function () {
         const f = OP.state.criarFichaVazia();

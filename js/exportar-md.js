@@ -1,10 +1,10 @@
 /* ==========================================================================
    js/exportar-md.js — resumo da ficha em Markdown (OP.exportarMd)
    --------------------------------------------------------------------------
-   Gera um texto .md legível com tudo o que a ficha mostra: identificação,
-   atributos, recursos, defesa, perícias (grau em texto e em número, "outros"
-   e bônus total), habilidades, rituais, ataques, inventário, condições e
-   biografia. Os números vêm de OP.calc.calcularTudo (os mesmos da tela).
+   Gera um texto .md legível, pensado como guia para montar a ficha física:
+   identificação, atributos, vitais (com defesa, esquiva e bloqueio), perícias
+   (treinamento, "outros" e total), origem, classe, trilha, habilidades,
+   rituais e inventário. Os números vêm de OP.calc.calcularTudo (os mesmos da tela).
    O texto do livro (origem, trilha, habilidades, poderes e rituais) só entra com
    o acesso liberado (OP.livro.texto); sem ele, só nomes, números e o que a
    pessoa escreveu.
@@ -90,10 +90,9 @@ window.OP = window.OP || {};
   }
 
   function secaoAtributos(ficha, calc) {
-    const linhas = OP.data.atributos.map(function (a) {
-      return [a.nome + ' (' + a.sigla + ')', calc.atributos[a.id]];
-    });
-    return secao('Atributos', [tabela(['Atributo', 'Valor'], linhas)]);
+    return secao('Atributos', [lista(OP.data.atributos.map(function (a) {
+      return item(a.nome + ' (' + a.sigla + ')', calc.atributos[a.id]);
+    }))]);
   }
 
   /** Soma escrita: "10 base + 1 AGI − 5 sobrecarga = 13" (os termos zerados ficam de fora). */
@@ -141,6 +140,7 @@ window.OP = window.OP || {};
     const desl = calc.deslocamento;
     return secao('Vitais', [
       tabela(['Vital', 'Máximo'], linhas),
+      lista([item('Limite de ' + (semSan ? 'PD' : 'PE') + ' por turno', calc.nex.limitePE)]),
       tabela(['Defesa', 'Cálculo', 'Valor'], defesas),
       d.totalCorpoACorpo !== d.total || d.totalDistancia !== d.total
         ? lista([item('Defesa corpo a corpo / à distância', d.totalCorpoACorpo + ' / ' + d.totalDistancia)]) : '',
@@ -148,24 +148,27 @@ window.OP = window.OP || {};
     ]);
   }
 
+  /** Marcas das perícias na tabela (a legenda vem logo abaixo dela). */
+  const MARCAS_PERICIA = [
+    ['somenteTreinada', '🎓', 'só pode ser usada com treinamento'],
+    ['penalidadeCarga', '🎒', 'sofre penalidade de carga'],
+    ['kit', '🧰', 'precisa de um kit']
+  ];
+
   function secaoPericias(ficha, calc) {
     const linhas = OP.data.pericias.map(function (definicao) {
       const e = calc.pericias[definicao.id];
       const salvo = (ficha.pericias && ficha.pericias[definicao.id]) || {};
       const grau = OP.data.grausTreinamento[e.grau] || OP.data.grausTreinamento[0];
       const atributo = achar(OP.data.atributos, e.atributo);
-      const nome = definicao.nome + (definicao.aberta && texto(salvo.nomeAberto) ? ' (' + texto(salvo.nomeAberto) + ')' : '');
-      const outros = Number(salvo.outros) || 0;
-      const extras = [e.bonusAlteracoes ? 'alterações de NEX ' + sinal(e.bonusAlteracoes) : '', e.penalidadeCarga ? 'carga −' + e.penalidadeCarga : '',
-        e.penalidadeKit ? 'sem kit −' + e.penalidadeKit : ''].filter(Boolean);
-      return [nome, atributo ? atributo.sigla : '—', grau.nome + ' (' + sinal(grau.bonus) + ')', sinal(outros),
-        sinal(e.bonus) + (extras.length ? ' (' + extras.join(', ') + ')' : '')];
+      const marcas = MARCAS_PERICIA.filter(function (m) { return definicao[m[0]] === true; }).map(function (m) { return m[1]; }).join(' ');
+      const nome = definicao.nome + (definicao.aberta && texto(salvo.nomeAberto) ? ' (' + texto(salvo.nomeAberto) + ')' : '') + (marcas ? ' ' + marcas : '');
+      return [nome, atributo ? atributo.sigla : '—', grau.nome + ' (' + sinal(grau.bonus) + ')', sinal(Number(salvo.outros) || 0), sinal(e.bonus)];
     });
-    const t = calc.treinamento;
     return secao('Perícias', [
-      t.classeDefinida ? lista([item('Pontos de treinamento', t.gastos + ' de ' + t.total + ' usados (' + t.restantes + ' restantes)')]) : '',
       tabela(['Perícia', 'Atributo', 'Treinamento', 'Outros', 'Total'], linhas),
-      'Total = treinamento + outros (+ efeitos, alterações de NEX e penalidades que valem hoje).'
+      MARCAS_PERICIA.map(function (m) { return m[1] + ' ' + m[2]; }).join(' · ') +
+        '. Total = treinamento + outros (+ efeitos, alterações de NEX e penalidades que valem hoje).'
     ]);
   }
 
@@ -270,8 +273,7 @@ window.OP = window.OP || {};
           item('Ativação', ativacao ? ativacao.nome : ''),
           item('Custo', h.custoPE ? h.custoPE + (ficha.config && ficha.config.semSanidade ? ' PD' : ' PE') : ''),
           item('DT', dt && typeof dt.total === 'number' ? dt.total : (typeof dt === 'number' ? dt : '')),
-          temPrerequisito ? null : item('Pré-requisito', texto(h.prerequisito)),
-          item('Página', texto(h.pagina))
+          temPrerequisito ? null : item('Pré-requisito', texto(h.prerequisito))
         ]);
         const descricao = blocosEmMd(livro);
         blocos.push('#### ' + (texto(h.nome) || 'Sem nome') + '\n\n' + meta + (descricao ? '\n\n' + descricao : '') +
@@ -309,8 +311,7 @@ window.OP = window.OP || {};
         item('Alvo', texto(r.alvo)),
         item('Área', texto(r.area)),
         item('Duração', texto(r.duracao)),
-        item('Resistência', res ? res.nomeTeste + (res.nomeEfeito ? ' — ' + res.nomeEfeito : '') + ' (DT ' + res.dt + ')' : ''),
-        item('Página', texto(r.pagina))
+        item('Resistência', res ? res.nomeTeste + (res.nomeEfeito ? ' — ' + res.nomeEfeito : '') + ' (DT ' + res.dt + ')' : '')
       ]) + (descricao ? '\n\n' + descricao : '') + (formas.length ? '\n\n' + formas.join('\n') : '') + (texto(r.notas) ? '\n\n' + citacao(r.notas) : '');
     });
     const topo = lista([
@@ -319,21 +320,6 @@ window.OP = window.OP || {};
       item('Elemento conectado', elemento ? elemento.nome : '')
     ]);
     return secao('Rituais', [topo].concat(blocos));
-  }
-
-  function secaoAtaques(ficha, calc) {
-    const ataques = Array.isArray(ficha.ataques) ? ficha.ataques : [];
-    if (!ataques.length) return '';
-    const linhas = ataques.map(function (a, indice) {
-      const e = calc.ataques[indice];
-      const pericia = achar(OP.data.pericias, a.pericia);
-      const teste = e && e.teste;
-      const bonus = teste ? OP.calc.formatarDados(teste.dados) + ' ' + sinal(teste.bonus) : sinal(a.testeBonus);
-      const dano = texto(a.dano) + (a.danoBonus ? ' ' + sinal(a.danoBonus) : '');
-      return [texto(a.nome) || 'Sem nome', pericia ? pericia.nome : a.pericia, bonus, dano, a.critMargem + '/x' + a.critMult,
-        texto(a.alcance), texto(a.tipoDano), a.usaMunicao ? a.municao : ''];
-    });
-    return secao('Ataques', [tabela(['Ataque', 'Perícia', 'Teste', 'Dano', 'Crítico', 'Alcance', 'Tipo', 'Munição'], linhas)]);
   }
 
   function secaoInventario(ficha, calc) {
@@ -350,38 +336,10 @@ window.OP = window.OP || {};
     const linhas = itens.map(function (i) {
       const tipo = achar(OP.data.tiposItem, i.tipo);
       const cat = achar(OP.data.categoriasItem.map(function (c) { return { id: c.valor, rotulo: c.rotulo }; }), i.categoria);
-      const extra = i.tipo === 'protecao' ? 'Defesa ' + sinal(i.defesa) + (i.penalidade ? ', penalidade −' + i.penalidade : '') : '';
       return [texto(i.nome) || 'Sem nome', tipo ? tipo.nome : i.tipo, cat ? cat.rotulo : i.categoria, i.espacos, i.quantidade,
-        i.equipada ? 'sim' : 'não', [extra, texto(i.descricao)].filter(Boolean).join(' — ')];
+        i.equipada ? 'sim' : 'não'];
     });
-    return secao('Inventário', [resumo, linhas.length ? tabela(['Item', 'Tipo', 'Cat.', 'Espaços', 'Qtd.', 'Equipado', 'Notas'], linhas) : '']);
-  }
-
-  function secaoCondicoes(ficha) {
-    const ativas = (ficha.condicoes && ficha.condicoes.ativas) || [];
-    if (!ativas.length) return '';
-    const nomes = ativas.map(function (c) {
-      const base = achar(OP.data.condicoes, c.id);
-      const nome = (c.personalizada && texto(c.personalizada.nome)) || (base ? base.nome : c.id);
-      return '- ' + nome + (texto(c.nota) ? ' — ' + texto(c.nota) : '');
-    });
-    return secao('Condições ativas', [nomes.join('\n')]);
-  }
-
-  function secaoBiografia(ficha) {
-    const b = ficha.biografia || {};
-    const campos = [['Aparência', b.aparencia], ['Personalidade', b.personalidade], ['Histórico', b.historico],
-      ['Objetivo', b.objetivo], ['Medos', b.medos], ['Notas', b.notas]];
-    const partes = campos.filter(function (c) { return texto(c[1]); }).map(function (c) { return '### ' + c[0] + '\n\n' + citacao(c[1]); });
-    [['Aliados', b.aliados], ['Rivais', b.rivais]].forEach(function (par) {
-      const pessoas = (par[1] || []).filter(function (p) { return p && texto(p.nome); });
-      if (pessoas.length) {
-        partes.push('### ' + par[0] + '\n\n' + pessoas.map(function (p) {
-          return '- ' + texto(p.nome) + (texto(p.nota) ? ' — ' + texto(p.nota) : '');
-        }).join('\n'));
-      }
-    });
-    return secao('Biografia', partes);
+    return secao('Inventário', [resumo, linhas.length ? tabela(['Item', 'Tipo', 'Cat.', 'Espaços', 'Qtd.', 'Equipado'], linhas) : '']);
   }
 
   /* ------------------------------------------------------------------------
@@ -404,10 +362,7 @@ window.OP = window.OP || {};
       secaoClasseOrigemTrilha(ficha, calc),
       secaoHabilidades(ficha, calc),
       secaoRituais(ficha, calc),
-      secaoAtaques(ficha, calc),
-      secaoInventario(ficha, calc),
-      secaoCondicoes(ficha),
-      secaoBiografia(ficha)
+      secaoInventario(ficha, calc)
     ].filter(Boolean).join('\n\n') + '\n';
   }
 

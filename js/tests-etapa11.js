@@ -328,14 +328,14 @@ window.OP = window.OP || {};
           return [antes === '', durante, f.habilidades[0].catalogo].join('|');
         } finally { OP.data.catalogo = cat; }
       }, esperado: 'true|academico-livro|academico-livro' },
-      { nome: 'E13 · Resumo em Markdown: nome, atributos só com o total, perícia com treinamento "Veterano (+10)", "outros" e trilha', obtido: function () {
+      { nome: 'E13 · Resumo em Markdown: nome, atributos um por linha, perícia com treinamento "Veterano (+10)", "outros" e trilha', obtido: function () {
         const f = OP.state.criarFichaVazia();
         Object.assign(f.identificacao, { nome: 'Ana | Teste', classe: 'combatente', trilha: 'combatente-aniquilador', nex: 40 });
         f.atributos.int.base = 3;
         f.pericias.luta.grau = 2;
         f.pericias.luta.outros = 3;
         const md = OP.exportarMd.gerar(f, new Date(2026, 0, 5));
-        return [md.indexOf('# Ana | Teste') === 0, md.indexOf('| Intelecto (INT) | 3 |') !== -1,
+        return [md.indexOf('# Ana | Teste') === 0, md.indexOf('- **Intelecto (INT):** 3\n') !== -1,
           md.indexOf('| Luta | FOR | Veterano (+10) | +3 | +13 |') !== -1,
           md.indexOf('| NEX 40% | Técnica Secreta |') !== -1 && md.indexOf('Técnica Sublime') === -1 && md.indexOf('Máquina de Matar') === -1, md.indexOf('exportada em 2026-01-05') !== -1].join('|');
       }, esperado: 'true|true|true|true|true' },
@@ -401,6 +401,28 @@ window.OP = window.OP || {};
             com.indexOf('- **Vem de:** Outros') !== -1, com.indexOf('descrição de teste do ritual.') !== -1,
             com.indexOf('**Discente (+2 PE).** forma discente de teste.') !== -1, com.indexOf('### Origem\n') === -1].join('|');
         } finally { OP.livro._esquecerTextos(['teste-origem', 'teste-poder', 'teste-ritual']); OP.data.catalogo = cat; }
+      }, esperado: 'true|true|true|true|true|true|true|true|true|true' },
+      { nome: 'E13 · Resumo em Markdown: perícias com símbolos (somente treinada, carga, kit) e sem pontos de treinamento', obtido: function () {
+        const f = OP.state.criarFichaVazia();
+        Object.assign(f.identificacao, { classe: 'combatente', nex: 5 });
+        const md = OP.exportarMd.gerar(f);
+        return [/\| Acrobacia 🎒 \|/.test(md), /\| Adestramento 🎓 \|/.test(md), /\| Crime 🎓 🎒 🧰 \|/.test(md), /\| Tecnologia 🎓 🧰 \|/.test(md),
+          md.indexOf('🎓 só pode ser usada com treinamento · 🎒 sofre penalidade de carga · 🧰 precisa de um kit') !== -1,
+          md.indexOf('sem kit') === -1, md.indexOf('Pontos de treinamento') === -1].join('|');
+      }, esperado: 'true|true|true|true|true|true|true' },
+      { nome: 'E13 · Resumo em Markdown: limite de PE por turno nos vitais; sem ataques, condições, biografia, página nem notas', obtido: function () {
+        const f = OP.state.criarFichaVazia();
+        Object.assign(f.identificacao, { classe: 'combatente', nex: 40 });
+        f.ataques.push(OP.state.novoAtaque({ nome: 'Faca' }));
+        f.condicoes.ativas.push(OP.state.novaCondicaoAtiva ? OP.state.novaCondicaoAtiva({ id: 'abalado' }) : { uid: 'c1', id: 'abalado' });
+        f.biografia.historico = 'Cresceu cedo.';
+        f.habilidades.push(OP.state.novaHabilidade({ nome: 'Poder X', fonte: 'poder', pagina: '99', prerequisito: 'FOR 2' }));
+        f.inventario.itens.push(OP.state.novoItem({ nome: 'Colete', tipo: 'protecao', defesa: 2, descricao: 'nota do item' }));
+        const md = OP.exportarMd.gerar(f);
+        return [md.indexOf('- **Limite de PE por turno:** 8') !== -1, md.indexOf('## Ataques') === -1, md.indexOf('Faca') === -1,
+          md.indexOf('Condições ativas') === -1, md.indexOf('## Biografia') === -1, md.indexOf('Cresceu cedo') === -1,
+          md.indexOf('Página') === -1, md.indexOf('- **Pré-requisito:** FOR 2') !== -1,
+          md.indexOf('Notas') === -1, md.indexOf('nota do item') === -1].join('|');
       }, esperado: 'true|true|true|true|true|true|true|true|true|true' },
       { nome: 'E13 · Resumo em Markdown: com "Jogando sem Sanidade" usa PD e não lista SAN', obtido: function () {
         const f = OP.state.criarFichaVazia();

@@ -5,7 +5,8 @@
    atributos, recursos, defesa, perícias (grau em texto e em número, "outros"
    e bônus total), habilidades, rituais, ataques, inventário, condições e
    biografia. Os números vêm de OP.calc.calcularTudo (os mesmos da tela).
-   O texto do livro NÃO entra: só nomes, números e o que a pessoa escreveu.
+   O texto do livro só entra nos marcos da trilha e só com acesso liberado
+   (OP.livro.texto); no resto, só nomes, números e o que a pessoa escreveu.
    Não altera a ficha nem toca na página; quem baixa o arquivo é o ui-fichas.js.
    ========================================================================== */
 window.OP = window.OP || {};
@@ -89,34 +90,23 @@ window.OP = window.OP || {};
 
   function secaoAtributos(ficha, calc) {
     const linhas = OP.data.atributos.map(function (a) {
-      const salvo = (ficha.atributos && ficha.atributos[a.id]) || {};
-      return [a.nome + ' (' + a.sigla + ')', Number(salvo.base) || 0, sinal(salvo.bonus || 0), calc.atributos[a.id]];
+      return [a.nome + ' (' + a.sigla + ')', calc.atributos[a.id]];
     });
-    return secao('Atributos', [tabela(['Atributo', 'Base', 'Bônus', 'Total'], linhas)]);
+    return secao('Atributos', [tabela(['Atributo', 'Valor'], linhas)]);
   }
 
-  function secaoRecursos(ficha, calc) {
+  /** Vitais: só PV, PE (ou PD) e SAN, com o atual e o máximo. */
+  function secaoVitais(ficha, calc) {
     const semSan = Boolean(ficha.config && ficha.config.semSanidade);
     const linhas = [];
     OP.data.recursos.forEach(function (definicao) {
       if (semSan && definicao.id === 'san') return;
       const r = calc.recursos[definicao.id];
       const rotulo = semSan && definicao.id === 'pe' ? 'Pontos de Determinação (PD)' : definicao.nome + ' (' + definicao.sigla + ')';
-      if (!r || r.max === null) {
-        linhas.push([rotulo, '—', '—', 'escolha a classe']);
-        return;
-      }
-      const partes = ['inicial ' + r.inicial, r.ganhoNex ? 'por NEX ' + r.ganhoNex : '', r.bonus ? 'bônus ' + sinal(r.bonus) : '',
-        r.bonusEfeitos ? 'efeitos ' + sinal(r.bonusEfeitos) : '', r.bonusAlteracoes ? 'alterações de NEX ' + sinal(r.bonusAlteracoes) : '',
-        r.perdaPermanente ? 'perda permanente −' + r.perdaPermanente : ''].filter(Boolean);
-      linhas.push([rotulo, r.atual, r.max, partes.join(', ')]);
+      if (!r || r.max === null) linhas.push([rotulo, '—', '—']);
+      else linhas.push([rotulo, r.atual, r.max]);
     });
-    const extras = [
-      item('Limite de PE por turno', calc.nex.limitePE),
-      item('Pontos de treinamento', calc.treinamento.classeDefinida
-        ? calc.treinamento.gastos + ' gastos de ' + calc.treinamento.total + ' (' + calc.treinamento.restantes + ' restantes)' : '')
-    ];
-    return secao('Recursos', [tabela(['Recurso', 'Atual', 'Máximo', 'Composição'], linhas), lista(extras)]);
+    return secao('Vitais', [tabela(['Vital', 'Atual', 'Máximo'], linhas)]);
   }
 
   function secaoDefesa(ficha, calc) {
@@ -126,16 +116,12 @@ window.OP = window.OP || {};
       d.sobrecarga ? 'sobrecarga −' + d.sobrecarga : '', d.condicoes ? 'condições ' + sinal(d.condicoes) : '',
       d.efeitos ? 'efeitos ' + sinal(d.efeitos) : ''].filter(Boolean);
     const desl = calc.deslocamento;
-    const testes = [['Iniciativa', 'iniciativa'], ['Fortitude', 'fortitude'], ['Reflexos', 'reflexos'], ['Vontade', 'vontade']].map(function (par) {
-      const t = calc.testes[par[1]];
-      return t ? [par[0], OP.calc.formatarDados(t.dados), sinal(t.bonus)] : null;
-    }).filter(Boolean);
-    return secao('Defesa, deslocamento e testes', [lista([
+    return secao('Defesa e deslocamento', [lista([
       item('Defesa', d.total + ' (' + partes.join(', ') + ')'),
       d.totalCorpoACorpo !== d.total || d.totalDistancia !== d.total
         ? item('Defesa corpo a corpo / à distância', d.totalCorpoACorpo + ' / ' + d.totalDistancia) : null,
       item('Deslocamento', desl.metros + ' m (' + desl.quadrados + ' quadrados)')
-    ]), testes.length ? tabela(['Teste', 'Dados', 'Bônus'], testes) : '', tabelaReacoes(d)]);
+    ]), tabelaReacoes(d)]);
   }
 
   /** Bloqueio e Esquiva (o contra-ataque fica de fora): sempre aparecem, dizendo se já estão disponíveis e o que valem. */
@@ -161,17 +147,29 @@ window.OP = window.OP || {};
       const grau = OP.data.grausTreinamento[e.grau] || OP.data.grausTreinamento[0];
       const atributo = achar(OP.data.atributos, e.atributo);
       const nome = definicao.nome + (definicao.aberta && texto(salvo.nomeAberto) ? ' (' + texto(salvo.nomeAberto) + ')' : '');
-      const origemGrau = e.concedidaPor ? ' (concedida pela ' + e.concedidaPor + ')' : '';
       const outros = Number(salvo.outros) || 0;
       const extras = [e.bonusAlteracoes ? 'alterações de NEX ' + sinal(e.bonusAlteracoes) : '', e.penalidadeCarga ? 'carga −' + e.penalidadeCarga : '',
         e.penalidadeKit ? 'sem kit −' + e.penalidadeKit : ''].filter(Boolean);
-      return [nome, atributo ? atributo.sigla : '—', OP.calc.formatarDados(e.dados), grau.nome + origemGrau,
-        sinal(grau.bonus), sinal(outros), sinal(e.bonus) + (extras.length ? ' (' + extras.join(', ') + ')' : '')];
+      return [nome, atributo ? atributo.sigla : '—', grau.nome + ' (' + sinal(grau.bonus) + ')', sinal(outros),
+        sinal(e.bonus) + (extras.length ? ' (' + extras.join(', ') + ')' : '')];
     });
+    const t = calc.treinamento;
     return secao('Perícias', [
-      tabela(['Perícia', 'Atributo', 'Dados', 'Treinamento', 'Treino (nº)', 'Outros', 'Bônus total'], linhas),
-      'Bônus total = treinamento + outros (+ efeitos, alterações de NEX e penalidades que valem hoje).'
+      t.classeDefinida ? lista([item('Pontos de treinamento', t.gastos + ' de ' + t.total + ' usados (' + t.restantes + ' restantes)')]) : '',
+      tabela(['Perícia', 'Atributo', 'Treinamento', 'Outros', 'Total'], linhas),
+      'Total = treinamento + outros (+ efeitos, alterações de NEX e penalidades que valem hoje).'
     ]);
+  }
+
+  /** Descrição do livro de um marco da trilha (só com o texto liberado nesta conta; '' sem acesso). */
+  function descricaoDoMarco(idTrilha, marco) {
+    const trilhas = (OP.data.catalogo && OP.data.catalogo.trilhas) || {};
+    const chave = trilhas[idTrilha] && trilhas[idTrilha][String(marco)];
+    const t = chave && OP.livro && OP.livro.texto(chave);
+    if (!t) return '';
+    const partes = OP.uiLivro && OP.uiLivro.blocosDoTexto ? OP.uiLivro.blocosDoTexto(t.corpo) : null;
+    if (!partes) return t.corpo.trim();
+    return partes.blocos.map(function (b) { return (b.rotulo ? '**' + b.rotulo + '.** ' : '') + b.texto; }).join('\n\n');
   }
 
   function secaoClasseOrigemTrilha(ficha, calc) {
@@ -179,23 +177,26 @@ window.OP = window.OP || {};
     const unidade = id.unidade;
     const partes = [];
     if (id.origem) partes.push(lista([item('Origem', id.origem.nome), item('Habilidade da origem', id.origem.habilidade)]));
-    if (id.classe) {
-      const progressao = calc.progressao;
-      partes.push(lista([
-        item('Classe', id.classe.nome),
-        item('Poderes de classe liberados', progressao.poderes ? progressao.poderes.liberados + ' (' + progressao.poderes.cadastrados + ' cadastrados)' : ''),
-        item('Aumentos de atributo', progressao.aumentos ? progressao.aumentos.usados + ' usados de ' + progressao.aumentos.liberados : '')
-      ]));
+    if (id.classe) partes.push(lista([item('Classe', id.classe.nome)]));
+    function rotuloMarco(marco) {
+      return unidade === 'estagio' ? 'Estágio ' + marco : 'NEX ' + marco + '%';
     }
+    // Só entram os poderes de trilha já liberados (pelo NEX ou estágio); os bloqueados ficam de fora
     if (id.trilha) {
-      const linhas = id.habilidadesTrilha.map(function (h) {
-        return [unidade === 'estagio' ? 'Estágio ' + h.marco : 'NEX ' + h.marco + '%', h.nome, h.liberada ? 'liberada' : 'bloqueada'];
-      });
-      partes.push('### Trilha: ' + id.trilha.nome + '\n\n' + tabela(['Marco', 'Habilidade', 'Situação'], linhas));
+      const liberadas = id.habilidadesTrilha.filter(function (h) { return h.liberada; });
+      const linhas = liberadas.map(function (h) { return [rotuloMarco(h.marco), h.nome]; });
+      const descricoes = liberadas.map(function (h) {
+        const d = descricaoDoMarco(id.trilha.id, h.marco);
+        return d ? '#### ' + rotuloMarco(h.marco) + ' · ' + h.nome + '\n\n' + d : '';
+      }).filter(Boolean);
+      partes.push('### Trilha: ' + id.trilha.nome + (linhas.length ? '\n\n' + tabela(['Marco', 'Habilidade'], linhas) : '') +
+        (descricoes.length ? '\n\n' + descricoes.join('\n\n') : ''));
     }
-    if (id.versatilidade) {
-      partes.push(lista([item('Versatilidade', id.versatilidade.nome + ' (trilha ' + id.versatilidade.nomeTrilha + ', ' +
-        (id.versatilidade.liberada ? 'liberada' : 'bloqueada') + ')')]));
+    if (id.versatilidade && id.versatilidade.liberada) {
+      const v = id.versatilidade;
+      const d = descricaoDoMarco(v.trilha, v.marco);
+      partes.push(lista([item('Versatilidade', v.nome + ' (trilha ' + v.nomeTrilha + ')')]) +
+        (d ? '\n\n#### ' + v.nome + ' (versatilidade)\n\n' + d : ''));
     }
     return secao('Origem, classe e trilha', partes);
   }
@@ -221,7 +222,7 @@ window.OP = window.OP || {};
       });
       if (blocos.length) partes.push('### ' + nomesFonte[fonte] + '\n\n' + blocos.join('\n\n'));
     });
-    if (partes.length) partes.push('_O texto do livro não é exportado: só o que está na ficha e o que você escreveu._');
+    if (partes.length) partes.push('_Aqui entram só os nomes e o que você escreveu; a descrição do livro vai apenas nos marcos da trilha (com acesso)._');
     return secao('Habilidades e poderes', partes);
   }
 
@@ -339,7 +340,7 @@ window.OP = window.OP || {};
       topo,
       secaoIdentificacao(ficha, calc),
       secaoAtributos(ficha, calc),
-      secaoRecursos(ficha, calc),
+      secaoVitais(ficha, calc),
       secaoDefesa(ficha, calc),
       secaoPericias(ficha, calc),
       secaoClasseOrigemTrilha(ficha, calc),

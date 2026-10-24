@@ -33,7 +33,7 @@ window.OP = window.OP || {};
   //     "descricao" virou "biografia" (anotacoes → notas)
   // v11: habilidades e rituais com "catalogo" (chave do livro, para os efeitos automáticos),
   //     forma de ritual com "cura" e a seção "efeitos" (ativos, preparados e escolhas)
-  const VERSAO_MODELO = 11;
+  const VERSAO_MODELO = 12;
   // Segmentos de caminho e chaves recusados, para nunca mexer em protótipos.
   const CHAVES_PROIBIDAS = ['__proto__', 'prototype', 'constructor'];
   // Ids de fichas e de itens de lista: letras, números, "_" e "-" (até 64).
@@ -50,11 +50,13 @@ window.OP = window.OP || {};
   const MAX_CONDICOES = 50;
   const MAX_DIARIO = 200;
   const MAX_PESSOAS = 100; // aliados e rivais
+  const MAX_RD = 50;       // entradas de RD (redução de dano)
   const LIMITES_LISTA = {
     'condicoes.ativas': MAX_CONDICOES,
     'efeitos.ativos': 100,
     'efeitos.preparados': 100,
     'efeitos.escolhas': 300,
+    'defesa.rd': MAX_RD,
     'biografia.diario': MAX_DIARIO,
     'biografia.aliados': MAX_PESSOAS,
     'biografia.rivais': MAX_PESSOAS
@@ -67,7 +69,8 @@ window.OP = window.OP || {};
     'biografia.aliados[].nome': 200,
     'biografia.rivais[].nome': 200,
     'condicoes.ativas[].nota': 500,
-    'condicoes.ativas[].personalizada.nome': 80
+    'condicoes.ativas[].personalizada.nome': 80,
+    'defesa.rd[].nome': 80
   };
 
   const ouvintes = [];
@@ -201,26 +204,35 @@ window.OP = window.OP || {};
     return pericias;
   }
 
-  /** Redução de dano por tipo: uma entrada para cada tipo de OP.data.tiposDano. */
-  function novasResistencias() {
-    const resistencias = {};
+  /** Tipos de dano de uma RD: uma marca (true/false) para cada tipo de OP.data.tiposDano. */
+  function novosTiposRd() {
+    const tipos = {};
     OP.data.tiposDano.forEach(function (tipo) {
-      resistencias[tipo.id] = 0;
+      tipos[tipo.id] = false;
     });
-    return resistencias;
+    return tipos;
+  }
+
+  /**
+   * Uma RD (redução de dano): valor que reduz o dano recebido dos tipos marcados em "tipos"
+   * (mapa id de OP.data.tiposDano → marcado). nome é opcional (de onde ela vem).
+   */
+  function rdPadrao() {
+    return { id: '', nome: '', valor: 0, tipos: novosTiposRd() };
   }
 
   /**
    * Defesa e derivados (os totais são calculados em js/calc.js).
-   * protecao: proteção manual; outros: bônus manual de Defesa.
+   * protecao: proteção manual; outros: bônus manual de Defesa (habilidades etc.).
    * deslocamentoBonus: bônus manual de deslocamento, em metros.
+   * rd: lista de RD por tipo de dano (rdPadrao).
    */
   function novaDefesa() {
     return {
       protecao: { nome: '', defesa: 0 },
       outros: 0,
       deslocamentoBonus: 0,
-      resistencias: novasResistencias()
+      rd: []
     };
   }
 
@@ -460,7 +472,8 @@ window.OP = window.OP || {};
         nexENivel: false,         // regra opcional "NEX e Experiência": o nível (1 a 20) vira a progressão e o NEX, a exposição
         atributoPV: null,         // atributo do cálculo do PV (null = VIG); algumas habilidades usam outro
         atributoPE: null,         // atributo do cálculo do PE ou PD (null = PRE)
-        atributoSAN: null         // atributo do cálculo da SAN (null = nenhum)
+        atributoSAN: null,        // atributo do cálculo da SAN (null = nenhum)
+        atributoDT: null          // atributo da DT de rituais (null = PRE)
       },
 
       // Regra opcional NEX e Experiência: escolhas e estado das alterações de NEX (js/calc.js, js/ui-nex.js)
@@ -548,6 +561,7 @@ window.OP = window.OP || {};
     habilidades: habilidadePadrao,
     rituais: ritualPadrao,
     'condicoes.ativas': condicaoAtivaPadrao,
+    'defesa.rd': rdPadrao,
     'efeitos.ativos': efeitoAtivoPadrao,
     'efeitos.preparados': efeitoPreparadoPadrao,
     'efeitos.escolhas': efeitoEscolhaPadrao,
@@ -583,6 +597,10 @@ window.OP = window.OP || {};
 
   function novaHabilidade(dados) {
     return criarComMolde(habilidadePadrao, 'hab', dados);
+  }
+
+  function novaRd(dados) {
+    return criarComMolde(rdPadrao, 'rd', dados);
   }
 
   function semAcentoMinusculo(texto) {
@@ -868,6 +886,29 @@ window.OP = window.OP || {};
   }
 
   /**
+   * v11 → v12: defesa.resistencias (tipo → número) vira defesa.rd. Os tipos com o mesmo
+   * valor entram juntos numa RD só. Confere o conteúdo, não a versão; ALTERA o objeto.
+   */
+  function migrarResistencias(defesa) {
+    if (!temPropria(defesa, 'resistencias')) return;
+    const antigas = defesa.resistencias;
+    delete defesa.resistencias;
+    if (!ehObjetoSimples(antigas)) return;
+    const lista = Array.isArray(defesa.rd) ? defesa.rd : [];
+    const porValor = Object.create(null);
+    OP.data.tiposDano.forEach(function (tipo) {
+      const valor = Math.trunc(Number(antigas[tipo.id]));
+      if (!Number.isFinite(valor) || valor === 0) return;
+      if (!porValor[valor]) {
+        porValor[valor] = novaRd({ valor: valor });
+        lista.push(porValor[valor]);
+      }
+      porValor[valor].tipos[tipo.id] = true;
+    });
+    defesa.rd = lista;
+  }
+
+  /**
    * Atualiza dados salvos por versões antigas do modelo, antes da mescla.
    * ALTERA o objeto recebido (quem chama passa uma cópia).
    */
@@ -904,6 +945,9 @@ window.OP = window.OP || {};
       migrarDescricao(salvo);
       delete salvo.descricao;
     }
+
+    // v11 → v12: a resistência por tipo (um número para cada tipo) virou a lista de RD.
+    if (ehObjetoSimples(salvo.defesa)) migrarResistencias(salvo.defesa);
 
     // v7 → v8: "versao" passou a se chamar "versaoModelo".
     delete salvo.versao;
@@ -992,6 +1036,7 @@ window.OP = window.OP || {};
     completa.ataques = normalizarLista(completa.ataques, novoAtaque, 'atq');
     completa.habilidades = normalizarLista(completa.habilidades, novaHabilidade, 'hab');
     completa.rituais = normalizarLista(completa.rituais, novoRitual, 'rit');
+    completa.defesa.rd = normalizarLista(completa.defesa.rd, novaRd, 'rd');
     completa.biografia.aliados = normalizarLista(completa.biografia.aliados, novaPessoa, 'pes').slice(0, MAX_PESSOAS);
     completa.biografia.rivais = normalizarLista(completa.biografia.rivais, novaPessoa, 'pes').slice(0, MAX_PESSOAS);
     completa.biografia.diario = normalizarLista(completa.biografia.diario, novaEntradaDiario, 'dia').slice(0, MAX_DIARIO);
@@ -1415,6 +1460,7 @@ window.OP = window.OP || {};
     idValido: idValido,
     novoItem: novoItem,
     novoAtaque: novoAtaque,
+    novaRd: novaRd,
     novaHabilidade: novaHabilidade,
     sincronizarHabilidadesAutomaticas: sincronizarHabilidadesAutomaticas,
     novoRitual: novoRitual,

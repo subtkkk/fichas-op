@@ -494,15 +494,19 @@
                   </div>
                 </div>
               </div>
+              <!-- Cada número abre a explicação do cálculo (js/ui-defesa.js); RD abre a lista de redução de dano -->
               <dl class="hud__derivados">
                 <div class="hud__derivado" title="Defesa total">
-                  <dt>Defesa</dt><dd><output data-saida="defesa.total">10</output></dd>
+                  <dt>Defesa</dt><dd><button type="button" class="derivado__abrir" data-abrir-defesa="defesa"><span class="visualmente-oculto">Defesa, ver o cálculo: </span><output data-saida="defesa.total">10</output></button></dd>
                 </div>
                 <div class="hud__derivado" title="Esquiva: reação que muda a sua Defesa contra um ataque">
-                  <dt>Esquiva</dt><dd><output data-esquiva>—</output></dd>
+                  <dt>Esquiva</dt><dd><button type="button" class="derivado__abrir" data-abrir-defesa="esquiva"><span class="visualmente-oculto">Esquiva, ver o cálculo: </span><output data-esquiva>—</output></button></dd>
                 </div>
                 <div class="hud__derivado" title="Bloqueio: reação que reduz o dano de um ataque">
-                  <dt>Bloqueio</dt><dd><output data-bloqueio>—</output></dd>
+                  <dt>Bloqueio</dt><dd><button type="button" class="derivado__abrir" data-abrir-defesa="bloqueio"><span class="visualmente-oculto">Bloqueio, ver o cálculo: </span><output data-bloqueio>—</output></button></dd>
+                </div>
+                <div class="hud__derivado" title="RD: redução de dano por tipo de dano">
+                  <dt>RD</dt><dd><button type="button" class="derivado__abrir" data-abrir-rd><span class="visualmente-oculto">RD, abrir a lista de redução de dano: </span><output data-rd-contagem>—</output></button></dd>
                 </div>
               </dl>
               <p class="hud__aviso" id="hud-sem-classe" hidden>Escolha uma classe para calcular os vitais.</p>
@@ -520,9 +524,10 @@
             </div>
             <!-- Só no celular (no computador e no tablet os mesmos números estão nos vitais) -->
             <dl class="resumo-derivados">
-              <div><dt>Defesa</dt><dd><output data-saida="defesa.total">10</output></dd></div>
-              <div title="Esquiva: reação que muda a sua Defesa contra um ataque"><dt>Esquiva</dt><dd><output data-esquiva>—</output></dd></div>
-              <div title="Bloqueio: reação que reduz o dano de um ataque"><dt>Bloqueio</dt><dd><output data-bloqueio>—</output></dd></div>
+              <div><dt>Defesa</dt><dd><button type="button" class="derivado__abrir" data-abrir-defesa="defesa"><span class="visualmente-oculto">Defesa, ver o cálculo: </span><output data-saida="defesa.total">10</output></button></dd></div>
+              <div title="Esquiva: reação que muda a sua Defesa contra um ataque"><dt>Esquiva</dt><dd><button type="button" class="derivado__abrir" data-abrir-defesa="esquiva"><span class="visualmente-oculto">Esquiva, ver o cálculo: </span><output data-esquiva>—</output></button></dd></div>
+              <div title="Bloqueio: reação que reduz o dano de um ataque"><dt>Bloqueio</dt><dd><button type="button" class="derivado__abrir" data-abrir-defesa="bloqueio"><span class="visualmente-oculto">Bloqueio, ver o cálculo: </span><output data-bloqueio>—</output></button></dd></div>
+              <div title="RD: redução de dano por tipo de dano"><dt>RD</dt><dd><button type="button" class="derivado__abrir" data-abrir-rd><span class="visualmente-oculto">RD, abrir a lista de redução de dano: </span><output data-rd-contagem>—</output></button></dd></div>
               <div title="PE gastos neste turno / limite por turno"><dt>PE/turno</dt><dd><output data-saida="conjuracao.peGastoTurno">0</output> / <output data-saida="conjuracao.limitePE">1</output></dd></div>
             </dl>
             <!-- Botões gerados a partir de OP.data.periciasDerivadas; clicar leva à linha da perícia -->
@@ -879,19 +884,15 @@
             <div class="grade-reacoes" id="grade-reacoes"></div>
 
 
-            <details class="resistencias">
-              <summary>
-                <span>Resistências a dano <span class="resistencias__opcional">(opcional)</span></span>
-                <span class="resistencias__contagem" id="contagem-resistencias"></span>
-              </summary>
-              <div class="resistencias__corpo">
-                <p class="secao__nota" id="resistencia-condicoes" hidden></p>
-                <p class="secao__nota" id="resistencia-poderes" hidden></p>
-                <p class="secao__nota">Redução de dano por tipo. Deixe 0 nos tipos sem resistência.</p>
-                <!-- Campos gerados a partir de OP.data.tiposDano -->
-                <div class="resistencias__grupos" id="grade-resistencias"></div>
+            <!-- RD (redução de dano) por tipo de dano: a lista se edita no diálogo #dialogo-rd (js/ui-defesa.js) -->
+            <section class="rd-resumo" id="rd-resumo" aria-labelledby="rd-resumo-titulo">
+              <div class="rd-resumo__topo">
+                <h3 class="subtitulo" id="rd-resumo-titulo">RD · redução de dano</h3>
+                <button type="button" class="botao botao--pequeno" data-abrir-rd>Editar RD</button>
               </div>
-            </details>
+              <ul class="rd-resumo__lista" id="rd-resumo-lista"></ul>
+              <p class="secao__nota" id="rd-resumo-vazio">Nenhuma RD. Use "Editar RD" para adicionar.</p>
+            </section>
             </details>
           </section>
           </div>
@@ -987,6 +988,12 @@
                     <input id="dt-bonus" class="passo__valor" type="number" step="1" data-campo="conjuracao.dtBonus" data-tipo="inteiro">
                     <button type="button" class="passo__botao" tabindex="-1" data-passo="1" data-alvo="dt-bonus" aria-label="Aumentar bônus de DT">+</button>
                   </div>
+                </div>
+                <!-- Opções geradas pelo ui.js; vazio = o padrão (PRE) -->
+                <div class="campo-bonus">
+                  <label for="dt-atributo">Atributo da DT</label>
+                  <select id="dt-atributo" class="controle" data-campo="config.atributoDT" data-tipo="texto" data-padrao=""
+                          title="Atributo somado à DT de rituais (algumas habilidades trocam o padrão)"></select>
                 </div>
               </article>
 
@@ -1734,6 +1741,74 @@
     </div>
   </dialog>
 
+  <!-- ================= DEFESA, ESQUIVA E BLOQUEIO: como o número é calculado (js/ui-defesa.js) ================= -->
+  <dialog class="dialogo dialogo--defesa" id="dialogo-defesa" aria-labelledby="defesa-dlg-titulo">
+    <div class="dialogo__corpo">
+      <div class="dialogo__topo">
+        <h2 class="dialogo__titulo" id="defesa-dlg-titulo">Defesa, Esquiva e Bloqueio</h2>
+        <button type="button" class="botao-icone" data-fechar-dialogo aria-label="Fechar">
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>
+        </button>
+      </div>
+
+      <section class="calculo" id="defesa-dlg-defesa" aria-labelledby="defesa-dlg-defesa-titulo">
+        <h3 class="subtitulo" id="defesa-dlg-defesa-titulo">Defesa</h3>
+        <p class="dialogo__texto">A Defesa é o número que um ataque precisa alcançar para te acertar. A ficha soma estas partes:</p>
+        <ul class="calculo__linhas" id="defesa-dlg-linhas"></ul>
+        <!-- Antes do resultado: um valor extra para os bônus de habilidades que a ficha não calcula (o mesmo campo "Outros" da Defesa) -->
+        <div class="calculo__extra">
+          <label for="defesa-dlg-outros">Outros <small>(bônus de habilidades)</small></label>
+          <div class="passo">
+            <button type="button" class="passo__botao" tabindex="-1" data-defesa-passo="-1" aria-label="Diminuir outros bônus de Defesa">−</button>
+            <input id="defesa-dlg-outros" class="passo__valor" type="number" step="1" inputmode="numeric" placeholder="0" autocomplete="off">
+            <button type="button" class="passo__botao" tabindex="-1" data-defesa-passo="1" aria-label="Aumentar outros bônus de Defesa">+</button>
+          </div>
+        </div>
+        <p class="calculo__total"><span>Defesa</span><output id="defesa-dlg-total">10</output></p>
+        <p class="calculo__nota" id="defesa-dlg-tipos" hidden></p>
+      </section>
+
+      <section class="calculo" id="defesa-dlg-esquiva" aria-labelledby="defesa-dlg-esquiva-titulo">
+        <h3 class="subtitulo" id="defesa-dlg-esquiva-titulo">Esquiva</h3>
+        <p class="dialogo__texto">Reação: contra um ataque, você soma o bônus de Reflexos à Defesa. Exige Reflexos treinada.</p>
+        <ul class="calculo__linhas" id="defesa-dlg-esquiva-linhas"></ul>
+        <p class="calculo__total" id="defesa-dlg-esquiva-total"><span>Defesa com Esquiva</span><output id="defesa-dlg-esquiva-valor">—</output></p>
+        <p class="calculo__nota" id="defesa-dlg-esquiva-aviso" hidden></p>
+      </section>
+
+      <section class="calculo" id="defesa-dlg-bloqueio" aria-labelledby="defesa-dlg-bloqueio-titulo">
+        <h3 class="subtitulo" id="defesa-dlg-bloqueio-titulo">Bloqueio</h3>
+        <p class="dialogo__texto">Reação: reduz o dano de um ataque pelo bônus de Fortitude. Exige Fortitude treinada.</p>
+        <ul class="calculo__linhas" id="defesa-dlg-bloqueio-linhas"></ul>
+        <p class="calculo__total" id="defesa-dlg-bloqueio-total"><span>Dano reduzido</span><output id="defesa-dlg-bloqueio-valor">—</output></p>
+        <p class="calculo__nota" id="defesa-dlg-bloqueio-aviso" hidden></p>
+      </section>
+    </div>
+  </dialog>
+
+  <!-- ================= RD: redução de dano por tipo de dano (js/ui-defesa.js) ================= -->
+  <dialog class="dialogo dialogo--rd" id="dialogo-rd" aria-labelledby="rd-dlg-titulo">
+    <div class="dialogo__corpo">
+      <div class="dialogo__topo">
+        <h2 class="dialogo__titulo" id="rd-dlg-titulo">RD · redução de dano</h2>
+        <button type="button" class="botao-icone" data-fechar-dialogo aria-label="Fechar">
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>
+        </button>
+      </div>
+      <p class="dialogo__dica">Cada RD reduz o dano dos tipos que você marcar. As que cobrem o mesmo tipo se somam.</p>
+      <p class="secao__nota" id="resistencia-condicoes" hidden></p>
+      <p class="secao__nota" id="resistencia-poderes" hidden></p>
+      <p class="rd-desfazer" id="rd-dlg-desfazer-linha" hidden>
+        <span role="status">RD removida.</span>
+        <button type="button" class="botao-texto" id="rd-dlg-desfazer">Desfazer</button>
+      </p>
+      <ul class="rd-lista" id="rd-dlg-lista"></ul>
+      <p class="rd-vazio" id="rd-dlg-vazio">Nenhuma RD ainda.</p>
+      <button type="button" class="botao botao--adicionar" id="rd-dlg-adicionar">+ Adicionar RD</button>
+      <p class="calculo__nota" id="rd-dlg-totais" hidden></p>
+    </div>
+  </dialog>
+
   <!-- ================= REGRAS OPCIONAIS (por ficha; js/ui-regras.js) ================= -->
   <dialog class="dialogo dialogo--regras" id="dialogo-regras" aria-labelledby="regras-titulo">
     <div class="dialogo__corpo">
@@ -1922,6 +1997,7 @@
   <script src="js/livro.js"></script>
   <script src="js/ui-livro.js"></script>
   <script src="js/ui-regras.js"></script>
+  <script src="js/ui-defesa.js"></script>
   <script src="js/ui-nex.js"></script>
   <script src="js/ui-auditoria.js"></script>
   <script src="js/main.js"></script>

@@ -192,8 +192,10 @@ window.OP = window.OP || {};
       if (r.width === 0 || r.height === 0) return;
       // botão de texto dentro de uma frase (alvo em linha) e o link "Ir para o conteúdo" (só aparece no foco)
       if (getComputedStyle(elemento).display === 'inline' || elemento.classList.contains('pular') || elemento.classList.contains('link')) return;
-      // caixas de marcação: o alvo é o rótulo
-      const alvo = (elemento.type === 'checkbox' || elemento.type === 'radio') && elemento.closest('label') ? elemento.closest('label') : elemento;
+      // caixas de marcação: o alvo é o rótulo; botões de Defesa, Esquiva, Bloqueio e RD: o alvo é a célula inteira (o botão a cobre)
+      const alvo = (elemento.type === 'checkbox' || elemento.type === 'radio') && elemento.closest('label') ? elemento.closest('label')
+        : elemento.classList.contains('derivado__abrir') ? elemento.closest('.hud__derivado, .resumo-derivados > div') || elemento
+        : elemento;
       const ra = alvo.getBoundingClientRect();
       if (ra.width < 43.5 || ra.height < 43.5) pequenos.push({ elemento: elemento, largura: Math.round(ra.width), altura: Math.round(ra.height) });
     });

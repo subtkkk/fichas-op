@@ -964,7 +964,7 @@ window.OP = window.OP || {};
     const rd = estado.origens.filter(function (o) { return /^RD /.test(o.texto); });
     refs.resistencias.hidden = !rd.length;
     refs.resistencias.textContent = rd.length
-      ? 'Dos poderes (somam às que você marcar abaixo): ' + rd.map(function (o) { return o.texto.replace(/ \(ativo\)$/, '') + ' — ' + o.nome; }).join('; ') + '.'
+      ? 'Dos poderes (somam às RD da lista): ' + rd.map(function (o) { return o.texto.replace(/ \(ativo\)$/, '') + ' — ' + o.nome; }).join('; ') + '.'
       : '';
   }
 

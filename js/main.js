@@ -62,6 +62,7 @@ window.OP = window.OP || {};
     OP.conta.montar();         // conta (login com o Discord e códigos); só aparece se a API existir
     OP.uiLivro.montar();       // origem, poderes e rituais do livro e efeitos automáticos (só com o conteúdo liberado)
     OP.uiRegras.montar();      // regras opcionais (por ficha): Jogando sem Sanidade e NEX e Experiência
+    OP.uiDefesa.montar();      // Defesa, Esquiva, Bloqueio (cálculo) e RD por tipo de dano
     OP.uiNex.montar();         // painel Alterações de NEX (regra NEX e Experiência)
     OP.state.aoMudar(aoMudarFicha);
     const corrigiu = redesenhar(OP.state.ficha);

@@ -209,7 +209,6 @@ body::after,
 }
 
 /* Setas dos blocos recolhíveis */
-.resistencias summary::before,
 .grupo-ritual > summary::before {
   display: none !important;
 }
@@ -697,38 +696,6 @@ input[type="checkbox"] {
 }
 
 .teste__dados {
-  font-size: 8pt;
-}
-
-.resistencias {
-  margin-top: 3pt;
-  border: 0;
-}
-
-.resistencias summary {
-  padding: 0;
-  font-size: 8pt;
-}
-
-.resistencias__corpo {
-  padding: 0;
-}
-
-.resistencias__grupos {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0 6pt;
-}
-
-.resistencias__grupo {
-  padding: 0 4pt 2pt;
-}
-
-.resistencias__grupo legend {
-  font-size: 8pt;
-}
-
-.resistencia {
-  padding: 0;
   font-size: 8pt;
 }
 
@@ -1655,4 +1622,26 @@ html[data-diario-impressao="sim"] .bio__diario {
   .nex-energia__acoes {
     display: none !important;
   }
+}
+
+/* ---- RD: só a lista; sem botão (js/ui-defesa.js) ---- */
+.rd-resumo {
+  margin-top: 3pt;
+}
+
+.rd-resumo__topo .botao,
+#rd-resumo-vazio,
+.derivado__abrir::after {
+  display: none !important;
+}
+
+.rd-resumo__lista {
+  display: block;
+}
+
+.rd-resumo__item {
+  padding: 0;
+  font-size: 8pt;
+  background: none;
+  border: 0;
 }

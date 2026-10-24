@@ -4554,6 +4554,62 @@ body.arrastando-arquivo::after {
   color: var(--papel-4);
 }
 
+/* Consultar outras trilhas: leitura de qualquer trilha, sem escolher */
+.trilha__consulta {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--linha-1);
+}
+
+.trilha__consulta-resumo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  font: 600 0.75rem/1.3 var(--fonte-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+  cursor: pointer;
+  list-style: none;
+}
+
+.trilha__consulta-resumo::-webkit-details-marker {
+  display: none;
+}
+
+.trilha__consulta-resumo::before {
+  content: "▸";
+  transition: transform 0.15s;
+}
+
+.trilha__consulta[open] > .trilha__consulta-resumo::before {
+  transform: rotate(90deg);
+}
+
+.trilha__consulta-resumo:hover {
+  color: var(--cor-texto);
+  text-decoration: underline;
+}
+
+.trilha__consulta-resumo:focus-visible {
+  outline: 2px solid var(--cor-foco, currentColor);
+  outline-offset: 2px;
+}
+
+.trilha__consulta-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.trilha__consulta-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .trilha__versatilidade {
   display: flex;
   flex-direction: column;

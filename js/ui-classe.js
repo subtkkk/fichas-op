@@ -17,7 +17,7 @@ window.OP = window.OP || {};
 (function (OP) {
   'use strict';
 
-  const refs = { trilhaAbertos: Object.create(null) };
+  const refs = { trilhaAbertos: Object.create(null), consultaTrilha: '', consultaAberta: false };
   const assinaturas = {};
 
   /* ------------------------------------------------------------------------
@@ -281,17 +281,18 @@ window.OP = window.OP || {};
    * O tópico aberto continua aberto quando a lista é refeita (refs.trilhaAbertos).
    */
   function itemHabilidade(ficha, idTrilha, habilidade, unidade, rotuloExtra) {
-    const item = criar('li', 'trilha__habilidade ' + (habilidade.liberada ? 'trilha__habilidade--liberada' : 'trilha__habilidade--bloqueada'));
+    const consulta = habilidade.liberada === undefined; // consulta de outra trilha: sem situação
+    const item = criar('li', 'trilha__habilidade' + (consulta ? '' : habilidade.liberada ? ' trilha__habilidade--liberada' : ' trilha__habilidade--bloqueada'));
     const detalhe = criar('details', 'trilha__detalhe');
     const resumo = criar('summary', 'trilha__resumo');
     resumo.appendChild(criar('span', 'trilha__marco', textoNivel(habilidade.marco, unidade, OP.calc.regraNexNivel(ficha))));
     resumo.appendChild(criar('span', 'trilha__nome', habilidade.nome + (rotuloExtra ? ' (' + rotuloExtra + ')' : '')));
-    resumo.appendChild(criar('span', 'trilha__situacao', habilidade.liberada ? 'liberada · já nas habilidades' : 'bloqueada'));
+    if (!consulta) resumo.appendChild(criar('span', 'trilha__situacao', habilidade.liberada ? 'liberada · já nas habilidades' : 'bloqueada'));
     detalhe.appendChild(resumo);
     const corpo = criar('div', 'trilha__texto');
     corpo.appendChild(OP.uiLivro.criarTextoLivro(chaveDaHabilidade(idTrilha, habilidade.marco)));
     detalhe.appendChild(corpo);
-    const id = idTrilha + '|' + habilidade.marco;
+    const id = (consulta ? 'consulta|' : '') + idTrilha + '|' + habilidade.marco;
     detalhe.open = refs.trilhaAbertos[id] === true;
     detalhe.addEventListener('toggle', function () {
       if (detalhe.open) refs.trilhaAbertos[id] = true;
@@ -310,7 +311,59 @@ window.OP = window.OP || {};
     }
     if (identidade.trilha) identidade.habilidadesTrilha.forEach(function (h) { marcar(identidade.trilha.id, h.marco); });
     if (identidade.versatilidade) marcar(identidade.versatilidade.trilha, identidade.versatilidade.marco);
-    return partes.join(',');
+    // A consulta de outras trilhas lê qualquer trilha: basta saber se o texto do livro está liberado
+    return partes.join(',') + '|' + (OP.livro && OP.livro.disponivel('habilidades') ? '+' : '-');
+  }
+
+  /** Habilidades de uma trilha qualquer, só para ler (nada é escolhido nem salvo na ficha). */
+  function listaConsulta(ficha, idTrilha) {
+    const trilha = OP.calc.trilhaDados(idTrilha);
+    if (!trilha) return criar('p', 'identidade__nota', 'Escolha uma trilha para ver as habilidades e as descrições por NEX.');
+    const classe = OP.calc.classeDados(trilha.classe);
+    const unidade = classe && classe.unidadeProgressao === 'estagio' ? 'estagio' : 'nex';
+    const caixa = criar('div', 'trilha__consulta-lista');
+    caixa.appendChild(criar('p', 'identidade__nome', trilha.nome));
+    caixa.appendChild(linhaInfo('Fonte', nomeFonte(trilha.fonte)));
+    const lista = criar('ul', 'trilha__habilidades');
+    Object.keys(trilha.habilidades).map(Number).sort(function (a, b) { return a - b; }).forEach(function (marco) {
+      lista.appendChild(itemHabilidade(ficha, trilha.id, { marco: marco, nome: trilha.habilidades[String(marco)] }, unidade));
+    });
+    caixa.appendChild(lista);
+    return caixa;
+  }
+
+  /** "Consultar outras trilhas": escolhe qualquer trilha (de qualquer classe) e lê as habilidades por NEX. */
+  function blocoConsulta(ficha, ativas) {
+    const detalhe = criar('details', 'trilha__consulta');
+    const resumo = criar('summary', 'trilha__consulta-resumo', 'Consultar outras trilhas');
+    detalhe.appendChild(resumo);
+    const corpo = criar('div', 'trilha__consulta-corpo');
+    const rotulo = criar('label', 'identidade__campo');
+    rotulo.appendChild(criar('span', 'identidade__rotulo', 'Ver habilidades da trilha'));
+    const select = criar('select', 'controle');
+    select.appendChild(opcao('', '— Escolha uma trilha —'));
+    OP.calc.classesLista().forEach(function (classe) {
+      const trilhas = OP.calc.trilhasDaClasse(classe.id).filter(function (t) { return ativas[t.fonte] !== false || t.id === refs.consultaTrilha; });
+      if (!trilhas.length) return;
+      const grupo = document.createElement('optgroup');
+      grupo.label = classe.nome;
+      trilhas.forEach(function (t) { grupo.appendChild(opcao(t.id, t.nome)); });
+      select.appendChild(grupo);
+    });
+    select.value = refs.consultaTrilha || '';
+    rotulo.appendChild(select);
+    corpo.appendChild(rotulo);
+    const area = criar('div', 'trilha__consulta-area');
+    area.appendChild(listaConsulta(ficha, select.value));
+    corpo.appendChild(area);
+    detalhe.appendChild(corpo);
+    select.addEventListener('change', function () {
+      refs.consultaTrilha = select.value;
+      OP.ui.substituirFilhos(area, [listaConsulta(OP.state.ficha, select.value)]);
+    });
+    detalhe.open = refs.consultaAberta === true;
+    detalhe.addEventListener('toggle', function () { refs.consultaAberta = detalhe.open; });
+    return detalhe;
   }
 
   function sincronizarTrilha(ficha, identidade) {
@@ -363,6 +416,7 @@ window.OP = window.OP || {};
       }
       filhos.push(bloco);
     }
+    filhos.push(blocoConsulta(ficha, ativas));
     return recriar(refs.conteudoTrilha, filhos);
   }
 

@@ -4106,8 +4106,9 @@ body {
   display: none;
 }
 
-/* O texto do livro não é impresso */
-.trilha__texto {
+/* O texto do livro não é impresso, nem a consulta de outras trilhas */
+.trilha__texto,
+.trilha__consulta {
   display: none;
 }
 

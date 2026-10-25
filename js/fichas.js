@@ -30,6 +30,9 @@ window.OP = window.OP || {};
   const config = { criarSeVazio: true };
   const ouvintesStatus = [];
   const ouvintesFora = [];
+  const ouvintesGravar = [];
+  // Ficha de outra pessoa aberta por link (js/nuvem.js): vive só na memória, nunca vai para o armazenamento
+  let externa = false;
 
   /* ------------------------------------------------------------------------
      Utilitários
@@ -204,6 +207,7 @@ window.OP = window.OP || {};
 
   /** A ficha aberta é um rascunho em branco que ainda não foi salvo? */
   function ehRascunho() {
+    if (externa) return false;
     const id = idAtual();
     return id === null || !existe(id);
   }
@@ -242,6 +246,7 @@ window.OP = window.OP || {};
 
     const indice = indiceOuVazio();
     const linha = linhaDe(id, ficha);
+    if (typeof o.atualizadoEm === 'string' && Number.isFinite(new Date(o.atualizadoEm).getTime())) linha.atualizadoEm = o.atualizadoEm;
     const posicao = posicaoNoIndice(indice, id);
     if (posicao !== -1) {
       indice.fichas[posicao] = linha;
@@ -252,7 +257,17 @@ window.OP = window.OP || {};
     }
     if (o.atual || !indice.atualId) indice.atualId = id;
     const okIndice = gravarIndice(indice);
+    avisarGravacao(id);
     return okFicha && okIndice;
+  }
+
+  /** fn(id) quando uma ficha é gravada ou excluída no armazenamento (a nuvem usa para sincronizar). */
+  function aoGravar(funcao) {
+    ouvintesGravar.push(funcao);
+  }
+
+  function avisarGravacao(id) {
+    ouvintesGravar.forEach(function (funcao) { funcao(id); });
   }
 
   /** Cria uma ficha (vazia ou a partir de dados) e devolve o id. Não abre. */
@@ -359,6 +374,7 @@ window.OP = window.OP || {};
   /** Grava agora a ficha aberta. Devolve true se ficou salva neste navegador. */
   function salvarAtual() {
     cancelarSalvamento();
+    if (externa) return true; // ficha de link: não grava neste navegador
     const ficha = OP.state.ficha;
     if (!ficha || !OP.state.idValido(ficha.id)) return false;
     const ok = gravar(ficha.id, ficha, { atual: true }) && OP.storage.modo() !== 'memoria';
@@ -370,6 +386,7 @@ window.OP = window.OP || {};
 
   /** Agenda a gravação para 400 ms depois da última mudança. */
   function agendarSalvamento() {
+    if (externa) return;
     cancelarSalvamento();
     if (status.estado !== 'pendente') emitirStatus({ estado: 'pendente' });
     temporizador = setTimeout(salvarAtual, ESPERA_SALVAR);
@@ -386,11 +403,13 @@ window.OP = window.OP || {};
    */
   function abrir(id, opcoes) {
     const o = opcoes || {};
-    if (id === idAtual() && !o.forcar) return { ok: true, erro: '' };
+    if (id === idAtual() && !o.forcar && !externa) return { ok: true, erro: '' };
     const ficha = ler(id);
     if (!ficha) return { ok: false, erro: 'Não foi possível abrir esta ficha: os dados salvos estão corrompidos ou não existem mais.' };
     if (o.semSalvar) cancelarSalvamento();
     else salvarPendente();
+    externa = false; // a ficha de um link sai da tela
+    OP.state.definirSomenteLeitura(false);
     OP.state.substituir(ficha);
     marcarAtual(id);
     emitirStatus({ estado: status.falhou ? 'falha' : 'salvo', quando: dataDaLinha(id) });
@@ -409,6 +428,8 @@ window.OP = window.OP || {};
   /** Põe na tela um rascunho em branco (não salvo; entra no índice ao ser editado). */
   function abrirRascunho() {
     cancelarSalvamento();
+    externa = false;
+    OP.state.definirSomenteLeitura(false);
     const ficha = OP.state.completarPadroes(OP.state.modeloVazio());
     ficha.id = novoId();
     OP.state.substituir(ficha);
@@ -427,6 +448,7 @@ window.OP = window.OP || {};
     if (eraAberta) cancelarSalvamento(); // não deixa um salvamento agendado recriar a ficha
 
     OP.storage.remover(chaveFicha(id));
+    avisarGravacao(id);
     const indice = indiceOuVazio();
     const posicao = posicaoNoIndice(indice, id);
     if (posicao !== -1) indice.fichas.splice(posicao, 1);
@@ -457,6 +479,39 @@ window.OP = window.OP || {};
     OP.state.substituir(ficha);
     emitirStatus({ estado: status.falhou ? 'falha' : 'salvo', quando: dataDaLinha(id) });
     return true;
+  }
+
+  /**
+   * Põe na tela a ficha de um link (de outra pessoa). Salva antes a que estava aberta.
+   * Ela fica só na memória: nada é gravado neste navegador enquanto estiver na tela.
+   * somenteLeitura: o estado recusa qualquer mudança.
+   */
+  function abrirExterna(ficha, somenteLeitura) {
+    salvarPendente();
+    cancelarSalvamento();
+    externa = true;
+    OP.state.definirSomenteLeitura(somenteLeitura === true);
+    OP.state.substituir(ficha);
+    emitirStatus({ estado: 'salvo', quando: null });
+  }
+
+  /** Tira a ficha de link da tela e volta a abrir a que estava em uso (ou um rascunho). */
+  function sairDaExterna() {
+    if (!externa) return;
+    const indice = indiceOuVazio();
+    const alvo = indice.atualId && posicaoNoIndice(indice, indice.atualId) !== -1 ? indice.atualId : (indice.fichas[0] && indice.fichas[0].id);
+    if (!alvo || !abrir(alvo, { semSalvar: true, forcar: true }).ok) abrirRascunho();
+    externa = false;
+    OP.state.definirSomenteLeitura(false);
+  }
+
+  function ehExterna() {
+    return externa;
+  }
+
+  /** Avisa de novo quem mostra o status de salvamento (o texto pode depender de outras coisas, como o link). */
+  function reemitirStatus() {
+    emitirStatus({});
   }
 
   /* ------------------------------------------------------------------------
@@ -493,7 +548,7 @@ window.OP = window.OP || {};
         if (ficha) fichas.push(ficha);
       }
     });
-    if (!incluiuAberta && OP.state.ficha) fichas.unshift(OP.state.ficha);
+    if (!incluiuAberta && OP.state.ficha && !externa) fichas.unshift(OP.state.ficha);
     return JSON.stringify(OP.state.envelopeBackup(fichas), null, 2);
   }
 
@@ -619,6 +674,11 @@ window.OP = window.OP || {};
     posicao: posicao,
     abrir: abrir,
     abrirRascunho: abrirRascunho,
+    abrirExterna: abrirExterna,
+    sairDaExterna: sairDaExterna,
+    ehExterna: ehExterna,
+    reemitirStatus: reemitirStatus,
+    aoGravar: aoGravar,
     existe: existe,
     ehRascunho: ehRascunho,
     idAtual: idAtual,

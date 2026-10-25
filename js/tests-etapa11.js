@@ -551,7 +551,42 @@ window.OP = window.OP || {};
         const depois = OP.calc.calcularTudo(f).defesa;
         const md = OP.exportarMd.gerar(f);
         return [depois.total - antes.total, depois.esquiva.defesaComEsquiva - antes.esquiva.defesaComEsquiva, md.indexOf('3 outros') !== -1].join('|');
-      }, esperado: '3|3|true' }
+      }, esperado: '3|3|true' },
+      { nome: 'Nuvem: a decisão da sincronia (mudou aqui, mudou lá, nos dois, excluída de um lado)', obtido: function () {
+        const d = OP.nuvem.decidir;
+        const m = { rev: 3, h: 'a' };
+        return [
+          d({ remota: null, local: false, hLocal: '', meta: null }),
+          d({ remota: null, local: true, hLocal: 'a', meta: null }),            // ficha nova daqui
+          d({ remota: { rev: 1 }, local: false, hLocal: '', meta: null }),     // ficha nova de lá
+          d({ remota: { rev: 3 }, local: true, hLocal: 'a', meta: m }),         // igual
+          d({ remota: { rev: 3 }, local: true, hLocal: 'b', meta: m }),         // só aqui
+          d({ remota: { rev: 4 }, local: true, hLocal: 'a', meta: m }),         // só lá
+          d({ remota: { rev: 4 }, local: true, hLocal: 'b', meta: m }),         // nos dois
+          d({ remota: { rev: 1 }, local: true, hLocal: 'a', meta: null }),      // nunca sincronizada, existe nos dois lados
+          d({ remota: null, local: true, hLocal: 'a', meta: m }),               // excluída lá, sem mexer aqui
+          d({ remota: null, local: true, hLocal: 'b', meta: m }),               // excluída lá, mas mexi aqui
+          d({ remota: { rev: 3 }, local: false, hLocal: '', meta: m }),         // excluída aqui
+          d({ remota: { rev: 4 }, local: false, hLocal: '', meta: m })          // excluída aqui, mas mudou lá
+        ].join(',');
+      }, esperado: 'nada,enviar-novo,baixar,nada,enviar,baixar,conflito,comparar,excluir-local,enviar-novo,excluir-nuvem,baixar' },
+      { nome: 'Nuvem: a impressão digital é a mesma para o mesmo texto e muda quando o texto muda', obtido: function () {
+        const h = OP.nuvem.hashDe;
+        return [h('{"a":1}') === h('{"a":1}'), h('{"a":1}') !== h('{"a":2}'), h('') !== h(' ')].join('|');
+      }, esperado: 'true|true|true' },
+      { nome: 'Só visualizar: o estado recusa mudanças, avisa só as tentativas da pessoa e volta ao normal', obtido: function () {
+        const antes = OP.state.ficha.identificacao.nome;
+        const avisos = [];
+        OP.state.aoBloquear(function (caminho) { avisos.push(caminho); });
+        OP.state.definirSomenteLeitura(true);
+        try {
+          OP.state.atualizar('identificacao.nome', 'XXX');
+          OP.state.atualizar('identificacao.nome', 'YYY', { silencioso: true });
+          return [OP.state.ficha.identificacao.nome === antes, OP.state.somenteLeitura(), avisos.join('+')].join('|');
+        } finally {
+          OP.state.definirSomenteLeitura(false);
+        }
+      }, esperado: 'true|true|identificacao.nome' }
     ];
   }
 

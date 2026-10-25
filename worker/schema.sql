@@ -52,3 +52,26 @@ CREATE TABLE IF NOT EXISTS tentativas (
   criado_em  INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_tentativas ON tentativas (discord_id, criado_em);
+
+CREATE TABLE IF NOT EXISTS fichas_nuvem (
+  discord_id     TEXT NOT NULL,
+  id             TEXT NOT NULL,
+  nome           TEXT NOT NULL,
+  classe         TEXT NOT NULL,
+  nex            INTEGER NOT NULL DEFAULT 0,
+  dados          TEXT NOT NULL,
+  rev            INTEGER NOT NULL,
+  criado_em      INTEGER NOT NULL,
+  atualizado_em  INTEGER NOT NULL,
+  atualizado_por TEXT,
+  PRIMARY KEY (discord_id, id)
+);
+
+CREATE TABLE IF NOT EXISTS links_ficha (
+  token      TEXT PRIMARY KEY,
+  discord_id TEXT NOT NULL,
+  ficha_id   TEXT NOT NULL,
+  modo       TEXT NOT NULL,
+  criado_em  INTEGER NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_links_ficha ON links_ficha (discord_id, ficha_id);

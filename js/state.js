@@ -74,6 +74,8 @@ window.OP = window.OP || {};
   };
 
   const ouvintes = [];
+  const ouvintesBloqueio = [];
+  let somenteLeitura = false;
   let contadorIds = 0; // junto com a hora, garante ids únicos (itens, ataques...)
 
   /* ------------------------------------------------------------------------
@@ -1361,8 +1363,23 @@ window.OP = window.OP || {};
    * várias mudanças de uma vez (avisando só no fim).
    */
   function atualizar(caminho, valor, opcoes) {
+    if (somenteLeitura) {
+      // Ficha vista por link (só visualizar): nada muda. Só as tentativas da pessoa avisam (as correções silenciosas, não).
+      if (!(opcoes && opcoes.silencioso)) ouvintesBloqueio.forEach(function (funcao) { funcao(caminho); });
+      return;
+    }
     escreverCaminho(api.ficha, caminho, valor);
     if (!(opcoes && opcoes.silencioso)) notificar(caminho);
+  }
+
+  /** Liga ou desliga o modo "só visualizar" (ficha aberta por um link sem edição). */
+  function definirSomenteLeitura(ligado) {
+    somenteLeitura = ligado === true;
+  }
+
+  /** fn(caminho) quando alguém tenta mudar a ficha no modo "só visualizar". */
+  function aoBloquear(funcao) {
+    ouvintesBloqueio.push(funcao);
   }
 
   /** Troca a ficha inteira (abrir, importar, recarregar): avisa com caminho "*". */
@@ -1468,6 +1485,9 @@ window.OP = window.OP || {};
     novaPessoa: novaPessoa,
     novaEntradaDiario: novaEntradaDiario,
     LIMITES: { condicoes: MAX_CONDICOES, diario: MAX_DIARIO, pessoas: MAX_PESSOAS, textoDiario: 20000, textoNotas: 20000, texto: LIMITE_TEXTO },
+    definirSomenteLeitura: definirSomenteLeitura,
+    somenteLeitura: function () { return somenteLeitura; },
+    aoBloquear: aoBloquear,
     aplicarCustos: aplicarCustos,
     gastarPE: gastarPE,
     novoTurno: novoTurno,

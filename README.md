@@ -51,6 +51,12 @@ Precisa de um navegador atual (Chrome, Edge, Safari ou Firefox recentes).
 - "Termos da ficha" é um glossário recolhido com NEX, DT, graus e outros termos.
 - As listas de escolha abrem um painel próprio, com as opções agrupadas por livro, busca nas listas longas e, no celular, uma gaveta.
 
+**Fichas na conta e compartilhar por link** (precisa do Worker e do login com o Discord; ver `worker/LEIA-ME.md`)
+- **Salvar na conta:** com a conta conectada, cada ficha também fica guardada na conta (até 50, 1,5 MB cada). O navegador continua sendo a cópia de trabalho: tudo funciona sem rede e sem conta, e a sincronia acontece sozinha (2 s depois de mexer, ao voltar para a aba e a cada minuto). Em **Conta → Fichas na conta** dá para desligar e para sincronizar na hora. Na primeira vez, e se mudar de conta no mesmo navegador, a ficha pergunta antes de enviar as fichas daqui.
+- **Nada se perde:** se a mesma ficha mudou aqui e na conta ao mesmo tempo, a versão da conta vira uma cópia "(da nuvem)" e a daqui segue como a ficha. Excluir uma ficha aqui apaga na conta (e vice-versa), desde que ela não tenha sido mexida do outro lado.
+- **Compartilhar** (botão na página Agente): liga um link por ficha. **Só visualizar** (qualquer pessoa abre, sem conta, e nada muda) ou **Visualizar e editar** (quem abrir precisa entrar com o Discord; as mudanças vão para a ficha do dono). Dá para trocar o modo, copiar o link, **gerar um link novo** (o anterior para de funcionar) e desligar. Quem abre vê a ficha só na memória: nada é gravado no navegador dela, e a tela confere a cada 15 s se mudou algo. A faixa no alto tem "Salvar uma cópia" (vira uma ficha da própria pessoa) e "Sair".
+- **Cuidado:** o link dá acesso à ficha inteira (biografia e diário também). O texto do livro continua só para quem tem o código de acesso, mesmo em ficha compartilhada.
+
 **Rolagens**
 - Página com o resultado de cada teste (todos os d20 e qual valeu), dano, crítico, modificador de dados, bônus extra, DT do alvo, fórmula livre (ex.: `2d6+3`) e histórico. O **último resultado** fica numa faixa com o total grande (no alto da coluna da direita no computador; presa abaixo dos vitais no celular) até a próxima rolagem ou até fechar, com o atalho **Detalhes**. Toda rolagem toca o som de **dados chacoalhando** e o **20 natural** tem um som diferente (um arpejo brilhante). Os sons são sintetizados na hora (Web Audio, sem arquivos) e podem ser desligados em **Aparência → Som das rolagens**.
 
@@ -67,17 +73,18 @@ Precisa de um navegador atual (Chrome, Edge, Safari ou Firefox recentes).
 
 ## Onde ficam os dados
 
-Tudo fica no **próprio navegador** (`localStorage`). Não há servidor nem conta.
+Tudo fica no **próprio navegador** (`localStorage`). Servidor e conta são opcionais: com o Worker e o login com o Discord (ver abaixo), as fichas também são guardadas na conta e podem ser compartilhadas por link.
 
 | Chave | Conteúdo |
 |---|---|
 | `op_idx_v2` | Índice das fichas (ordem, ficha aberta) |
 | `op_f_<id>` | Cada ficha |
 | `op_prefs` | Preferências: livros ativos, tema elemental de cada ficha e aparência do site (tema, tamanho do texto, animações, diário na impressão) |
+| `op_nuvem` | Sincronia com a conta: o último estado em comum de cada ficha (versão e impressão digital), a chave "Salvar na conta" e de qual conta é |
 | `op_ficha_atual` | Formato antigo, migrado automaticamente |
 
 Isso tem algumas consequências:
-- **Cada aparelho tem as suas fichas.** Para levar uma ficha do celular para o notebook, exporte e importe o `.json`.
+- **Cada aparelho tem as suas fichas.** Sem conta, para levar uma ficha do celular para o notebook, exporte e importe o `.json`. Com a conta conectada e "Salvar minhas fichas na conta" ligado, elas aparecem sozinhas nos dois.
 - O tema elemental e a aparência do site ficam nas preferências do navegador e **não** vão no arquivo exportado.
 - O retrato fica dentro da ficha (JPEG pequeno, até 400 mil caracteres). Se o armazenamento do navegador encher, o site avisa e manda exportar a ficha, sem perder o que está na memória. A Central mostra "Armazenamento usado".
 - Sem `localStorage` (por exemplo, alguns modos privados), o site funciona só na memória. Ele avisa que não conseguiu salvar e oferece exportar um backup, e a Central marca o armazenamento como temporário.
@@ -121,6 +128,8 @@ js/
   ui-condicoes.js   Condições, estados, Morrendo e diálogo Descansar
   ui-biografia.js   Retrato, aliados, rivais e diário
   ui-defesa.js      Defesa, Esquiva e Bloqueio (cálculo à vista) e a lista de RD por tipo de dano
+  nuvem.js          Fichas na conta (sincronia) e link de compartilhamento (sem tela)
+  ui-nuvem.js       Telas da nuvem: Compartilhar, Conta e a faixa da ficha de link
   ui-verificacoes.js  Painel de verificações
   ui-aparencia.js   Temas (do site e da ficha), tamanho do texto, animações, Sobre e ajuda de teclado
   ui-auditoria.js   Auditorias de layout, contraste e acessibilidade (para os testes)
@@ -139,7 +148,7 @@ fonts/              Fontes locais (Cormorant Garamond e IBM Plex, licença OFL; 
 
 - HTML, CSS e JavaScript puro, sem dependências e sem etapa de build: edite e recarregue.
 - Os scripts compartilham o objeto global `OP`. O fluxo é `OP.state.atualizar` → `OP.calc` → `OP.ui.desenhar`. As telas ligam os campos por atributos (`data-campo`, `data-saida`, `data-passo`…).
-- **Testes das fórmulas:** abra o site e rode `OP.runTests()` no console do navegador. O esperado é `{ total: 607, aprovados: 607, falhas: 0 }`. Em janela estreita (até 480 px) o teste de layout também confere a rolagem horizontal. As auditorias ficam em `OP.ui.auditarLayout()`, `auditarContraste(tema)`, `auditarAcessibilidade()`, `auditarTitulos()` e `auditarAlvosToque()`.
+- **Testes das fórmulas:** abra o site e rode `OP.runTests()` no console do navegador. O esperado é `{ total: 610, aprovados: 610, falhas: 0 }`. Em janela estreita (até 480 px) o teste de layout também confere a rolagem horizontal. As auditorias ficam em `OP.ui.auditarLayout()`, `auditarContraste(tema)`, `auditarAcessibilidade()`, `auditarTitulos()` e `auditarAlvosToque()`.
 - **Cores:** o CSS da tela não tem cor fixa fora de variáveis. As paletas (`--cor-*`, em `#rrggbb`) ficam no começo do `css/style.css`: escuro em `:root`, claro em `[data-tema="claro"]` (e no `@media (prefers-color-scheme: light)` do modo Automático) e alto contraste em `[data-tema="contraste"]`. O `css/print.css` mantém fundo branco e texto preto, qualquer que seja o tema.
 - **Compatibilidade:** fichas salvas e arquivos exportados de versões anteriores precisam continuar abrindo. Mudanças no modelo passam pela migração em `js/state.js`.
 
@@ -157,7 +166,7 @@ As fontes Cormorant Garamond e IBM Plex são distribuídas sob a SIL Open Font L
 
 ## Conta e conteúdo protegido (opcional)
 
-Além do site estático, o repositório tem um Worker do Cloudflare (`worker/`, `wrangler.jsonc`): login com o Discord, códigos de acesso de uso único e um conteúdo que só aparece para quem o administrador liberou por alguns dias. O conteúdo fica no banco D1, nunca nos arquivos do site. Sem o Worker (arquivo aberto direto, outro servidor) o botão "Conta" some e a ficha funciona igual. Passo a passo e como testar: `worker/LEIA-ME.md`.
+Além do site estático, o repositório tem um Worker do Cloudflare (`worker/`, `wrangler.jsonc`): login com o Discord, as fichas na conta e o compartilhamento por link, códigos de acesso de uso único e um conteúdo que só aparece para quem o administrador liberou por alguns dias. O conteúdo fica no banco D1, nunca nos arquivos do site. Sem o Worker (arquivo aberto direto, outro servidor) o botão "Conta" some e a ficha funciona igual. Passo a passo e como testar: `worker/LEIA-ME.md`.
 
 ### O livro na ficha: textos, poderes, rituais e efeitos automáticos
 

@@ -1,4 +1,4 @@
-# Conta, códigos de acesso e conteúdo protegido
+# Conta, fichas na conta, links e conteúdo protegido
 
 O site continua estático e funciona sozinho (até abrindo o arquivo direto). Este Worker acrescenta, **opcionalmente**, uma conta com login do Discord e conteúdos que só aparecem para quem o administrador liberou por um código.
 
@@ -9,6 +9,16 @@ O site continua estático e funciona sozinho (até abrindo o arquivo direto). Es
 - **Conteúdo protegido:** fica na tabela `conteudo` do D1, **nunca no repositório nem nos arquivos do site**. O servidor só entrega a quem tem acesso válido; o navegador não guarda o texto (só em memória da página).
 - **Segurança:** o código só existe em texto no momento em que é gerado (o banco guarda um HMAC dele); 8 tentativas de resgate por hora por conta; pedidos que mudam algo só valem se vierem do próprio endereço do site.
 - **Limite honesto:** o servidor decide quem recebe o texto, mas quem recebeu consegue copiar o que está na tela. Isto reduz e controla o acesso; não é proteção contra cópia.
+
+## Fichas na conta e links de compartilhamento
+
+- **Fichas na conta:** com o login, o site guarda uma cópia de cada ficha no D1 (tabela `fichas_nuvem`) e sincroniza sozinho (`js/nuvem.js`). Limites: 50 fichas por conta e 1,5 MB por ficha (o retrato pesa bastante). Cada gravação leva a versão (`rev`) em que se baseou e o servidor **recusa com 409** se a ficha mudou desde então: ninguém sobrescreve o trabalho de outro aparelho ou de quem editou por link sem saber.
+- **Links:** `links_ficha` guarda um token aleatório de 192 bits por ficha, com o modo `ver` ou `editar`. O endereço é `<site>/#/compartilhada/<token>`: o token fica depois do `#`, que o navegador não envia ao servidor nem a outros sites.
+  - `GET /api/link/<token>`: qualquer pessoa (sem login) lê a ficha. Devolve só o nome de exibição do dono, nunca o ID dele.
+  - `PUT /api/link/<token>`: só com login e só se o link for `editar`; grava na ficha do dono (a mesma regra de versão).
+  - O dono liga, troca o modo, gera um token novo (o antigo morre) ou desliga em `/api/fichas/<id>/link`; excluir a ficha na conta apaga o link.
+- **O que o servidor não faz:** ele não conhece o formato da ficha (só guarda o JSON e confere o tamanho). Por isso o navegador passa tudo o que vem da conta ou de um link por `OP.state.sanitizar` antes de usar.
+- **Ativar num banco que já existe:** as tabelas novas estão no fim de `schema.sql`. Abra o D1 → **Console**, cole o arquivo inteiro de novo e clique em *Execute* (todas as tabelas usam `IF NOT EXISTS`: o que já existe não é mexido). Enquanto isso não for feito, o site funciona igual e a Conta avisa que as fichas na conta não foram ativadas (`/api/eu` devolve `nuvem: false`).
 
 ## Preparar (uma vez, tudo no plano gratuito)
 

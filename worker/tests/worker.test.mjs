@@ -247,3 +247,159 @@ test('sem configuração, a API avisa em vez de quebrar; fora de /api vão os ar
   const estaticos = ambiente({ ASSETS: { fetch: async () => new Response('pagina') } });
   assert.equal(await (await chamar(estaticos, 'GET', '/index.html')).text(), 'pagina');
 });
+
+/* ---------- Fichas na nuvem e link de compartilhamento ---------- */
+
+const FICHA = { identificacao: { nome: 'Marina Lopes', classe: 'ocultista', nex: 35 }, recursos: { pv: { atual: 10 } } };
+
+test('nuvem: salvar, listar, ler e apagar a própria ficha (com controle de versão)', async () => {
+  const env = ambiente();
+  const jogador = await entrar(env, JOGADOR, 'Marina');
+  assert.equal((await chamar(env, 'GET', '/api/fichas')).status, 401);
+  const eu = await (await chamar(env, 'GET', '/api/eu', { cookie: jogador })).json();
+  assert.equal(eu.nuvem, true);
+
+  const nova = await chamar(env, 'PUT', '/api/fichas/ficha-1', { cookie: jogador, json: { dados: FICHA, baseRev: 0 } });
+  assert.equal(nova.status, 200);
+  assert.equal((await nova.json()).rev, 1);
+  const lista = await (await chamar(env, 'GET', '/api/fichas', { cookie: jogador })).json();
+  assert.deepEqual(lista.fichas.map((f) => [f.id, f.nome, f.classe, f.nex, f.rev, f.link]), [['ficha-1', 'Marina Lopes', 'ocultista', 35, 1, null]]);
+  assert.equal(lista.limite, 50);
+
+  const lida = await (await chamar(env, 'GET', '/api/fichas/ficha-1', { cookie: jogador })).json();
+  assert.deepEqual(lida.dados, FICHA);
+
+  const v2 = await chamar(env, 'PUT', '/api/fichas/ficha-1', { cookie: jogador, json: { dados: Object.assign({}, FICHA, { identificacao: { nome: 'Marina 2', classe: 'ocultista', nex: 40 } }), baseRev: 1 } });
+  assert.equal((await v2.json()).rev, 2);
+
+  // versão velha: 409 com a versão atual, sem gravar
+  const velha = await chamar(env, 'PUT', '/api/fichas/ficha-1', { cookie: jogador, json: { dados: FICHA, baseRev: 1 } });
+  assert.equal(velha.status, 409);
+  const corpoVelha = await velha.json();
+  assert.equal(corpoVelha.conflito, true);
+  assert.equal(corpoVelha.rev, 2);
+  assert.equal((await (await chamar(env, 'GET', '/api/fichas', { cookie: jogador })).json()).fichas[0].nome, 'Marina 2');
+  // ficha nova com baseRev diferente de 0 num id que não existe: avisa que foi apagada
+  const fantasma = await chamar(env, 'PUT', '/api/fichas/outra', { cookie: jogador, json: { dados: FICHA, baseRev: 3 } });
+  assert.equal(fantasma.status, 409);
+  assert.equal((await fantasma.json()).apagada, true);
+
+  assert.equal((await chamar(env, 'DELETE', '/api/fichas/ficha-1', { cookie: jogador })).status, 200);
+  assert.equal((await chamar(env, 'GET', '/api/fichas/ficha-1', { cookie: jogador })).status, 404);
+});
+
+test('nuvem: cada conta só vê e mexe nas próprias fichas; confere id, formato, tamanho e limite', async () => {
+  const env = ambiente();
+  const marina = await entrar(env, JOGADOR, 'Marina');
+  const outro = await entrar(env, OUTRO, 'Outro');
+  await chamar(env, 'PUT', '/api/fichas/f1', { cookie: marina, json: { dados: FICHA, baseRev: 0 } });
+  assert.equal((await chamar(env, 'GET', '/api/fichas/f1', { cookie: outro })).status, 404);
+  assert.deepEqual((await (await chamar(env, 'GET', '/api/fichas', { cookie: outro })).json()).fichas, []);
+  // o mesmo id em outra conta é outra ficha
+  assert.equal((await chamar(env, 'PUT', '/api/fichas/f1', { cookie: outro, json: { dados: FICHA, baseRev: 0 } })).status, 200);
+  await chamar(env, 'DELETE', '/api/fichas/f1', { cookie: outro });
+  assert.equal((await chamar(env, 'GET', '/api/fichas/f1', { cookie: marina })).status, 200);
+
+  assert.equal((await chamar(env, 'PUT', '/api/fichas/' + 'x'.repeat(65), { cookie: marina, json: { dados: FICHA } })).status, 400);
+  assert.equal((await chamar(env, 'PUT', '/api/fichas/ok', { cookie: marina, json: { dados: [1] } })).status, 400);
+  assert.equal((await chamar(env, 'PUT', '/api/fichas/ok', { cookie: marina, json: { dados: FICHA, baseRev: -1 } })).status, 400);
+  assert.equal((await chamar(env, 'PUT', '/api/fichas/ok', { cookie: marina, json: { dados: { lixo: 'x'.repeat(1600000) } } })).status, 413);
+  assert.equal((await chamar(env, 'PUT', '/api/fichas/ok', { cookie: marina, origem: 'https://mal.exemplo', json: { dados: FICHA } })).status, 403);
+
+  for (let i = 0; i < 49; i++) assert.equal((await chamar(env, 'PUT', '/api/fichas/lote' + i, { cookie: marina, json: { dados: FICHA, baseRev: 0 } })).status, 200);
+  const cheio = await chamar(env, 'PUT', '/api/fichas/passou', { cookie: marina, json: { dados: FICHA, baseRev: 0 } });
+  assert.equal(cheio.status, 403);
+  // atualizar uma que já existe continua valendo com a conta cheia
+  assert.equal((await chamar(env, 'PUT', '/api/fichas/f1', { cookie: marina, json: { dados: FICHA, baseRev: 1 } })).status, 200);
+});
+
+test('link: só ver (sem login), trocar o modo, gerar link novo e parar de compartilhar', async () => {
+  const env = ambiente();
+  const marina = await entrar(env, JOGADOR, 'Marina');
+  assert.equal((await chamar(env, 'PUT', '/api/fichas/f1/link', { cookie: marina, json: { modo: 'ver' } })).status, 404); // ainda não está na nuvem
+  await chamar(env, 'PUT', '/api/fichas/f1', { cookie: marina, json: { dados: FICHA, baseRev: 0 } });
+  assert.equal((await chamar(env, 'PUT', '/api/fichas/f1/link', { cookie: marina, json: { modo: 'qualquer' } })).status, 400);
+  assert.deepEqual((await (await chamar(env, 'GET', '/api/fichas/f1/link', { cookie: marina })).json()).link, null);
+
+  const criado = (await (await chamar(env, 'PUT', '/api/fichas/f1/link', { cookie: marina, json: { modo: 'ver' } })).json()).link;
+  assert.match(criado.token, /^[0-9a-f]{48}$/);
+  assert.equal(criado.modo, 'ver');
+
+  // qualquer pessoa, sem login, vê; não vê o id do dono; o cabeçalho impede cache
+  const publico = await chamar(env, 'GET', '/api/link/' + criado.token);
+  assert.equal(publico.status, 200);
+  assert.equal(publico.headers.get('cache-control'), 'no-store');
+  const corpo = await publico.json();
+  assert.equal(corpo.modo, 'ver');
+  assert.equal(corpo.dono, 'Marina');
+  assert.equal(corpo.seu, false);
+  assert.deepEqual(corpo.dados, FICHA);
+  assert.equal(JSON.stringify(corpo).includes(JOGADOR), false);
+  // com rev igual: só avisa que nada mudou
+  const igual = await (await chamar(env, 'GET', '/api/link/' + criado.token + '?rev=' + corpo.rev)).json();
+  assert.equal(igual.igual, true);
+  assert.equal(igual.dados, undefined);
+  // o dono reconhece o próprio link
+  assert.equal((await (await chamar(env, 'GET', '/api/link/' + criado.token, { cookie: marina })).json()).seu, true);
+
+  // só ver: ninguém grava, nem logado
+  const outro = await entrar(env, OUTRO, 'Outro');
+  assert.equal((await chamar(env, 'PUT', '/api/link/' + criado.token, { cookie: outro, json: { dados: FICHA, baseRev: 1 } })).status, 403);
+
+  // trocar o modo mantém o token; "novo" troca o token e o antigo morre
+  const editar = (await (await chamar(env, 'PUT', '/api/fichas/f1/link', { cookie: marina, json: { modo: 'editar' } })).json()).link;
+  assert.equal(editar.token, criado.token);
+  assert.equal(editar.modo, 'editar');
+  const novo = (await (await chamar(env, 'PUT', '/api/fichas/f1/link', { cookie: marina, json: { modo: 'editar', novo: true } })).json()).link;
+  assert.notEqual(novo.token, criado.token);
+  assert.equal((await chamar(env, 'GET', '/api/link/' + criado.token)).status, 404);
+  assert.equal((await chamar(env, 'GET', '/api/link/' + novo.token)).status, 200);
+  assert.equal((await chamar(env, 'GET', '/api/link/curto')).status, 404);
+
+  // parar de compartilhar; apagar a ficha também derruba o link
+  assert.equal((await chamar(env, 'DELETE', '/api/fichas/f1/link', { cookie: marina })).status, 200);
+  assert.equal((await chamar(env, 'GET', '/api/link/' + novo.token)).status, 404);
+  const de_novo = (await (await chamar(env, 'PUT', '/api/fichas/f1/link', { cookie: marina, json: { modo: 'ver' } })).json()).link;
+  await chamar(env, 'DELETE', '/api/fichas/f1', { cookie: marina });
+  assert.equal((await chamar(env, 'GET', '/api/link/' + de_novo.token)).status, 404);
+  assert.equal(env.DB.bruto.prepare('SELECT COUNT(*) AS n FROM links_ficha').get().n, 0);
+});
+
+test('link: editar exige login, grava na ficha do dono com controle de versão e mostra a lista do dono com o link', async () => {
+  const env = ambiente();
+  const marina = await entrar(env, JOGADOR, 'Marina');
+  const editor = await entrar(env, OUTRO, 'Editor');
+  await chamar(env, 'PUT', '/api/fichas/f1', { cookie: marina, json: { dados: FICHA, baseRev: 0 } });
+  const { token } = (await (await chamar(env, 'PUT', '/api/fichas/f1/link', { cookie: marina, json: { modo: 'editar' } })).json()).link;
+  assert.equal((await (await chamar(env, 'GET', '/api/fichas', { cookie: marina })).json()).fichas[0].link, 'editar');
+
+  assert.equal((await chamar(env, 'PUT', '/api/link/' + token, { json: { dados: FICHA, baseRev: 1 } })).status, 401); // sem login
+  assert.equal((await chamar(env, 'PUT', '/api/link/' + token, { cookie: editor, origem: 'https://mal.exemplo', json: { dados: FICHA, baseRev: 1 } })).status, 403);
+
+  const editada = Object.assign({}, FICHA, { recursos: { pv: { atual: 3 } } });
+  const ok = await chamar(env, 'PUT', '/api/link/' + token, { cookie: editor, json: { dados: editada, baseRev: 1 } });
+  assert.equal(ok.status, 200);
+  assert.equal((await ok.json()).rev, 2);
+  const naNuvem = await (await chamar(env, 'GET', '/api/fichas/f1', { cookie: marina })).json();
+  assert.equal(naNuvem.rev, 2);
+  assert.equal(naNuvem.dados.recursos.pv.atual, 3);
+  assert.equal(env.DB.bruto.prepare('SELECT atualizado_por FROM fichas_nuvem').get().atualizado_por, OUTRO);
+
+  // o editor com versão velha leva 409; o dono também (a ficha mudou por link)
+  assert.equal((await chamar(env, 'PUT', '/api/link/' + token, { cookie: editor, json: { dados: FICHA, baseRev: 1 } })).status, 409);
+  assert.equal((await chamar(env, 'PUT', '/api/fichas/f1', { cookie: marina, json: { dados: FICHA, baseRev: 1 } })).status, 409);
+  // o editor não consegue ler nem apagar a ficha pela rota da conta
+  assert.equal((await chamar(env, 'GET', '/api/fichas/f1', { cookie: editor })).status, 404);
+  assert.equal((await chamar(env, 'DELETE', '/api/fichas/f1', { cookie: editor })).status, 200); // apaga a "dele" (inexistente): nada acontece
+  assert.equal((await chamar(env, 'GET', '/api/fichas/f1', { cookie: marina })).status, 200);
+});
+
+test('nuvem sem as tabelas novas: a API avisa que falta rodar o schema (e /api/eu diz nuvem: false)', async () => {
+  const env = ambiente();
+  env.DB.bruto.exec('DROP TABLE fichas_nuvem; DROP TABLE links_ficha;');
+  const jogador = await entrar(env, JOGADOR, 'Marina');
+  assert.equal((await (await chamar(env, 'GET', '/api/eu', { cookie: jogador })).json()).nuvem, false);
+  const r = await chamar(env, 'GET', '/api/fichas', { cookie: jogador });
+  assert.equal(r.status, 503);
+  assert.match((await r.json()).erro, /schema\.sql/);
+});

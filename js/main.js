@@ -40,6 +40,11 @@ window.OP = window.OP || {};
    */
   function aoMudarFicha(ficha, caminho) {
     const corrigiu = redesenhar(ficha);
+    // Ficha aberta por link: não grava neste navegador; em "editar", as mudanças vão para a ficha do dono
+    if (OP.fichas.ehExterna()) {
+      if (caminho !== '*') OP.nuvem.aoEditarExterna();
+      return;
+    }
     if (caminho === '*' && OP.fichas.ehRascunho()) return;
     if (caminho !== '*' || corrigiu) OP.fichas.agendarSalvamento();
   }
@@ -64,6 +69,8 @@ window.OP = window.OP || {};
     OP.uiRegras.montar();      // regras opcionais (por ficha): Jogando sem Sanidade e NEX e Experiência
     OP.uiDefesa.montar();      // Defesa, Esquiva, Bloqueio (cálculo) e RD por tipo de dano
     OP.uiNex.montar();         // painel Alterações de NEX (regra NEX e Experiência)
+    OP.nuvem.montar();         // fichas na conta (sincronia) e link de compartilhamento
+    OP.uiNuvem.montar();       // telas da nuvem: Compartilhar, Conta e a faixa da ficha de link
     OP.state.aoMudar(aoMudarFicha);
     const corrigiu = redesenhar(OP.state.ficha);
     // Se a ficha salva tinha valores fora dos limites, já grava a versão corrigida.

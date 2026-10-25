@@ -930,7 +930,11 @@ window.OP = window.OP || {};
   function mostrarStatus(status) {
     let texto;
     let estado;
-    if (status.estado === 'pendente') {
+    if (OP.fichas.ehExterna()) {
+      // Ficha de um link: nada é salvo neste navegador
+      texto = OP.nuvem.textoDoStatus();
+      estado = 'ok';
+    } else if (status.estado === 'pendente') {
       texto = 'Salvando…';
       estado = 'pendente';
     } else if (status.estado === 'falha') {

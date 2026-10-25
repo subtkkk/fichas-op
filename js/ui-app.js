@@ -6,6 +6,7 @@
    - #/arquivo        Arquivo de agentes (biblioteca de fichas)
    - #/ficha/<id>     abre a ficha <id> (OP.fichas.abrir) e mostra a ficha
    - #/ficha          a ficha aberta
+   - #/compartilhada/<token>  a ficha de um link de compartilhamento (js/nuvem.js; só na memória)
    Âncoras comuns (ex.: #secao-pericias) não são rotas e são ignoradas.
    A tela ativa fica em <body data-vista="...">; o CSS mostra só ela.
    Avisos rápidos: OP.uiApp.aviso('ok'|'aviso'|'erro', texto) — sempre por
@@ -48,6 +49,7 @@ window.OP = window.OP || {};
     if (!texto || texto === '#' || texto === '#/') return { vista: 'central', id: null };
     if (texto.indexOf('#/') !== 0) return null;
     const partes = texto.slice(2).split('/');
+    if (partes[0] === 'compartilhada') return { vista: 'ficha', id: null, token: partes[1] || '' };
     const vista = VISTAS.indexOf(partes[0]) !== -1 ? partes[0] : 'central';
     let id = null;
     if (vista === 'ficha' && partes[1]) {
@@ -96,10 +98,44 @@ window.OP = window.OP || {};
     }
   }
 
+  /** Abre a ficha de um link de compartilhamento (assíncrono: vem do servidor). */
+  function abrirCompartilhada(token) {
+    const atual = OP.nuvem.estado.externa;
+    if (OP.fichas.ehExterna() && atual && atual.token === token) {
+      mostrarVista('ficha');
+      return;
+    }
+    refs.abrindoLink = token;
+    if (!document.body.dataset.vista) mostrarVista('central'); // enquanto o link carrega
+    OP.nuvem.abrirLink(token).then(function (r) {
+      if (refs.abrindoLink !== token) return; // a pessoa já foi para outra tela
+      refs.abrindoLink = null;
+      if (!r.ok) {
+        aviso('erro', r.erro);
+        substituirHash('#/central');
+        mostrarVista('central');
+        return;
+      }
+      if (r.redirecionar) { // é uma ficha da própria pessoa que já está neste navegador
+        substituirHash(hashDe('ficha', r.redirecionar));
+        aplicarRota();
+        return;
+      }
+      mostrarVista('ficha');
+    });
+  }
+
   /** Aplica a rota atual: abre a ficha pedida, se for o caso, e mostra a tela. */
   function aplicarRota() {
     const rota = lerRota();
     if (!rota) return; // âncora dentro da página: não muda de tela
+
+    if (rota.token !== undefined) {
+      abrirCompartilhada(rota.token);
+      return;
+    }
+    refs.abrindoLink = null;
+    if (OP.fichas.ehExterna()) OP.nuvem.sairDoLink(); // saiu da ficha de um link: volta a ficha daqui
 
     if (rota.vista === 'ficha') {
       if (rota.id && rota.id !== OP.fichas.idAtual()) {
@@ -133,8 +169,9 @@ window.OP = window.OP || {};
       else item.removeAttribute('aria-current');
     });
     const semFicha = OP.fichas.ehRascunho();
+    const externa = OP.fichas.ehExterna() ? OP.nuvem.estado.externa : null;
     refs.navFicha.hidden = semFicha;
-    refs.navFicha.setAttribute('href', semFicha ? '#/ficha' : hashDe('ficha', OP.fichas.idAtual()));
+    refs.navFicha.setAttribute('href', externa ? '#/compartilhada/' + externa.token : semFicha ? '#/ficha' : hashDe('ficha', OP.fichas.idAtual()));
   }
 
   function atualizarTitulo(vista) {

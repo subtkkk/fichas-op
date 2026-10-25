@@ -8,6 +8,8 @@
      • códigos de acesso de uso único e curta validade, que liberam "escopos"
        de conteúdo por X dias;
      • o conteúdo protegido (texto integral), entregue só a quem tem acesso;
+     • as fichas na conta (nuvem) e o compartilhamento de uma ficha por link
+       (só ver, ou ver e editar para quem entrou com o Discord);
      • rotas de admin (o dono, pelo ID do Discord em ADMIN_DISCORD_ID).
    Segredos (nunca no repositório): DISCORD_CLIENT_SECRET e SEGREDO (chave que
    amarra o hash dos códigos). Variáveis: DISCORD_CLIENT_ID e ADMIN_DISCORD_ID.
@@ -23,6 +25,11 @@ const LIMITE_TEXTO = 100000; // caracteres por item de conteúdo
 const LIMITE_ITENS = 500;
 const ESCOPO_VALIDO = /^[a-z0-9-]{1,40}$/;
 const CHAVE_VALIDA = /^[a-zA-Z0-9._-]{1,80}$/;
+const ID_FICHA_VALIDO = /^[A-Za-z0-9_-]{1,64}$/;
+const TOKEN_LINK_VALIDO = /^[0-9a-f]{48}$/;
+const LIMITE_FICHAS_NUVEM = 50;      // fichas por conta
+const LIMITE_BYTES_FICHA = 1500000;  // tamanho da ficha em JSON (o retrato entra aí)
+const MODOS_LINK = ['ver', 'editar'];
 
 /* ------------------------------------------------------------------------
    Utilitários
@@ -212,6 +219,7 @@ async function quemSou(request, env) {
   return resposta({
     configurado: true,
     conectado: true,
+    nuvem: await nuvemAtiva(env),
     usuario: { id: usuario.discord_id, nome: usuario.nome, avatar: usuario.avatar },
     admin: ehAdmin(env, usuario.discord_id),
     acessos: await acessosAtivos(env, usuario.discord_id)
@@ -377,6 +385,182 @@ async function apagarConteudo(env, escopo) {
 }
 
 /* ------------------------------------------------------------------------
+   Fichas na nuvem (da conta)
+   ------------------------------------------------------------------------ */
+
+const MSG_SEM_NUVEM = 'A nuvem ainda não foi ativada neste banco (rode o worker/schema.sql de novo no Console do D1).';
+
+function tamanhoEmBytes(texto) {
+  return new TextEncoder().encode(texto).length;
+}
+
+/** Lê { dados, baseRev } do corpo e confere o tamanho e o formato. Devolve { dados, texto, baseRev } ou { erro: Response }. */
+async function lerFichaDoCorpo(request) {
+  // Recusa antes de ler um corpo claramente grande demais
+  if (Number(request.headers.get('content-length')) > LIMITE_BYTES_FICHA * 2) return { erro: erro(413, 'A ficha é grande demais para a nuvem.') };
+  const bruto = await request.text();
+  if (tamanhoEmBytes(bruto) > LIMITE_BYTES_FICHA + 1000) return { erro: erro(413, 'A ficha é grande demais para a nuvem (limite de ' + Math.round(LIMITE_BYTES_FICHA / 1000) + ' mil caracteres; o retrato pesa bastante).') };
+  let corpo = null;
+  try { corpo = JSON.parse(bruto); } catch (e) { corpo = null; }
+  if (!corpo || typeof corpo !== 'object' || !corpo.dados || typeof corpo.dados !== 'object' || Array.isArray(corpo.dados)) return { erro: erro(400, 'Envie { "dados": { ...ficha }, "baseRev": número }.') };
+  const baseRev = corpo.baseRev === undefined || corpo.baseRev === null ? 0 : Number(corpo.baseRev);
+  if (!Number.isInteger(baseRev) || baseRev < 0) return { erro: erro(400, 'baseRev inválido.') };
+  const texto = JSON.stringify(corpo.dados);
+  if (tamanhoEmBytes(texto) > LIMITE_BYTES_FICHA) return { erro: erro(413, 'A ficha é grande demais para a nuvem (limite de ' + Math.round(LIMITE_BYTES_FICHA / 1000) + ' mil caracteres; o retrato pesa bastante).') };
+  return { dados: corpo.dados, texto: texto, baseRev: baseRev };
+}
+
+/** Nome, classe e NEX para a lista (a ficha vem de fora: tudo cortado e conferido). */
+function resumoDaFicha(dados) {
+  const ident = dados && typeof dados.identificacao === 'object' && dados.identificacao ? dados.identificacao : {};
+  const nex = Number(ident.nex);
+  return {
+    nome: String(ident.nome || '').slice(0, 200),
+    classe: String(ident.classe || '').slice(0, 40),
+    nex: Number.isFinite(nex) ? Math.max(0, Math.min(99, Math.trunc(nex))) : 0
+  };
+}
+
+async function listarFichasNuvem(env, usuario) {
+  const { results } = await env.DB.prepare(
+    'SELECT f.id, f.nome, f.classe, f.nex, f.rev, f.atualizado_em, l.modo AS link_modo FROM fichas_nuvem f ' +
+    'LEFT JOIN links_ficha l ON l.discord_id = f.discord_id AND l.ficha_id = f.id WHERE f.discord_id = ? ORDER BY f.atualizado_em DESC'
+  ).bind(usuario.discord_id).all();
+  return resposta({
+    limite: LIMITE_FICHAS_NUVEM,
+    fichas: (results || []).map(function (f) {
+      return { id: f.id, nome: f.nome, classe: f.classe, nex: f.nex, rev: f.rev, atualizado_em: f.atualizado_em, link: f.link_modo || null };
+    })
+  });
+}
+
+async function lerFichaNuvem(env, usuario, id) {
+  const f = await env.DB.prepare('SELECT id, dados, rev, atualizado_em FROM fichas_nuvem WHERE discord_id = ? AND id = ?').bind(usuario.discord_id, id).first();
+  if (!f) return erro(404, 'Ficha não encontrada na nuvem.');
+  return resposta({ id: f.id, rev: f.rev, atualizado_em: f.atualizado_em, dados: JSON.parse(f.dados) });
+}
+
+/**
+ * Grava uma ficha da conta com controle de versão: baseRev é a versão em que a
+ * pessoa se baseou (0 = ficha nova). Se a versão da nuvem mudou, devolve 409 com
+ * a versão atual (quem chama decide o que fazer, sem perder nada).
+ * quemEditou: o id de quem gravou (o dono, ou quem editou pelo link).
+ */
+async function gravarFichaNuvem(env, donoId, id, entrada, quemEditou) {
+  const t = agora(env);
+  const atual = await env.DB.prepare('SELECT rev FROM fichas_nuvem WHERE discord_id = ? AND id = ?').bind(donoId, id).first();
+  const r = resumoDaFicha(entrada.dados);
+  if (!atual) {
+    if (entrada.baseRev !== 0) return resposta({ erro: 'Esta ficha não existe mais na nuvem.', apagada: true }, 409);
+    const total = await env.DB.prepare('SELECT COUNT(*) AS n FROM fichas_nuvem WHERE discord_id = ?').bind(donoId).first();
+    if (total && total.n >= LIMITE_FICHAS_NUVEM) return erro(403, 'Limite de ' + LIMITE_FICHAS_NUVEM + ' fichas na nuvem atingido. Exclua alguma para enviar outra.');
+    await env.DB.prepare(
+      'INSERT INTO fichas_nuvem (discord_id, id, nome, classe, nex, dados, rev, criado_em, atualizado_em, atualizado_por) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?)'
+    ).bind(donoId, id, r.nome, r.classe, r.nex, entrada.texto, t, t, quemEditou).run();
+    return resposta({ ok: true, rev: 1, atualizado_em: t });
+  }
+  // Só grava se ninguém mexeu desde a versão em que a pessoa se baseou (compara e troca num comando só)
+  const feito = await env.DB.prepare(
+    'UPDATE fichas_nuvem SET nome = ?, classe = ?, nex = ?, dados = ?, rev = rev + 1, atualizado_em = ?, atualizado_por = ? WHERE discord_id = ? AND id = ? AND rev = ?'
+  ).bind(r.nome, r.classe, r.nex, entrada.texto, t, quemEditou, donoId, id, entrada.baseRev).run();
+  if (!feito.meta || feito.meta.changes !== 1) {
+    const agoraNaNuvem = await env.DB.prepare('SELECT rev, atualizado_em FROM fichas_nuvem WHERE discord_id = ? AND id = ?').bind(donoId, id).first();
+    return resposta({ erro: 'A ficha mudou na nuvem desde a última vez que você a leu.', conflito: true, rev: agoraNaNuvem ? agoraNaNuvem.rev : null, atualizado_em: agoraNaNuvem ? agoraNaNuvem.atualizado_em : null }, 409);
+  }
+  return resposta({ ok: true, rev: entrada.baseRev + 1, atualizado_em: t });
+}
+
+async function enviarFichaNuvem(request, env, usuario, id) {
+  const entrada = await lerFichaDoCorpo(request);
+  if (entrada.erro) return entrada.erro;
+  return gravarFichaNuvem(env, usuario.discord_id, id, entrada, usuario.discord_id);
+}
+
+async function apagarFichaNuvem(env, usuario, id) {
+  await env.DB.batch([
+    env.DB.prepare('DELETE FROM links_ficha WHERE discord_id = ? AND ficha_id = ?').bind(usuario.discord_id, id),
+    env.DB.prepare('DELETE FROM fichas_nuvem WHERE discord_id = ? AND id = ?').bind(usuario.discord_id, id)
+  ]);
+  return resposta({ ok: true });
+}
+
+/* ------------------------------------------------------------------------
+   Link de compartilhamento ("ver" ou "editar")
+   ------------------------------------------------------------------------ */
+
+async function lerLinkDaFicha(env, usuario, id) {
+  const l = await env.DB.prepare('SELECT token, modo, criado_em FROM links_ficha WHERE discord_id = ? AND ficha_id = ?').bind(usuario.discord_id, id).first();
+  return resposta({ link: l ? { token: l.token, modo: l.modo, criado_em: l.criado_em } : null });
+}
+
+/** Liga o link (ou muda o modo). corpo.novo = true troca o token: o link antigo para de funcionar. */
+async function definirLinkDaFicha(request, env, usuario, id) {
+  const corpo = await lerJson(request);
+  const modo = corpo && String(corpo.modo);
+  if (MODOS_LINK.indexOf(modo) === -1) return erro(400, 'O modo do link é "ver" ou "editar".');
+  const existe = await env.DB.prepare('SELECT 1 AS x FROM fichas_nuvem WHERE discord_id = ? AND id = ?').bind(usuario.discord_id, id).first();
+  if (!existe) return erro(404, 'Salve a ficha na nuvem antes de compartilhar.');
+  const atual = await env.DB.prepare('SELECT token FROM links_ficha WHERE discord_id = ? AND ficha_id = ?').bind(usuario.discord_id, id).first();
+  const t = agora(env);
+  if (atual && !(corpo && corpo.novo === true)) {
+    await env.DB.prepare('UPDATE links_ficha SET modo = ? WHERE token = ?').bind(modo, atual.token).run();
+    return resposta({ link: { token: atual.token, modo: modo } });
+  }
+  const token = aleatorioHex(24);
+  await env.DB.batch([
+    env.DB.prepare('DELETE FROM links_ficha WHERE discord_id = ? AND ficha_id = ?').bind(usuario.discord_id, id),
+    env.DB.prepare('INSERT INTO links_ficha (token, discord_id, ficha_id, modo, criado_em) VALUES (?, ?, ?, ?, ?)').bind(token, usuario.discord_id, id, modo, t)
+  ]);
+  return resposta({ link: { token: token, modo: modo } });
+}
+
+async function apagarLinkDaFicha(env, usuario, id) {
+  await env.DB.prepare('DELETE FROM links_ficha WHERE discord_id = ? AND ficha_id = ?').bind(usuario.discord_id, id).run();
+  return resposta({ ok: true });
+}
+
+/** A ficha e o modo por trás de um token (ou null). */
+async function acharLink(env, token) {
+  if (!TOKEN_LINK_VALIDO.test(token)) return null;
+  return env.DB.prepare(
+    'SELECT l.modo, l.discord_id AS dono_id, l.ficha_id, f.dados, f.rev, f.atualizado_em, u.nome AS dono_nome ' +
+    'FROM links_ficha l JOIN fichas_nuvem f ON f.discord_id = l.discord_id AND f.id = l.ficha_id LEFT JOIN usuarios u ON u.discord_id = l.discord_id WHERE l.token = ?'
+  ).bind(token).first();
+}
+
+/** Qualquer pessoa com o link vê a ficha (sem login). ?rev=N devolve só { igual: true } se nada mudou. */
+async function abrirLink(request, env, token) {
+  const l = await acharLink(env, token);
+  if (!l) return erro(404, 'Este link não existe mais ou foi desativado.');
+  const usuario = await usuarioDaSessao(request, env);
+  const seu = Boolean(usuario) && usuario.discord_id === l.dono_id;
+  const visto = Number(new URL(request.url).searchParams.get('rev'));
+  const base = { modo: l.modo, dono: l.dono_nome || 'Jogador', rev: l.rev, atualizado_em: l.atualizado_em, id: l.ficha_id, seu: seu, conectado: Boolean(usuario) };
+  if (Number.isInteger(visto) && visto === l.rev) return resposta(Object.assign({ igual: true }, base));
+  return resposta(Object.assign({ dados: JSON.parse(l.dados) }, base));
+}
+
+/** Edição por link: só com login e só se o dono liberou "editar". Segue a mesma regra de versão (409). */
+async function editarPorLink(request, env, usuario, token) {
+  const l = await acharLink(env, token);
+  if (!l) return erro(404, 'Este link não existe mais ou foi desativado.');
+  if (l.modo !== 'editar') return erro(403, 'Este link é só para visualizar.');
+  const entrada = await lerFichaDoCorpo(request);
+  if (entrada.erro) return entrada.erro;
+  return gravarFichaNuvem(env, l.dono_id, l.ficha_id, entrada, usuario.discord_id);
+}
+
+async function nuvemAtiva(env) {
+  try {
+    await env.DB.prepare('SELECT 1 AS x FROM fichas_nuvem LIMIT 1').first();
+    await env.DB.prepare('SELECT 1 AS x FROM links_ficha LIMIT 1').first();
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+/* ------------------------------------------------------------------------
    Roteador
    ------------------------------------------------------------------------ */
 
@@ -395,13 +579,35 @@ async function tratar(request, env) {
   if (metodo === 'GET' && caminho === '/api/auth/discord/retorno') return concluirLogin(request, env);
   if (metodo === 'GET' && caminho === '/api/eu') return quemSou(request, env);
 
+  // Quem tem o link vê a ficha sem entrar (o token de 192 bits é a chave)
+  let achado = caminho.match(/^\/api\/link\/([^/]+)$/);
+  if (metodo === 'GET' && achado) return abrirLink(request, env, achado[1]);
+
   const usuario = await usuarioDaSessao(request, env);
   if (!usuario) return erro(401, 'Entre com o Discord para continuar.');
 
   if (metodo === 'POST' && caminho === '/api/sair') return sair(request, env);
   if (metodo === 'POST' && caminho === '/api/resgatar') return resgatar(request, env, usuario);
 
-  let achado = caminho.match(/^\/api\/conteudo\/([^/]+)$/);
+  achado = caminho.match(/^\/api\/link\/([^/]+)$/);
+  if (metodo === 'PUT' && achado) return editarPorLink(request, env, usuario, achado[1]);
+
+  if (metodo === 'GET' && caminho === '/api/fichas') return listarFichasNuvem(env, usuario);
+  achado = caminho.match(/^\/api\/fichas\/([^/]+)(\/link)?$/);
+  if (achado) {
+    if (!ID_FICHA_VALIDO.test(achado[1])) return erro(400, 'Id de ficha inválido.');
+    if (!achado[2]) {
+      if (metodo === 'GET') return lerFichaNuvem(env, usuario, achado[1]);
+      if (metodo === 'PUT') return enviarFichaNuvem(request, env, usuario, achado[1]);
+      if (metodo === 'DELETE') return apagarFichaNuvem(env, usuario, achado[1]);
+    } else {
+      if (metodo === 'GET') return lerLinkDaFicha(env, usuario, achado[1]);
+      if (metodo === 'PUT') return definirLinkDaFicha(request, env, usuario, achado[1]);
+      if (metodo === 'DELETE') return apagarLinkDaFicha(env, usuario, achado[1]);
+    }
+  }
+
+  achado = caminho.match(/^\/api\/conteudo\/([^/]+)$/);
   if (metodo === 'GET' && achado) return lerConteudo(env, usuario, achado[1]);
 
   if (caminho.startsWith('/api/admin/')) {
@@ -426,6 +632,7 @@ export default {
       return await tratar(request, env);
     } catch (e) {
       console.error('Erro no Worker:', e && e.message);
+      if (/no such table: (fichas_nuvem|links_ficha)/i.test(String(e && e.message))) return erro(503, MSG_SEM_NUVEM);
       return erro(500, 'Erro interno. Tente de novo.');
     }
   }

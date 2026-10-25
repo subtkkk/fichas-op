@@ -14,7 +14,7 @@ window.OP = window.OP || {};
   'use strict';
 
   const refs = {};
-  const estado = { disponivel: false, conectado: false, usuario: null, admin: false, acessos: [] };
+  const estado = { disponivel: false, conectado: false, usuario: null, admin: false, acessos: [], nuvem: false };
   const memoria = {};
 
   function podeUsarApi() {
@@ -89,11 +89,13 @@ window.OP = window.OP || {};
       estado.usuario = r.dados.usuario || null;
       estado.admin = !!r.dados.admin;
       estado.acessos = r.dados.acessos || [];
+      estado.nuvem = r.dados.nuvem === true; // as fichas na conta dependem das tabelas novas do banco
     } catch (erro) {
       estado.disponivel = false; // sem API: a ficha segue normal
     }
     desenhar();
     recarregarLivro();
+    if (OP.nuvem) OP.nuvem.atualizar(); // liga ou desliga a sincronia das fichas
   }
 
   /** O conteúdo do livro depende dos acessos: recarrega (ou esvazia) quando eles mudam. */
@@ -140,10 +142,12 @@ window.OP = window.OP || {};
     estado.usuario = null;
     estado.admin = false;
     estado.acessos = [];
+    estado.nuvem = false;
     Object.keys(memoria).forEach(function (k) { delete memoria[k]; });
     mostrarAviso('');
     desenhar();
     recarregarLivro();
+    if (OP.nuvem) OP.nuvem.atualizar();
   }
 
   /** Conteúdo protegido de um escopo; só em memória. Resolve com a lista de itens, ou rejeita com a mensagem do servidor. */
@@ -153,6 +157,24 @@ window.OP = window.OP || {};
     if (!r.ok) throw new Error(r.dados.erro || 'Sem acesso.');
     memoria[escopo] = r.dados.itens;
     return r.dados.itens;
+  }
+
+  const CHAVE_VOLTA = 'op_voltar';
+
+  function lembrarOndeEstava() {
+    try {
+      if (/^#\/compartilhada\/[0-9a-f]{48}$/.test(location.hash)) sessionStorage.setItem(CHAVE_VOLTA, location.hash);
+    } catch (erro) { /* sem sessionStorage: volta para a Central */ }
+  }
+
+  function recuperarOndeEstava() {
+    try {
+      const volta = sessionStorage.getItem(CHAVE_VOLTA);
+      sessionStorage.removeItem(CHAVE_VOLTA);
+      return /^#\/compartilhada\/[0-9a-f]{48}$/.test(volta || '') ? volta : '';
+    } catch (erro) {
+      return '';
+    }
   }
 
   function abrir() {
@@ -184,14 +206,20 @@ window.OP = window.OP || {};
       if (evento.target.closest('[data-fechar-dialogo]')) refs.dialogo.close();
     });
 
+    // O login sai do site e volta para a raiz: lembra onde a pessoa estava (ex.: o link de uma ficha) para voltar
+    refs.entrar = document.getElementById('conta-entrar');
+    if (refs.entrar) refs.entrar.addEventListener('click', lembrarOndeEstava);
+
     const voltouDoLogin = /[?&]conta=ok\b/.test(location.search);
     carregar().then(function () {
       if (voltouDoLogin && estado.disponivel) {
         history.replaceState(null, '', location.pathname + location.hash);
-        abrir();
+        const volta = recuperarOndeEstava();
+        if (volta) location.hash = volta;
+        else abrir();
       }
     });
   }
 
-  OP.conta = { montar: montar, estado: estado, conteudo: conteudo, recarregar: carregar };
+  OP.conta = { montar: montar, estado: estado, conteudo: conteudo, recarregar: carregar, pedir: pedir, abrir: abrir };
 })(window.OP);

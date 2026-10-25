@@ -1073,7 +1073,8 @@ input[type="checkbox"] {
   grid-template-columns: minmax(0, 2fr) minmax(0, 0.9fr) minmax(0, 0.4fr) minmax(0, 0.55fr) minmax(0, 0.4fr) minmax(0, 2.7fr) 0;
   grid-template-areas:
     "nome tipo cat esp qtd det acoes"
-    "desc desc desc desc desc desc desc";
+    "desc desc desc desc desc desc desc"
+    "mel  mel  mel  mel  mel  mel  mel";
   column-gap: 6pt;
   row-gap: 0;
 }
@@ -1118,6 +1119,75 @@ input[type="checkbox"] {
 
 .item[data-tipo-item] .item__detalhes {
   display: block;
+}
+
+/* Melhorias do item: o painel abre no papel só nos itens que têm melhorias (OP.uiItens.imprimir) */
+.item__melhorias {
+  margin: 0;
+  padding: 0 0 1pt 10pt;
+  background: none;
+  border: 0;
+}
+
+.item__melhorias[data-sem-melhorias],
+.item__melhorias-acoes,
+.melhoria__acoes,
+.melhoria__nota--vazia,
+.item__efetivo {
+  display: none;
+}
+
+.melhoria {
+  padding: 0 0 0 4pt;
+  background: none;
+  border-width: 0 0 0 1.5pt;
+  border-radius: 0;
+}
+
+.item__resumo {
+  margin: 0;
+  font-size: 8pt;
+}
+
+.item__natureza {
+  display: flex;
+  align-items: baseline;
+  gap: 4pt;
+  font-size: 8pt;
+}
+
+.item__natureza > span {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.item__natureza > span::after {
+  content: ":";
+}
+
+.item__melhorias-lista {
+  margin: 1pt 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.melhoria__topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6pt;
+}
+
+.melhoria__classe,
+.melhoria__elemento {
+  font-size: 7pt;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cor-texto-suave);
+}
+
+.melhoria__nome-texto {
+  font-size: 9pt;
 }
 
 .item__det--protecao {

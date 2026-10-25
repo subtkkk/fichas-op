@@ -46,7 +46,7 @@ Até 500 itens de 100 mil caracteres (chave de até 80 caracteres). Enviar de no
 
 ## Origens, habilidades e rituais do livro
 
-Os nomes de conteúdo usados pela ficha são `origens`, `habilidades` e `rituais` (um código pode liberar os três). Cada item do arquivo é o texto do livro mais, no fim, uma linha `§AUTO§{...}` que o site separa ao carregar (ela leva a classificação e os efeitos automáticos). Para gerar os arquivos a partir do txt, veja o README (`tools/gerar-conteudo.mjs`). Limites do Worker: até 500 itens por nome e 100 mil caracteres por item; `habilidades` tem 461.
+Os nomes de conteúdo usados pela ficha são `origens`, `habilidades` e `rituais` (um código pode liberar os três) e, do compêndio de itens, `itens` e `melhorias` (veja o README: "Itens e melhorias do compêndio"). Cada item do arquivo é o texto do livro mais, no fim, uma linha `§AUTO§{...}` que o site separa ao carregar (ela leva a classificação e os efeitos automáticos). Para gerar os arquivos a partir do txt, veja o README (`tools/gerar-conteudo.mjs`). Limites do Worker: até 500 itens por nome e 100 mil caracteres por item; `habilidades` tem 461, `itens` 263 e `melhorias` 103.
 
 ## Usar no site
 

@@ -527,10 +527,162 @@ window.OP = window.OP || {};
     return Math.max(0, capacidadeBase(ficha) + numero(inventarioSalvo(ficha).capacidadeBonus) + efeitosDaFicha(ficha).carga);
   }
 
-  /** Espaços usados = soma de espaços × quantidade de TODOS os itens. */
+  /* ---------- Melhorias dos itens (modificações, maldições e regalias) ----------
+     A categoria, os espaços e a Defesa de um item são os BASE (campos do item) mais o que as
+     melhorias mudam. A categoria vem das regras de data/melhorias.js (não precisa do livro);
+     os ajustes numéricos (espaços, Defesa, ataque, dano, margem) vêm do catálogo do livro e só
+     valem com o conteúdo liberado. Sem ele, a ficha funciona manualmente, como sempre. */
+
+  const ROMANOS_CATEGORIA = ['0', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+
+  /** Rótulo de uma categoria: 0, I a IV e, com melhorias, V, VI... (acima de X, o número). */
+  function rotuloCategoria(n) {
+    return ROMANOS_CATEGORIA[n] !== undefined ? ROMANOS_CATEGORIA[n] : String(n);
+  }
+
+  /** Melhorias de um item (só os objetos). */
+  function melhoriasDoItem(item) {
+    return item && Array.isArray(item.melhorias) ? item.melhorias.filter(function (m) { return m !== null && typeof m === 'object'; }) : [];
+  }
+
+  function classeDeMelhoria(id) {
+    return OP.data.classesMelhoria.find(function (c) { return c.id === id; }) || null;
+  }
+
+  function grupoDeItem(id) {
+    return OP.data.gruposItem.find(function (g) { return g.id === id; }) || null;
+  }
+
+  function grupoDeMelhoria(id) {
+    return OP.data.gruposMelhoria.find(function (g) { return g.id === id; }) || null;
+  }
+
+  /** Dados do item no catálogo do livro ({ nome, grupo, cat, esp, arma, protecao, limite... }) ou null. */
+  function itemDoCatalogo(chave) {
+    const mapa = catalogoLivro().itemPorChave;
+    return chave && mapa && temChave(mapa, chave) ? mapa[chave] : null;
+  }
+
+  /** Dados da melhoria no catálogo do livro ({ nome, cls, grupo, aj, so, somente, tambem, exclui, max }) ou null. */
+  function melhoriaDoCatalogo(chave) {
+    const mapa = catalogoLivro().melhoriaPorChave;
+    return chave && mapa && temChave(mapa, chave) ? mapa[chave] : null;
+  }
+
+  /** Quantas vezes a melhoria pode entrar no mesmo item (padrão 1; o catálogo pode dizer mais). */
+  function maximoDaMelhoria(melhoria) {
+    const entrada = melhoriaDoCatalogo(melhoria.chave);
+    const max = entrada ? Math.trunc(numero(entrada.max)) : 0;
+    return max >= 1 ? max : 1;
+  }
+
+  /**
+   * Melhorias do item que valem: as repetidas além do máximo (o livro não acumula)
+   * ficam de fora da conta, mas continuam na lista (e geram aviso).
+   */
+  function melhoriasQueValem(item) {
+    const usos = Object.create(null);
+    return melhoriasDoItem(item).filter(function (m) {
+      const id = m.chave || ('nome:' + String(m.nome || '').trim().toLowerCase() + '|' + m.classe);
+      usos[id] = (usos[id] || 0) + 1;
+      return usos[id] <= maximoDaMelhoria(m);
+    });
+  }
+
+  /**
+   * Quanto as melhorias somam à categoria (data/melhorias.js): modificação +I cada; a 1ª maldição +II
+   * e as seguintes +I; regalia não muda. Contam as melhorias que valem.
+   */
+  function aumentoDeCategoria(item) {
+    return aumentosDasMelhorias(item).reduce(function (soma, n) { return soma + n; }, 0);
+  }
+
+  /** O que cada melhoria soma à categoria (na ordem de item.melhorias; 0 para as que não valem). */
+  function aumentosDasMelhorias(item) {
+    const vale = melhoriasQueValem(item);
+    const contados = Object.create(null);
+    return melhoriasDoItem(item).map(function (m) {
+      const classe = classeDeMelhoria(m.classe);
+      if (!classe || vale.indexOf(m) === -1) return 0;
+      const i = contados[classe.id] || 0;
+      contados[classe.id] = i + 1;
+      return numero(classe.aumento[Math.min(i, classe.aumento.length - 1)]);
+    });
+  }
+
+  function categoriaBaseItem(item) {
+    return Math.max(0, Math.trunc(numero(item.categoria)));
+  }
+
+  /** Categoria que conta para a patente: a base mais o aumento das melhorias (pode passar de IV). */
+  function categoriaEfetivaItem(item) {
+    return categoriaBaseItem(item) + aumentoDeCategoria(item);
+  }
+
+  /** Soma dos ajustes numéricos das melhorias do catálogo: { esp, def, ataque, dano, margem }. */
+  function ajustesDoItem(item) {
+    const r = { esp: 0, def: 0, ataque: 0, dano: 0, margem: 0 };
+    melhoriasQueValem(item).forEach(function (m) {
+      const entrada = melhoriaDoCatalogo(m.chave);
+      const aj = entrada && entrada.aj && typeof entrada.aj === 'object' ? entrada.aj : null;
+      if (!aj) return;
+      Object.keys(r).forEach(function (k) { r[k] += numero(aj[k]); });
+    });
+    return r;
+  }
+
+  /** Espaços de UMA unidade: os do item mais o que as melhorias mudam, nunca abaixo de 0. */
+  function espacosDoItem(item) {
+    return Math.max(0, Math.round((numero(item.espacos) + ajustesDoItem(item).esp) * 100) / 100);
+  }
+
+  /** Defesa do item (proteções): a do item mais o que as melhorias dão. */
+  function defesaDoItem(item) {
+    return numero(item.defesa) + ajustesDoItem(item).def;
+  }
+
+  /** Natureza do item: a escolhida na ficha ou, se vazia, a do item do livro. '' = desconhecida. */
+  function grupoDoItem(item) {
+    if (typeof item.grupo === 'string' && item.grupo !== '' && grupoDeItem(item.grupo)) return item.grupo;
+    const entrada = itemDoCatalogo(item.catalogo);
+    return entrada && grupoDeItem(entrada.grupo) ? entrada.grupo : '';
+  }
+
+  function nomesDosGrupos(ids) {
+    return ids.map(function (id) { const g = grupoDeItem(id); return g ? g.nome.toLowerCase() : id; }).join(', ');
+  }
+
+  /**
+   * A melhoria serve para este item? { ok, incerto, motivo }.
+   * Regras (as mesmas de tools/gerar-arsenal.mjs): o grupo da melhoria diz que naturezas ela aceita
+   * (data/melhorias.js); no catálogo, "so" restringe essas naturezas, "somente" limita a itens do livro
+   * e "tambem" aceita outros itens. incerto: não dá para saber (melhoria própria ou sem dados do
+   * livro, item sem natureza) — nesses casos a ficha não reclama.
+   */
+  function compatibilidadeMelhoria(item, melhoria) {
+    const entrada = melhoriaDoCatalogo(melhoria.chave);
+    if (!entrada) return { ok: true, incerto: true, motivo: '' };
+    const grupo = grupoDeMelhoria(entrada.grupo);
+    if (!grupo) return { ok: true, incerto: true, motivo: '' };
+    if (Array.isArray(entrada.tambem) && item.catalogo && entrada.tambem.indexOf(item.catalogo) !== -1) return { ok: true, incerto: false, motivo: '' };
+    if (Array.isArray(entrada.somente) && entrada.somente.length) {
+      if (!item.catalogo) return { ok: true, incerto: true, motivo: '' };
+      if (entrada.somente.indexOf(item.catalogo) === -1) {
+        const nomes = entrada.somente.map(function (c) { const e = itemDoCatalogo(c); return e ? e.nome : c; });
+        return { ok: false, incerto: false, motivo: 'serve só para ' + nomes.join(' e ') };
+      }
+    }
+    const natureza = grupoDoItem(item);
+    if (!natureza) return { ok: true, incerto: true, motivo: '' };
+    const alvos = Array.isArray(entrada.so) && entrada.so.length ? entrada.so.filter(function (a) { return grupo.alvos.indexOf(a) !== -1; }) : grupo.alvos;
+    if (alvos.indexOf(natureza) !== -1) return { ok: true, incerto: false, motivo: '' };
+    return { ok: false, incerto: false, motivo: 'serve para ' + nomesDosGrupos(alvos) };
+  }
+
+  /** Espaços usados = soma de espaços (com as melhorias) × quantidade de TODOS os itens. */
   function espacosUsados(ficha) {
     const total = itensDaFicha(ficha).reduce(function (soma, item) {
-      return soma + Math.max(0, numero(item.espacos)) * quantidadeItem(item);
+      return soma + espacosDoItem(item) * quantidadeItem(item);
     }, 0);
     return Math.round(total * 100) / 100; // evita sobras de ponto flutuante (ex.: 0,5 × 3)
   }
@@ -584,7 +736,7 @@ window.OP = window.OP || {};
     return OP.data.categoriasItem.filter(function (categoria) { return categoria.chave !== null; }).map(function (categoria) {
       const limite = numero(patente.limites[categoria.chave]);
       const usados = itens.filter(function (item) {
-        return Math.trunc(numero(item.categoria)) === categoria.valor;
+        return categoriaEfetivaItem(item) === categoria.valor; // a categoria que conta é a efetiva (com as melhorias)
       }).reduce(function (soma, item) { return soma + quantidadeItem(item); }, 0);
       return { categoria: categoria.chave, limite: limite, usados: usados, excedeu: usados > limite };
     });
@@ -599,7 +751,7 @@ window.OP = window.OP || {};
 
   /** Soma da Defesa das proteções equipadas. */
   function defesaProtecoes(ficha) {
-    return protecoesEquipadas(ficha).reduce(function (soma, item) { return soma + numero(item.defesa); }, 0);
+    return protecoesEquipadas(ficha).reduce(function (soma, item) { return soma + defesaDoItem(item); }, 0);
   }
 
   /**
@@ -629,6 +781,42 @@ window.OP = window.OP || {};
   function penalidadeSemKit(ficha, idPericia) {
     const definicao = definicaoPericia(idPericia) || {};
     return definicao.kit && !kitAtivo(ficha, idPericia) ? Math.max(0, numero(OP.data.config.penalidadeSemKit)) : 0;
+  }
+
+  /** Itens cuja categoria efetiva passa da maior categoria (IV): [{ id, nome, categoria }]. */
+  function itensAcimaDeIV(ficha) {
+    const maxima = OP.data.categoriasItem[OP.data.categoriasItem.length - 1].valor;
+    return itensDaFicha(ficha).filter(function (item) { return categoriaEfetivaItem(item) > maxima; })
+      .map(function (item) { return { id: item.id, nome: String(item.nome || '').trim(), categoria: categoriaEfetivaItem(item) }; });
+  }
+
+  /**
+   * O que a tela mostra de cada item com melhorias: { [id]: { categoriaBase, categoriaEfetiva, aumento,
+   * espacosBase, espacosEfetivos, defesaBase, defesaEfetiva, ajustes,
+   * melhorias: [{ id, vale, ok, incerto, motivo, aumento }] } } (melhorias na ordem de item.melhorias).
+   */
+  function detalhesDosItens(ficha) {
+    const r = Object.create(null);
+    itensDaFicha(ficha).forEach(function (item) {
+      if (typeof item.id !== 'string') return;
+      const vale = melhoriasQueValem(item);
+      const aumentos = aumentosDasMelhorias(item);
+      r[item.id] = {
+        categoriaBase: categoriaBaseItem(item),
+        categoriaEfetiva: categoriaEfetivaItem(item),
+        aumento: aumentoDeCategoria(item),
+        espacosBase: Math.max(0, numero(item.espacos)),
+        espacosEfetivos: espacosDoItem(item),
+        defesaBase: numero(item.defesa),
+        defesaEfetiva: defesaDoItem(item),
+        ajustes: ajustesDoItem(item),
+        melhorias: melhoriasDoItem(item).map(function (m, j) {
+          const comp = compatibilidadeMelhoria(item, m);
+          return { id: m.id, vale: vale.indexOf(m) !== -1, ok: comp.ok, incerto: comp.incerto, motivo: comp.motivo, aumento: aumentos[j] };
+        })
+      };
+    });
+    return r;
   }
 
   /** Tudo o que a interface precisa do inventário. */
@@ -663,6 +851,8 @@ window.OP = window.OP || {};
       limites: limites,
       limitesPorCategoria: limitesPorCategoria,
       algumLimiteExcedido: limites.some(function (limite) { return limite.excedeu; }),
+      itens: detalhesDosItens(ficha),
+      acimaDeIV: itensAcimaDeIV(ficha),
       defesaProtecoes: defesaProtecoes(ficha),
       nomesProtecoes: protecoesEquipadas(ficha).map(function (item) { return item.nome; }),
       penalidadeCarga: penalidadeCarga(ficha)
@@ -672,7 +862,8 @@ window.OP = window.OP || {};
   /**
    * Correções para dados inválidos do inventário: patente inexistente volta
    * à primeira, crédito inexistente volta ao padrão (null), tipo inválido vira
-   * "geral", categoria fica entre 0 e 4 e kit sem perícia válida vira null.
+   * "geral", categoria fica entre 0 e 4, kit sem perícia válida vira null,
+   * natureza desconhecida vira "" e melhoria de classe desconhecida vira modificação.
    */
   function correcoesInventario(ficha) {
     const inventario = inventarioSalvo(ficha);
@@ -695,6 +886,14 @@ window.OP = window.OP || {};
       if (item.periciaKit !== null && !periciaTemKit(item.periciaKit)) {
         correcoes.push({ caminho: caminho + '.periciaKit', valor: null });
       }
+      if (typeof item.grupo === 'string' && item.grupo !== '' && !grupoDeItem(item.grupo)) {
+        correcoes.push({ caminho: caminho + '.grupo', valor: '' });
+      }
+      (Array.isArray(item.melhorias) ? item.melhorias : []).forEach(function (melhoria, j) {
+        if (melhoria !== null && typeof melhoria === 'object' && !classeDeMelhoria(melhoria.classe)) {
+          correcoes.push({ caminho: caminho + '.melhorias.' + j + '.classe', valor: 'modificacao' });
+        }
+      });
     });
     return correcoes;
   }
@@ -2992,7 +3191,56 @@ window.OP = window.OP || {};
         aviso('limite-itens', 'inventario', 'inv-patente', 'Categoria ' + limite.categoria + ': ' + limite.usados + ' itens para o limite de ' + limite.limite + '.');
       }
     });
+    verificarMelhorias(ficha, aviso);
     return lista;
+  }
+
+  /** Avisos sobre as melhorias dos itens (incompatível, repetida, em conflito, categoria acima de IV, patente, regalias). */
+  function verificarMelhorias(ficha, aviso) {
+    const nomeDe = function (item) { return '"' + (String(item.nome || '').trim() || 'item sem nome') + '"'; };
+    const nomeMel = function (m) { return '"' + (String(m.nome || '').trim() || (melhoriaDoCatalogo(m.chave) || {}).nome || 'melhoria sem nome') + '"'; };
+    let temMaldicao = false;
+    itensDaFicha(ficha).forEach(function (item) {
+      const lista = melhoriasDoItem(item);
+      if (!lista.length) return;
+      const vale = melhoriasQueValem(item);
+      lista.forEach(function (m) {
+        if (m.classe === 'maldicao') temMaldicao = true;
+        const comp = compatibilidadeMelhoria(item, m);
+        if (!comp.ok) {
+          aviso('melhoria-incompativel', 'inventario', null, 'Item ' + nomeDe(item) + ': a melhoria ' + nomeMel(m) + ' não combina com este item (' + comp.motivo + ').', item.id);
+        }
+        if (vale.indexOf(m) === -1) {
+          aviso('melhoria-repetida', 'inventario', null, 'Item ' + nomeDe(item) + ': ' + nomeMel(m) + ' está repetida; o livro não acumula, então a repetição não conta.', item.id);
+        }
+        const entrada = melhoriaDoCatalogo(m.chave);
+        (entrada && Array.isArray(entrada.exclui) ? entrada.exclui : []).forEach(function (outra) {
+          const conflito = lista.find(function (x) { return x.chave === outra; });
+          if (conflito && lista.indexOf(conflito) > lista.indexOf(m)) {
+            aviso('melhoria-conflito', 'inventario', null, 'Item ' + nomeDe(item) + ': ' + nomeMel(m) + ' não pode ser combinada com ' + nomeMel(conflito) + '.', item.id);
+          }
+        });
+      });
+      // Regalias de veículo: o limite vem da ficha do veículo no livro
+      const doLivro = itemDoCatalogo(item.catalogo);
+      const regalias = vale.filter(function (m) { return m.classe === 'regalia'; }).length;
+      if (doLivro && numero(doLivro.limite) > 0 && regalias > numero(doLivro.limite)) {
+        aviso('regalias-acima-limite', 'inventario', null, 'Veículo ' + nomeDe(item) + ': ' + regalias + ' regalias para um limite de ' + numero(doLivro.limite) + '.', item.id);
+      }
+    });
+    itensAcimaDeIV(ficha).forEach(function (a) {
+      const rotulo = a.categoria <= 4 ? String(a.categoria) : 'categoria ' + a.categoria;
+      aviso('item-acima-iv', 'inventario', null, 'Item ' + (a.nome ? '"' + a.nome + '"' : 'sem nome') + ': com as melhorias chega à ' + rotulo + ', acima da categoria IV. Só habilidades que reduzem a categoria permitem levá-lo.', a.id);
+    });
+    // Itens amaldiçoados só a partir de uma patente (data/melhorias.js)
+    const classeMaldicao = classeDeMelhoria('maldicao');
+    if (temMaldicao && classeMaldicao && classeMaldicao.patenteMinima) {
+      const minima = OP.data.patentes.findIndex(function (p) { return p.id === classeMaldicao.patenteMinima; });
+      const atual = OP.data.patentes.findIndex(function (p) { return p.id === patenteAtual(ficha); });
+      if (minima > atual && atual !== -1) {
+        aviso('maldicao-patente', 'inventario', 'inv-patente', 'Há itens com maldição, mas a patente ' + dadosPatente(patenteAtual(ficha)).nome + ' ainda não dá acesso a itens amaldiçoados (a partir de ' + OP.data.patentes[minima].nome + ').');
+      }
+    }
   }
 
   /* ------------------------------------------------------------------------
@@ -3330,11 +3578,20 @@ window.OP = window.OP || {};
     return dadosEfeitosPericia(ficha, ataque && ataque.pericia) + numero(r.dadosAtaque[tipoDeAtaque(ataque)]);
   }
 
-  /** Bônus fixos de efeitos num ataque: { teste, dano, margem }. */
+  /** Bônus fixos num ataque: { teste, dano, margem }, dos efeitos automáticos e das melhorias da arma ligada. */
   function bonusEfeitosAtaque(ficha, ataque) {
     const r = efeitosDaFicha(ficha);
     const t = tipoDeAtaque(ataque);
-    return r.ativo ? { teste: numero(r.ataque[t]), dano: numero(r.dano[t]), margem: numero(r.margem[t]) } : { teste: 0, dano: 0, margem: 0 };
+    const bonus = r.ativo ? { teste: numero(r.ataque[t]), dano: numero(r.dano[t]), margem: numero(r.margem[t]) } : { teste: 0, dano: 0, margem: 0 };
+    // Melhorias da arma do inventário ligada ao ataque (Certeira +2 no ataque, Cruel +2 no dano, Perigosa +2 na margem...)
+    const arma = armaDoAtaque(ficha, ataque);
+    if (arma) {
+      const aj = ajustesDoItem(arma);
+      bonus.teste += aj.ataque;
+      bonus.dano += aj.dano;
+      bonus.margem += aj.margem;
+    }
+    return bonus;
   }
 
   /* ---------- Gastos opcionais (preparados antes do teste) ---------- */
@@ -4005,6 +4262,19 @@ window.OP = window.OP || {};
     usosDaFicha: usosDaFicha,
     bonusDeCura: bonusDeCura,
     bonusEfeitosAtaque: bonusEfeitosAtaque,
+    rotuloCategoria: rotuloCategoria,
+    melhoriasDoItem: melhoriasDoItem,
+    melhoriasQueValem: melhoriasQueValem,
+    aumentoDeCategoria: aumentoDeCategoria,
+    aumentosDasMelhorias: aumentosDasMelhorias,
+    categoriaEfetivaItem: categoriaEfetivaItem,
+    ajustesDoItem: ajustesDoItem,
+    espacosDoItem: espacosDoItem,
+    defesaDoItem: defesaDoItem,
+    grupoDoItem: grupoDoItem,
+    itemDoCatalogo: itemDoCatalogo,
+    melhoriaDoCatalogo: melhoriaDoCatalogo,
+    compatibilidadeMelhoria: compatibilidadeMelhoria,
     resistenciaEfeitos: resistenciaEfeitos,
     pendenciasDeEfeitos: pendenciasDeEfeitos,
     ajusteCustoRitualEfeitos: ajusteCustoRitualEfeitos,

@@ -417,7 +417,7 @@ function alvosEfetivos(meta) {
 
 function textoAumento(cls) {
   const c = classeMelhoria(cls);
-  if (cls === 'modificacao') return '+1 categoria';
+  if (cls === 'modificacao' || cls === 'regalia') return '+1 categoria';
   if (cls === 'maldicao') return 'a 1ª maldição do item soma +2 categorias, as seguintes +1';
   return c ? 'não muda a categoria' : '';
 }

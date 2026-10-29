@@ -591,7 +591,7 @@ window.OP = window.OP || {};
 
   /**
    * Quanto as melhorias somam à categoria (data/melhorias.js): modificação +I cada; a 1ª maldição +II
-   * e as seguintes +I; regalia não muda. Contam as melhorias que valem.
+   * e as seguintes +I; regalia de veículo +I cada. Contam as melhorias que valem.
    */
   function aumentoDeCategoria(item) {
     return aumentosDasMelhorias(item).reduce(function (soma, n) { return soma + n; }, 0);

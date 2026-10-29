@@ -121,7 +121,7 @@ window.OP = window.OP || {};
       }, esperado: '120|500|inventada|xxx|inventario.itens.0.grupo=;inventario.itens.0.melhorias.0.classe=modificacao' },
 
       /* ---- categoria (regras de data/melhorias.js; não precisam do livro) ---- */
-      { nome: 'Categoria: modificação soma +I cada; a 1ª maldição +II e as seguintes +I; regalia não muda', obtido: function () {
+      { nome: 'Categoria: modificação soma +I cada; a 1ª maldição +II e as seguintes +I; regalia de veículo +I cada', obtido: function () {
         const f = agente([
           item({ nome: 'A', categoria: 1, melhorias: [mel('modificacao', '', { nome: 'x' }), mel('modificacao', '', { nome: 'y' })] }),
           item({ nome: 'B', categoria: 0, melhorias: [mel('maldicao', '', { nome: 'x' }), mel('maldicao', '', { nome: 'y' }), mel('maldicao', '', { nome: 'z' })] }),
@@ -129,7 +129,7 @@ window.OP = window.OP || {};
           item({ nome: 'D', categoria: 2, melhorias: [mel('regalia', '', { nome: 'x' }), mel('regalia', '', { nome: 'y' })] })
         ]);
         return f.inventario.itens.map(function (i) { return calc.categoriaEfetivaItem(i); }).join(',');
-      }, esperado: '3,4,4,2' },
+      }, esperado: '3,4,4,4' },
       { nome: 'Categoria: o limite da patente conta a categoria efetiva (item I com modificação passa a valer como II)', obtido: function () {
         const f = agente([item({ nome: 'A', categoria: 1, melhorias: [mel('modificacao', '', { nome: 'x' })] }), item({ nome: 'B', categoria: 1 })], 'operador');
         const l = calc.estadoInventario(f).limitesPorCategoria;

@@ -15,7 +15,7 @@
    aumento[0], a 2ª aumento[1]... e as seguintes repetem o último valor.
    - modificação: +I cada;
    - maldição: a primeira +II, as seguintes +I (e só a partir de Agente especial);
-   - regalia (veículo): não muda a categoria; o veículo tem um limite de regalias.
+   - regalia (veículo): +I cada; o veículo tem um limite de regalias.
 
    Grupo de melhoria (gruposMelhoria): cada tabela do livro. "alvos" são as
    naturezas de item que o grupo aceita. Uma melhoria do catálogo pode restringir
@@ -57,7 +57,7 @@ window.OP.data = window.OP.data || {};
   data.classesMelhoria = [
     { id: 'modificacao', nome: 'Modificação', plural: 'Modificações', aumento: [1] },
     { id: 'maldicao',    nome: 'Maldição',    plural: 'Maldições',    aumento: [2, 1], patenteMinima: 'agente-especial' },
-    { id: 'regalia',     nome: 'Regalia',     plural: 'Regalias',     aumento: [0] }
+    { id: 'regalia',     nome: 'Regalia',     plural: 'Regalias',     aumento: [1] }
   ];
 
   var ARMAS_CORPO_E_DISPARO = ['arma-cac', 'arma-arremesso', 'arma-disparo'];

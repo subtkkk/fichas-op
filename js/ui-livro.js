@@ -1014,7 +1014,7 @@ window.OP = window.OP || {};
     const primeira = OP.data.classesMelhoria.find(function (c) { return compativeis(c.id) > 0; });
     abrirLista({
       titulo: 'Melhorias para ' + (String(item.nome || '').trim() || 'o item'),
-      dica: 'Modificação soma +I à categoria; a 1ª maldição soma +II e as seguintes +I (só a partir de Agente especial); regalia é só para veículos. A lista abre só com o que serve para este item; desligue o filtro para ver todas.',
+      dica: 'Modificação soma +I à categoria; a 1ª maldição soma +II e as seguintes +I (só a partir de Agente especial); regalia, só para veículos, soma +I cada. A lista abre só com o que serve para este item; desligue o filtro para ver todas.',
       busca: 'Buscar melhoria…', buscaEmTodas: true, abas: abas, itens: itens, gatilho: gatilho, abaInicial: primeira ? primeira.id : abas[0].id,
       filtros: [{ id: 'serve', rotulo: 'Para este item', itens: [{ id: 'sim', nome: 'Só as que servem' }] }],
       selecaoInicial: { serve: ['sim'] }

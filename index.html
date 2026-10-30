@@ -403,37 +403,20 @@
         <!-- ============ ZONA 2 · atributos, vitais, defesa e testes (sempre à vista no computador) ============ -->
         <div class="zona zona--esq ficha__conteudo">
             <!-- ======================= ATRIBUTOS ======================= -->
-            <section class="secao secao--atributos" id="secao-atributos" data-pagina="resumo" data-fixa aria-labelledby="titulo-atributos">
+            <section class="secao secao--atributos" id="secao-atributos" data-modo="mesa" data-pagina="resumo" data-fixa aria-labelledby="titulo-atributos">
               <button type="button" class="aviso-classe" id="aviso-classe" hidden>Escolha a classe para calcular os vitais <span aria-hidden="true">→</span></button>
               <div class="secao__cabecalho">
                 <h2 class="secao__titulo" id="titulo-atributos">Atributos</h2>
 
                 <div class="secao__controles">
-                  <button type="button" class="alternar atributos__modo" id="botao-modo-atributos" aria-pressed="false"
-                          title="Mostra base e bônus de cada atributo, os pontos de criação e o modo livre.">
-                    <span class="alternar__trilho" aria-hidden="true"></span>
-                    <span>Editar atributos</span>
-                  </button>
-
-                  <div class="contador" id="contador-pontos" data-estado="pendente">
-                    <output class="contador__valor" data-saida="distribuicao.restantes" aria-describedby="contador-rotulo">0</output>
-                    <span class="contador__rotulo" id="contador-rotulo">pontos restantes</span>
-                  </div>
-
-                  <button type="button" class="alternar" id="botao-modo-livre" aria-pressed="false" data-alternar="config.modoLivre"
-                          title="Desliga os avisos de criação. Use para personagens com aumentos de atributo ou regras especiais.">
-                    <span class="alternar__trilho" aria-hidden="true"></span>
-                    <span>Modo livre</span>
+                  <!-- Abre a janela de edição (#dialogo-editar-atributos); o número avisa de pontos a distribuir -->
+                  <button type="button" class="lapis" id="botao-editar-atributos" aria-haspopup="dialog" aria-controls="dialogo-editar-atributos"
+                          title="Editar atributos: base, bônus, pontos de criação e modo livre.">
+                    <svg class="lapis__icone" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M10.6 2.9l2.5 2.5-8 8L2 14l.6-3.1z"/><path d="M9.2 4.3l2.5 2.5"/></svg>
+                    <span class="visualmente-oculto">Editar atributos</span>
+                    <span class="lapis__pendencia" id="pendencia-atributos" data-estado="pendente" hidden></span>
                   </button>
                 </div>
-              </div>
-
-              <p class="secao__info secao__info--linha" id="info-aumentos"></p>
-
-              <div class="avisos" id="avisos-atributos" role="status" aria-live="polite" hidden>
-                <p class="avisos__titulo">Aviso: distribuição fora das regras</p>
-                <ul class="avisos__lista" id="lista-avisos"></ul>
-                <p class="avisos__dica">Regra especial ou poder que muda atributos? Ative o <strong>modo livre</strong> para esconder estes avisos.</p>
               </div>
 
               <!-- Palco: na mesa, os cinco dados num mostrador (anel de marcas e o teste no centro) -->
@@ -456,7 +439,6 @@
                 <div class="grade-atributos" id="grade-atributos"></div>
               </div>
 
-              <p class="secao__nota" id="nota-regras"></p>
             </section>
 
         <aside class="trilho" id="trilho-vitais" aria-label="Painel do agente">
@@ -548,71 +530,24 @@
         <!-- ============ ZONA 3 · perícias (sempre à vista no computador) ============ -->
         <div class="zona zona--per ficha__conteudo" data-pagina="pericias" data-fixa>
           <!-- ======================= PERÍCIAS ======================= -->
-          <section class="secao secao--pericias" id="secao-pericias"  aria-labelledby="titulo-pericias">
+          <section class="secao secao--pericias" id="secao-pericias" data-modo="mesa" aria-labelledby="titulo-pericias">
             <div class="secao__cabecalho">
               <h2 class="secao__titulo" id="titulo-pericias">Perícias</h2>
 
               <div class="secao__controles">
-                <button type="button" class="alternar pericias__modo" id="botao-modo-pericias" aria-pressed="false"
-                        title="Mostra a caixa Concedida de cada perícia e os pontos de treinamento.">
-                  <span class="alternar__trilho" aria-hidden="true"></span>
-                  <span>Editar perícias</span>
-                </button>
-
-                <div class="contador" id="contador-treinamento" data-estado="pendente"
-                     title="Perícias treinadas que gastam pontos / pontos disponíveis">
-                  <span class="contador__rotulo">Pontos de treinamento</span>
-                  <output class="contador__valor" data-saida="treinamento.gastos">0</output>
-                  <span class="contador__separador" aria-hidden="true">/</span>
-                  <output class="contador__total" data-saida="treinamento.total">—</output>
-                </div>
-
-                <!-- Graus de treinamento (NEX 35% e 70%): Veterano = 1, Expert = 2 -->
-                <div class="contador" id="contador-graus" data-estado="indefinido">
-                  <span class="contador__rotulo">Graus</span>
-                  <output class="contador__valor" data-saida="graus.usados">0</output>
-                  <span class="contador__separador" aria-hidden="true">/</span>
-                  <output class="contador__total" data-saida="graus.liberados">0</output>
-                </div>
-
-                <button type="button" class="alternar" id="botao-modo-livre-pericias" aria-pressed="false"
-                        data-alternar="config.modoLivrePericias"
-                        title="Desliga os avisos de pontos de treinamento e de graus.">
-                  <span class="alternar__trilho" aria-hidden="true"></span>
-                  <span>Modo livre</span>
+                <!-- Abre a janela de edição (#dialogo-editar-pericias); o número avisa de pontos de treinamento -->
+                <button type="button" class="lapis" id="botao-editar-pericias" aria-haspopup="dialog" aria-controls="dialogo-editar-pericias"
+                        title="Editar perícias: grau, Concedida, outros bônus, pontos de treinamento e modo livre.">
+                  <svg class="lapis__icone" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M10.6 2.9l2.5 2.5-8 8L2 14l.6-3.1z"/><path d="M9.2 4.3l2.5 2.5"/></svg>
+                  <span class="visualmente-oculto">Editar perícias</span>
+                  <span class="lapis__pendencia" id="pendencia-pericias" data-estado="pendente" hidden></span>
                 </button>
               </div>
-            </div>
-
-            <div class="avisos" id="avisos-pericias" role="status" aria-live="polite" hidden>
-              <p class="avisos__titulo">Aviso: pontos de treinamento excedidos</p>
-              <p id="texto-aviso-pericias"></p>
-              <p class="avisos__dica">Perícia veio de um poder? Marque <strong>concedida</strong> (as da origem e da classe já são automáticas). Personagem avançado? Ative o <strong>modo livre</strong>.</p>
-            </div>
-
-            <div class="avisos" id="avisos-graus" role="status" aria-live="polite" hidden>
-              <p class="avisos__titulo">Aviso: graus de treinamento</p>
-              <ul class="avisos__lista" id="lista-avisos-graus"></ul>
-              <p class="avisos__dica">No NEX 35% e no 70%, perícias treinadas sobem um grau (Treinado → Veterano → Expert): quantidade = base da classe + Intelecto.</p>
             </div>
 
             <p class="aviso-neutro" id="aviso-pericias-sem-classe" hidden>
               Escolha uma <strong>classe</strong> na Identificação para calcular os pontos de treinamento.
             </p>
-
-            <!-- Bônus manual dos pontos e de onde vem o total -->
-            <div class="pericias__pontos">
-              <div class="campo-bonus">
-                <label for="pontos-treinamento-bonus">Bônus de pontos</label>
-                <div class="passo">
-                  <button type="button" class="passo__botao" tabindex="-1" data-passo="-1" data-alvo="pontos-treinamento-bonus" aria-label="Diminuir bônus de pontos de treinamento">−</button>
-                  <input id="pontos-treinamento-bonus" class="passo__valor" type="number" step="1"
-                         data-campo="pontosTreinamento.bonus" data-tipo="inteiro">
-                  <button type="button" class="passo__botao" tabindex="-1" data-passo="1" data-alvo="pontos-treinamento-bonus" aria-label="Aumentar bônus de pontos de treinamento">+</button>
-                </div>
-              </div>
-              <p class="pericias__composicao" id="composicao-treinamento"></p>
-            </div>
 
             <!-- Busca e filtro (não são salvos na ficha) -->
             <div class="pericias__ferramentas">
@@ -1542,6 +1477,121 @@
             </div>
           </div>
         </div>
+
+        <!-- Edição de atributos e de perícias (abrem pelo lápis do título de cada seção; js/ui.js). Os campos ficam
+             aqui, fora das seções, para a mesa mostrar só os totais. A impressão usa as colunas da própria tabela. -->
+        <dialog class="dialogo dialogo--edicao" id="dialogo-editar-atributos" aria-labelledby="editar-atributos-titulo">
+          <div class="dialogo__corpo">
+            <div class="dialogo__topo">
+              <h2 class="dialogo__titulo" id="editar-atributos-titulo">Editar atributos</h2>
+              <button type="button" class="botao-icone" data-fechar-dialogo aria-label="Fechar">
+                <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>
+              </button>
+            </div>
+
+            <div class="edicao__controles">
+              <div class="contador" id="contador-pontos" data-estado="pendente">
+                <output class="contador__valor" data-saida="distribuicao.restantes" aria-describedby="contador-rotulo">0</output>
+                <span class="contador__rotulo" id="contador-rotulo">pontos restantes</span>
+              </div>
+
+              <button type="button" class="alternar" id="botao-modo-livre" aria-pressed="false" data-alternar="config.modoLivre"
+                      title="Desliga os avisos de criação. Use para personagens com aumentos de atributo ou regras especiais.">
+                <span class="alternar__trilho" aria-hidden="true"></span>
+                <span>Modo livre</span>
+              </button>
+            </div>
+
+            <p class="secao__info secao__info--linha" id="info-aumentos"></p>
+
+            <!-- Uma linha por atributo, geradas a partir de OP.data.atributos -->
+            <div class="edicao-atributos" id="edicao-atributos"></div>
+
+            <div class="avisos" id="avisos-atributos" role="status" aria-live="polite" hidden>
+              <p class="avisos__titulo">Aviso: distribuição fora das regras</p>
+              <ul class="avisos__lista" id="lista-avisos"></ul>
+              <p class="avisos__dica">Regra especial ou poder que muda atributos? Ative o <strong>modo livre</strong> para esconder estes avisos.</p>
+            </div>
+
+            <p class="secao__nota" id="nota-regras"></p>
+          </div>
+        </dialog>
+
+        <dialog class="dialogo dialogo--edicao dialogo--edicao-pericias" id="dialogo-editar-pericias" aria-labelledby="editar-pericias-titulo">
+          <div class="dialogo__corpo">
+            <div class="dialogo__topo">
+              <h2 class="dialogo__titulo" id="editar-pericias-titulo">Editar perícias</h2>
+              <button type="button" class="botao-icone" data-fechar-dialogo aria-label="Fechar">
+                <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>
+              </button>
+            </div>
+
+            <div class="edicao__controles">
+              <div class="contador" id="contador-treinamento" data-estado="pendente"
+                   title="Perícias treinadas que gastam pontos / pontos disponíveis">
+                <span class="contador__rotulo">Pontos de treinamento</span>
+                <output class="contador__valor" data-saida="treinamento.gastos">0</output>
+                <span class="contador__separador" aria-hidden="true">/</span>
+                <output class="contador__total" data-saida="treinamento.total">—</output>
+              </div>
+
+              <!-- Graus de treinamento (NEX 35% e 70%): Veterano = 1, Expert = 2 -->
+              <div class="contador" id="contador-graus" data-estado="indefinido">
+                <span class="contador__rotulo">Graus</span>
+                <output class="contador__valor" data-saida="graus.usados">0</output>
+                <span class="contador__separador" aria-hidden="true">/</span>
+                <output class="contador__total" data-saida="graus.liberados">0</output>
+              </div>
+
+              <button type="button" class="alternar" id="botao-modo-livre-pericias" aria-pressed="false"
+                      data-alternar="config.modoLivrePericias"
+                      title="Desliga os avisos de pontos de treinamento e de graus.">
+                <span class="alternar__trilho" aria-hidden="true"></span>
+                <span>Modo livre</span>
+              </button>
+            </div>
+
+            <div class="avisos" id="avisos-pericias" role="status" aria-live="polite" hidden>
+              <p class="avisos__titulo">Aviso: pontos de treinamento excedidos</p>
+              <p id="texto-aviso-pericias"></p>
+              <p class="avisos__dica">Perícia veio de um poder? Marque <strong>concedida</strong> (as da origem e da classe já são automáticas). Personagem avançado? Ative o <strong>modo livre</strong>.</p>
+            </div>
+
+            <div class="avisos" id="avisos-graus" role="status" aria-live="polite" hidden>
+              <p class="avisos__titulo">Aviso: graus de treinamento</p>
+              <ul class="avisos__lista" id="lista-avisos-graus"></ul>
+              <p class="avisos__dica">No NEX 35% e no 70%, perícias treinadas sobem um grau (Treinado → Veterano → Expert): quantidade = base da classe + Intelecto.</p>
+            </div>
+
+            <!-- Bônus manual dos pontos e de onde vem o total -->
+            <div class="pericias__pontos">
+              <div class="campo-bonus">
+                <label for="pontos-treinamento-bonus">Bônus de pontos</label>
+                <div class="passo">
+                  <button type="button" class="passo__botao" tabindex="-1" data-passo="-1" data-alvo="pontos-treinamento-bonus" aria-label="Diminuir bônus de pontos de treinamento">−</button>
+                  <input id="pontos-treinamento-bonus" class="passo__valor" type="number" step="1"
+                         data-campo="pontosTreinamento.bonus" data-tipo="inteiro">
+                  <button type="button" class="passo__botao" tabindex="-1" data-passo="1" data-alvo="pontos-treinamento-bonus" aria-label="Aumentar bônus de pontos de treinamento">+</button>
+                </div>
+              </div>
+              <p class="pericias__composicao" id="composicao-treinamento"></p>
+            </div>
+
+            <table class="edicao-pericias">
+              <thead>
+                <tr>
+                  <th scope="col">Perícia</th>
+                  <th scope="col" title="Grau de treinamento: um chevron = Treinado, dois = Veterano, três = Expert">Grau</th>
+                  <th scope="col" title="Outros bônus: itens, poderes, rituais">Outros</th>
+                  <th scope="col" title="Concedida: veio da origem, classe ou poder e não gasta pontos" aria-label="Concedida">Conc.</th>
+                  <th scope="col">Total</th>
+                </tr>
+              </thead>
+              <!-- Linhas geradas a partir de OP.data.pericias -->
+              <tbody id="corpo-edicao-pericias"></tbody>
+            </table>
+          </div>
+        </dialog>
 
         <!-- Ajuste de um vital (abre pelo topo de PV, PE ou SAN; no celular é uma gaveta) -->
         <dialog class="dialogo dialogo--vital" id="dialogo-vital" aria-labelledby="vital-titulo">

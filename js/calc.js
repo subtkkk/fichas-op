@@ -3164,12 +3164,12 @@ window.OP = window.OP || {};
     if (config.modoLivrePericias !== true) {
       const treino = estadoTreinamento(ficha);
       if (treino.excedido) {
-        aviso('pericias-pontos', 'pericias', 'busca-pericias',
+        aviso('pericias-pontos', 'pericias', 'botao-editar-pericias',
           'Perícias: ' + (treino.gastos - treino.total) + ' ' + palavraPontos(treino.gastos - treino.total) + ' de treinamento além do total (' + treino.total + ').');
       }
       const graus = estadoGraus(ficha);
       if (graus.excedido) {
-        aviso('graus-excedidos', 'pericias', 'busca-pericias', 'Graus de treinamento: ' + graus.usados + ' usados para ' + graus.liberados + ' liberados.');
+        aviso('graus-excedidos', 'pericias', 'botao-editar-pericias', 'Graus de treinamento: ' + graus.usados + ' usados para ' + graus.liberados + ' liberados.');
       }
       graus.avisos.forEach(function (a) {
         aviso('grau-fora-nex', 'pericias', null,

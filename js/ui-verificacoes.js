@@ -65,6 +65,8 @@ window.OP = window.OP || {};
   /** Rola até o campo e dá foco; sem campo visível, vai para a seção. */
   function irAoCampo(item) {
     let alvo = item.campo ? document.getElementById(item.campo) : null;
+    // Aviso de um item do inventário: abre o cartão dele
+    if (!alvo && item.ref && OP.uiItens && OP.uiItens.mostrar && OP.uiItens.mostrar(String(item.ref))) return;
     if (!alvo && item.ref) {
       const linha = document.querySelector('[data-pericia="' + String(item.ref).replace(/[^A-Za-z0-9_-]/g, '') + '"]');
       alvo = linha ? linha.querySelector('select, input, button') : null;

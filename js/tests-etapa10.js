@@ -489,7 +489,7 @@ window.OP = window.OP || {};
       }, esperado: 'sobrecarga,categoria-acima-patente' },
 
       // --- Modelo e migração (versão 10) ---
-      { nome: 'E10 · versaoModelo é 13', obtido: function () { return [OP.state.VERSAO_MODELO, OP.state.criarFichaVazia().versaoModelo].join('/'); }, esperado: '13/13' },
+      { nome: 'E10 · versaoModelo é 14', obtido: function () { return [OP.state.VERSAO_MODELO, OP.state.criarFichaVazia().versaoModelo].join('/'); }, esperado: '14/14' },
       { nome: 'E10 · Migração: ficha v9 sem condições/descanso/biografia abre com os padrões', obtido: function () {
         const f = OP.state.completarPadroes({ versaoModelo: 9, identificacao: { nome: 'Antigo' } });
         return [f.condicoes.ativas.length, f.condicoes.turnosMorrendo, f.condicoes.aplicarEfeitos, f.biografia.diario.length, f.descanso.condicao].join('/');

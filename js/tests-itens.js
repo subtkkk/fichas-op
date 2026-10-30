@@ -89,7 +89,7 @@ window.OP = window.OP || {};
         const f = OP.state.completarPadroes({ versaoModelo: 12, inventario: { itens: [{ id: 'a1', nome: 'Faca', categoria: 1 }] } });
         const it = f.inventario.itens[0];
         return [n.grupo === '', n.catalogo === '', Array.isArray(n.melhorias) && n.melhorias.length === 0, it.nome, it.categoria, it.grupo === '', it.melhorias.length, f.versaoModelo].join('|');
-      }, esperado: 'true|true|true|Faca|1|true|0|13' },
+      }, esperado: 'true|true|true|Faca|1|true|0|14' },
       { nome: 'Melhorias: ficha exportada com melhorias volta igual; arquivo de versão mais nova é recusado', obtido: function () {
         const f = OP.state.criarFichaVazia();
         f.inventario.itens.push(item({ nome: 'Faca', grupo: 'arma-cac', catalogo: 'i-faca', melhorias: [{ id: 'm1', classe: 'maldicao', chave: 'c-antielemento', nome: 'Antielemento', elemento: 'conhecimento', nota: 'x' }] }));
@@ -150,6 +150,56 @@ window.OP = window.OP || {};
         const inv = calc.estadoInventario(f);
         return [calc.categoriaEfetivaItem(f.inventario.itens[0]), inv.limitesPorCategoria.II.usados, inv.espacosUsados, codigos(f)].join('|');
       }, esperado: '2|2|3|limite-itens' },
+
+      /* ---- modificadores de categoria (habilidades e poderes que sobem ou baixam a categoria) ---- */
+      { nome: 'Modificar categoria: o item novo vem sem modificadores; ficha de versão 13 ganha a lista; o valor entra na categoria efetiva', obtido: function () {
+        const n = OP.state.novoItem();
+        const f = OP.state.completarPadroes({ versaoModelo: 13, inventario: { itens: [{ id: 'a1', nome: 'Faca', categoria: 2 }] } });
+        const it = f.inventario.itens[0];
+        const com = item({ nome: 'X', categoria: 2, modCategoria: [{ valor: 1, fonte: 'Poder A' }, { valor: -2, fonte: 'Poder B' }] });
+        return [Array.isArray(n.modCategoria) && n.modCategoria.length === 0, Array.isArray(it.modCategoria) && it.modCategoria.length === 0,
+          com.modCategoria.length, com.modCategoria[0].id !== com.modCategoria[1].id, calc.ajusteDeCategoria(com), calc.categoriaEfetivaItem(com)].join('|');
+      }, esperado: 'true|true|2|true|-1|1' },
+      { nome: 'Modificar categoria: soma com as melhorias, pode ficar abaixo de 0 (rótulo −1) e só 1 a 4 entram nos limites', obtido: function () {
+        const f = agente([
+          item({ nome: 'A', categoria: 1, melhorias: [mel('modificacao', '', { nome: 'x' })], modCategoria: [{ valor: -3, fonte: 'Habilidade' }] }),
+          item({ nome: 'B', categoria: 1, modCategoria: [{ valor: 1, fonte: 'Poder' }] })
+        ], 'operador');
+        const inv = calc.estadoInventario(f);
+        const a = inv.itens[f.inventario.itens[0].id];
+        return [a.categoriaBase, a.aumento, a.ajuste, a.categoriaEfetiva, calc.rotuloCategoria(a.categoriaEfetiva), inv.limitesPorCategoria.I.usados, inv.limitesPorCategoria.II.usados].join('|');
+      }, esperado: '1|1|-3|-1|−1|0|1' },
+      { nome: 'Modificar categoria: valor fora de −20 a +20 é cortado na conta; modificador que traz o item de V para IV tira o aviso de acima de IV', obtido: function () {
+        const soma = function (valores) { return calc.ajusteDeCategoria(item({ nome: 'G', modCategoria: valores.map(function (v) { return { valor: v }; }) })); };
+        const base = [item({ nome: 'Katana', categoria: 1, melhorias: ['a', 'b', 'c', 'd'].map(function (n) { return mel('modificacao', '', { nome: n }); }) })];
+        const antes = codigos(agente(base));
+        const reduzido = [item({ nome: 'Katana', categoria: 1, melhorias: base[0].melhorias, modCategoria: [{ valor: -1, fonte: 'Habilidade' }] })];
+        return [soma([99]), soma([-500]), soma(['abc']), antes, codigos(agente(reduzido)) === '', calc.estadoInventario(agente(reduzido)).limitesPorCategoria.IV.usados].join('|');
+      }, esperado: '20|-20|0|item-acima-iv|true|1' },
+      { nome: 'Modificar categoria: importação corta em 20 por item, corta a fonte em 200 caracteres e descarta o que não é objeto', obtido: function () {
+        const muitos = []; for (let k = 0; k < 25; k += 1) muitos.push({ id: 'c' + k, valor: k, fonte: 'F' + k });
+        const bruta = { versaoModelo: 14, inventario: { itens: [{ id: 'i1', nome: 'Faca', modCategoria: muitos.concat(['lixo', 7, null]) }] } };
+        const r = OP.state.lerImportacao(JSON.stringify({ formato: 'op-ficha', versao: 14, ficha: bruta })).fichas[0].inventario.itens[0].modCategoria;
+        const longa = { versaoModelo: 14, inventario: { itens: [{ id: 'i1', nome: 'Faca', modCategoria: [{ id: 'c1', valor: 1, fonte: 'T'.repeat(500) }, 'lixo'] }] } };
+        const l = OP.state.lerImportacao(JSON.stringify({ formato: 'op-ficha', versao: 14, ficha: longa })).fichas[0].inventario.itens[0].modCategoria;
+        return [r.length, r[19].fonte, l.length, l[0].fonte.length].join('|');
+      }, esperado: '20|F19|1|200' },
+      { nome: 'Modificar categoria: a ficha exportada com modificadores volta igual', obtido: function () {
+        const f = OP.state.criarFichaVazia();
+        f.inventario.itens.push(item({ nome: 'Faca', categoria: 1, modCategoria: [{ id: 'k1', valor: -1, fonte: 'Poder X' }] }));
+        const volta = OP.state.lerImportacao(JSON.stringify(OP.state.envelopeFicha(f))).fichas[0].inventario.itens[0];
+        return [volta.modCategoria.length, volta.modCategoria[0].id, volta.modCategoria[0].valor, volta.modCategoria[0].fonte, calc.categoriaEfetivaItem(volta)].join('|');
+      }, esperado: '1|k1|-1|Poder X|0' },
+      { nome: 'Markdown: os modificadores de categoria entram na conta da categoria e numa lista com a fonte', obtido: function () {
+        const f = OP.state.criarFichaVazia();
+        Object.assign(f.identificacao, { classe: 'combatente', nex: 50 });
+        f.inventario.patente = 'agente-elite';
+        f.inventario.itens.push(item({ nome: 'Fuzil', categoria: 2, modCategoria: [{ valor: 1, fonte: 'Poder A' }, { valor: -2, fonte: 'Habilidade B' }, { valor: 0, fonte: '' }] }));
+        const md = OP.exportarMd.gerar(f);
+        return [md.indexOf('- **Categoria:** I (base II − 1 de modificadores)') !== -1, md.indexOf('**Modificadores de categoria (3)**') !== -1,
+          md.indexOf('- +1 — Poder A') !== -1, md.indexOf('- −2 — Habilidade B') !== -1, md.indexOf('- +0 — sem fonte') !== -1,
+          md.indexOf('| Fuzil | Geral | I (base II) |') !== -1].join('|');
+      }, esperado: 'true|true|true|true|true|true' },
 
       /* ---- ajustes numéricos (precisam do catálogo do livro) ---- */
       { nome: 'Ajustes: Discreta tira 1 espaço, Reforçada soma Defesa e espaço, nunca abaixo de 0', obtido: function () {

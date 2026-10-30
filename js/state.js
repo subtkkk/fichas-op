@@ -35,7 +35,8 @@ window.OP = window.OP || {};
   //     forma de ritual com "cura" e a seção "efeitos" (ativos, preparados e escolhas)
   // v12: defesa.rd (lista de RD por tipo de dano; defesa.resistencias foi convertida)
   // v13: itens com natureza (grupo), chave do catálogo e melhorias (modificações, maldições e regalias)
-  const VERSAO_MODELO = 13;
+  // v14: itens com modificadores de categoria (valor com sinal e fonte), para habilidades que sobem ou baixam a categoria
+  const VERSAO_MODELO = 14;
   // Segmentos de caminho e chaves recusados, para nunca mexer em protótipos.
   const CHAVES_PROIBIDAS = ['__proto__', 'prototype', 'constructor'];
   // Ids de fichas e de itens de lista: letras, números, "_" e "-" (até 64).
@@ -54,8 +55,10 @@ window.OP = window.OP || {};
   const MAX_PESSOAS = 100; // aliados e rivais
   const MAX_RD = 50;       // entradas de RD (redução de dano)
   const MAX_MELHORIAS = 30; // melhorias por item
+  const MAX_MOD_CATEGORIA = 20; // modificadores de categoria por item
   const LIMITES_LISTA = {
     'inventario.itens[].melhorias': MAX_MELHORIAS,
+    'inventario.itens[].modCategoria': MAX_MOD_CATEGORIA,
     'condicoes.ativas': MAX_CONDICOES,
     'efeitos.ativos': 100,
     'efeitos.preparados': 100,
@@ -77,7 +80,8 @@ window.OP = window.OP || {};
     'defesa.rd[].nome': 80,
     'inventario.itens[].melhorias[].nome': 120,
     'inventario.itens[].melhorias[].chave': 80,
-    'inventario.itens[].melhorias[].nota': 500
+    'inventario.itens[].melhorias[].nota': 500,
+    'inventario.itens[].modCategoria[].fonte': 200
   };
 
   const ouvintes = [];
@@ -281,6 +285,7 @@ window.OP = window.OP || {};
       periciaKit: null,
       catalogo: '',               // chave do item no livro (js/livro.js); liga o item ao texto e aos dados do livro
       melhorias: [],              // modificações, maldições e regalias (ver melhoriaPadrao)
+      modCategoria: [],           // modificadores de categoria de outras fontes (ver modCategoriaPadrao)
       descricao: ''
     };
   }
@@ -292,6 +297,14 @@ window.OP = window.OP || {};
    */
   function melhoriaPadrao() {
     return { id: '', classe: 'modificacao', chave: '', nome: '', elemento: '', nota: '' };
+  }
+
+  /**
+   * Modificador de categoria de um item: habilidades e poderes que sobem ou baixam a categoria
+   * (a efetiva pode ficar abaixo de 0). valor: inteiro com sinal; fonte: de onde veio (texto livre).
+   */
+  function modCategoriaPadrao() {
+    return { id: '', valor: 0, fonte: '' };
   }
 
   /**
@@ -579,6 +592,7 @@ window.OP = window.OP || {};
   const MOLDES_LISTA = {
     'inventario.itens': itemPadrao,
     'inventario.itens.melhorias': melhoriaPadrao,
+    'inventario.itens.modCategoria': modCategoriaPadrao,
     ataques: ataquePadrao,
     habilidades: habilidadePadrao,
     rituais: ritualPadrao,
@@ -613,10 +627,15 @@ window.OP = window.OP || {};
     return criarComMolde(melhoriaPadrao, 'mel', dados);
   }
 
-  /** Item completo; as melhorias ganham ids únicos e o limite por item. */
+  function novoModCategoria(dados) {
+    return criarComMolde(modCategoriaPadrao, 'cat', dados);
+  }
+
+  /** Item completo; as melhorias e os modificadores ganham ids únicos e o limite por item. */
   function novoItem(dados) {
     const item = criarComMolde(itemPadrao, 'item', dados);
     item.melhorias = normalizarLista(item.melhorias, novaMelhoria, 'mel').slice(0, MAX_MELHORIAS);
+    item.modCategoria = normalizarLista(item.modCategoria, novoModCategoria, 'cat').slice(0, MAX_MOD_CATEGORIA);
     return item;
   }
 
@@ -1504,6 +1523,7 @@ window.OP = window.OP || {};
     idValido: idValido,
     novoItem: novoItem,
     novaMelhoria: novaMelhoria,
+    novoModCategoria: novoModCategoria,
     novoAtaque: novoAtaque,
     novaRd: novaRd,
     novaHabilidade: novaHabilidade,

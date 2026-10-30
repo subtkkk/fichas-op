@@ -1044,10 +1044,34 @@
           <section class="secao secao--inventario" id="secao-inventario" aria-labelledby="titulo-inventario">
             <h2 class="secao__titulo" id="titulo-inventario">Inventário</h2>
 
-            <p class="secao__resumo">
-              <span>Carga <output data-saida="inventario.espacosUsados" data-formato="numero">0</output> / <output data-saida="inventario.capacidade" data-formato="numero">5</output> espaços</span>
-            </p>
-
+            <!-- Faixa presa no topo: patente e limites por categoria à esquerda, carga à direita.
+                 Cada lado abre uma janela com os campos (mais abaixo, em #dialogo-patente e #dialogo-carga). -->
+            <div class="inv-faixa" id="inv-faixa">
+              <div class="inv-faixa__esq">
+                <button type="button" class="inv-patente" id="inv-patente-abrir" aria-haspopup="dialog" aria-controls="dialogo-patente"
+                        title="Patente, Pontos de Prestígio e crédito">
+                  <span class="inv-faixa__rotulo">Patente</span>
+                  <span class="inv-patente__nome" id="inv-patente-nome">Recruta</span>
+                  <span class="inv-patente__pp"><output data-saida="inventario.pontosPrestigio" data-formato="numero">0</output> PP</span>
+                </button>
+                <!-- Um traço por categoria (I a IV), com um quadradinho por item permitido; js/ui.js desenha -->
+                <ul class="inv-limites" id="inv-limites" aria-label="Itens por categoria"></ul>
+              </div>
+              <button type="button" class="inv-carga" id="inv-carga-abrir" aria-haspopup="dialog" aria-controls="dialogo-carga"
+                      title="Capacidade de carga e bônus">
+                <span class="inv-faixa__rotulo">Carga</span>
+                <span class="inv-carga__valor">
+                  <output data-saida="inventario.espacosUsados" data-formato="numero">0</output><span class="inv-carga__sep">/</span><output data-saida="inventario.capacidade" data-formato="numero">5</output>
+                </span>
+                <span class="inv-carga__barra" aria-hidden="true"><span class="inv-carga__preenchimento" data-largura="inventario.percentualCarga"></span></span>
+              </button>
+            </div>
+            <!-- Avisos (só aparecem quando há o que avisar); ficam fora da faixa para ela continuar baixa -->
+            <div class="avisos" id="avisos-limites" role="status" aria-live="polite" hidden>
+              <p class="avisos__titulo">Aviso: limite de itens excedido</p>
+              <ul class="avisos__lista" id="lista-avisos-limites"></ul>
+            </div>
+            <p class="aviso-sobrecarga" data-aviso-sobrecarga role="status" aria-live="polite" hidden></p>
 
             <h3 class="subtitulo">Itens</h3>
             <div class="itens">
@@ -1063,72 +1087,82 @@
               <button type="button" class="botao botao--adicionar" data-acao="adicionar-item">+ Adicionar item</button>
               <button type="button" class="botao botao--pequeno" id="livro-add-item" hidden>Escolher do livro…</button>
             </div>
+            <!-- Patente e carga: na tela, janelas que a faixa do topo abre; no papel, painéis (css/print.css) -->
             <div class="inventario__topo">
-              <!-- Patente, Pontos de Prestígio, crédito e limites por categoria -->
-              <article class="painel painel--patente">
-                <span class="painel__rotulo">Patente</span>
+              <dialog class="dialogo dialogo--inventario" id="dialogo-patente" aria-labelledby="dialogo-patente-titulo">
+                <article class="painel painel--patente">
+                  <div class="dialogo__topo">
+                    <h2 class="dialogo__titulo" id="dialogo-patente-titulo">Patente e crédito</h2>
+                    <button type="button" class="botao-icone" data-fechar-dialogo aria-label="Fechar">
+                      <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>
+                    </button>
+                  </div>
+                  <span class="painel__rotulo">Patente</span>
 
-                <div class="painel__campos">
-                  <div class="campo-texto">
-                    <label for="inv-patente">Patente</label>
-                    <!-- Opções geradas a partir de OP.data.patentes -->
-                    <select id="inv-patente" class="controle" data-campo="inventario.patente" data-tipo="texto"></select>
+                  <div class="painel__campos">
+                    <div class="campo-texto">
+                      <label for="inv-patente">Patente</label>
+                      <!-- Opções geradas a partir de OP.data.patentes -->
+                      <select id="inv-patente" class="controle" data-campo="inventario.patente" data-tipo="texto"></select>
+                    </div>
+
+                    <div class="campo-texto campo-texto--curto">
+                      <label for="inv-pp">Pontos de Prestígio</label>
+                      <input id="inv-pp" class="controle controle--numero" type="number" min="0" step="1" inputmode="numeric"
+                             data-campo="inventario.pontosPrestigio" data-tipo="inteiro">
+                    </div>
+
+                    <div class="campo-texto">
+                      <label for="inv-credito">Crédito</label>
+                      <!-- Opção vazia = "Padrão da patente" (grava null) -->
+                      <select id="inv-credito" class="controle" data-campo="inventario.creditoNivel" data-tipo="texto" data-padrao=""></select>
+                    </div>
                   </div>
 
-                  <div class="campo-texto campo-texto--curto">
-                    <label for="inv-pp">Pontos de Prestígio</label>
-                    <input id="inv-pp" class="controle controle--numero" type="number" min="0" step="1" inputmode="numeric"
-                           data-campo="inventario.pontosPrestigio" data-tipo="inteiro">
-                  </div>
+                  <p class="painel__info" id="dica-patente"></p>
 
-                  <div class="campo-texto">
-                    <label for="inv-credito">Crédito</label>
-                    <!-- Opção vazia = "Padrão da patente" (grava null) -->
-                    <select id="inv-credito" class="controle" data-campo="inventario.creditoNivel" data-tipo="texto" data-padrao=""></select>
-                  </div>
-                </div>
-
-                <p class="painel__info" id="dica-patente"></p>
-
-                <!-- Contadores gerados a partir de OP.data.categoriasItem (I a IV) -->
-                <div class="limites" id="limites-itens"></div>
-                <div class="avisos" id="avisos-limites" role="status" aria-live="polite" hidden>
-                  <p class="avisos__titulo">Aviso: limite de itens excedido</p>
-                  <ul class="avisos__lista" id="lista-avisos-limites"></ul>
-                </div>
-              </article>
+                  <!-- Itens por categoria (usados/limite), gerados a partir de OP.data.categoriasItem (I a IV) -->
+                  <div class="limites" id="limites-itens"></div>
+                </article>
+              </dialog>
 
               <!-- Capacidade de carga -->
-              <article class="painel painel--carga" id="painel-carga">
-                <div class="painel__topo">
-                  <div class="painel__titulo">
-                    <span class="painel__rotulo">Carga</span>
-                    <p class="painel__composicao" id="composicao-carga"></p>
+              <dialog class="dialogo dialogo--inventario" id="dialogo-carga" aria-labelledby="dialogo-carga-titulo">
+                <article class="painel painel--carga" id="painel-carga">
+                  <div class="dialogo__topo">
+                    <h2 class="dialogo__titulo" id="dialogo-carga-titulo">Capacidade de carga</h2>
+                    <button type="button" class="botao-icone" data-fechar-dialogo aria-label="Fechar">
+                      <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>
+                    </button>
                   </div>
-                  <p class="carga__valor">
-                    <output data-saida="inventario.espacosUsados" data-formato="numero">0</output>
-                    <span class="carga__separador">/</span>
-                    <output data-saida="inventario.capacidade" data-formato="numero">5</output>
-                    <span class="carga__unidade">espaços</span>
-                  </p>
-                </div>
-
-                <div class="barra barra--carga" aria-hidden="true">
-                  <div class="barra__preenchimento" data-largura="inventario.percentualCarga"></div>
-                </div>
-
-                <div class="campo-bonus">
-                  <label for="inv-capacidade-bonus">Bônus de capacidade</label>
-                  <div class="passo">
-                    <button type="button" class="passo__botao" tabindex="-1" data-passo="-1" data-alvo="inv-capacidade-bonus" aria-label="Diminuir bônus de capacidade">−</button>
-                    <input id="inv-capacidade-bonus" class="passo__valor" type="number" step="1"
-                           data-campo="inventario.capacidadeBonus" data-tipo="inteiro">
-                    <button type="button" class="passo__botao" tabindex="-1" data-passo="1" data-alvo="inv-capacidade-bonus" aria-label="Aumentar bônus de capacidade">+</button>
+                  <div class="painel__topo">
+                    <div class="painel__titulo">
+                      <span class="painel__rotulo">Carga</span>
+                      <p class="painel__composicao" id="composicao-carga"></p>
+                    </div>
+                    <p class="carga__valor">
+                      <output data-saida="inventario.espacosUsados" data-formato="numero">0</output>
+                      <span class="carga__separador">/</span>
+                      <output data-saida="inventario.capacidade" data-formato="numero">5</output>
+                      <span class="carga__unidade">espaços</span>
+                    </p>
                   </div>
-                </div>
 
-                <p class="aviso-sobrecarga" data-aviso-sobrecarga role="status" aria-live="polite" hidden></p>
-              </article>
+                  <div class="barra barra--carga" aria-hidden="true">
+                    <div class="barra__preenchimento" data-largura="inventario.percentualCarga"></div>
+                  </div>
+
+                  <div class="campo-bonus">
+                    <label for="inv-capacidade-bonus">Bônus de capacidade</label>
+                    <div class="passo">
+                      <button type="button" class="passo__botao" tabindex="-1" data-passo="-1" data-alvo="inv-capacidade-bonus" aria-label="Diminuir bônus de capacidade">−</button>
+                      <input id="inv-capacidade-bonus" class="passo__valor" type="number" step="1"
+                             data-campo="inventario.capacidadeBonus" data-tipo="inteiro">
+                      <button type="button" class="passo__botao" tabindex="-1" data-passo="1" data-alvo="inv-capacidade-bonus" aria-label="Aumentar bônus de capacidade">+</button>
+                    </div>
+                  </div>
+                </article>
+              </dialog>
             </div>
           </section>
           </div>

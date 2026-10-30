@@ -535,8 +535,9 @@ window.OP = window.OP || {};
 
   const ROMANOS_CATEGORIA = ['0', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
 
-  /** Rótulo de uma categoria: 0, I a IV e, com melhorias, V, VI... (acima de X, o número). */
+  /** Rótulo de uma categoria: 0, I a IV e, com melhorias, V, VI... (acima de X, o número; abaixo de 0, "−1"...). */
   function rotuloCategoria(n) {
+    if (n < 0) return '−' + Math.abs(n);
     return ROMANOS_CATEGORIA[n] !== undefined ? ROMANOS_CATEGORIA[n] : String(n);
   }
 
@@ -614,9 +615,27 @@ window.OP = window.OP || {};
     return Math.max(0, Math.trunc(numero(item.categoria)));
   }
 
-  /** Categoria que conta para a patente: a base mais o aumento das melhorias (pode passar de IV). */
+  /** Modificadores de categoria do item (só os objetos): [{ id, valor, fonte }]. */
+  function modificadoresDoItem(item) {
+    return item && Array.isArray(item.modCategoria) ? item.modCategoria.filter(function (m) { return m !== null && typeof m === 'object'; }) : [];
+  }
+
+  /** Valor de um modificador: inteiro com sinal, entre −20 e +20. */
+  function valorDoModificador(modificador) {
+    return Math.min(20, Math.max(-20, Math.trunc(numero(modificador && modificador.valor))));
+  }
+
+  /** Soma dos modificadores de categoria do item (habilidades e poderes que sobem ou baixam a categoria). */
+  function ajusteDeCategoria(item) {
+    return modificadoresDoItem(item).reduce(function (soma, m) { return soma + valorDoModificador(m); }, 0);
+  }
+
+  /**
+   * Categoria que conta para a patente: a base mais o aumento das melhorias e os modificadores.
+   * Pode passar de IV e pode ficar abaixo de 0 (só 1 a 4 entram nos limites da patente).
+   */
   function categoriaEfetivaItem(item) {
-    return categoriaBaseItem(item) + aumentoDeCategoria(item);
+    return categoriaBaseItem(item) + aumentoDeCategoria(item) + ajusteDeCategoria(item);
   }
 
   /** Soma dos ajustes numéricos das melhorias do catálogo: { esp, def, ataque, dano, margem }. */
@@ -791,8 +810,8 @@ window.OP = window.OP || {};
   }
 
   /**
-   * O que a tela mostra de cada item com melhorias: { [id]: { categoriaBase, categoriaEfetiva, aumento,
-   * espacosBase, espacosEfetivos, defesaBase, defesaEfetiva, ajustes,
+   * O que a tela mostra de cada item com melhorias: { [id]: { categoriaBase, categoriaEfetiva, aumento (das melhorias),
+   * ajuste (dos modificadores de categoria), espacosBase, espacosEfetivos, defesaBase, defesaEfetiva, ajustes,
    * melhorias: [{ id, vale, ok, incerto, motivo, aumento }] } } (melhorias na ordem de item.melhorias).
    */
   function detalhesDosItens(ficha) {
@@ -805,6 +824,7 @@ window.OP = window.OP || {};
         categoriaBase: categoriaBaseItem(item),
         categoriaEfetiva: categoriaEfetivaItem(item),
         aumento: aumentoDeCategoria(item),
+        ajuste: ajusteDeCategoria(item),
         espacosBase: Math.max(0, numero(item.espacos)),
         espacosEfetivos: espacosDoItem(item),
         defesaBase: numero(item.defesa),
@@ -3181,14 +3201,14 @@ window.OP = window.OP || {};
     // Inventário
     const inventario = estadoInventario(ficha);
     if (inventario.sobrecarregado) {
-      aviso('sobrecarga', 'inventario', null, 'Sobrecarregado: ' + inventario.espacosUsados + ' de ' + inventario.capacidade + ' espaços.');
+      aviso('sobrecarga', 'inventario', 'inv-carga-abrir', 'Sobrecarregado: ' + inventario.espacosUsados + ' de ' + inventario.capacidade + ' espaços.');
     }
     inventario.limites.forEach(function (limite) {
       if (!limite.excedeu) return;
       if (limite.limite === 0) {
-        aviso('categoria-acima-patente', 'inventario', 'inv-patente', 'Itens de categoria ' + limite.categoria + ' acima da patente (a patente não permite).');
+        aviso('categoria-acima-patente', 'inventario', 'inv-patente-abrir', 'Itens de categoria ' + limite.categoria + ' acima da patente (a patente não permite).');
       } else {
-        aviso('limite-itens', 'inventario', 'inv-patente', 'Categoria ' + limite.categoria + ': ' + limite.usados + ' itens para o limite de ' + limite.limite + '.');
+        aviso('limite-itens', 'inventario', 'inv-patente-abrir', 'Categoria ' + limite.categoria + ': ' + limite.usados + ' itens para o limite de ' + limite.limite + '.');
       }
     });
     verificarMelhorias(ficha, aviso);
@@ -3230,7 +3250,7 @@ window.OP = window.OP || {};
     });
     itensAcimaDeIV(ficha).forEach(function (a) {
       const rotulo = a.categoria <= 4 ? String(a.categoria) : 'categoria ' + a.categoria;
-      aviso('item-acima-iv', 'inventario', null, 'Item ' + (a.nome ? '"' + a.nome + '"' : 'sem nome') + ': com as melhorias chega à ' + rotulo + ', acima da categoria IV. Só habilidades que reduzem a categoria permitem levá-lo.', a.id);
+      aviso('item-acima-iv', 'inventario', null, 'Item ' + (a.nome ? '"' + a.nome + '"' : 'sem nome') + ': com as melhorias chega à ' + rotulo + ', acima da categoria IV. Só habilidades que reduzem a categoria permitem levá-lo (registre-as em "Modificar categoria" do item).', a.id);
     });
     // Itens amaldiçoados só a partir de uma patente (data/melhorias.js)
     const classeMaldicao = classeDeMelhoria('maldicao');
@@ -3238,7 +3258,7 @@ window.OP = window.OP || {};
       const minima = OP.data.patentes.findIndex(function (p) { return p.id === classeMaldicao.patenteMinima; });
       const atual = OP.data.patentes.findIndex(function (p) { return p.id === patenteAtual(ficha); });
       if (minima > atual && atual !== -1) {
-        aviso('maldicao-patente', 'inventario', 'inv-patente', 'Há itens com maldição, mas a patente ' + dadosPatente(patenteAtual(ficha)).nome + ' ainda não dá acesso a itens amaldiçoados (a partir de ' + OP.data.patentes[minima].nome + ').');
+        aviso('maldicao-patente', 'inventario', 'inv-patente-abrir', 'Há itens com maldição, mas a patente ' + dadosPatente(patenteAtual(ficha)).nome + ' ainda não dá acesso a itens amaldiçoados (a partir de ' + OP.data.patentes[minima].nome + ').');
       }
     }
   }
@@ -4266,6 +4286,8 @@ window.OP = window.OP || {};
     melhoriasDoItem: melhoriasDoItem,
     melhoriasQueValem: melhoriasQueValem,
     aumentoDeCategoria: aumentoDeCategoria,
+    modificadoresDoItem: modificadoresDoItem,
+    ajusteDeCategoria: ajusteDeCategoria,
     aumentosDasMelhorias: aumentosDasMelhorias,
     categoriaEfetivaItem: categoriaEfetivaItem,
     ajustesDoItem: ajustesDoItem,

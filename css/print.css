@@ -1041,6 +1041,27 @@ input[type="checkbox"] {
   font-size: 8pt;
 }
 
+/* Inventário: a faixa do topo é de tela; as janelas da patente e da carga viram painéis no papel */
+.inv-faixa,
+.inventario__topo .dialogo__topo {
+  display: none;
+}
+
+.inventario__topo dialog {
+  position: static;
+  display: block !important; /* vence o "dialog { display: none !important }" lá de cima */
+  width: auto;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  color: inherit;
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+
 /* Inventário: itens em linhas, com cabeçalho */
 .inventario__topo {
   grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
@@ -1074,7 +1095,8 @@ input[type="checkbox"] {
   grid-template-areas:
     "nome tipo cat esp qtd det acoes"
     "desc desc desc desc desc desc desc"
-    "mel  mel  mel  mel  mel  mel  mel";
+    "mel  mel  mel  mel  mel  mel  mel"
+    "mods mods mods mods mods mods mods";
   column-gap: 6pt;
   row-gap: 0;
 }
@@ -1121,7 +1143,23 @@ input[type="checkbox"] {
   display: block;
 }
 
-/* Melhorias do item: o painel abre no papel só nos itens que têm melhorias (OP.uiItens.imprimir) */
+/* Cartão de tela (cabeçalho e visão de leitura) e editor de "Modificar categoria" não vão para o papel:
+   o formulário sai completo e os modificadores saem em uma linha de texto (js/ui-itens.js) */
+.item__topo,
+.item__visao,
+.item__mods,
+.item__mods-impresso:empty {
+  display: none;
+}
+
+.item__mods-impresso {
+  grid-area: mods;
+  margin: 0;
+  padding: 0 0 1pt 10pt;
+  font-size: 8pt;
+}
+
+/* Melhorias do item: o painel sai no papel só nos itens que têm melhorias */
 .item__melhorias {
   margin: 0;
   padding: 0 0 1pt 10pt;

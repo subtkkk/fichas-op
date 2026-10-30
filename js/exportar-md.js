@@ -341,9 +341,26 @@ window.OP = window.OP || {};
     return String(Math.round(Number(n) * 100) / 100).replace('.', ',');
   }
 
-  /** "III (base I)" quando as melhorias mudam a categoria; senão só a categoria. */
+  /** "III (base I)" quando as melhorias ou os modificadores mudam a categoria; senão só a categoria. */
   function categoriaEmTexto(d) {
-    return rotuloCategoria(d.categoriaEfetiva) + (d.aumento > 0 ? ' (base ' + rotuloCategoria(d.categoriaBase) + ')' : '');
+    return rotuloCategoria(d.categoriaEfetiva) + (d.aumento !== 0 || d.ajuste !== 0 ? ' (base ' + rotuloCategoria(d.categoriaBase) + ')' : '');
+  }
+
+  /** "base II + 4 das melhorias − 1 de modificadores" (a conta da categoria efetiva). */
+  function contaDaCategoria(d) {
+    const partes = [];
+    if (d.aumento !== 0) partes.push((d.aumento > 0 ? '+ ' : '− ') + Math.abs(d.aumento) + ' das melhorias');
+    if (d.ajuste !== 0) partes.push((d.ajuste > 0 ? '+ ' : '− ') + Math.abs(d.ajuste) + ' de modificadores');
+    return partes.length ? ' (base ' + rotuloCategoria(d.categoriaBase) + ' ' + partes.join(' ') + ')' : '';
+  }
+
+  /** Linhas "- +1 — fonte" dos modificadores de categoria do item. */
+  function linhasDosModificadores(i) {
+    return OP.calc.modificadoresDoItem(i).map(function (m) {
+      const valor = Math.trunc(Number(m.valor)) || 0;
+      const fonte = texto(m.fonte);
+      return '- ' + (valor < 0 ? '−' : '+') + Math.abs(valor) + ' — ' + (fonte || 'sem fonte');
+    });
   }
 
   function espacosEmTexto(d) {
@@ -391,7 +408,7 @@ window.OP = window.OP || {};
     const meta = lista([
       item('Tipo', tipo ? tipo.nome : i.tipo),
       item('Natureza', natureza),
-      item('Categoria', d ? rotuloCategoria(d.categoriaEfetiva) + (d.aumento > 0 ? ' (base ' + rotuloCategoria(d.categoriaBase) + ' + ' + d.aumento + ' das melhorias)' : '') : ''),
+      item('Categoria', d ? rotuloCategoria(d.categoriaEfetiva) + contaDaCategoria(d) : ''),
       item('Espaços', d ? espacosEmTexto(d) + ' por unidade' + (qtd !== 1 ? ' × ' + qtd + ' = ' + numeroBr(d.espacosEfetivos * qtd) : '') : ''),
       item('Quantidade', qtd !== 1 ? qtd : ''),
       protecao && d ? item('Defesa', sinal(d.defesaEfetiva) + (d.defesaEfetiva !== d.defesaBase ? ' (base ' + sinal(d.defesaBase) + ')' : '')) : null,
@@ -405,6 +422,8 @@ window.OP = window.OP || {};
     if (descricao) partes.push(descricao);
     if (anotacao) partes.push((descricao ? '**Anotações.**\n' : '') + citacao(i.descricao));
     if (melhorias.length) partes.push('**Melhorias (' + melhorias.length + ')**\n\n' + melhorias.map(function (m, j) { return linhaDaMelhoria(m, d && d.melhorias[j]); }).join('\n'));
+    const modificadores = linhasDosModificadores(i);
+    if (modificadores.length) partes.push('**Modificadores de categoria (' + modificadores.length + ')**\n\n' + modificadores.join('\n'));
     return '#### ' + (texto(i.nome) || 'Sem nome') + '\n\n' + partes.filter(Boolean).join('\n\n');
   }
 
@@ -429,14 +448,14 @@ window.OP = window.OP || {};
         i.equipada ? 'sim' : 'não', melhorias.join(', ')];
     });
     const comDetalhe = itens.filter(function (i) {
-      return texto(i.descricao) || (Array.isArray(i.melhorias) && i.melhorias.length) || blocosDoLivro(i.catalogo) || i.tipo === 'protecao' || i.tipo === 'kit' || OP.calc.grupoDoItem(i);
+      return texto(i.descricao) || (Array.isArray(i.melhorias) && i.melhorias.length) || OP.calc.modificadoresDoItem(i).length || blocosDoLivro(i.catalogo) || i.tipo === 'protecao' || i.tipo === 'kit' || OP.calc.grupoDoItem(i);
     });
     const dependeDoLivro = itens.some(function (i) { return i.catalogo || (Array.isArray(i.melhorias) && i.melhorias.some(function (m) { return m && m.chave; })); });
     return secao('Inventário', [
       resumo,
       linhas.length ? tabela(['Item', 'Natureza', 'Cat.', 'Espaços', 'Qtd.', 'Equipado', 'Melhorias'], linhas) : '',
       comDetalhe.length ? '### Detalhes dos itens\n\n' + comDetalhe.map(function (i) { return detalheDoItem(i, calc); }).join('\n\n') : '',
-      linhas.length ? '_Cat. e Espaços já incluem o que as melhorias mudam; o valor base aparece entre parênteses.' + (dependeDoLivro ? ' O texto do livro (regras do item e efeito das melhorias) entra só quando está liberado nesta conta; sem isso, só o que a ficha guarda e o que você escreveu._' : '_') : ''
+      linhas.length ? '_Cat. e Espaços já incluem o que as melhorias e os modificadores mudam; o valor base aparece entre parênteses.' + (dependeDoLivro ? ' O texto do livro (regras do item e efeito das melhorias) entra só quando está liberado nesta conta; sem isso, só o que a ficha guarda e o que você escreveu._' : '_') : ''
     ]);
   }
 

@@ -279,7 +279,7 @@ window.OP = window.OP || {};
         const f = OP.state.criarFichaVazia();
         const imp = OP.state.sanitizar({ efeitos: { ativos: [{ id: 'a', chave: 'c', rodadas: 2, ateFimCena: true, lixo: 1 }, 5], preparados: 'x', escolhas: [{ id: 'e', chave: 'c', campo: 'p', valor: 'luta' }] } });
         return [OP.state.VERSAO_MODELO, Array.isArray(f.efeitos.ativos), imp.efeitos.ativos.length, imp.efeitos.ativos[0].rodadas, imp.efeitos.preparados.length, imp.efeitos.escolhas[0].valor].join('|');
-      }, esperado: '13|true|1|2|0|luta' },
+      }, esperado: '14|true|1|2|0|luta' },
       { nome: 'E11 · Histórico: habilidade e ritual do catálogo guardam só a chave (nenhum texto)', obtido: function () {
         const h = OP.state.novaHabilidade({ nome: 'X', catalogo: 'chave-x' });
         const rt = OP.state.novoRitual({ nome: 'Y', catalogo: 'chave-y' });

@@ -16,7 +16,7 @@
    - data-alternar="caminho" botão liga/desliga de um valor booleano (aria-pressed)
    - data-filtro="busca|treinadas" controles de filtro da tela (não são salvos)
    - data-ir-pericia="id"  botão que rola até a linha da perícia e a destaca
-   - data-acao="adicionar-item", data-remover-item="id", data-alternar-descricao="id"
+   - data-acao="adicionar-item", data-remover-item="id"
                            botões do inventário
    - data-aviso-sobrecarga  parágrafo que mostra as penalidades de sobrecarga
    - data-rolar-pericia="id", data-rolar-ataque="id", data-rolar-dano="id"
@@ -631,8 +631,6 @@ window.OP = window.OP || {};
 
   // Ícones dos botões de cada item
   const ICONES_ITEM = {
-    descricao: '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3 4h10M3 8h10M3 12h6"/></svg>',
-    melhorias: '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 1.8v3.4M8 10.8v3.4M1.8 8h3.4M10.8 8h3.4"/><circle cx="8" cy="8" r="2"/></svg>',
     remover: '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
       '<path d="M2.5 4.5h11"/><path d="M6.5 4.5V3h3v1.5"/><path d="M4 4.5l.8 9h6.4l.8-9"/></svg>'
   };
@@ -656,6 +654,17 @@ window.OP = window.OP || {};
           '<output data-saida="inventario.limitesPorCategoria.' + chave + '.limite" data-formato="limite">0</output>' +
         '</span>' +
       '</div>';
+  }
+
+  /** Uma categoria na faixa do topo: algarismo e os quadradinhos (js/ui.js, desenharLimiteDaFaixa). */
+  function htmlLimiteFaixa(categoria) {
+    const chave = escaparHtml(categoria.chave);
+    return '' +
+      '<li class="inv-limite" data-inv-limite="' + chave + '">' +
+        '<span class="inv-limite__rotulo" aria-hidden="true">' + escaparHtml(categoria.rotulo) + '</span>' +
+        '<span class="inv-limite__pips" aria-hidden="true"></span>' +
+        '<span class="visualmente-oculto"></span>' +
+      '</li>';
   }
 
   function htmlOpcoesTipoItem() {
@@ -686,19 +695,30 @@ window.OP = window.OP || {};
   }
 
   // Atributos que recebem o id do item (por setAttribute, em criarComIds).
-  const IDS_ITEM = ['data-item', 'data-alternar-descricao', 'data-remover-item'];
+  const IDS_ITEM = ['data-item', 'data-remover-item'];
 
   /**
-   * HTML FIXO de um item (o id entra depois, por criarComIds). Os campos de
-   * proteção e de kit existem em todos os itens, mas o CSS só mostra os que
-   * valem para o tipo (data-tipo-item).
+   * HTML FIXO de um item (o id entra depois, por criarComIds). Dois modos de tela (data-modo):
+   * "resumo" (padrão) mostra só o cabeçalho que abre e fecha e, aberto, a visão de leitura
+   * (js/ui-itens.js); "edicao" mostra o formulário, que é o que a impressão usa. Os campos de
+   * proteção e de kit existem em todos os itens, mas o CSS só mostra os que valem para o tipo.
    */
   function htmlItem(indice) {
     const caminho = 'inventario.itens.' + indice;
-    const idDescricao = 'item-desc-' + indice;
-    const idMelhorias = 'item-mel-' + indice;
     return '' +
-      '<div class="item" role="listitem" data-item>' +
+      '<div class="item" role="listitem" data-item data-modo="resumo" data-aberto="nao">' +
+        // Cabeçalho do modo resumo: abre e fecha o cartão (js/ui-itens.js escreve o texto)
+        '<div class="item__topo">' +
+          '<button type="button" class="item__alternar" data-alternar-item aria-expanded="false">' +
+            '<span class="item__seta" aria-hidden="true"></span>' +
+            '<span class="item__nomes">' +
+              '<span class="item__titulo" data-item-titulo></span>' +
+              '<span class="item__sub" data-item-sub></span>' +
+            '</span>' +
+            '<span class="item__chips" data-item-chips></span>' +
+          '</button>' +
+        '</div>' +
+        '<div class="item__visao" data-item-visao></div>' +
         '<div class="item__nome">' +
           '<input type="text" class="controle" placeholder="Nome do item" autocomplete="off" aria-label="Nome do item"' +
             ' data-campo="' + caminho + '.nome" data-tipo="texto">' +
@@ -741,22 +761,16 @@ window.OP = window.OP || {};
           '</div>' +
         '</div>' +
         '<div class="item__acoes">' +
-          '<button type="button" class="botao-icone item__botao-melhorias" data-alternar-melhorias aria-expanded="false"' +
-            ' aria-controls="' + idMelhorias + '" title="Natureza e melhorias (modificações, maldições, regalias)">' + ICONES_ITEM.melhorias +
-            '<span class="item__contagem" data-contagem-melhorias hidden></span>' +
-            '<span class="visualmente-oculto">Natureza e melhorias</span></button>' +
-          '<button type="button" class="botao-icone" data-alternar-descricao aria-expanded="false"' +
-            ' aria-controls="' + idDescricao + '" title="Descrição">' + ICONES_ITEM.descricao +
-            '<span class="visualmente-oculto">Descrição</span></button>' +
+          '<button type="button" class="botao-texto cartao-editar" data-editar-item aria-expanded="false">Editar</button>' +
           '<button type="button" class="botao-icone botao-icone--perigo" data-remover-item title="Remover item">' +
             ICONES_ITEM.remover + '<span class="visualmente-oculto">Remover item</span></button>' +
         '</div>' +
-        '<div class="item__descricao" id="' + idDescricao + '" hidden>' +
+        '<div class="item__descricao">' +
           '<div class="item__livro" data-livro-item></div>' +
           '<textarea class="controle" rows="3" placeholder="Descrição e anotações do item" aria-label="Descrição do item"' +
             ' data-campo="' + caminho + '.descricao" data-tipo="texto"></textarea>' +
         '</div>' +
-        '<div class="item__melhorias" id="' + idMelhorias + '" hidden>' +
+        '<div class="item__melhorias">' +
           '<label class="item__natureza"><span>Natureza do item</span>' +
             '<select class="controle" aria-label="Natureza do item" data-campo="' + caminho + '.grupo" data-tipo="texto" data-padrao="">' +
               htmlOpcoesNatureza() + '</select></label>' +
@@ -767,6 +781,16 @@ window.OP = window.OP || {};
             '<button type="button" class="botao botao--pequeno botao--fantasma" data-melhoria-propria>+ Melhoria própria</button>' +
           '</div>' +
         '</div>' +
+        // Modificar categoria: poderes e habilidades que sobem ou baixam a categoria (a lista é montada em js/ui-itens.js)
+        '<div class="item__mods">' +
+          '<p class="item__mods-titulo"><span>Modificar categoria</span>' +
+            '<span class="item__mods-ajuda">Poderes e habilidades que sobem ou baixam a categoria. Pode ficar abaixo de 0.</span></p>' +
+          '<ul class="item__mods-lista" data-lista-mods aria-label="Modificadores de categoria"></ul>' +
+          '<div class="item__melhorias-acoes">' +
+            '<button type="button" class="botao botao--pequeno botao--fantasma" data-mod-adicionar>+ Modificador</button>' +
+          '</div>' +
+        '</div>' +
+        '<p class="item__mods-impresso" data-mods-impresso></p>' +
       '</div>';
   }
 
@@ -792,6 +816,26 @@ window.OP = window.OP || {};
       refs.limites[elemento.dataset.limite] = elemento;
     });
 
+    // Faixa do topo: um traço por categoria, com um quadradinho por item permitido (desenharInventario)
+    const faixaLimites = document.getElementById('inv-limites');
+    faixaLimites.innerHTML = OP.data.categoriasItem
+      .filter(function (categoria) { return categoria.chave !== null; })
+      .map(htmlLimiteFaixa).join('');
+    refs.limitesFaixa = {};
+    selecionarTodos('[data-inv-limite]', faixaLimites).forEach(function (elemento) {
+      refs.limitesFaixa[elemento.dataset.invLimite] = elemento;
+    });
+    refs.faixaInventario = document.getElementById('inv-faixa');
+    refs.patenteNome = document.getElementById('inv-patente-nome');
+    [['inv-patente-abrir', 'dialogo-patente'], ['inv-carga-abrir', 'dialogo-carga']].forEach(function (par) {
+      const botao = document.getElementById(par[0]);
+      const dialogo = document.getElementById(par[1]);
+      botao.addEventListener('click', function () { if (OP.ui.abrirDialogo) OP.ui.abrirDialogo(dialogo, botao); });
+      dialogo.addEventListener('click', function (evento) {
+        if (evento.target === dialogo || evento.target.closest('[data-fechar-dialogo]')) dialogo.close();
+      });
+    });
+
     refs.dicaPatente = document.getElementById('dica-patente');
     refs.avisosLimites = document.getElementById('avisos-limites');
     refs.listaAvisosLimites = document.getElementById('lista-avisos-limites');
@@ -802,7 +846,6 @@ window.OP = window.OP || {};
     refs.itensVazio = document.getElementById('itens-vazio');
     refs.itensRenderizados = null;                // ids desenhados por último ("a|b|c")
     refs.elementosItens = Object.create(null);    // id → elementos da linha
-    refs.descricoesAbertas = Object.create(null); // id → true (estado só da tela)
   }
 
   /* ---------- Ataques ---------- */
@@ -1199,6 +1242,7 @@ window.OP = window.OP || {};
     'ataques': { removido: 'Ataque removido', semNome: 'ataque sem nome' },
     'inventario.itens': { removido: 'Item removido', semNome: 'item sem nome' },
     'inventario.itens.melhorias': { removido: 'Melhoria removida', semNome: 'melhoria sem nome' },
+    'inventario.itens.modCategoria': { removido: 'Modificador de categoria removido', semNome: 'modificador de categoria', campoNome: 'fonte' },
     'habilidades': { removido: 'Habilidade removida', semNome: 'habilidade sem nome' },
     'rituais': { removido: 'Ritual removido', semNome: 'ritual sem nome' },
     'condicoes.ativas': { removido: 'Condição removida', semNome: 'condição', chave: 'uid' },
@@ -1261,16 +1305,8 @@ window.OP = window.OP || {};
 
   /** Remove um item pelo id (a lista inteira é regravada pelo estado). */
   function removerItem(idItem) {
-    delete refs.descricoesAbertas[idItem];
+    if (OP.uiItens) OP.uiItens.esquecer(idItem);
     removerComDesfazer('inventario.itens', idItem);
-  }
-
-  /** Abre/fecha a descrição de um item (estado só da tela, não vai para a ficha). */
-  function alternarDescricao(idItem) {
-    refs.descricoesAbertas[idItem] = !refs.descricoesAbertas[idItem];
-    desenharItens(OP.state.ficha);
-    const elementos = refs.elementosItens[idItem];
-    if (elementos && refs.descricoesAbertas[idItem]) elementos.textoDescricao.focus();
   }
 
   function aoClicar(evento) {
@@ -1287,11 +1323,6 @@ window.OP = window.OP || {};
     const botaoPericia = evento.target.closest('[data-ir-pericia]');
     if (botaoPericia) {
       irParaPericia(botaoPericia.dataset.irPericia);
-      return;
-    }
-    const botaoDescricao = evento.target.closest('[data-alternar-descricao]');
-    if (botaoDescricao) {
-      alternarDescricao(botaoDescricao.dataset.alternarDescricao);
       return;
     }
     const botaoRemover = evento.target.closest('[data-remover-item]');
@@ -2003,28 +2034,19 @@ window.OP = window.OP || {};
     selecionarTodos('[data-item]', refs.listaItens).forEach(function (linha) {
       refs.elementosItens[linha.dataset.item] = {
         linha: linha,
-        nome: linha.querySelector('.item__nome input'),
-        descricao: linha.querySelector('.item__descricao'),
-        textoDescricao: linha.querySelector('.item__descricao textarea'),
-        botaoDescricao: linha.querySelector('[data-alternar-descricao]')
+        nome: linha.querySelector('.item__nome input')
       };
     });
     coletarLigacoes(); // os campos novos passam a ser desenhados pelo ciclo normal
   }
 
-  /** Estado visual de cada item: tipo (campos que aparecem), equipada e descrição. */
+  /** Estado visual de cada item: tipo (campos que aparecem) e equipada. Modo e cabeçalho: js/ui-itens.js. */
   function desenharItens(ficha) {
     ficha.inventario.itens.forEach(function (item) {
       const elementos = refs.elementosItens[item.id];
       if (!elementos) return;
       if (elementos.linha.dataset.tipoItem !== item.tipo) elementos.linha.dataset.tipoItem = item.tipo;
       elementos.linha.classList.toggle('item--equipada', item.tipo === 'protecao' && item.equipada === true);
-
-      const aberta = refs.descricoesAbertas[item.id] === true;
-      if (elementos.descricao.hidden === aberta) elementos.descricao.hidden = !aberta;
-      elementos.botaoDescricao.setAttribute('aria-expanded', String(aberta));
-      // marca o botão quando há descrição escrita
-      elementos.botaoDescricao.classList.toggle('botao-icone--marcado', String(item.descricao || '').trim() !== '');
     });
     refs.itensVazio.hidden = ficha.inventario.itens.length > 0;
   }
@@ -2032,6 +2054,31 @@ window.OP = window.OP || {};
   function textoSobrecarga(sobrecarga) {
     return 'Aviso: sobrecarregado, −' + sobrecarga.defesa + ' Defesa, −' + formatarNumero(sobrecarga.deslocamento) +
       ' m de deslocamento, −' + sobrecarga.pericias + ' em perícias com carga';
+  }
+
+  /**
+   * Um traço da faixa: um quadradinho por item permitido (cheio = usado, vazio = livre) e, passando do
+   * limite, quadradinhos extras em vermelho. Categoria que a patente não permite e sem itens fica só com um traço.
+   */
+  function desenharLimiteDaFaixa(elemento, limite) {
+    const assinatura = limite.limite + ':' + limite.usados;
+    if (elemento.dataset.assinatura === assinatura) return;
+    elemento.dataset.assinatura = assinatura;
+    elemento.classList.toggle('inv-limite--excedido', limite.excedeu);
+    elemento.classList.toggle('inv-limite--sem', limite.limite === 0 && limite.usados === 0);
+    const total = Math.max(limite.limite, limite.usados);
+    const quadradinhos = [];
+    for (let i = 0; i < total; i += 1) {
+      const quadradinho = document.createElement('span');
+      quadradinho.className = 'inv-pip' + (i >= limite.limite ? ' inv-pip--extra' : (i < limite.usados ? ' inv-pip--cheio' : ''));
+      quadradinhos.push(quadradinho);
+    }
+    substituirFilhos(elemento.querySelector('.inv-limite__pips'), quadradinhos);
+    let texto = 'Categoria ' + limite.categoria + ': ' + limite.usados + ' ' + plural(limite.usados, 'item', 'itens') + ' de ' + limite.limite;
+    if (limite.limite === 0) texto = 'Categoria ' + limite.categoria + ': a patente não permite' + (limite.usados ? ', mas há ' + limite.usados + ' ' + plural(limite.usados, 'item', 'itens') : '');
+    if (limite.excedeu) texto += ' (acima do limite)';
+    definirTexto(elemento.querySelector('.visualmente-oculto'), texto);
+    elemento.title = texto;
   }
 
   function desenharInventario(ficha, derivados) {
@@ -2045,9 +2092,13 @@ window.OP = window.OP || {};
     refs.dicaPatente.classList.toggle('painel__info--destaque', sugerida.id !== patente.id);
     definirTexto(refs.opcaoCreditoPadrao, 'Padrão: ' + nomeCredito(inv.creditoPatente));
 
+    definirTexto(refs.patenteNome, patente.nome);
+    refs.faixaInventario.classList.toggle('inv-faixa--sobrecarregada', inv.sobrecarregado);
+
     // Limites por categoria (aviso sem bloquear)
     const excedidos = [];
     inv.limites.forEach(function (limite) {
+      desenharLimiteDaFaixa(refs.limitesFaixa[limite.categoria], limite);
       refs.limites[limite.categoria].classList.toggle('limite--excedido', limite.excedeu);
       if (limite.excedeu && limite.limite === 0) {
         excedidos.push('Categoria ' + limite.categoria + ': ' + limite.usados + ' ' + plural(limite.usados, 'item', 'itens') +
@@ -3651,7 +3702,6 @@ window.OP = window.OP || {};
     impressao.ativa = true;
 
     // Guarda o estado da tela para restaurar depois
-    impressao.descricoes = refs.descricoesAbertas;
     impressao.habilidades = refs.habilidadesAbertas;
     impressao.filtros = {
       pericias: Object.assign({}, filtros),
@@ -3663,11 +3713,8 @@ window.OP = window.OP || {};
     Object.assign(filtros, { busca: '', soTreinadas: false });
     Object.assign(filtrosHabilidades, { fonte: 'todas', busca: '' });
     Object.assign(filtrosRituais, { elemento: '', busca: '' });
-    refs.descricoesAbertas = Object.create(null);
     refs.habilidadesAbertas = Object.create(null);
-    ficha.inventario.itens.forEach(function (item) { refs.descricoesAbertas[item.id] = true; });
     ficha.habilidades.forEach(function (habilidade) { refs.habilidadesAbertas[habilidade.id] = true; });
-    if (OP.uiItens) OP.uiItens.imprimir(true); // painel de melhorias aberto nos itens que têm melhorias
     redesenharListas();
 
     impressao.detalhes = selecionarTodos('details', refs.raiz).filter(function (d) { return !d.open; });
@@ -3732,7 +3779,6 @@ window.OP = window.OP || {};
   function restaurarImpressao() {
     if (!impressao.ativa) return;
     impressao.ativa = false;
-    refs.descricoesAbertas = impressao.descricoes;
     refs.habilidadesAbertas = impressao.habilidades;
     Object.assign(filtros, impressao.filtros.pericias);
     Object.assign(filtrosHabilidades, impressao.filtros.habilidades);
@@ -3745,7 +3791,6 @@ window.OP = window.OP || {};
       if (anterior.size === null) anterior.campo.removeAttribute('size');
       else anterior.campo.setAttribute('size', anterior.size);
     });
-    if (OP.uiItens) OP.uiItens.imprimir(false);
     redesenharListas();
   }
 

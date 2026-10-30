@@ -639,15 +639,12 @@ window.OP = window.OP || {};
           return !b || !/^Grau de /.test(b.getAttribute('aria-label') || '') || !/^[0-3]$/.test(b.dataset.nivel);
         }).length;
       }, esperado: 0 },
-      { nome: 'E10 · Botão de grau: Destreinado → Treinado → Veterano → Expert → Destreinado', obtido: function () {
+      { nome: 'E10 · Botão de grau (janela Editar perícias): Destreinado → Treinado → Veterano → Expert → Destreinado', obtido: function () {
         const ficha = OP.state.ficha;
-        const botao = document.querySelector('[data-pericia="luta"] .botao-grau');
+        const botao = document.querySelector('[data-edicao-pericia="luta"] .botao-grau');
         const antes = ficha.pericias.luta.grau;
         const concedida = OP.calc.estadoPericia(ficha, 'luta').concedidaPor;
         if (!botao || concedida) return 'sem botão ou concedida';
-        const modo = document.getElementById('botao-modo-pericias');
-        const estavaEmEdicao = modo.getAttribute('aria-pressed') === 'true';
-        if (!estavaEmEdicao) modo.click();
         try {
           OP.state.atualizar('pericias.luta.grau', 0);
           const graus = [];
@@ -658,27 +655,22 @@ window.OP = window.OP || {};
           return graus.join(',');
         } finally {
           OP.state.atualizar('pericias.luta.grau', antes);
-          if (!estavaEmEdicao) modo.click();
         }
       }, esperado: '1,2,3,0' },
-      { nome: 'E10 · Na mesa o botão de grau fica desligado e não muda o grau; em "Editar perícias" funciona', obtido: function () {
-        const botao = document.querySelector('[data-pericia="luta"] .botao-grau');
-        const modo = document.getElementById('botao-modo-pericias');
-        const estavaEmEdicao = modo.getAttribute('aria-pressed') === 'true';
+      { nome: 'E10 · Na tabela da ficha o botão de grau fica desligado e não muda o grau; o da janela do lápis funciona', obtido: function () {
+        const botaoTabela = document.querySelector('[data-pericia="luta"] .botao-grau');
+        const botaoJanela = document.querySelector('[data-edicao-pericia="luta"] .botao-grau');
         const antes = OP.state.ficha.pericias.luta.grau;
         try {
-          if (estavaEmEdicao) modo.click();
-          const naMesa = botao.disabled;
-          botao.click();
+          botaoTabela.click();
           const naoMudou = OP.state.ficha.pericias.luta.grau === antes;
-          modo.click();
-          return [naMesa, naoMudou, botao.disabled].join('/');
+          botaoJanela.click();
+          const mudou = OP.state.ficha.pericias.luta.grau !== antes;
+          return [botaoTabela.disabled, naoMudou, mudou, botaoJanela.disabled].join('/');
         } finally {
           OP.state.atualizar('pericias.luta.grau', antes);
-          if (modo.getAttribute('aria-pressed') === 'true' && !estavaEmEdicao) modo.click();
-          if (modo.getAttribute('aria-pressed') !== 'true' && estavaEmEdicao) modo.click();
         }
-      }, esperado: 'true/true/false' },
+      }, esperado: 'true/true/true/false' },
       { nome: 'E10 · Perícia "somente treinada" sem grau pede treinamento só por símbolo (sem texto "requer treinamento")', obtido: function () {
         return document.querySelectorAll('.pericia__requer').length + '/' + document.querySelector('.tabela-pericias').textContent.indexOf('requer treinamento');
       }, esperado: '0/-1' },
@@ -758,10 +750,10 @@ window.OP = window.OP || {};
         const mostrou = caixa.getAttribute('data-vazio') === 'nao' && /^-?\d+$/.test(total) && document.getElementById('rr-titulo').textContent.indexOf('Luta') !== -1 && !caixa.hidden;
         return mostrou + '/' + idAntes.length;
       }, esperado: 'true/' + OP.state.ficha.id.length },
-      { nome: 'E11 · Na mesa o grau é um marcador (T, V, E) e "outros" some; em edição voltam o botão e o campo', obtido: function () {
+      { nome: 'E11 · Na mesa o grau é um marcador (T, V, E) e "outros" some; o lápis abre a janela com o botão de grau e o campo', obtido: function () {
         const secao = document.getElementById('secao-pericias');
-        const modo = document.getElementById('botao-modo-pericias');
-        const estavaEmEdicao = modo.getAttribute('aria-pressed') === 'true';
+        const lapis = document.getElementById('botao-editar-pericias');
+        const janela = document.getElementById('dialogo-editar-pericias');
         const marcaOk = function () {
           return OP.data.pericias.every(function (p) {
             const marca = document.querySelector('[data-pericia="' + p.id + '"] .pericia__grau-marca');
@@ -769,18 +761,19 @@ window.OP = window.OP || {};
             return marca.textContent === ['', 'T', 'V', 'E'][grau];
           });
         };
+        const celulaOutros = document.querySelector('[data-pericia="luta"] .pericia__outros');
+        const outrosNaMesa = getComputedStyle(celulaOutros).display === 'none' ? 0 : 1;
+        const marcas = marcaOk();
         try {
-          if (estavaEmEdicao) modo.click();
-          const celulaOutros = document.querySelector('[data-pericia="luta"] .pericia__outros');
-          const outrosNaMesa = getComputedStyle(celulaOutros).display === 'none' ? 0 : 1;
-          const marcas = marcaOk();
-          modo.click();
-          const outrosEmEdicao = getComputedStyle(celulaOutros).display !== 'none';
-          return [secao.dataset.modo, outrosNaMesa, marcas, outrosEmEdicao].join('/');
+          lapis.click();
+          const aberta = janela.open;
+          const campo = janela.querySelector('[data-edicao-pericia="luta"] input[data-campo="pericias.luta.outros"]');
+          const botao = janela.querySelector('[data-edicao-pericia="luta"] .botao-grau');
+          return [secao.dataset.modo, outrosNaMesa, marcas, aberta, Boolean(campo), Boolean(botao)].join('/'); // a tela da ficha pode estar escondida durante os testes
         } finally {
-          if ((modo.getAttribute('aria-pressed') === 'true') !== estavaEmEdicao) modo.click();
+          if (janela.open) janela.close();
         }
-      }, esperado: 'edicao/0/true/true' },
+      }, esperado: 'mesa/0/true/true/true/true' },
 
       // --- Rodada de revisão de design ---
       { nome: 'E12 · Atalhos de teclado: a tecla "5" abre Rituais (a numeração é a do índice, igual nos dois tamanhos)', obtido: function () {

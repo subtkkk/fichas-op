@@ -73,10 +73,18 @@ window.OP = window.OP || {};
     }
     if (alvo && OP.uiPaginas) OP.uiPaginas.mostrarPaginaDe(alvo); // abre a página onde o campo mora
     if (alvo) abrirDetalhesAncestrais(alvo);
-    // Atributos na mesa: o campo só aparece em "Editar atributos"
-    if (alvo && !visivel(alvo) && /^atr-/.test(item.campo || '')) {
-      const modo = document.getElementById('botao-modo-atributos');
-      if (modo && modo.getAttribute('aria-pressed') !== 'true') modo.click();
+    // Atributos: base e bônus moram na janela "Editar atributos" (os campos do cartão só servem ao papel)
+    if (alvo && /^atr-/.test(item.campo || '')) {
+      const naJanela = document.getElementById('edicao-' + item.campo);
+      if (naJanela) alvo = naJanela;
+    }
+    // Campo dentro de uma janela fechada: abre a janela
+    const janela = alvo && alvo.closest ? alvo.closest('dialog') : null;
+    if (janela && !janela.open && OP.ui && OP.ui.abrirDialogo) OP.ui.abrirDialogo(janela, document.activeElement);
+    // O lápis das seções abre a janela de edição (em vez de só receber o foco)
+    if (alvo && /^botao-editar-/.test(item.campo || '') && visivel(alvo)) {
+      alvo.click();
+      return;
     }
     if (alvo && visivel(alvo)) {
       alvo.scrollIntoView({ behavior: reduzMovimento() ? 'auto' : 'smooth', block: 'center' });

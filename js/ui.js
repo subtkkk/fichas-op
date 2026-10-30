@@ -270,9 +270,37 @@ window.OP = window.OP || {};
       '</article>';
   }
 
+  /**
+   * Uma linha da janela "Editar atributos": sigla e nome, base e bônus (os mesmos caminhos dos campos
+   * escondidos do cartão, que a impressão usa) e o total. Os ids dos campos levam o prefixo "edicao-".
+   */
+  function htmlLinhaEdicaoAtributo(atributo) {
+    const id = atributo.id;
+    return '' +
+      '<div class="edicao-atributo" data-edicao-atributo="' + escaparHtml(id) + '">' +
+        '<div class="edicao-atributo__nome">' +
+          '<span class="edicao-atributo__sigla">' + escaparHtml(atributo.sigla) + '</span>' +
+          '<span class="edicao-atributo__rotulo">' + escaparHtml(atributo.nome) + '</span>' +
+        '</div>' +
+        htmlCampoPasso({
+          id: 'edicao-atr-' + id + '-base', caminho: 'atributos.' + id + '.base', area: 'base',
+          rotulo: 'Base', nomeAtributo: atributo.nome, minimo: OP.data.regrasAtributos.minimo, teclado: 'numeric'
+        }) +
+        htmlCampoPasso({
+          id: 'edicao-atr-' + id + '-bonus', caminho: 'atributos.' + id + '.bonus', area: 'bonus',
+          rotulo: 'Bônus', nomeAtributo: atributo.nome
+        }) +
+        '<p class="edicao-atributo__total" title="Total = base + bônus">= ' +
+          '<output data-saida="atributos.' + escaparHtml(id) + '" aria-label="Total de ' + escaparHtml(atributo.nome) + '">0</output></p>' +
+      '</div>';
+  }
+
   function montarAtributos() {
     document.getElementById('grade-atributos').innerHTML =
       OP.data.atributos.map(htmlCartaoAtributo).join('');
+    document.getElementById('edicao-atributos').innerHTML =
+      OP.data.atributos.map(htmlLinhaEdicaoAtributo).join('');
+    refs.linhasEdicaoAtributo = selecionarTodos('[data-edicao-atributo]', document.getElementById('edicao-atributos'));
   }
 
   // Informação extra mostrada no cabeçalho de alguns recursos.
@@ -548,9 +576,52 @@ window.OP = window.OP || {};
       '</tr>';
   }
 
+  /**
+   * Uma linha da janela "Editar perícias": nome e atributo, grau (botão de chevrons), outros bônus,
+   * Concedida e o total. Os campos usam os mesmos caminhos da tabela da ficha (que a impressão usa).
+   */
+  function htmlLinhaEdicaoPericia(pericia) {
+    const id = escaparHtml(pericia.id);
+    const nome = escaparHtml(pericia.nome);
+    const caminho = 'pericias.' + id;
+    return '' +
+      '<tr class="edicao-pericia" data-edicao-pericia="' + id + '">' +
+        '<th scope="row" class="edicao-pericia__nome">' +
+          '<span class="edicao-pericia__rotulo">' + nome + '</span>' +
+          '<span class="edicao-pericia__atributo" data-edicao-sigla></span>' +
+        '</th>' +
+        '<td class="edicao-pericia__grau">' +
+          '<button type="button" class="botao-icone botao-grau" data-grau-pericia="' + id + '" data-nivel="0">' + SVG_GRAU + '</button>' +
+        '</td>' +
+        '<td class="edicao-pericia__outros">' +
+          '<input type="number" step="1" class="controle controle--numero" aria-label="Outros bônus de ' + nome + '"' +
+            ' title="Outros bônus (itens, poderes, rituais)" data-campo="' + caminho + '.outros" data-tipo="inteiro">' +
+        '</td>' +
+        '<td class="edicao-pericia__concedida">' +
+          '<label class="caixa caixa--pequena" title="Concedida: não gasta pontos de treinamento">' +
+            '<input type="checkbox" aria-label="' + nome + ' concedida (não gasta pontos)"' +
+              ' data-campo="' + caminho + '.concedida" data-tipo="booleano">' +
+          '</label>' +
+        '</td>' +
+        '<td class="edicao-pericia__bonus">' +
+          '<output data-saida="' + caminho + '.bonus" data-formato="sinal" aria-label="Bônus total de ' + nome + '"></output>' +
+        '</td>' +
+      '</tr>';
+  }
+
   function montarPericias() {
     const corpo = document.getElementById('corpo-pericias');
     corpo.innerHTML = OP.data.pericias.map(htmlLinhaPericia).join('');
+    const corpoEdicao = document.getElementById('corpo-edicao-pericias');
+    corpoEdicao.innerHTML = OP.data.pericias.map(htmlLinhaEdicaoPericia).join('');
+    refs.periciasEdicao = {};
+    selecionarTodos('[data-edicao-pericia]', corpoEdicao).forEach(function (linha) {
+      refs.periciasEdicao[linha.dataset.edicaoPericia] = {
+        linha: linha,
+        sigla: linha.querySelector('[data-edicao-sigla]'),
+        grau: linha.querySelector('.botao-grau')
+      };
+    });
     document.getElementById('legenda-pericias').innerHTML = htmlLegendaPericias();
 
     // Guarda os elementos que mudam a cada desenho, por id de perícia.
@@ -1372,18 +1443,9 @@ window.OP = window.OP || {};
       alternarEdicaoCartao(alternarEdicao.getAttribute('data-alternar-edicao'));
       return;
     }
-    const botaoModoAtributos = evento.target.closest('#botao-modo-atributos');
-    if (botaoModoAtributos) {
-      refs.modoAtributos = refs.modoAtributos === 'mesa' ? 'edicao' : 'mesa';
-      desenharModoAtributos(OP.state.ficha, refs.derivados && refs.derivados.distribuicao);
-      return;
-    }
-    const botaoModoPericias = evento.target.closest('#botao-modo-pericias');
-    if (botaoModoPericias) {
-      refs.modoPericias = refs.modoPericias === 'mesa' ? 'edicao' : 'mesa';
-      // redesenha as linhas: o botão de grau só funciona em "Editar perícias"
-      if (refs.derivados) desenharPericias(refs.derivados);
-      else desenharModoPericias(OP.state.ficha);
+    const lapis = evento.target.closest('#botao-editar-atributos, #botao-editar-pericias');
+    if (lapis) {
+      abrirEdicao(lapis.id === 'botao-editar-atributos' ? refs.dlgEditarAtributos : refs.dlgEditarPericias, lapis);
       return;
     }
     const removerAtq = evento.target.closest('[data-remover-ataque]');
@@ -1460,6 +1522,17 @@ window.OP = window.OP || {};
     refs.cartoes.forEach(function (cartao) {
       cartao.classList.toggle('atributo--alerta', problemas.indexOf(cartao.dataset.atributo) !== -1);
     });
+    refs.linhasEdicaoAtributo.forEach(function (linha) {
+      linha.classList.toggle('edicao-atributo--alerta', problemas.indexOf(linha.dataset.edicaoAtributo) !== -1);
+    });
+
+    // Lápis dos atributos: pontos a distribuir (ou a mais); some no modo livre
+    const estadoPontos = livre ? 'completo' : estadoContador(dist.restantes);
+    const faltas = Math.abs(dist.restantes);
+    desenharPendencia(refs.pendenciaAtributos, estadoPontos === 'completo' ? '' : estadoPontos, String(faltas),
+      dist.restantes > 0
+        ? faltas + ' ' + plural(faltas, 'ponto a distribuir', 'pontos a distribuir') + ' nos atributos'
+        : faltas + ' ' + plural(faltas, 'ponto além do permitido', 'pontos além do permitido') + ' nos atributos');
   }
 
   /** "+ 3 bônus" / "− 2 bônus" */
@@ -1587,41 +1660,25 @@ window.OP = window.OP || {};
   }
 
   /**
-   * Atributos na mesa (só os totais, no mostrador) ou em edição (base, bônus,
-   * pontos, modo livre e regras). Na primeira vez que a ficha aparece: com
-   * pontos a distribuir (ou fora da regra), abre em edição; senão, na mesa.
+   * Abre a janela de edição de atributos ou de perícias (o lápis do título da seção).
+   * A seção fica sempre "na mesa": só os totais; base, bônus, graus e pontos moram nas janelas.
    */
-  function desenharModoAtributos(ficha, distribuicao) {
-    if (!refs.secaoAtributos || !ficha) return;
-    if (refs.modoAtributosFicha !== ficha.id) {
-      refs.modoAtributosFicha = ficha.id;
-      const restantes = distribuicao ? OP.calc.numero(distribuicao.restantes) : 0;
-      const livre = Boolean(ficha.config && ficha.config.modoLivre);
-      refs.modoAtributos = !livre && restantes !== 0 ? 'edicao' : 'mesa';
-    }
-    if (refs.secaoAtributos.dataset.modo !== refs.modoAtributos) refs.secaoAtributos.dataset.modo = refs.modoAtributos;
-    const editando = String(refs.modoAtributos === 'edicao');
-    if (refs.botaoModoAtributos.getAttribute('aria-pressed') !== editando) refs.botaoModoAtributos.setAttribute('aria-pressed', editando);
+  function abrirEdicao(dialogo, quemAbriu) {
+    if (dialogo && OP.ui.abrirDialogo) OP.ui.abrirDialogo(dialogo, quemAbriu);
   }
 
   /**
-   * Perícias na mesa (nome, dados, bônus e rolar) ou em edição (atributo,
-   * grau, outros, pontos). Na primeira vez que a ficha aparece: personagem
-   * com alguma perícia treinada abre na mesa; personagem novo, em edição.
+   * O número no lápis avisa que há algo a resolver: pontos a distribuir (ou a mais) nos atributos,
+   * pontos de treinamento a gastar (ou a mais) e graus fora da regra nas perícias. Some no modo livre.
+   * estado: 'pendente' (falta), 'excedido' (passou) ou '' (nada a avisar).
    */
-  function desenharModoPericias(ficha) {
-    if (!refs.secaoPericias || !ficha) return;
-    if (refs.modoPericiasFicha !== ficha.id) {
-      refs.modoPericiasFicha = ficha.id;
-      const treinada = OP.data.pericias.some(function (definicao) {
-        const pericia = ficha.pericias && ficha.pericias[definicao.id];
-        return pericia && OP.calc.numero(pericia.grau) > 0;
-      });
-      refs.modoPericias = treinada ? 'mesa' : 'edicao';
-    }
-    if (refs.secaoPericias.dataset.modo !== refs.modoPericias) refs.secaoPericias.dataset.modo = refs.modoPericias;
-    const editando = String(refs.modoPericias === 'edicao');
-    if (refs.botaoModoPericias.getAttribute('aria-pressed') !== editando) refs.botaoModoPericias.setAttribute('aria-pressed', editando);
+  function desenharPendencia(elemento, estado, texto, titulo) {
+    const mostrar = estado !== '';
+    if (elemento.hidden === mostrar) elemento.hidden = !mostrar;
+    if (!mostrar) return;
+    if (elemento.dataset.estado !== estado) elemento.dataset.estado = estado;
+    definirTexto(elemento, texto);
+    if (elemento.title !== titulo) elemento.title = titulo;
   }
 
   /* ---------- Atributo da perícia: painel que abre ao clicar na sigla ---------- */
@@ -1764,7 +1821,6 @@ window.OP = window.OP || {};
 
   /** Muda o grau de uma perícia pelo botão de chevrons. */
   function ciclarGrau(idPericia) {
-    if (refs.modoPericias !== 'edicao') return; // na mesa o grau só aparece
     const estado = refs.derivados && refs.derivados.pericias[idPericia];
     if (!estado) return;
     const novo = proximoGrau(estado.grau, Boolean(estado.concedidaPor));
@@ -1775,7 +1831,6 @@ window.OP = window.OP || {};
   }
 
   function desenharPericias(derivados) {
-    desenharModoPericias(OP.state.ficha);
     const identidade = derivados.identidade;
     OP.data.pericias.forEach(function (definicao) {
       const estado = derivados.pericias[definicao.id];
@@ -1792,14 +1847,26 @@ window.OP = window.OP || {};
       const fonte = estado.concedidaPor || '';
       const nomeGrau = graus[estado.grau] ? graus[estado.grau].nome : '';
       const proximo = proximoGrau(estado.grau, fonte);
-      const editando = refs.modoPericias === 'edicao';
+      // Na tabela da ficha o botão de chevrons só marca o grau (escondido na tela, usado no papel); quem muda é a janela
       const rotuloGrau = definicao.nome + ': ' + nomeGrau + (fonte ? ' (concedida pela ' + fonte + ')' : '') +
-        (editando ? '. Ativar para mudar para ' + graus[proximo].nome + '.' : '. Para mudar o grau, use Editar perícias.');
-      if (elementos.grau.disabled === editando) elementos.grau.disabled = !editando;
+        '. Para mudar o grau, use o lápis de Perícias.';
+      if (!elementos.grau.disabled) elementos.grau.disabled = true;
       if (String(estado.grau) !== elementos.grau.dataset.nivel) elementos.grau.dataset.nivel = String(estado.grau);
       if (elementos.grau.getAttribute('aria-label') !== rotuloGrau) {
         elementos.grau.setAttribute('aria-label', 'Grau de ' + rotuloGrau);
         elementos.grau.title = 'Grau de ' + rotuloGrau;
+      }
+      const edicao = refs.periciasEdicao[definicao.id];
+      if (edicao) {
+        const rotuloEdicao = 'Grau de ' + definicao.nome + ': ' + nomeGrau + (fonte ? ' (concedida pela ' + fonte + ')' : '') +
+          '. Ativar para mudar para ' + graus[proximo].nome + '.';
+        if (String(estado.grau) !== edicao.grau.dataset.nivel) edicao.grau.dataset.nivel = String(estado.grau);
+        if (edicao.grau.getAttribute('aria-label') !== rotuloEdicao) {
+          edicao.grau.setAttribute('aria-label', rotuloEdicao);
+          edicao.grau.title = rotuloEdicao;
+        }
+        definirTexto(edicao.sigla, siglaAtributo(estado.atributo));
+        edicao.linha.classList.toggle('edicao-pericia--concedida', Boolean(estado.concedidaPor));
       }
       definirTexto(elementos.grauImpressao, nomeGrau);
       // Marcador da mesa: T (Treinado), V (Veterano), E (Expert); Destreinado fica sem marca
@@ -1906,6 +1973,12 @@ window.OP = window.OP || {};
         treino.gastos + ' ' + plural(treino.gastos, 'ponto gasto', 'pontos gastos') + ' de ' + treino.total + ').');
     }
 
+    // Lápis das perícias: pontos de treinamento a gastar ou a mais (os graus fora da regra entram em desenharGraus)
+    refs.pendenciaTreino = { estado: '', quantidade: 0 };
+    if (!livre && treino.classeDefinida && treino.gastos !== treino.total) {
+      refs.pendenciaTreino = { estado: treino.gastos > treino.total ? 'excedido' : 'pendente', quantidade: Math.abs(treino.total - treino.gastos) };
+    }
+
     refs.avisoPericiasSemClasse.hidden = treino.classeDefinida;
     definirTexto(refs.composicaoTreino, treino.classeDefinida
       ? treino.daClasse + ' da classe + INT ' + treino.intelecto + termoComSinal(treino.bonus, 'bônus') + ' = ' + treino.total
@@ -1941,6 +2014,20 @@ window.OP = window.OP || {};
     }
     desenharListaTextos(refs.listaAvisosGraus, avisos);
     refs.avisosGraus.hidden = avisos.length === 0;
+
+    // Lápis das perícias: junta os pontos de treinamento (desenharTreinamento) e os graus fora da regra
+    const treino = refs.pendenciaTreino || { estado: '', quantidade: 0 };
+    let estadoLapis = treino.estado;
+    let texto = String(treino.quantidade);
+    const partes = [];
+    if (treino.estado === 'pendente') partes.push(treino.quantidade + ' ' + plural(treino.quantidade, 'ponto de treinamento a gastar', 'pontos de treinamento a gastar'));
+    if (treino.estado === 'excedido') partes.push(treino.quantidade + ' ' + plural(treino.quantidade, 'ponto de treinamento a mais', 'pontos de treinamento a mais'));
+    if (avisos.length) {
+      partes.push(avisos.length + ' ' + plural(avisos.length, 'aviso de grau', 'avisos de grau'));
+      if (estadoLapis === '') { estadoLapis = 'excedido'; texto = '!'; }
+      else if (estadoLapis === 'pendente') estadoLapis = 'excedido';
+    }
+    desenharPendencia(refs.pendenciaPericias, estadoLapis, texto, partes.join(' · ') + ' nas perícias');
   }
 
   /** " + AGI 2", " − outros 1" */
@@ -3812,10 +3899,15 @@ window.OP = window.OP || {};
 
   function montar() {
     refs.raiz = document.getElementById('ficha');
-    refs.secaoPericias = document.getElementById('secao-pericias');
-    refs.secaoAtributos = document.getElementById('secao-atributos');
-    refs.botaoModoAtributos = document.getElementById('botao-modo-atributos');
-    refs.botaoModoPericias = document.getElementById('botao-modo-pericias');
+    refs.dlgEditarAtributos = document.getElementById('dialogo-editar-atributos');
+    refs.dlgEditarPericias = document.getElementById('dialogo-editar-pericias');
+    refs.pendenciaAtributos = document.getElementById('pendencia-atributos');
+    refs.pendenciaPericias = document.getElementById('pendencia-pericias');
+    [refs.dlgEditarAtributos, refs.dlgEditarPericias].forEach(function (dialogo) {
+      dialogo.addEventListener('click', function (evento) {
+        if (evento.target === dialogo || evento.target.closest('[data-fechar-dialogo]')) dialogo.close();
+      });
+    });
     refs.contador = document.getElementById('contador-pontos');
     refs.contadorRotulo = document.getElementById('contador-rotulo');
     refs.avisos = document.getElementById('avisos-atributos');
@@ -3921,7 +4013,6 @@ window.OP = window.OP || {};
 
     desenharAlternadores();
     desenharDistribuicao(ficha, derivados.distribuicao);
-    desenharModoAtributos(ficha, derivados.distribuicao);
     desenharBarras(derivados);
     desenharRecursos(derivados);
     desenharDefesa(derivados);

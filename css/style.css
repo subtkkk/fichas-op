@@ -1704,56 +1704,278 @@ textarea.controle {
   background: var(--acento-texto);
 }
 
-/* "Editar atributos" e "Editar perícias": discretos, só um texto mono pequeno e um interruptor miúdo, sem pílula */
-.alternar.atributos__modo,
-.alternar.pericias__modo {
-  gap: 7px;
-  padding: 0 2px;
-  font: 500 0.6875rem/1 var(--fonte-mono);
-  letter-spacing: 0.03em;
+/* Lápis: abre a janela de edição de uma seção (atributos, perícias). Só o ícone; o número avisa de pendência */
+.lapis {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: var(--papel-3);
   background: transparent;
-  border-color: transparent;
+  border: 0;
+  border-radius: var(--raio-2);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: color var(--dur-1) var(--curva), background-color var(--dur-1) var(--curva);
 }
 
-.alternar.atributos__modo:hover,
-.alternar.pericias__modo:hover {
-  border-color: transparent;
+.lapis:hover {
+  color: var(--papel);
+  background: color-mix(in srgb, var(--cor-texto) 6%, transparent);
 }
 
-.alternar.atributos__modo .alternar__trilho,
-.alternar.pericias__modo .alternar__trilho {
-  width: 22px;
-  height: 12px;
-  background: color-mix(in srgb, var(--cor-texto) 16%, transparent);
-  box-shadow: none;
+.lapis__icone {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-.alternar.atributos__modo .alternar__trilho::after,
-.alternar.pericias__modo .alternar__trilho::after {
-  top: 2px;
-  left: 2px;
-  width: 8px;
-  height: 8px;
-  background: var(--papel-3);
-  box-shadow: none;
-}
-
-.alternar.atributos__modo[aria-pressed="true"],
-.alternar.pericias__modo[aria-pressed="true"] {
-  color: color-mix(in srgb, var(--acento) 72%, var(--papel));
-  background: transparent;
-  border-color: transparent;
-}
-
-.alternar.atributos__modo[aria-pressed="true"] .alternar__trilho,
-.alternar.pericias__modo[aria-pressed="true"] .alternar__trilho {
+.lapis__pendencia {
+  position: absolute;
+  top: -3px;
+  right: -5px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font: 700 0.625rem/16px var(--fonte-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: var(--acento-texto);
   background: var(--acento);
+  border-radius: 8px;
 }
 
-.alternar.atributos__modo[aria-pressed="true"] .alternar__trilho::after,
-.alternar.pericias__modo[aria-pressed="true"] .alternar__trilho::after {
-  transform: translateX(10px);
-  background: var(--acento-texto);
+.lapis__pendencia[data-estado="excedido"] {
+  color: var(--tinta-1);
+  background: var(--erro);
+}
+
+.lapis__pendencia[hidden] {
+  display: none;
+}
+
+@media (max-width: 1023px), (pointer: coarse) {
+  .lapis {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* Janelas de edição de atributos e de perícias */
+.dialogo--edicao {
+  width: min(560px, calc(100vw - 24px));
+}
+
+.dialogo--edicao-pericias {
+  width: min(680px, calc(100vw - 24px));
+}
+
+.edicao__controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.edicao-atributos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.edicao-atributo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  grid-template-areas: "nome base bonus total";
+  align-items: end;
+  gap: 8px 14px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--cor-texto) 3%, transparent);
+  border: 1px solid var(--linha-1);
+  border-radius: var(--raio-2);
+}
+
+.edicao-atributo--alerta {
+  background: var(--aviso-fundo);
+  border-color: var(--aviso-borda);
+}
+
+.edicao-atributo__nome {
+  display: flex;
+  grid-area: nome;
+  flex-direction: column;
+  gap: 2px;
+  align-self: center;
+  min-width: 0;
+}
+
+.edicao-atributo__sigla {
+  font: 600 1.25rem/1 var(--fonte-display);
+}
+
+.edicao-atributo__rotulo {
+  font: 500 var(--t-micro) / 1.2 var(--fonte-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+}
+
+.edicao-atributo .atributo__campo {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 4px;
+}
+
+.edicao-atributo .passo {
+  height: 34px;
+}
+
+.edicao-atributo .passo__botao {
+  width: 30px;
+}
+
+.edicao-atributo__total {
+  grid-area: total;
+  align-self: center;
+  min-width: 3ch;
+  margin: 0;
+  font: 600 1.0625rem/1 var(--fonte-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--papel-2);
+}
+
+.edicao-atributo__total output {
+  color: var(--papel);
+}
+
+@media (max-width: 460px) {
+  .edicao-atributo {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "nome total"
+      "base bonus";
+    align-items: end;
+  }
+
+  .edicao-atributo__total {
+    justify-self: end;
+  }
+
+  .edicao-atributo .atributo__campo {
+    align-items: stretch;
+  }
+
+  .edicao-atributo .passo {
+    width: 100%;
+  }
+
+  .edicao-atributo .passo__valor {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+  }
+
+  .dialogo--edicao .dialogo__corpo {
+    padding: 18px 14px 16px;
+  }
+}
+
+.edicao-pericias {
+  width: 100%;
+  font-size: 0.875rem;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.edicao-pericias thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 8px 6px;
+  font: 500 var(--t-micro) / 1.2 var(--fonte-mono);
+  letter-spacing: 0.14em;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--papel-3);
+  background: color-mix(in oklab, var(--tinta-2) 98%, transparent);
+  border-bottom: 1px solid var(--linha-2);
+}
+
+.edicao-pericias thead th:first-child {
+  text-align: left;
+}
+
+.edicao-pericias td,
+.edicao-pericias tbody th {
+  padding: 3px 6px;
+  text-align: center;
+  border-bottom: 1px solid var(--linha-1);
+}
+
+.edicao-pericias tbody th.edicao-pericia__nome {
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.edicao-pericia__atributo {
+  margin-left: 8px;
+  font: 500 var(--t-micro) / 1 var(--fonte-mono);
+  letter-spacing: 0.08em;
+  color: var(--papel-3);
+}
+
+.edicao-pericias td,
+.edicao-pericias tbody th {
+  vertical-align: middle;
+}
+
+.edicao-pericia--concedida .edicao-pericia__rotulo {
+  color: var(--papel-2);
+}
+
+.edicao-pericia__outros .controle {
+  width: 56px;
+  height: 32px;
+}
+
+.edicao-pericia__bonus output {
+  font: 600 0.9375rem var(--fonte-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.edicao-pericia__concedida .caixa {
+  justify-content: center;
+}
+
+@media (max-width: 460px) {
+  .edicao-pericia__atributo {
+    display: none;
+  }
+
+  .edicao-pericias thead th {
+    padding-inline: 2px;
+    letter-spacing: 0.06em;
+  }
+
+  .edicao-pericias td,
+  .edicao-pericias tbody th {
+    padding-inline: 3px;
+  }
+
+  .edicao-pericia__outros .controle {
+    width: 48px;
+  }
 }
 
 /* Contadores (pontos, graus) */
@@ -4972,16 +5194,12 @@ body.arrastando-arquivo::after {
 }
 
 /* ---- Mesa: os cinco dados num mostrador, com o teste no centro ----
-   Base, bônus, pontos, modo livre, avisos e regras ficam em "Editar atributos". */
+   Base, bônus, pontos, modo livre, avisos e regras ficam na janela do lápis (#dialogo-editar-atributos).
+   Os campos de base e bônus do cartão só existem para o papel. */
 .secao--atributos[data-modo="mesa"] {
   --dado: clamp(68px, 17cqi, 112px);
 }
 
-.secao--atributos[data-modo="mesa"] #contador-pontos,
-.secao--atributos[data-modo="mesa"] #botao-modo-livre,
-.secao--atributos[data-modo="mesa"] #info-aumentos,
-.secao--atributos[data-modo="mesa"] #avisos-atributos,
-.secao--atributos[data-modo="mesa"] #nota-regras,
 .secao--atributos[data-modo="mesa"] .atributo__campo {
   display: none !important;
 }
@@ -8423,20 +8641,14 @@ body.arrastando-arquivo::after {
   color: var(--acento);
 }
 
-/* Perícias na mesa: sem "concedida" (fica em "Editar perícias"); atributo, grau, outros e total sempre aparecem */
+/* Perícias na mesa: grau, outros e concedida ficam na janela do lápis (as colunas só existem para o papel) */
 .secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(7),
 .secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(4),
 .secao--pericias[data-modo="mesa"] .tabela-pericias thead th:nth-child(3),
 .secao--pericias[data-modo="mesa"] .pericia > .pericia__grau,
 .secao--pericias[data-modo="mesa"] .pericia > .pericia__outros,
 .secao--pericias[data-modo="mesa"] .botao-grau,
-.secao--pericias[data-modo="mesa"] .pericia > .pericia__concedida,
-.secao--pericias[data-modo="mesa"] .pericias__pontos,
-.secao--pericias[data-modo="mesa"] #contador-treinamento,
-.secao--pericias[data-modo="mesa"] #contador-graus,
-.secao--pericias[data-modo="mesa"] #botao-modo-livre-pericias,
-.secao--pericias[data-modo="mesa"] #avisos-pericias,
-.secao--pericias[data-modo="mesa"] #avisos-graus {
+.secao--pericias[data-modo="mesa"] .pericia > .pericia__concedida {
   display: none !important;
 }
 
@@ -12114,12 +12326,6 @@ kbd {
     grid-template-areas: "nome dados grau bonus rolar";
   }
 
-  .zona--per .secao--pericias[data-modo="edicao"] .pericia {
-    grid-template-areas:
-      "nome dados grau outros bonus rolar"
-      "conc conc  conc conc   conc  conc";
-  }
-
   .zona--per .pericia__nome,
   .zona--per .pericia__dados {
     align-self: center;
@@ -13050,64 +13256,6 @@ button.trilho__agente::after {
 }
 }
 
-/* ---- Edição de atributos: cinco linhas compactas, nunca o pentágono ---- */
-.secao--atributos[data-modo="edicao"] .grade-atributos {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.secao--atributos[data-modo="edicao"] .atributo {
-  grid-template-columns: 46px minmax(0, 1fr) auto auto;
-  grid-template-areas: "total cab base bonus";
-  gap: 8px;
-  width: 100%;
-  padding: 8px 10px;
-}
-
-.secao--atributos[data-modo="edicao"] .atributo__total {
-  width: 46px;
-}
-
-.secao--atributos[data-modo="edicao"] .atributo__total output {
-  font-size: 1rem;
-}
-
-.secao--atributos[data-modo="edicao"] .atributo__campo {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 3px;
-}
-
-.secao--atributos[data-modo="edicao"] .atributo__campo label {
-  font-size: 0.625rem;
-  letter-spacing: 0.1em;
-}
-
-.secao--atributos[data-modo="edicao"] .atributo__sigla {
-  font-size: 1.125rem;
-}
-
-.secao--atributos[data-modo="edicao"] .atributo__nome {
-  font-size: 0.625rem;
-}
-
-@container atributos (max-width: 420px) {
-  .secao--atributos[data-modo="edicao"] .atributo {
-    grid-template-columns: 46px minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-areas:
-      "total cab   cab"
-      "base  base  bonus";
-  }
-}
-
-/* No computador, editando atributos, os vitais sobem para o topo da coluna (nunca saem da tela) */
-@media (min-width: 1280px) {
-  .zona--esq:has(.secao--atributos[data-modo="edicao"]) .trilho {
-    order: -1;
-  }
-}
-
 /* ---- Telas de toque com layout de computador (tablet grande): alvos de 44px ---- */
 @media (pointer: coarse) and (min-width: 1280px) {
   .vital__botao,
@@ -13504,9 +13652,7 @@ button.trilho__agente::after {
   }
 }
 
-/* ---- Rótulos nunca abaixo de 11px (edição de atributos, Rolagens) e fórmula do ataque menos gritante que o nome ---- */
-.secao--atributos[data-modo="edicao"] .atributo__campo label,
-.secao--atributos[data-modo="edicao"] .atributo__nome,
+/* ---- Rótulos nunca abaixo de 11px (janela de atributos, Rolagens) e fórmula do ataque menos gritante que o nome ---- */
 .ficha-layout .atributo__campo label,
 .rolagens small {
   font-size: 0.6875rem;

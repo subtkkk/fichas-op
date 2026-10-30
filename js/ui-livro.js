@@ -208,8 +208,11 @@ window.OP = window.OP || {};
     return Boolean(OP.conta && OP.conta.estado && OP.conta.estado.disponivel);
   }
 
-  /** Elemento com o texto do livro de uma chave, ou um aviso de que ele não está liberado. */
-  function criarTextoLivro(chave, ignorar) {
+  /**
+   * Elemento com o texto do livro de uma chave, ou um aviso de que ele não está liberado.
+   * ignorar: rótulos de blocos a deixar de fora. opcoes.semCabecalho: sem a 1ª linha (Nº, tipo, categoria, página).
+   */
+  function criarTextoLivro(chave, ignorar, opcoes) {
     const caixa = el('div', 'livro-texto');
     const t = OP.livro && OP.livro.texto(chave);
     if (!t) {
@@ -219,7 +222,7 @@ window.OP = window.OP || {};
       return caixa;
     }
     const partes = blocosDoTexto(t.corpo);
-    if (partes.cabecalho) caixa.appendChild(el('p', 'livro-texto__cabecalho', partes.cabecalho));
+    if (partes.cabecalho && !(opcoes && opcoes.semCabecalho)) caixa.appendChild(el('p', 'livro-texto__cabecalho', partes.cabecalho));
     partes.blocos.forEach(function (b) {
       if (ignorar && ignorar.indexOf(b.rotulo) !== -1) return;
       const p = el('p', 'livro-texto__bloco');

@@ -421,13 +421,19 @@ window.OP = window.OP || {};
     return dado;
   }
 
+  /**
+   * O que a leitura acrescenta ao cabeçalho. Categoria e espaços já estão nas etiquetas do cabeçalho:
+   * aqui só entram quando há o que explicar (a conta das melhorias e modificadores, os espaços que mudam).
+   * Devolve null quando não há nada a mostrar.
+   */
   function criarDadosDaVisao(item, d, quantidade) {
     const dados = criar('div', 'visao__dados');
-    dados.appendChild(criarDado('Categoria', rotuloCategoria(d.categoriaEfetiva), d.aumento || d.ajuste ? textoConta(d) : ''));
-    const porUnidade = numeroTexto(d.espacosEfetivos);
-    dados.appendChild(criarDado('Espaços', quantidade !== 1 ? numeroTexto(d.espacosEfetivos * quantidade) : porUnidade,
-      (quantidade !== 1 ? porUnidade + ' por unidade × ' + quantidade : '') +
-      (d.espacosEfetivos !== d.espacosBase ? (quantidade !== 1 ? ' · ' : '') + 'base ' + numeroTexto(d.espacosBase) : '')));
+    if (d.aumento || d.ajuste) dados.appendChild(criarDado('Categoria', rotuloCategoria(d.categoriaEfetiva), textoConta(d)));
+    if (d.espacosEfetivos !== d.espacosBase || (quantidade !== 1 && d.espacosEfetivos > 0)) {
+      const porUnidade = numeroTexto(d.espacosEfetivos);
+      dados.appendChild(criarDado('Espaços', numeroTexto(d.espacosEfetivos * quantidade),
+        [quantidade !== 1 ? porUnidade + ' por unidade × ' + quantidade : '', d.espacosEfetivos !== d.espacosBase ? 'base ' + numeroTexto(d.espacosBase) : ''].filter(Boolean).join(' · ')));
+    }
     if (item.tipo === 'protecao') {
       dados.appendChild(criarDado('Defesa', sinal(d.defesaEfetiva), d.defesaEfetiva !== d.defesaBase ? 'base ' + sinal(d.defesaBase) : ''));
       if (OP.calc.numero(item.penalidade) > 0) dados.appendChild(criarDado('Penalidade', '−' + OP.calc.numero(item.penalidade), 'em perícias com carga'));
@@ -444,7 +450,7 @@ window.OP = window.OP || {};
       if (aj.margem) lista.push('margem de ameaça ' + sinal(aj.margem));
       dados.appendChild(criarDado('Nos ataques', lista.join(' · '), 'ligados a esta arma'));
     }
-    return dados;
+    return dados.childNodes.length ? dados : null;
   }
 
   function criarSecaoVisao(titulo, quantidade) {
@@ -507,12 +513,14 @@ window.OP = window.OP || {};
     assinaturasVisao.set(linha, assinatura);
 
     const quantidade = Math.max(0, Math.trunc(OP.calc.numero(item.quantidade)));
-    const filhos = [criarDadosDaVisao(item, d, quantidade)];
+    const filhos = [];
+    const dados = criarDadosDaVisao(item, d, quantidade);
+    if (dados) filhos.push(dados);
 
     const chave = item.catalogo && OP.livro && OP.livro.texto(item.catalogo) ? item.catalogo : '';
     if (chave && OP.uiLivro && OP.uiLivro.criarTextoLivro) {
       const livro = criar('div', 'item__livro visao__livro');
-      livro.appendChild(OP.uiLivro.criarTextoLivro(chave));
+      livro.appendChild(OP.uiLivro.criarTextoLivro(chave, null, { semCabecalho: true })); // Nº, categoria, peso e página: no cabeçalho e na edição
       filhos.push(livro);
     }
     if (String(item.descricao || '').trim()) filhos.push(criar('p', 'visao__texto', item.descricao));

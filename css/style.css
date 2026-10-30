@@ -1704,6 +1704,58 @@ textarea.controle {
   background: var(--acento-texto);
 }
 
+/* "Editar atributos" e "Editar perícias": discretos, só um texto mono pequeno e um interruptor miúdo, sem pílula */
+.alternar.atributos__modo,
+.alternar.pericias__modo {
+  gap: 7px;
+  padding: 0 2px;
+  font: 500 0.6875rem/1 var(--fonte-mono);
+  letter-spacing: 0.03em;
+  background: transparent;
+  border-color: transparent;
+}
+
+.alternar.atributos__modo:hover,
+.alternar.pericias__modo:hover {
+  border-color: transparent;
+}
+
+.alternar.atributos__modo .alternar__trilho,
+.alternar.pericias__modo .alternar__trilho {
+  width: 22px;
+  height: 12px;
+  background: color-mix(in srgb, var(--cor-texto) 16%, transparent);
+  box-shadow: none;
+}
+
+.alternar.atributos__modo .alternar__trilho::after,
+.alternar.pericias__modo .alternar__trilho::after {
+  top: 2px;
+  left: 2px;
+  width: 8px;
+  height: 8px;
+  background: var(--papel-3);
+  box-shadow: none;
+}
+
+.alternar.atributos__modo[aria-pressed="true"],
+.alternar.pericias__modo[aria-pressed="true"] {
+  color: color-mix(in srgb, var(--acento) 72%, var(--papel));
+  background: transparent;
+  border-color: transparent;
+}
+
+.alternar.atributos__modo[aria-pressed="true"] .alternar__trilho,
+.alternar.pericias__modo[aria-pressed="true"] .alternar__trilho {
+  background: var(--acento);
+}
+
+.alternar.atributos__modo[aria-pressed="true"] .alternar__trilho::after,
+.alternar.pericias__modo[aria-pressed="true"] .alternar__trilho::after {
+  transform: translateX(10px);
+  background: var(--acento-texto);
+}
+
 /* Contadores (pontos, graus) */
 .contador {
   display: inline-flex;

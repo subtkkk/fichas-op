@@ -632,6 +632,7 @@ window.OP = window.OP || {};
   // Ícones dos botões de cada item
   const ICONES_ITEM = {
     descricao: '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3 4h10M3 8h10M3 12h6"/></svg>',
+    melhorias: '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 1.8v3.4M8 10.8v3.4M1.8 8h3.4M10.8 8h3.4"/><circle cx="8" cy="8" r="2"/></svg>',
     remover: '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
       '<path d="M2.5 4.5h11"/><path d="M6.5 4.5V3h3v1.5"/><path d="M4 4.5l.8 9h6.4l.8-9"/></svg>'
   };
@@ -663,6 +664,13 @@ window.OP = window.OP || {};
     }).join('');
   }
 
+  /** Natureza do item (data/melhorias.js): decide quais melhorias o item aceita. */
+  function htmlOpcoesNatureza() {
+    return '<option value="">Não informada</option>' + OP.data.gruposItem.map(function (g) {
+      return '<option value="' + escaparHtml(g.id) + '">' + escaparHtml(g.nome) + '</option>';
+    }).join('');
+  }
+
   function htmlOpcoesCategoria() {
     return OP.data.categoriasItem.map(function (categoria) {
       return '<option value="' + categoria.valor + '">' + escaparHtml(categoria.rotulo) + '</option>';
@@ -688,6 +696,7 @@ window.OP = window.OP || {};
   function htmlItem(indice) {
     const caminho = 'inventario.itens.' + indice;
     const idDescricao = 'item-desc-' + indice;
+    const idMelhorias = 'item-mel-' + indice;
     return '' +
       '<div class="item" role="listitem" data-item>' +
         '<div class="item__nome">' +
@@ -699,13 +708,19 @@ window.OP = window.OP || {};
             htmlOpcoesTipoItem() + '</select>' +
         '</div>' +
         '<div class="item__categoria" data-rotulo="Categoria">' +
-          '<select class="controle" aria-label="Categoria do item" data-campo="' + caminho + '.categoria" data-tipo="inteiro">' +
-            htmlOpcoesCategoria() + '</select>' +
+          '<div class="item__com-efetivo">' +
+            '<select class="controle" aria-label="Categoria base do item (sem as melhorias)" data-campo="' + caminho + '.categoria" data-tipo="inteiro">' +
+              htmlOpcoesCategoria() + '</select>' +
+            '<span class="item__efetivo" data-efetivo-categoria hidden></span>' +
+          '</div>' +
         '</div>' +
         '<div class="item__espacos" data-rotulo="Espaços">' +
-          '<input type="text" inputmode="decimal" min="0" autocomplete="off" spellcheck="false" enterkeyhint="done"' +
-            ' class="controle controle--numero" aria-label="Espaços por unidade"' +
-            ' data-campo="' + caminho + '.espacos" data-tipo="decimal">' +
+          '<div class="item__com-efetivo">' +
+            '<input type="text" inputmode="decimal" min="0" autocomplete="off" spellcheck="false" enterkeyhint="done"' +
+              ' class="controle controle--numero" aria-label="Espaços por unidade (sem as melhorias)"' +
+              ' data-campo="' + caminho + '.espacos" data-tipo="decimal">' +
+            '<span class="item__efetivo" data-efetivo-espacos hidden></span>' +
+          '</div>' +
         '</div>' +
         '<div class="item__quantidade" data-rotulo="Qtd.">' +
           '<input type="number" min="0" step="1" inputmode="numeric" class="controle controle--numero" aria-label="Quantidade"' +
@@ -726,6 +741,10 @@ window.OP = window.OP || {};
           '</div>' +
         '</div>' +
         '<div class="item__acoes">' +
+          '<button type="button" class="botao-icone item__botao-melhorias" data-alternar-melhorias aria-expanded="false"' +
+            ' aria-controls="' + idMelhorias + '" title="Natureza e melhorias (modificações, maldições, regalias)">' + ICONES_ITEM.melhorias +
+            '<span class="item__contagem" data-contagem-melhorias hidden></span>' +
+            '<span class="visualmente-oculto">Natureza e melhorias</span></button>' +
           '<button type="button" class="botao-icone" data-alternar-descricao aria-expanded="false"' +
             ' aria-controls="' + idDescricao + '" title="Descrição">' + ICONES_ITEM.descricao +
             '<span class="visualmente-oculto">Descrição</span></button>' +
@@ -733,8 +752,20 @@ window.OP = window.OP || {};
             ICONES_ITEM.remover + '<span class="visualmente-oculto">Remover item</span></button>' +
         '</div>' +
         '<div class="item__descricao" id="' + idDescricao + '" hidden>' +
+          '<div class="item__livro" data-livro-item></div>' +
           '<textarea class="controle" rows="3" placeholder="Descrição e anotações do item" aria-label="Descrição do item"' +
             ' data-campo="' + caminho + '.descricao" data-tipo="texto"></textarea>' +
+        '</div>' +
+        '<div class="item__melhorias" id="' + idMelhorias + '" hidden>' +
+          '<label class="item__natureza"><span>Natureza do item</span>' +
+            '<select class="controle" aria-label="Natureza do item" data-campo="' + caminho + '.grupo" data-tipo="texto" data-padrao="">' +
+              htmlOpcoesNatureza() + '</select></label>' +
+          '<p class="item__resumo" data-resumo-melhorias></p>' +
+          '<ul class="item__melhorias-lista" data-lista-melhorias aria-label="Melhorias do item"></ul>' +
+          '<div class="item__melhorias-acoes">' +
+            '<button type="button" class="botao botao--pequeno" data-melhoria-livro hidden>Escolher do livro…</button>' +
+            '<button type="button" class="botao botao--pequeno botao--fantasma" data-melhoria-propria>+ Melhoria própria</button>' +
+          '</div>' +
         '</div>' +
       '</div>';
   }
@@ -1167,6 +1198,7 @@ window.OP = window.OP || {};
   const REMOCOES = {
     'ataques': { removido: 'Ataque removido', semNome: 'ataque sem nome' },
     'inventario.itens': { removido: 'Item removido', semNome: 'item sem nome' },
+    'inventario.itens.melhorias': { removido: 'Melhoria removida', semNome: 'melhoria sem nome' },
     'habilidades': { removido: 'Habilidade removida', semNome: 'habilidade sem nome' },
     'rituais': { removido: 'Ritual removido', semNome: 'ritual sem nome' },
     'condicoes.ativas': { removido: 'Condição removida', semNome: 'condição', chave: 'uid' },
@@ -1188,7 +1220,8 @@ window.OP = window.OP || {};
   function removerComDesfazer(caminho, id, nomeAviso) {
     const lista = OP.state.obter(caminho);
     if (!Array.isArray(lista)) return;
-    const textos = REMOCOES[caminho] || { removido: 'Removido', semNome: 'sem nome' };
+    // listas dentro de itens (inventario.itens.3.melhorias) usam o texto da lista sem o índice
+    const textos = REMOCOES[caminho] || REMOCOES[caminho.replace(/\.\d+\./g, '.')] || { removido: 'Removido', semNome: 'sem nome' };
     const chave = textos.chave || 'id';
     const posicao = lista.findIndex(function (elemento) { return elemento[chave] === id; });
     if (posicao === -1) return;
@@ -3634,6 +3667,7 @@ window.OP = window.OP || {};
     refs.habilidadesAbertas = Object.create(null);
     ficha.inventario.itens.forEach(function (item) { refs.descricoesAbertas[item.id] = true; });
     ficha.habilidades.forEach(function (habilidade) { refs.habilidadesAbertas[habilidade.id] = true; });
+    if (OP.uiItens) OP.uiItens.imprimir(true); // painel de melhorias aberto nos itens que têm melhorias
     redesenharListas();
 
     impressao.detalhes = selecionarTodos('details', refs.raiz).filter(function (d) { return !d.open; });
@@ -3711,6 +3745,7 @@ window.OP = window.OP || {};
       if (anterior.size === null) anterior.campo.removeAttribute('size');
       else anterior.campo.setAttribute('size', anterior.size);
     });
+    if (OP.uiItens) OP.uiItens.imprimir(false);
     redesenharListas();
   }
 

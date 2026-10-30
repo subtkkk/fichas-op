@@ -7180,7 +7180,8 @@ body.arrastando-arquivo::after {
     "tipo tipo tipo"
     "cat  esp  qtd"
     "det  det  det"
-    "desc desc desc";
+    "desc desc desc"
+    "mel  mel  mel";
   align-items: end;
   gap: 0 8px;
   min-width: 0;
@@ -7198,6 +7199,7 @@ body.arrastando-arquivo::after {
 .item__detalhes { grid-area: det; }
 .item__acoes { grid-area: acoes; }
 .item__descricao { grid-area: desc; }
+.item__melhorias { grid-area: mel; }
 
 .item > div {
   min-width: 0;
@@ -7208,7 +7210,8 @@ body.arrastando-arquivo::after {
 .item__espacos,
 .item__quantidade,
 .item__detalhes,
-.item__descricao {
+.item__descricao,
+.item__melhorias {
   margin-top: 10px;
 }
 
@@ -7290,10 +7293,11 @@ body.arrastando-arquivo::after {
 @container ficha (min-width: 940px) {
   .itens__cabecalho,
   .item {
-    grid-template-columns: minmax(140px, 1.4fr) 124px 72px 76px 64px minmax(300px, 2.4fr) 76px;
+    grid-template-columns: minmax(140px, 1.4fr) 124px 92px 88px 64px minmax(300px, 2.4fr) 112px;
     grid-template-areas:
       "nome tipo cat esp qtd det acoes"
-      "desc desc desc desc desc desc desc";
+      "desc desc desc desc desc desc desc"
+      "mel  mel  mel  mel  mel  mel  mel";
     column-gap: 8px;
     row-gap: 0;
   }
@@ -7363,7 +7367,8 @@ body.arrastando-arquivo::after {
     margin-top: 0;
   }
 
-  .item__descricao {
+  .item__descricao,
+  .item__melhorias {
     margin: 6px 0;
   }
 
@@ -7375,6 +7380,202 @@ body.arrastando-arquivo::after {
   .itens__vazio {
     margin-top: 10px;
   }
+}
+
+/* ---- Melhorias do item: categoria efetiva, painel e lista ---- */
+.itens__botoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.itens__botoes .botao--adicionar {
+  flex: 1 1 220px;
+  width: auto;
+}
+
+.itens__botoes .botao--pequeno {
+  margin-top: var(--e3);
+}
+
+.item__com-efetivo {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.item__com-efetivo .controle {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.item__efetivo {
+  flex: none;
+  padding: 2px 5px;
+  font: 600 var(--t-micro) / 1.2 var(--fonte-mono);
+  color: color-mix(in srgb, var(--acento) 72%, var(--papel));
+  background: var(--acento-suave);
+  border: 1px solid var(--acento-linha);
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.item__botao-melhorias {
+  position: relative;
+}
+
+.item__contagem {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font: 700 0.625rem / 16px var(--fonte-mono);
+  text-align: center;
+  color: var(--acento-texto);
+  background: var(--acento);
+  border-radius: 8px;
+}
+
+.item__melhorias {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--cor-texto) 3%, transparent);
+  border: 1px solid var(--linha-1);
+  border-radius: var(--raio-2);
+}
+
+.item__melhorias[hidden] {
+  display: none;
+}
+
+.item .item__natureza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.item .item__natureza > span {
+  font: 500 var(--t-micro) / 1.2 var(--fonte-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+}
+
+.item .item__natureza .controle {
+  width: auto;
+  min-width: 220px;
+  max-width: 100%;
+}
+
+.item__resumo {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--papel-2);
+}
+
+.item__melhorias-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item__melhorias-lista:empty {
+  display: none;
+}
+
+.melhoria {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  background: color-mix(in oklab, var(--tinta-superficie) 80%, transparent);
+  border: 1px solid var(--linha-1);
+  border-left: 3px solid var(--cor-aco);
+  border-radius: var(--raio-2);
+}
+
+.melhoria--maldicao { border-left-color: var(--cor-sangue); }
+.melhoria--regalia { border-left-color: var(--cor-conhecimento); }
+
+.melhoria__topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.melhoria__classe,
+.melhoria__elemento {
+  font: 600 var(--t-micro) / 1.2 var(--fonte-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--papel-3);
+}
+
+.melhoria__elemento[data-elemento-livro="sangue"] { color: var(--el-sangue); }
+.melhoria__elemento[data-elemento-livro="morte"] { color: var(--el-morte); }
+.melhoria__elemento[data-elemento-livro="conhecimento"] { color: var(--el-conhecimento); }
+.melhoria__elemento[data-elemento-livro="energia"] { color: var(--el-energia); }
+
+.melhoria__nome-texto {
+  flex: 1 1 140px;
+  font-size: 0.875rem;
+}
+
+.item .melhoria__nome {
+  flex: 1 1 160px;
+  width: auto;
+  min-width: 0;
+}
+
+.item .melhoria__classe-select {
+  flex: none;
+  width: auto;
+}
+
+.melhoria__alerta {
+  padding: 1px 6px;
+  font-size: 0.75rem;
+  color: var(--cor-aviso);
+  border: 1px solid color-mix(in srgb, var(--cor-aviso) 55%, transparent);
+  border-radius: 4px;
+}
+
+.melhoria__acoes {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.item .melhoria__nota {
+  width: 100%;
+  height: 30px;
+  font-size: 0.8125rem;
+}
+
+.item__melhorias-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.item__livro:empty {
+  display: none;
+}
+
+.item__livro {
+  margin-bottom: 8px;
 }
 
 /* ---- Descrição: caderno de campo pautado ---- */
@@ -12836,7 +13037,8 @@ body {
       "nome nome acoes acoes"
       "tipo cat  esp  qtd"
       "det  det  det  det"
-      "desc desc desc desc";
+      "desc desc desc desc"
+      "mel  mel  mel  mel";
     gap: 6px 6px;
     padding: 10px 12px;
   }
@@ -12857,6 +13059,22 @@ body {
   .item__espacos,
   .item__quantidade {
     margin-top: 2px;
+  }
+
+  .item__tipo,
+  .item__categoria,
+  .item__espacos,
+  .item__quantidade {
+    align-self: start;
+  }
+
+  /* A marca "→ IV" da categoria efetiva (e dos espaços) vai para baixo do campo, que mantém a largura */
+  .item__com-efetivo {
+    flex-wrap: wrap;
+  }
+
+  .item__com-efetivo .controle {
+    flex: 1 1 100%;
   }
 }
 

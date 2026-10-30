@@ -13,13 +13,18 @@
    Cada item do servidor tem o texto do livro e, no fim, uma linha "§AUTO§{...}"
    com { t: 'origem'|'classe'|'trilha'|'poder'|'ritual', …, ef: {efeitos} }
    (gerada por tools/gerar-conteudo.mjs).
+
+   Os conteúdos "itens" e "melhorias" (compêndio de itens, tools/gerar-arsenal.mjs) levam
+   { t: 'item', … } e { t: 'melhoria', … } (ou { t: 'regra' }); formato no cabeçalho de
+   tools/gerar-arsenal.mjs. Eles entram em OP.data.catalogo.itens e .melhorias (listas) e
+   em .itemPorChave e .melhoriaPorChave (busca por chave, usada por js/calc.js).
    ========================================================================== */
 window.OP = window.OP || {};
 
 (function (OP) {
   'use strict';
 
-  const ESCOPOS = ['origens', 'habilidades', 'rituais'];
+  const ESCOPOS = ['origens', 'habilidades', 'rituais', 'itens', 'melhorias'];
   const MARCADOR = '\n\n§AUTO§';
 
   const textos = Object.create(null); // chave → { titulo, corpo, escopo }
@@ -28,7 +33,10 @@ window.OP = window.OP || {};
   let carga = { carregando: false, escopos: {} }; // o que chegou de cada conteúdo (para a tela da Conta explicar)
 
   function catalogoVazio() {
-    return { origens: {}, trilhas: {}, classe: {}, poderes: [], rituais: [] };
+    return {
+      origens: {}, trilhas: {}, classe: {}, poderes: [], rituais: [],
+      itens: [], melhorias: [], itemPorChave: {}, melhoriaPorChave: {}, regrasDeMelhoria: {}
+    };
   }
 
   /** Separa o texto do livro dos dados da ficha. Dados ilegíveis são ignorados (o texto continua). */
@@ -65,6 +73,13 @@ window.OP = window.OP || {};
       delete r.t;
       delete r.ef;
       catalogo.rituais.push(r);
+    } else if (m.t === 'item' || m.t === 'melhoria') {
+      const dados = Object.assign({}, m, { id: chave, nome: item.titulo });
+      delete dados.t;
+      (m.t === 'item' ? catalogo.itens : catalogo.melhorias).push(dados);
+      (m.t === 'item' ? catalogo.itemPorChave : catalogo.melhoriaPorChave)[chave] = dados;
+    } else if (m.t === 'regra' && typeof m.cls === 'string') {
+      catalogo.regrasDeMelhoria[m.cls] = chave;
     }
     if (m.ef && typeof m.ef === 'object') {
       const problemas = OP.calc.validarEfeitos(chave, m.ef);
@@ -146,7 +161,10 @@ window.OP = window.OP || {};
     const poderes = (cat.poderes || []).length;
     const rituais = (cat.rituais || []).length;
     const efeitos = Object.keys(OP.data.efeitos || {}).length;
+    const itens = (cat.itens || []).length;
+    const melhorias = (cat.melhorias || []).length;
     if (poderes || rituais) partes.unshift('Livro carregado: ' + poderes + ' poderes, ' + rituais + ' rituais e ' + efeitos + ' fontes com efeito automático.');
+    if (itens || melhorias) partes.unshift('Itens carregados: ' + itens + ' itens e ' + melhorias + ' melhorias (modificações, maldições e regalias).');
     return partes.join(' ');
   }
 

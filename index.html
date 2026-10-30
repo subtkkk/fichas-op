@@ -1059,7 +1059,10 @@
               <div class="itens__lista" id="lista-itens" role="list" aria-label="Itens do inventário"></div>
               <p class="itens__vazio" id="itens-vazio">Nenhum item. Use "Adicionar item" para começar.</p>
             </div>
-            <button type="button" class="botao botao--adicionar" data-acao="adicionar-item">+ Adicionar item</button>
+            <div class="itens__botoes">
+              <button type="button" class="botao botao--adicionar" data-acao="adicionar-item">+ Adicionar item</button>
+              <button type="button" class="botao botao--pequeno" id="livro-add-item" hidden>Escolher do livro…</button>
+            </div>
             <div class="inventario__topo">
               <!-- Patente, Pontos de Prestígio, crédito e limites por categoria -->
               <article class="painel painel--patente">
@@ -2040,6 +2043,7 @@
   <script src="data/danos.js"></script>
   <script src="data/defesa.js"></script>
   <script src="data/patentes.js"></script>
+  <script src="data/melhorias.js"></script>
   <script src="data/elementos.js"></script>
   <script src="data/habilidades.js"></script>
   <script src="data/resistencias.js"></script>
@@ -2075,6 +2079,7 @@
   <script src="js/conta.js"></script>
   <script src="js/livro.js"></script>
   <script src="js/ui-livro.js"></script>
+  <script src="js/ui-itens.js"></script>
   <script src="js/ui-regras.js"></script>
   <script src="js/ui-defesa.js"></script>
   <script src="js/nuvem.js"></script>
@@ -2086,6 +2091,7 @@
   <script src="js/tests.js"></script>
   <script src="js/tests-etapa10.js"></script>
   <script src="js/tests-etapa11.js"></script>
+  <script src="js/tests-itens.js"></script>
   <script src="js/tests-atmosfera.js"></script>
 </body>
 </html>

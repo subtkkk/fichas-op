@@ -1824,7 +1824,8 @@ select.controle {
     "tipo tipo tipo"
     "cat  esp  qtd"
     "det  det  det"
-    "desc desc desc";
+    "desc desc desc"
+    "mel  mel  mel";
   align-items: end;
   gap: 0 8px; /* espaço entre linhas vem da margem: linhas escondidas não deixam buraco */
   min-width: 0;
@@ -1842,6 +1843,7 @@ select.controle {
 .item__detalhes  { grid-area: det; }
 .item__acoes     { grid-area: acoes; }
 .item__descricao { grid-area: desc; }
+.item__melhorias { grid-area: mel; }
 
 .item > div {
   min-width: 0;

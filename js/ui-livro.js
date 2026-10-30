@@ -271,7 +271,9 @@ window.OP = window.OP || {};
    * `ignorar` deixa um grupo de fora (para contar quanto cada botão daria).
    */
   function itemCasa(item, ignorar) {
-    if (lista.aba !== 'todos' && item.abas && item.abas.indexOf(lista.aba) === -1) return false;
+    // config.buscaEmTodas: digitando na busca, vale todas as abas (itens e melhorias têm muitas abas)
+    const buscando = Boolean(lista.config && lista.config.buscaEmTodas) && normalizar(lista.busca) !== '';
+    if (!buscando && lista.aba !== 'todos' && item.abas && item.abas.indexOf(lista.aba) === -1) return false;
     if (!gruposVisiveis().every(function (g) { return g.id === ignorar || grupoCasa(item, g); })) return false;
     const termo = normalizar(lista.busca);
     return !termo || normalizar(item.busca || item.titulo).indexOf(termo) !== -1;
@@ -302,9 +304,10 @@ window.OP = window.OP || {};
     });
     refs.vazio.hidden = filtrados.length > 0;
     if (refs.resultado) {
-      const total = lista.itens.filter(function (i) { return lista.aba === 'todos' || !i.abas || i.abas.indexOf(lista.aba) !== -1; }).length;
+      const total = lista.itens.filter(function (i) { return !i.semContagem && (lista.aba === 'todos' || !i.abas || i.abas.indexOf(lista.aba) !== -1); }).length;
       const filtrando = haFiltros() || normalizar(lista.busca) !== '';
-      refs.resultado.textContent = filtrando ? 'Mostrando ' + filtrados.length + ' de ' + total : total + ' no total';
+      const mostrados = filtrados.filter(function (i) { return !i.semContagem; }).length;
+      refs.resultado.textContent = filtrando ? 'Mostrando ' + mostrados + ' de ' + total : total + ' no total';
     }
     if (refs.limpar) refs.limpar.hidden = !haFiltros();
   }
@@ -331,20 +334,21 @@ window.OP = window.OP || {};
       if (novo) novo.focus();
     });
     topo.appendChild(alternar);
-    if (item.acao) {
-      const a = el('button', 'livro-acao' + (item.acao.primaria ? ' livro-acao--primaria' : ''));
+    // Uma ação (item.acao) ou várias (item.acoes, ex.: "Adicionar" e "Adicionar com ataque")
+    (item.acoes || (item.acao ? [item.acao] : [])).forEach(function (acao) {
+      const a = el('button', 'livro-acao' + (acao.primaria ? ' livro-acao--primaria' : ''));
       a.type = 'button';
-      if (item.acao.icone) {
-        const icone = el('span', 'livro-acao__icone livro-acao__icone--' + item.acao.icone);
+      if (acao.icone) {
+        const icone = el('span', 'livro-acao__icone livro-acao__icone--' + acao.icone);
         icone.setAttribute('aria-hidden', 'true');
         a.appendChild(icone);
       }
-      a.appendChild(el('span', 'livro-acao__texto', item.acao.rotulo));
-      a.disabled = item.acao.desativada === true;
-      a.setAttribute('aria-label', item.acao.rotulo + ': ' + item.titulo);
-      a.addEventListener('click', function () { item.acao.aoClicar(item); });
+      a.appendChild(el('span', 'livro-acao__texto', acao.rotulo));
+      a.disabled = acao.desativada === true;
+      a.setAttribute('aria-label', acao.rotulo + ': ' + item.titulo);
+      a.addEventListener('click', function () { acao.aoClicar(item); });
       topo.appendChild(a);
-    }
+    });
     linha.appendChild(topo);
     const detalhes = el('div', 'livro-item__detalhes');
     detalhes.id = idDetalhes;
@@ -360,7 +364,9 @@ window.OP = window.OP || {};
   }
 
   function contarAba(id) {
-    return id === 'todos' ? lista.itens.length : lista.itens.filter(function (i) { return i.abas && i.abas.indexOf(id) !== -1; }).length;
+    // semContagem: linhas de apoio (ex.: "Regras do livro") não entram nas contas
+    const contaveis = lista.itens.filter(function (i) { return !i.semContagem; });
+    return id === 'todos' ? contaveis.length : contaveis.filter(function (i) { return i.abas && i.abas.indexOf(id) !== -1; }).length;
   }
 
   function gruposDaConfig() {
@@ -409,7 +415,7 @@ window.OP = window.OP || {};
       linha.appendChild(el('span', 'livro-filtros__rotulo', g.rotulo));
       g.itens.forEach(function (filtro) {
         const n = lista.itens.filter(function (i) {
-          return itemCasa(i, g.id) && i.filtros && i.filtros[g.id] && i.filtros[g.id].indexOf(filtro.id) !== -1;
+          return !i.semContagem && itemCasa(i, g.id) && i.filtros && i.filtros[g.id] && i.filtros[g.id].indexOf(filtro.id) !== -1;
         }).length;
         const marcado = (lista.sel[g.id] || []).indexOf(filtro.id) !== -1;
         const b = el('button', 'livro-filtro' + (n === 0 && !marcado ? ' livro-filtro--vazio' : ''));
@@ -441,14 +447,17 @@ window.OP = window.OP || {};
   }
 
   /**
-   * Abre o diálogo de escolha. config: { titulo, dica, busca, abas: [{id,nome}], itens, gatilho }.
-   * item: { id, titulo, meta, grupo, abas, busca, marcado, detalhes(corpo), acao: { rotulo, aoClicar, desativada, primaria } }.
+   * Abre o diálogo de escolha. config: { titulo, dica, busca, abas: [{id,nome}], itens, gatilho,
+   * abaInicial, filtros, selecaoInicial: { <grupo>: [ids marcados ao abrir] }, buscaEmTodas }.
+   * item: { id, titulo, meta, grupo, abas, busca, marcado, semContagem, detalhes(corpo),
+   * acao: { rotulo, aoClicar, desativada, primaria } ou acoes: [acao, ...] }.
    */
   function abrirLista(config) {
     lista.config = config;
     lista.itens = config.itens;
     lista.aba = config.abaInicial || 'todos';
     lista.sel = Object.create(null);
+    Object.keys(config.selecaoInicial || {}).forEach(function (grupo) { lista.sel[grupo] = config.selecaoInicial[grupo].slice(); });
     lista.busca = '';
     lista.expandidos = Object.create(null);
     lista.gatilho = config.gatilho || null;
@@ -810,6 +819,224 @@ window.OP = window.OP || {};
   }
 
   /* ------------------------------------------------------------------------
+     Itens e melhorias do livro (compêndio de itens: conteúdos "itens" e "melhorias")
+     ------------------------------------------------------------------------ */
+
+  const rotuloCategoria = function (n) { return OP.calc.rotuloCategoria(n); };
+
+  function nomeNatureza(id) {
+    const g = OP.data.gruposItem.find(function (x) { return x.id === id; });
+    return g ? g.nome : '';
+  }
+
+  /** "OPRPG p. 58", "AS#09 p. 51" (a fonte de um item ou melhoria do compêndio). */
+  function fonteDoCompendio(d) {
+    return d.fonte ? d.fonte + (d.pag ? ' p. ' + d.pag : '') : '';
+  }
+
+  function textoEspacos(n, texto) {
+    if (texto) return texto;
+    return n === 0 ? 'sem espaço' : (String(n).replace('.', ',') + (n <= 1 ? ' espaço' : ' espaços'));
+  }
+
+  // Abas do seletor de itens: cada uma reúne naturezas de item
+  const ABAS_ITENS = [
+    { id: 'armas', nome: 'Armas', naturezas: ['arma-cac', 'arma-arremesso', 'arma-disparo', 'arma-fogo'] },
+    { id: 'protecoes', nome: 'Proteções', naturezas: ['protecao-leve', 'protecao-pesada', 'escudo', 'capacete'] },
+    { id: 'acessorios', nome: 'Acessórios', naturezas: ['acessorio'] },
+    { id: 'explosivos', nome: 'Munições e explosivos', naturezas: ['municao', 'granada', 'explosivo'] },
+    { id: 'saude', nome: 'Medicamentos e venenos', naturezas: ['medicamento', 'veneno'] },
+    { id: 'operacionais', nome: 'Operacionais', naturezas: ['operacional', 'recurso', 'aliado', 'outro'] },
+    { id: 'paranormais', nome: 'Paranormais', naturezas: ['paranormal'] },
+    { id: 'amaldicoados', nome: 'Amaldiçoados', naturezas: ['amaldicoado'] },
+    { id: 'veiculos', nome: 'Veículos e drones', naturezas: ['veiculo', 'drone'] }
+  ];
+
+  /** Item novo do inventário preenchido com o que o catálogo sabe (o texto do livro não é copiado). */
+  function criarItemDoCatalogo(d) {
+    const dados = { nome: d.nome, tipo: d.tipo || 'geral', grupo: d.grupo || '', categoria: Math.min(Math.max(Number(d.cat) || 0, 0), 4), espacos: Number(d.esp) || 0, catalogo: d.id };
+    if (d.protecao) { dados.defesa = d.protecao.def || 0; dados.penalidade = d.protecao.pen || 0; }
+    return OP.state.novoItem(dados);
+  }
+
+  /** Ataque novo ligado a uma arma do catálogo (dano, crítico, alcance e tipo do livro). */
+  function criarAtaqueDaArma(d, idItem) {
+    const a = d.arma || {};
+    const notas = [];
+    if (a.danoAlt) notas.push('Duas mãos: ' + a.danoAlt);
+    if (a.danoTexto && !a.dano) notas.push('Dano: ' + a.danoTexto);
+    if (a.tiposDano && a.tiposDano.length > 1) notas.push('Dano misto: ' + a.tiposDano.map(function (t) { const x = OP.data.tiposDano.find(function (y) { return y.id === t; }); return x ? x.nome : t; }).join(' + '));
+    if (a.municao) notas.push('Munição: ' + a.municao + (a.capacidade ? ' (capacidade ' + a.capacidade + ')' : ''));
+    return OP.state.novoAtaque({
+      nome: d.nome, pericia: a.pericia === 'pontaria' ? 'pontaria' : 'luta', dano: a.dano || '',
+      critMargem: a.margem || 20, critMult: a.mult || 2, alcance: a.alcance || '', tipoDano: a.tipoDano || '',
+      propriedades: notas.join(' · '), itemId: idItem
+    });
+  }
+
+  function adicionarItemDoLivro(d, comAtaque) {
+    const novo = criarItemDoCatalogo(d);
+    OP.state.atualizar('inventario.itens', OP.state.obter('inventario.itens').concat([novo]));
+    if (comAtaque && d.arma) {
+      OP.state.atualizar('ataques', OP.state.obter('ataques').concat([criarAtaqueDaArma(d, novo.id)]));
+      mensagemDialogo(d.nome + ' foi para o inventário e ganhou um ataque.');
+    } else {
+      mensagemDialogo(d.nome + ' foi para o inventário.');
+    }
+  }
+
+  function metaDoItem(d) {
+    const partes = [nomeNatureza(d.grupo), 'categoria ' + (d.catTexto ? d.catTexto : rotuloCategoria(d.cat)), textoEspacos(d.esp, d.espTexto)];
+    if (d.arma && d.arma.dano) partes.push('dano ' + d.arma.dano + (d.arma.critTexto ? ' · crítico ' + d.arma.critTexto : ''));
+    if (d.elemento && d.elemento !== 'varia') partes.push(nomeElemento(d.elemento));
+    return partes.filter(Boolean).join(' · ');
+  }
+
+  function abrirItens(gatilho) {
+    const catalogo = OP.data.catalogo || {};
+    const naFicha = {};
+    ficha().inventario.itens.forEach(function (i) { if (i.catalogo) naFicha[i.catalogo] = (naFicha[i.catalogo] || 0) + 1; });
+    const abaDe = function (d) { const a = ABAS_ITENS.find(function (x) { return x.naturezas.indexOf(d.grupo) !== -1; }); return a ? a.id : 'operacionais'; };
+    const itens = (catalogo.itens || []).map(function (d, i) { return { d: d, i: i }; }).sort(function (a, b) {
+      return (OP.data.gruposItem.findIndex(function (g) { return g.id === a.d.grupo; }) - OP.data.gruposItem.findIndex(function (g) { return g.id === b.d.grupo; })) || (a.i - b.i);
+    }).map(function (x) {
+      const d = x.d;
+      const quantos = naFicha[d.id] || 0;
+      const acoes = [{
+        rotulo: 'Adicionar', primaria: true, icone: 'mais',
+        aoClicar: function () { adicionarItemDoLivro(d, false); desenharLista(); }
+      }];
+      if (d.arma) acoes.push({ rotulo: 'Com ataque', icone: 'mais', aoClicar: function () { adicionarItemDoLivro(d, true); desenharLista(); } });
+      return {
+        id: 'item-' + d.id,
+        titulo: d.nome,
+        meta: metaDoItem(d) + (quantos ? ' · na ficha' + (quantos > 1 ? ' (' + quantos + ')' : '') : ''),
+        grupo: nomeNatureza(d.grupo),
+        abas: [abaDe(d)],
+        filtros: { cat: [String(d.cat || 0)] },
+        busca: d.nome + ' ' + nomeNatureza(d.grupo) + ' ' + (d.elemento && d.elemento !== 'varia' ? nomeElemento(d.elemento) : ''),
+        detalhes: detalhesDoItemDoLivro(d),
+        acoes: acoes
+      };
+    });
+    const abas = ABAS_ITENS.filter(function (a) { return itens.some(function (i) { return i.abas[0] === a.id; }); }).map(function (a) { return { id: a.id, nome: a.nome }; });
+    abrirLista({
+      titulo: 'Itens do livro',
+      dica: 'Adicionar já preenche o nome, a natureza, a categoria, os espaços e, nas proteções, a Defesa. "Com ataque" também cria o ataque da arma (dano, crítico, alcance e tipo). O texto do livro aparece aqui e na descrição do item; ele não é copiado para a ficha.',
+      busca: 'Buscar item…', buscaEmTodas: true, abas: abas, itens: itens, gatilho: gatilho, abaInicial: abas.length ? abas[0].id : 'todos',
+      filtros: [{ id: 'cat', rotulo: 'Categoria', itens: [0, 1, 2, 3, 4].map(function (n) { return { id: String(n), nome: rotuloCategoria(n) }; }) }]
+    });
+  }
+
+  /** Corpo expandido de um item do livro: o texto e o que a ficha preenche. */
+  function detalhesDoItemDoLivro(d) {
+    return function (corpo) {
+      corpo.appendChild(criarTextoLivro(d.id));
+      const linhas = [];
+      if (d.arma) {
+        const a = d.arma;
+        linhas.push('Ataque: ' + [a.pericia === 'luta' ? 'Luta' : 'Pontaria', a.dano ? 'dano ' + a.dano : '', a.margem ? 'crítico ' + a.margem + '/x' + a.mult : '', a.alcance ? a.alcance.toLowerCase() : ''].filter(Boolean).join(' · '));
+      }
+      if (d.protecao && (d.protecao.def || d.protecao.pen)) linhas.push('Proteção: Defesa +' + d.protecao.def + (d.protecao.pen ? ', penalidade de carga −' + d.protecao.pen : ''));
+      if (d.limite) linhas.push('Regalias: até ' + d.limite);
+      if (!linhas.length) return;
+      const caixa = el('div', 'livro-auto');
+      caixa.appendChild(el('p', 'livro-auto__titulo', 'O que a ficha preenche'));
+      const ul = el('ul', 'livro-auto__lista');
+      linhas.forEach(function (l) { ul.appendChild(el('li', '', l)); });
+      caixa.appendChild(ul);
+      corpo.appendChild(caixa);
+    };
+  }
+
+  /** "Espaços −1 · Defesa +2 · Ataque +2" — o que a ficha aplica sozinha de uma melhoria do livro. */
+  function ajustesEmTexto(aj) {
+    if (!aj) return [];
+    const sinal = function (v) { return (v < 0 ? '−' : '+') + Math.abs(v); };
+    const rotulos = { esp: 'Espaços ', def: 'Defesa (proteção equipada) ', ataque: 'Testes de ataque da arma ligada ', dano: 'Dano da arma ligada ', margem: 'Margem de ameaça da arma ligada ' };
+    return Object.keys(rotulos).filter(function (k) { return Number(aj[k]); }).map(function (k) { return rotulos[k] + sinal(Number(aj[k])); });
+  }
+
+  /** Quanto uma melhoria soma à categoria do item (a classe diz; a maldição depende da ordem). */
+  function textoAumentoCategoria(classe) {
+    if (!classe) return '';
+    if (classe.id === 'maldicao') return 'categoria +' + classe.aumento[0] + ' na 1ª maldição, +' + classe.aumento[1] + ' nas seguintes';
+    return classe.aumento[0] ? 'categoria +' + classe.aumento[0] : 'não muda a categoria';
+  }
+
+  function abrirMelhorias(idItem, gatilho) {
+    const catalogo = OP.data.catalogo || {};
+    const item = ficha().inventario.itens.find(function (i) { return i.id === idItem; });
+    if (!item) return;
+    const indice = ficha().inventario.itens.indexOf(item);
+    const regras = catalogo.regrasDeMelhoria || {};
+    const quantasNoItem = function (chave) { return (OP.state.obter('inventario.itens.' + indice + '.melhorias') || []).filter(function (m) { return m.chave === chave; }).length; };
+    const linhasMel = (catalogo.melhorias || []).map(function (m) {
+      const classe = OP.data.classesMelhoria.find(function (c) { return c.id === m.cls; });
+      const comp = OP.calc.compatibilidadeMelhoria(item, { chave: m.id });
+      const grupo = OP.data.gruposMelhoria.find(function (g) { return g.id === m.grupo; });
+      const max = Math.max(1, Math.trunc(Number(m.max)) || 1);
+      const tem = quantasNoItem(m.id);
+      const aj = ajustesEmTexto(m.aj);
+      return {
+        id: 'mel-' + m.id,
+        titulo: m.nome,
+        meta: [classe ? classe.nome : '', m.elemento && m.elemento !== 'varia' ? nomeElemento(m.elemento) : '', textoAumentoCategoria(classe), fonteDoCompendio(m),
+          comp.ok ? '' : 'não combina com este item (' + comp.motivo + ')', tem ? 'já no item' + (tem > 1 ? ' (×' + tem + ')' : '') : ''].filter(Boolean).join(' · '),
+        grupo: grupo ? grupo.nome : '',
+        abas: [m.cls],
+        filtros: { serve: comp.ok ? ['sim'] : [] },
+        busca: m.nome + ' ' + (grupo ? grupo.nome : '') + ' ' + (m.elemento && m.elemento !== 'varia' ? nomeElemento(m.elemento) : ''),
+        detalhes: function (corpo) {
+          corpo.appendChild(criarTextoLivro(m.id));
+          if (aj.length) {
+            const caixa = el('div', 'livro-auto');
+            caixa.appendChild(el('p', 'livro-auto__titulo', 'O que a ficha faz sozinha'));
+            const ul = el('ul', 'livro-auto__lista');
+            aj.forEach(function (l) { ul.appendChild(el('li', '', l)); });
+            caixa.appendChild(ul);
+            corpo.appendChild(caixa);
+          }
+        },
+        acao: {
+          rotulo: tem >= max ? 'No item' : (comp.ok ? 'Adicionar' : 'Adicionar mesmo assim'), desativada: tem >= max, primaria: comp.ok && tem < max, icone: tem >= max ? 'ok' : 'mais',
+          aoClicar: function () { adicionarMelhoriaDoLivro(item.id, m); desenharLista(); }
+        }
+      };
+    });
+    // Texto das regras gerais de cada classe (aparece no topo da aba)
+    const linhasRegras = Object.keys(regras).map(function (cls) {
+      return { id: 'regra-' + cls, titulo: 'Regras do livro', meta: 'leia antes de escolher', grupo: 'Regras', abas: [cls], filtros: { serve: ['sim'] }, busca: 'regras', semContagem: true, detalhes: function (corpo) { corpo.appendChild(criarTextoLivro(regras[cls])); } };
+    });
+    const itens = linhasRegras.concat(linhasMel);
+    const abas = OP.data.classesMelhoria.map(function (c) { return { id: c.id, nome: c.plural }; });
+    const compativeis = function (cls) { return linhasMel.filter(function (l) { return l.abas[0] === cls && l.filtros.serve.length; }).length; };
+    const primeira = OP.data.classesMelhoria.find(function (c) { return compativeis(c.id) > 0; });
+    abrirLista({
+      titulo: 'Melhorias para ' + (String(item.nome || '').trim() || 'o item'),
+      dica: 'Modificação soma +I à categoria; a 1ª maldição soma +II e as seguintes +I (só a partir de Agente especial); regalia, só para veículos, soma +I cada. A lista abre só com o que serve para este item; desligue o filtro para ver todas.',
+      busca: 'Buscar melhoria…', buscaEmTodas: true, abas: abas, itens: itens, gatilho: gatilho, abaInicial: primeira ? primeira.id : abas[0].id,
+      filtros: [{ id: 'serve', rotulo: 'Para este item', itens: [{ id: 'sim', nome: 'Só as que servem' }] }],
+      selecaoInicial: { serve: ['sim'] }
+    });
+  }
+
+  function adicionarMelhoriaDoLivro(idItem, m) {
+    const itens = OP.state.obter('inventario.itens');
+    const indice = itens.findIndex(function (i) { return i.id === idItem; });
+    if (indice === -1) return;
+    const max = Math.max(1, Math.trunc(Number(m.max)) || 1);
+    if ((itens[indice].melhorias || []).filter(function (x) { return x.chave === m.id; }).length >= max) {
+      mensagemDialogo(m.nome + ' já está no item (o livro não acumula).');
+      return;
+    }
+    const elemento = m.elemento && m.elemento !== 'varia' ? m.elemento : '';
+    const nova = OP.state.novaMelhoria({ classe: m.cls, chave: m.id, nome: m.nome, elemento: elemento });
+    OP.state.atualizar('inventario.itens.' + indice + '.melhorias', (itens[indice].melhorias || []).concat([nova]));
+    mensagemDialogo(m.nome + ' foi para o item.');
+  }
+
+  /* ------------------------------------------------------------------------
      Ações sobre a ficha (preparar, ativar, usar, escolher)
      ------------------------------------------------------------------------ */
 
@@ -1111,6 +1338,8 @@ window.OP = window.OP || {};
     abrirTrilha: abrirTrilha,
     abrirPoderes: abrirPoderes,
     abrirRituais: abrirRituais,
+    abrirItens: abrirItens,
+    abrirMelhorias: abrirMelhorias,
     descreverDefinicao: descreverDefinicao,
     criarTextoLivro: criarTextoLivro,
     blocosDoTexto: blocosDoTexto,

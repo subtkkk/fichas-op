@@ -33,7 +33,9 @@ window.OP = window.OP || {};
   //     "descricao" virou "biografia" (anotacoes → notas)
   // v11: habilidades e rituais com "catalogo" (chave do livro, para os efeitos automáticos),
   //     forma de ritual com "cura" e a seção "efeitos" (ativos, preparados e escolhas)
-  const VERSAO_MODELO = 12;
+  // v12: defesa.rd (lista de RD por tipo de dano; defesa.resistencias foi convertida)
+  // v13: itens com natureza (grupo), chave do catálogo e melhorias (modificações, maldições e regalias)
+  const VERSAO_MODELO = 13;
   // Segmentos de caminho e chaves recusados, para nunca mexer em protótipos.
   const CHAVES_PROIBIDAS = ['__proto__', 'prototype', 'constructor'];
   // Ids de fichas e de itens de lista: letras, números, "_" e "-" (até 64).
@@ -51,7 +53,9 @@ window.OP = window.OP || {};
   const MAX_DIARIO = 200;
   const MAX_PESSOAS = 100; // aliados e rivais
   const MAX_RD = 50;       // entradas de RD (redução de dano)
+  const MAX_MELHORIAS = 30; // melhorias por item
   const LIMITES_LISTA = {
+    'inventario.itens[].melhorias': MAX_MELHORIAS,
     'condicoes.ativas': MAX_CONDICOES,
     'efeitos.ativos': 100,
     'efeitos.preparados': 100,
@@ -70,7 +74,10 @@ window.OP = window.OP || {};
     'biografia.rivais[].nome': 200,
     'condicoes.ativas[].nota': 500,
     'condicoes.ativas[].personalizada.nome': 80,
-    'defesa.rd[].nome': 80
+    'defesa.rd[].nome': 80,
+    'inventario.itens[].melhorias[].nome': 120,
+    'inventario.itens[].melhorias[].chave': 80,
+    'inventario.itens[].melhorias[].nota': 500
   };
 
   const ouvintes = [];
@@ -264,15 +271,27 @@ window.OP = window.OP || {};
       id: '',
       nome: '',
       tipo: 'geral',              // 'geral' | 'arma' | 'protecao' | 'kit'
-      categoria: 0,               // 0 a 4 (0 = sem limite)
+      grupo: '',                  // natureza do item (id de OP.data.gruposItem); '' = não informada
+      categoria: 0,               // categoria BASE, 0 a 4 (0 = sem limite); as melhorias somam (OP.calc.categoriaEfetivaItem)
       espacos: 0,
       quantidade: 1,
       equipada: false,
       defesa: 0,
       penalidade: 0,
       periciaKit: null,
+      catalogo: '',               // chave do item no livro (js/livro.js); liga o item ao texto e aos dados do livro
+      melhorias: [],              // modificações, maldições e regalias (ver melhoriaPadrao)
       descricao: ''
     };
+  }
+
+  /**
+   * Melhoria de um item (data/melhorias.js): modificação, maldição ou regalia.
+   * classe: id de OP.data.classesMelhoria. chave: a do catálogo do livro ('' = melhoria própria,
+   * sem dados do livro). nome: o que aparece (vale para a própria e para a do livro). elemento: de uma maldição.
+   */
+  function melhoriaPadrao() {
+    return { id: '', classe: 'modificacao', chave: '', nome: '', elemento: '', nota: '' };
   }
 
   /**
@@ -559,6 +578,7 @@ window.OP = window.OP || {};
   /** Moldes dos elementos de cada lista da ficha (usados por sanitizar). */
   const MOLDES_LISTA = {
     'inventario.itens': itemPadrao,
+    'inventario.itens.melhorias': melhoriaPadrao,
     ataques: ataquePadrao,
     habilidades: habilidadePadrao,
     rituais: ritualPadrao,
@@ -589,8 +609,15 @@ window.OP = window.OP || {};
     return elemento;
   }
 
+  function novaMelhoria(dados) {
+    return criarComMolde(melhoriaPadrao, 'mel', dados);
+  }
+
+  /** Item completo; as melhorias ganham ids únicos e o limite por item. */
   function novoItem(dados) {
-    return criarComMolde(itemPadrao, 'item', dados);
+    const item = criarComMolde(itemPadrao, 'item', dados);
+    item.melhorias = normalizarLista(item.melhorias, novaMelhoria, 'mel').slice(0, MAX_MELHORIAS);
+    return item;
   }
 
   function novoAtaque(dados) {
@@ -1476,6 +1503,7 @@ window.OP = window.OP || {};
     envelopeBackup: envelopeBackup,
     idValido: idValido,
     novoItem: novoItem,
+    novaMelhoria: novaMelhoria,
     novoAtaque: novoAtaque,
     novaRd: novaRd,
     novaHabilidade: novaHabilidade,

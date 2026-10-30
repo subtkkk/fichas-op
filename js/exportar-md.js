@@ -4,7 +4,8 @@
    Gera um texto .md legível, pensado como guia para montar a ficha física:
    identificação, atributos, vitais (com defesa, esquiva e bloqueio), perícias
    (treinamento, "outros" e total), origem, classe, trilha, habilidades,
-   rituais e inventário. Os números vêm de OP.calc.calcularTudo (os mesmos da tela).
+   rituais e inventário (cada item com natureza, categoria base e efetiva, espaços, Defesa,
+   descrição e melhorias). Os números vêm de OP.calc.calcularTudo (os mesmos da tela).
    O texto do livro (origem, trilha, habilidades, poderes e rituais) só entra com
    o acesso liberado (OP.livro.texto); sem ele, só nomes, números e o que a
    pessoa escreveu.
@@ -332,6 +333,81 @@ window.OP = window.OP || {};
     return secao('Rituais', [topo].concat(blocos));
   }
 
+  function rotuloCategoria(n) {
+    return OP.calc.rotuloCategoria(n);
+  }
+
+  function numeroBr(n) {
+    return String(Math.round(Number(n) * 100) / 100).replace('.', ',');
+  }
+
+  /** "III (base I)" quando as melhorias mudam a categoria; senão só a categoria. */
+  function categoriaEmTexto(d) {
+    return rotuloCategoria(d.categoriaEfetiva) + (d.aumento > 0 ? ' (base ' + rotuloCategoria(d.categoriaBase) + ')' : '');
+  }
+
+  function espacosEmTexto(d) {
+    return numeroBr(d.espacosEfetivos) + (d.espacosEfetivos !== d.espacosBase ? ' (base ' + numeroBr(d.espacosBase) + ')' : '');
+  }
+
+  function naturezaDoItem(i) {
+    const g = achar(OP.data.gruposItem, OP.calc.grupoDoItem(i));
+    return g ? g.nome : '';
+  }
+
+  function nomeDaMelhoria(m) {
+    const entrada = OP.calc.melhoriaDoCatalogo(m.chave);
+    return texto(m.nome) || (entrada && entrada.nome) || 'Melhoria sem nome';
+  }
+
+  /** Uma melhoria do item em lista: nome, classe, elemento, quanto soma à categoria, avisos, efeito do livro e anotação. */
+  function linhaDaMelhoria(m, dm) {
+    const classe = achar(OP.data.classesMelhoria, m.classe);
+    const el = m.elemento ? achar(OP.data.elementos, m.elemento) : null;
+    const partes = [classe ? classe.nome.toLowerCase() : 'melhoria', el ? el.nome : '', dm && dm.aumento > 0 ? 'categoria +' + dm.aumento : ''].filter(Boolean);
+    const avisos = [];
+    if (dm && !dm.vale) avisos.push('repetida, não conta');
+    else if (dm && !dm.ok) avisos.push('não combina com o item (' + dm.motivo + ')');
+    const blocos = (blocosDoLivro(m.chave) || []).filter(function (b) { return ['Efeito', 'Preço', 'Drones complexos'].indexOf(b.rotulo) !== -1; });
+    const efeito = blocos.map(function (b) { return (b.rotulo === 'Efeito' ? '' : b.rotulo + ': ') + b.texto; }).join(' ');
+    let saida = '- **' + nomeDaMelhoria(m) + '** (' + partes.join('; ') + ')' + (avisos.length ? ' ⚠ ' + avisos.join('; ') : '') + (efeito ? ' — ' + efeito : '');
+    if (texto(m.nota)) saida += '\n' + citacao(m.nota).replace(/^/gm, '  ');
+    return saida;
+  }
+
+  /** Bloco de um item: tudo que a ficha guarda sobre ele, o texto do livro (se liberado), a descrição da pessoa e as melhorias. */
+  function detalheDoItem(i, calc) {
+    const d = calc.inventario.itens[i.id];
+    const tipo = achar(OP.data.tiposItem, i.tipo);
+    const natureza = naturezaDoItem(i);
+    const livro = blocosDoLivro(i.catalogo);
+    const textoLivro = i.catalogo && OP.livro && OP.livro.texto(i.catalogo);
+    const cabecalho = textoLivro && OP.uiLivro && OP.uiLivro.blocosDoTexto ? OP.uiLivro.blocosDoTexto(textoLivro.corpo).cabecalho : '';
+    const melhorias = (Array.isArray(i.melhorias) ? i.melhorias : []).filter(function (m) { return m && typeof m === 'object'; });
+    const anotacao = texto(i.descricao);
+    const qtd = Math.max(0, Math.trunc(Number(i.quantidade)) || 0);
+    const protecao = i.tipo === 'protecao';
+    const kit = i.tipo === 'kit' && i.periciaKit ? achar(OP.data.pericias, i.periciaKit) : null;
+    const meta = lista([
+      item('Tipo', tipo ? tipo.nome : i.tipo),
+      item('Natureza', natureza),
+      item('Categoria', d ? rotuloCategoria(d.categoriaEfetiva) + (d.aumento > 0 ? ' (base ' + rotuloCategoria(d.categoriaBase) + ' + ' + d.aumento + ' das melhorias)' : '') : ''),
+      item('Espaços', d ? espacosEmTexto(d) + ' por unidade' + (qtd !== 1 ? ' × ' + qtd + ' = ' + numeroBr(d.espacosEfetivos * qtd) : '') : ''),
+      item('Quantidade', qtd !== 1 ? qtd : ''),
+      protecao && d ? item('Defesa', sinal(d.defesaEfetiva) + (d.defesaEfetiva !== d.defesaBase ? ' (base ' + sinal(d.defesaBase) + ')' : '')) : null,
+      protecao ? item('Penalidade de carga', Number(i.penalidade) > 0 ? '−' + Number(i.penalidade) + ' em perícias com penalidade de carga' : '') : null,
+      protecao ? item('Equipada', i.equipada ? 'sim' : 'não') : null,
+      kit ? item('Perícia do kit', kit.nome) : null,
+      item('No livro', cabecalho)
+    ]);
+    const descricao = blocosEmMd(livro);
+    const partes = [meta];
+    if (descricao) partes.push(descricao);
+    if (anotacao) partes.push((descricao ? '**Anotações.**\n' : '') + citacao(i.descricao));
+    if (melhorias.length) partes.push('**Melhorias (' + melhorias.length + ')**\n\n' + melhorias.map(function (m, j) { return linhaDaMelhoria(m, d && d.melhorias[j]); }).join('\n'));
+    return '#### ' + (texto(i.nome) || 'Sem nome') + '\n\n' + partes.filter(Boolean).join('\n\n');
+  }
+
   function secaoInventario(ficha, calc) {
     const inv = calc.inventario;
     const itens = ((ficha.inventario && ficha.inventario.itens) || []).filter(function (i) { return i && typeof i === 'object'; });
@@ -341,15 +417,27 @@ window.OP = window.OP || {};
       item('Pontos de Prestígio', inv.pontosPrestigio),
       item('Limite de crédito', credito ? credito.nome : ''),
       item('Itens por categoria', inv.limites.filter(function (l) { return l.limite > 0 || l.usados > 0; })
-        .map(function (l) { return l.categoria + ' ' + l.usados + '/' + l.limite; }).join(', '))
+        .map(function (l) { return l.categoria + ' ' + l.usados + '/' + l.limite; }).join(', ')),
+      item('Itens acima da categoria IV', (inv.acimaDeIV || []).map(function (a) { return (a.nome || 'sem nome') + ' (' + rotuloCategoria(a.categoria) + ')'; }).join(', '))
     ]);
     const linhas = itens.map(function (i) {
       const tipo = achar(OP.data.tiposItem, i.tipo);
-      const cat = achar(OP.data.categoriasItem.map(function (c) { return { id: c.valor, rotulo: c.rotulo }; }), i.categoria);
-      return [texto(i.nome) || 'Sem nome', tipo ? tipo.nome : i.tipo, cat ? cat.rotulo : i.categoria, i.espacos, i.quantidade,
-        i.equipada ? 'sim' : 'não'];
+      const d = inv.itens[i.id];
+      const cat = d ? categoriaEmTexto(d) : rotuloCategoria(Number(i.categoria) || 0);
+      const melhorias = (Array.isArray(i.melhorias) ? i.melhorias : []).filter(function (m) { return m && typeof m === 'object'; }).map(nomeDaMelhoria);
+      return [texto(i.nome) || 'Sem nome', naturezaDoItem(i) || (tipo ? tipo.nome : i.tipo), cat, d ? espacosEmTexto(d) : numeroBr(i.espacos), i.quantidade,
+        i.equipada ? 'sim' : 'não', melhorias.join(', ')];
     });
-    return secao('Inventário', [resumo, linhas.length ? tabela(['Item', 'Tipo', 'Cat.', 'Espaços', 'Qtd.', 'Equipado'], linhas) : '']);
+    const comDetalhe = itens.filter(function (i) {
+      return texto(i.descricao) || (Array.isArray(i.melhorias) && i.melhorias.length) || blocosDoLivro(i.catalogo) || i.tipo === 'protecao' || i.tipo === 'kit' || OP.calc.grupoDoItem(i);
+    });
+    const dependeDoLivro = itens.some(function (i) { return i.catalogo || (Array.isArray(i.melhorias) && i.melhorias.some(function (m) { return m && m.chave; })); });
+    return secao('Inventário', [
+      resumo,
+      linhas.length ? tabela(['Item', 'Natureza', 'Cat.', 'Espaços', 'Qtd.', 'Equipado', 'Melhorias'], linhas) : '',
+      comDetalhe.length ? '### Detalhes dos itens\n\n' + comDetalhe.map(function (i) { return detalheDoItem(i, calc); }).join('\n\n') : '',
+      linhas.length ? '_Cat. e Espaços já incluem o que as melhorias mudam; o valor base aparece entre parênteses.' + (dependeDoLivro ? ' O texto do livro (regras do item e efeito das melhorias) entra só quando está liberado nesta conta; sem isso, só o que a ficha guarda e o que você escreveu._' : '_') : ''
+    ]);
   }
 
   /* ------------------------------------------------------------------------
